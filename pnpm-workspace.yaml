@@ -1,0 +1,30 @@
+packages:
+  - "apps/web"
+  - "packages/config"
+  - "packages/db"
+  - "packages/permissions"
+  - "packages/request"
+  - "packages/security"
+  - "packages/ui"
+
+catalog:
+  "@prisma/client": "^6.19.3"
+  "argon2": "^0.41.1"
+  "client-only": "^0.0.1"
+  "lucide-react": "^0.552.0"
+  "next": "16.2.6"
+  "prisma": "^6.19.3"
+  "react": "19.2.4"
+  "react-dom": "19.2.4"
+  "server-only": "^0.0.1"
+  "zod": "^4.4.3"
+
+ignoredBuiltDependencies:
+  - sharp
+  - unrs-resolver
+
+onlyBuiltDependencies:
+  - argon2
+  - "@prisma/client"
+  - "@prisma/engines"
+  - prisma

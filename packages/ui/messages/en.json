@@ -1,0 +1,11 @@
+{
+  "ui": {
+    "appShell": {
+      "nav": {
+        "dashboard": "Dashboard",
+        "users": "Users",
+        "permissions": "Permissions"
+      }
+    }
+  }
+}

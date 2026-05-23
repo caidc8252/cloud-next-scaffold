@@ -1,0 +1,11 @@
+{
+  "ui": {
+    "appShell": {
+      "nav": {
+        "dashboard": "仪表盘",
+        "users": "用户",
+        "permissions": "权限"
+      }
+    }
+  }
+}

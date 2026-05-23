@@ -1,0 +1,7 @@
+AGENTS.md
+pnpm-lock.yaml
+node_modules
+.next
+apps/*/.next
+packages/db/src/generated
+coverage

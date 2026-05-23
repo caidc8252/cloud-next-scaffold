@@ -1,0 +1,34 @@
+/* Interactive element icon size defaults.
+   Single source of truth — NOT design tokens.
+   Explicit size-* classes on individual icons always override this. */
+@layer components {
+  :is(
+    [data-slot="button"],
+    [data-slot="select-trigger"],
+    [data-slot="select-item"],
+    [data-slot="select-scroll-up-button"],
+    [data-slot="select-scroll-down-button"],
+    [data-slot="dropdown-menu-item"],
+    [data-slot="dropdown-menu-sub-trigger"],
+    [data-slot="dropdown-menu-checkbox-item"],
+    [data-slot="dropdown-menu-radio-item"],
+    [data-slot="context-menu-item"],
+    [data-slot="context-menu-sub-trigger"],
+    [data-slot="context-menu-checkbox-item"],
+    [data-slot="context-menu-radio-item"],
+    [data-slot="command-item"],
+    [data-slot="navigation-menu-trigger"],
+    [data-slot="navigation-menu-link"],
+    [data-slot="menubar-trigger"],
+    [data-slot="menubar-item"],
+    [data-slot="menubar-sub-trigger"],
+    [data-slot="menubar-checkbox-item"],
+    [data-slot="menubar-radio-item"],
+    [data-slot="accordion-trigger"],
+    [data-slot="collapsible-trigger"],
+    [data-slot="tabs-trigger"]
+  ) svg:not([class*="size-"]) {
+    width: 0.875rem;  /* 14px = size-3.5 */
+    height: 0.875rem;
+  }
+}

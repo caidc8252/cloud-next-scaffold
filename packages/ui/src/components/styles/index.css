@@ -1,0 +1,305 @@
+@custom-variant dark (&:is(.dark *, [data-theme="dark"] *));
+
+.dark, [data-theme="dark"] { color-scheme: dark; }
+
+/* ───────────────────────────────────────────────────────
+   Design tokens — single source of truth.
+   `@theme` emits CSS vars to :root AND generates Tailwind
+   utilities (bg-*, text-*, border-*, shadow-*, z-*, etc.).
+   Dark mode overrides are applied via [data-theme="dark"]
+   below using normal CSS cascade.
+   ─────────────────────────────────────────────────────── */
+@theme {
+  /* ─── Palette · Primary ─── */
+  --color-primary-50:  oklch(97% 0.012 262);
+  --color-primary-100: oklch(94% 0.025 262);
+  --color-primary-200: oklch(86% 0.06  262);
+  --color-primary-300: oklch(72% 0.10  262);
+  --color-primary-400: oklch(55% 0.14  262);
+  --color-primary-500: oklch(40% 0.14  262);
+  --color-primary-600: oklch(32% 0.10  262);
+  --color-primary-700: oklch(24% 0.06  262);
+  --color-primary-800: oklch(18% 0.04  262);
+  --color-primary-900: oklch(12% 0.025 262);
+
+  /* ─── Palette · Secondary ─── */
+  --color-secondary-50:  oklch(97% 0.005 250);
+  --color-secondary-100: oklch(94% 0.008 250);
+  --color-secondary-500: oklch(56% 0.02  250);
+  --color-secondary-700: oklch(38% 0.018 250);
+  --color-secondary-900: oklch(22% 0.012 250);
+
+  /* ─── Palette · Accent ─── */
+  --color-accent-50:  oklch(97% 0.02 265);
+  --color-accent-100: oklch(93% 0.05 265);
+  --color-accent-200: oklch(86% 0.10 265);
+  --color-accent-500: oklch(58% 0.22 270);
+  --color-accent-600: oklch(52% 0.24 272);
+  --color-accent-700: oklch(46% 0.24 274);
+
+  /* ─── Palette · Semantic ─── */
+  --color-success-50:  oklch(96% 0.03 152);
+  --color-success-500: oklch(58% 0.14 152);
+  --color-success-700: oklch(46% 0.13 152);
+  --color-warning-50:  oklch(96.5% 0.04 80);
+  --color-warning-500: oklch(70% 0.16 70);
+  --color-warning-700: oklch(56% 0.15 60);
+  --color-error-50:    oklch(96% 0.04 25);
+  --color-error-500:   oklch(58% 0.20 25);
+  --color-error-700:   oklch(46% 0.19 25);
+  --color-info-50:     oklch(96% 0.03 230);
+  --color-info-500:    oklch(60% 0.14 230);
+  --color-info-700:    oklch(48% 0.13 230);
+
+  /* Semantic shortcuts: bg-success / bg-success-bg / text-success-strong */
+  --color-success:        var(--color-success-500);
+  --color-success-bg:     var(--color-success-50);
+  --color-success-strong: var(--color-success-700);
+  --color-warning:        var(--color-warning-500);
+  --color-warning-bg:     var(--color-warning-50);
+  --color-warning-strong: var(--color-warning-700);
+  --color-error:          var(--color-error-500);
+  --color-error-bg:       var(--color-error-50);
+  --color-error-strong:   var(--color-error-700);
+  --color-info:           var(--color-info-500);
+  --color-info-bg:        var(--color-info-50);
+  --color-info-strong:    var(--color-info-700);
+
+  /* ─── Surfaces · bg-surface-{1|2|3|hover|active|overlay} ─── */
+  --color-surface-1:       oklch(99%   0.003 90);
+  --color-surface-2:       oklch(100%  0     0);
+  --color-surface-3:       oklch(97.2% 0.004 90);
+  --color-surface-hover:   oklch(95.8% 0.005 90);
+  --color-surface-active:  oklch(93.5% 0.006 90);
+  --color-surface-overlay: oklch(15% 0.01 270 / 0.45);
+
+  /* ─── Content · text-content-{primary|secondary|...|on-primary} ─── */
+  --color-content-primary:    oklch(18% 0.01  270);
+  --color-content-secondary:  oklch(42% 0.008 270);
+  --color-content-tertiary:   oklch(58% 0.006 270);
+  --color-content-disabled:   oklch(72% 0.005 270);
+  --color-content-inverse:    oklch(99% 0     0);
+  --color-content-on-primary: oklch(99% 0     0);
+
+  /* ─── Lines · border-line-{subtle|default|strong|focus} ─── */
+  --color-line-subtle:  oklch(93% 0.005 90);
+  --color-line-default: oklch(89% 0.005 90);
+  --color-line-strong:  oklch(80% 0.006 90);
+  --color-line-focus:   oklch(40% 0.14  262);
+
+  /* ─── Brand mono ─── */
+  --color-brand-mono:        oklch(22% 0.015 270);
+  --color-brand-mono-strong: oklch(14% 0.012 270);
+  --color-brand-mono-soft:   oklch(28% 0.02  270);
+
+  /* ─── Radius ─── */
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-2xl:  16px;
+  --radius-full: 9999px;
+
+  /* ─── Shadows ─── */
+  --shadow-1: 0 1px 0 oklch(0% 0 0 / 0.04);
+  --shadow-2: 0 1px 2px oklch(0% 0 0 / 0.05), 0 1px 0 oklch(0% 0 0 / 0.02);
+  --shadow-3: 0 4px 12px oklch(0% 0 0 / 0.06), 0 1px 0 oklch(0% 0 0 / 0.03);
+  --shadow-4: 0 12px 24px oklch(0% 0 0 / 0.08), 0 2px 4px oklch(0% 0 0 / 0.04);
+  --shadow-5: 0 24px 48px oklch(0% 0 0 / 0.12), 0 4px 8px oklch(0% 0 0 / 0.06);
+  --shadow-cta: inset 0 1px 0 oklch(100% 0 0 / 0.12),
+                0 1px 2px oklch(0% 0 0 / 0.25),
+                0 0 0 0.5px oklch(0% 0 0 / 0.4);
+  --shadow-focus: 0 0 0 3px oklch(40% 0.14 262 / 0.25);
+
+  /* ─── Type scale (overrides Tailwind defaults) ─── */
+  --text-xs:  12px;
+  --text-sm:  13px;
+  --text-md:  14px;
+  --text-lg:  16px;
+  --text-xl:  18px;
+  --text-2xl: 22px;
+  --text-3xl: 28px;
+  --text-4xl: 36px;
+  --text-5xl: 48px;
+
+  /* ─── Fonts ─── */
+  --font-family-sans: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-family-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: var(--font-family-sans);
+  --font-mono: var(--font-family-mono);
+
+  /* ─── Motion ─── */
+  --duration-instant: 80ms;
+  --duration-fast:    120ms;
+  --duration-normal:  200ms;
+  --duration-slow:    320ms;
+  --ease-standard:    cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized:  cubic-bezier(0.3, 0, 0, 1);
+
+  /* ─── Control sizing → h-control-*, px-cx-* ─── */
+  --spacing-control-xs: 22px;
+  --spacing-control-sm: 28px;
+  --spacing-control-md: 36px;
+  --spacing-control-lg: 44px;
+  --spacing-cx-sm: 10px;
+  --spacing-cx-md: 14px;
+  --spacing-cx-lg: 18px;
+
+  /* ─── Container max-widths → max-w-* ─── */
+  --container-content: 1200px;
+
+  /* ─── Breakpoints ─── */
+  --breakpoint-xs:  480px;
+  --breakpoint-sm:  640px;
+  --breakpoint-md:  768px;
+  --breakpoint-lg:  1024px;
+  --breakpoint-xl:  1280px;
+  --breakpoint-2xl: 1536px;
+}
+
+/* ───────────────────────────────────────────────────────
+   Z-index utilities — defined via @utility because Tailwind
+   v4's `--z-{name}` namespace only generates numeric utilities
+   (z-10, z-20 etc.). Custom names need explicit declaration.
+   ─────────────────────────────────────────────────────── */
+@utility z-dropdown { z-index: 1000; }
+@utility z-sticky   { z-index: 1020; }
+@utility z-overlay  { z-index: 1040; }
+@utility z-modal    { z-index: 1050; }
+@utility z-popover  { z-index: 1060; }
+@utility z-tooltip  { z-index: 1070; }
+@utility z-toast    { z-index: 1080; }
+@utility z-cmdk     { z-index: 1090; }
+
+/* ───────────────────────────────────────────────────────
+   shadcn semantic aliases — point to other theme vars.
+   ─────────────────────────────────────────────────────── */
+@theme inline {
+  --color-background:           var(--color-surface-1);
+  --color-foreground:           var(--color-content-primary);
+  --color-card:                 var(--color-surface-2);
+  --color-card-foreground:      var(--color-content-primary);
+  --color-popover:              var(--color-surface-2);
+  --color-popover-foreground:   var(--color-content-primary);
+  --color-primary:              var(--color-primary-700);
+  --color-primary-foreground:   var(--color-content-on-primary);
+  --color-secondary:            var(--color-secondary-50);
+  --color-secondary-foreground: var(--color-secondary-900);
+  --color-muted:                var(--color-surface-3);
+  --color-muted-foreground:     var(--color-content-tertiary);
+  --color-accent:               var(--color-accent-50);
+  --color-accent-foreground:    var(--color-accent-700);
+  --color-destructive:          var(--color-error-500);
+  --color-border:               var(--color-line-default);
+  --color-input:                var(--color-line-default);
+  --color-ring:                 var(--color-line-focus);
+}
+
+/* ───────────────────────────────────────────────────────
+   Raw spacing scale — not Tailwind utilities, only for
+   direct var() consumption (e.g. Layout.tsx Stack/Grid).
+   ─────────────────────────────────────────────────────── */
+:root {
+  --space-0:  0;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+}
+
+/* ───────────────────────────────────────────────────────
+   Dark mode — overrides only the values that change.
+   [data-theme="dark"] specificity (0,1,0) wins over :root.
+   ─────────────────────────────────────────────────────── */
+[data-theme="dark"], .dark {
+  --color-brand-mono:        oklch(86% 0.005 260);
+  --color-brand-mono-strong: oklch(96% 0.003 260);
+  --color-brand-mono-soft:   oklch(70% 0.006 260);
+
+  --color-primary-50:  oklch(20% 0.005 260);
+  --color-primary-100: oklch(26% 0.006 260);
+  --color-primary-200: oklch(34% 0.006 260);
+  --color-primary-300: oklch(50% 0.005 260);
+  --color-primary-400: oklch(66% 0.005 260);
+  --color-primary-500: oklch(78% 0.004 260);
+  --color-primary-600: oklch(92% 0.004 260);
+  --color-primary-700: oklch(88% 0.004 260);
+  --color-primary-800: oklch(82% 0.005 260);
+  --color-primary-900: oklch(74% 0.005 260);
+
+  --color-secondary-50:  oklch(22% 0.008 250);
+  --color-secondary-100: oklch(26% 0.010 250);
+  --color-secondary-500: oklch(60% 0.012 250);
+  --color-secondary-700: oklch(76% 0.012 250);
+  --color-secondary-900: oklch(92% 0.005 250);
+
+  --color-accent-50:  oklch(22% 0.05 264);
+  --color-accent-100: oklch(28% 0.08 264);
+  --color-accent-200: oklch(36% 0.12 264);
+  --color-accent-500: oklch(70% 0.13 264);
+  --color-accent-600: oklch(74% 0.12 264);
+  --color-accent-700: oklch(82% 0.10 264);
+
+  --color-success-50:  oklch(24% 0.05 152);
+  --color-success-500: oklch(68% 0.13 152);
+  --color-success-700: oklch(78% 0.11 152);
+  --color-warning-50:  oklch(26% 0.06 70);
+  --color-warning-500: oklch(76% 0.13 70);
+  --color-warning-700: oklch(84% 0.11 70);
+  --color-error-50:    oklch(24% 0.07 25);
+  --color-error-500:   oklch(68% 0.16 25);
+  --color-error-700:   oklch(78% 0.14 25);
+  --color-info-50:     oklch(24% 0.05 235);
+  --color-info-500:    oklch(70% 0.12 235);
+  --color-info-700:    oklch(80% 0.10 235);
+
+  --color-surface-1:       oklch(15% 0.005 270);
+  --color-surface-2:       oklch(18% 0.006 270);
+  --color-surface-3:       oklch(13% 0.005 270);
+  --color-surface-hover:   oklch(22% 0.008 270);
+  --color-surface-active:  oklch(26% 0.01  270);
+  --color-surface-overlay: oklch(0% 0 0 / 0.55);
+
+  --color-content-primary:    oklch(96% 0.005 270);
+  --color-content-secondary:  oklch(74% 0.008 270);
+  --color-content-tertiary:   oklch(58% 0.008 270);
+  --color-content-disabled:   oklch(42% 0.008 270);
+  --color-content-inverse:    oklch(18% 0.01  270);
+  --color-content-on-primary: oklch(15% 0.01  270);
+
+  --color-line-subtle:  oklch(22% 0.006 270);
+  --color-line-default: oklch(28% 0.008 270);
+  --color-line-strong:  oklch(38% 0.01  270);
+  --color-line-focus:   oklch(70% 0.13  262);
+
+  --shadow-1: 0 0 0 1px oklch(0% 0 0 / 0.5);
+  --shadow-2: 0 1px 2px oklch(0% 0 0 / 0.6);
+  --shadow-3: 0 4px 10px oklch(0% 0 0 / 0.6);
+  --shadow-4: 0 8px 18px oklch(0% 0 0 / 0.7);
+  --shadow-5: 0 24px 48px oklch(0% 0 0 / 0.75);
+  --shadow-cta: inset 0 1px 0 oklch(100% 0 0 / 0.12),
+                0 1px 2px oklch(0% 0 0 / 0.6);
+  --shadow-focus: 0 0 0 3px oklch(70% 0.13 264 / 0.40);
+}
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground; }
+  html { @apply font-sans; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0ms;
+    --duration-fast:    0ms;
+    --duration-normal:  0ms;
+    --duration-slow:    0ms;
+  }
+}
