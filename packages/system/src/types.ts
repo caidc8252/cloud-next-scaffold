@@ -72,5 +72,6 @@ export type User = {
   inviteExpiresAt?: string;
   inviteToken?: string;
   inviteEmail?: string;
+  resendCount?: number;
   passwordResetRequests?: PasswordResetRequest[];
 };

@@ -6,7 +6,6 @@ import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, 
 import type { Role, User as UserType, PasswordResetRequest } from "../types";
 import { relTime, fmtDate, fmtDateTime, initials } from "../helpers";
 import { PASSWORD_POLICY } from "../mock/password-policy";
-import { SEED_ROLES } from "../mock/seed-roles";
 
 type UserDetailProps = {
   user: UserType;
@@ -44,7 +43,7 @@ export function UserDetail({ user, users, roles, onSave, onResetPassword, onTogg
   const pwAgeDays = draft.passwordChangedTimestamp ? Math.floor((now - draft.passwordChangedTimestamp) / 86_400_000) : null;
   const pwExpired = pwAgeDays !== null && pwAgeDays >= PASSWORD_POLICY.expiryDays;
 
-  const adminRoles = (roles.length > 0 ? roles : SEED_ROLES).filter((r) => r.contractDefineCode === "ADMIN" && r.roleType === "global");
+  const adminRoles = roles.filter((r) => r.contractDefineCode === "ADMIN" && r.roleType === "global");
   const assignedRoles = adminRoles.filter((r) => (draft.roleIds ?? []).includes(r.id));
 
   function toggleRole(roleId: string) {

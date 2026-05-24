@@ -2,28 +2,29 @@
 
 import { useState, useMemo } from "react";
 import { Search, Plus } from "lucide-react";
-import { Button, Input, SplitPanel, SplitPanelSidebar, SplitPanelContent } from "@cloud/ui";
+import { toast } from "sonner";
+import { Button, Input, Modal, SplitPanel, SplitPanelSidebar, SplitPanelContent } from "@cloud/ui";
+import { request } from "@cloud/request/client";
 import type { Role, User } from "../types";
-import { SEED_USERS } from "../mock/seed-users";
-import { SEED_ROLES } from "../mock/seed-roles";
 import { UserListItem } from "./user-list-item";
 import { UserDetail } from "./user-detail";
 import { PendingInviteDetail } from "./pending-invite-detail";
 import { NewUserModal } from "./new-user-modal";
 
-type UsersPageProps = { users?: User[]; setUsers?: (users: User[]) => void; roles?: Role[] };
+const API = "/api/system/users";
+
+type UsersPageProps = { initialUsers: User[]; initialRoles: Role[] };
 type StatusFilter = "all" | "active" | "locked" | "pending";
 
-export function UsersPage({ users: propUsers, setUsers: propSetUsers, roles: propRoles }: UsersPageProps) {
-  const [localUsers, setLocalUsers] = useState(SEED_USERS);
-  const users = propUsers ?? localUsers;
-  const setUsers = propSetUsers ?? setLocalUsers;
-  const roles = propRoles ?? SEED_ROLES;
+export function UsersPage({ initialUsers, initialRoles }: UsersPageProps) {
+  const [users, setUsers] = useState(initialUsers);
+  const roles = initialRoles;
 
-  const [selectedId, setSelectedId] = useState<string | null>(users[0]?.id ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialUsers[0]?.id ?? null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [showNew, setShowNew] = useState(false);
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
 
   const stats = useMemo(() => ({
     total: users.length,
@@ -47,59 +48,84 @@ export function UsersPage({ users: propUsers, setUsers: propSetUsers, roles: pro
   }, [users, statusFilter, query]);
 
   const selected = users.find((u) => u.id === selectedId) ?? null;
+  const cancelTarget = confirmCancelId ? users.find((u) => u.id === confirmCancelId) : null;
 
-  function update(next: User) {
-    setUsers(users.map((u) => (u.id === next.id ? { ...next, updatedAt: new Date().toISOString() } : u)));
+  async function update(next: User) {
+    try {
+      const res = await request.put<User>(`${API}/${next.id}`, {
+        displayName: next.displayName,
+        remark: next.remark,
+        roleIds: next.roleIds,
+      });
+      setUsers((prev) => prev.map((u) => (u.id === next.id ? res.data : u)));
+      toast.success("User saved");
+    } catch {
+      toast.error("Failed to save user");
+    }
   }
 
-  function createUser(draft: { email: string; roleIds: string[]; remark: string }) {
-    const id = `u-inv-${Math.random().toString(36).slice(2, 7)}`;
-    const now = new Date().toISOString();
-    const newUser: User = {
-      id, loginName: "", displayName: "", email: draft.email, country: "",
-      status: "PENDING", lastLoginAt: null, passwordChangedTimestamp: 0,
-      passwordErrorTimes: 0, passwordChangeTimes: 0, passwordErrorLockExpiredTimestamp: null,
-      passwordUpdatedAt: null, remark: draft.remark, createdAt: now, updatedAt: now,
-      authorizingType: "NORMAL", roleIds: draft.roleIds, passwordHistory: [],
-      invitedAt: now, invitedBy: "admin@carbon",
-      inviteExpiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString(),
-      inviteToken: id, inviteEmail: draft.email,
-    };
-    setUsers([newUser, ...users]);
-    setSelectedId(newUser.id);
-    setShowNew(false);
+  async function createUser(draft: { email: string; roleIds: string[]; remark: string }) {
+    try {
+      const res = await request.post<User>(API, draft);
+      setUsers((prev) => [res.data, ...prev]);
+      setSelectedId(res.data.id);
+      setShowNew(false);
+      toast.success("Invitation sent");
+    } catch {
+      toast.error("Failed to create invitation");
+    }
   }
 
-  function toggleLock(user: User) {
-    const next: User = user.status === "LOCKED"
-      ? { ...user, status: "ACTIVE", passwordErrorTimes: 0, passwordErrorLockExpiredTimestamp: null }
-      : { ...user, status: "LOCKED", passwordErrorLockExpiredTimestamp: Date.now() + 30 * 60_000 };
-    update(next);
+  async function toggleLock(user: User) {
+    try {
+      const res = await request.post<User>(`${API}/${user.id}/lock`);
+      setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
+      toast.success(user.status === "LOCKED" ? "User unlocked" : "User locked");
+    } catch {
+      toast.error("Failed to toggle lock");
+    }
   }
 
-  function resetPassword(user: User) {
-    const now = new Date().toISOString();
-    const expiresAt = new Date(Date.now() + 72 * 3_600_000).toISOString();
-    const prior = (user.passwordResetRequests ?? []).map((r) =>
-      r.status === "pending" ? { ...r, status: "superseded" as const } : r,
-    );
-    update({
-      ...user,
-      passwordResetRequests: [
-        { id: `prr-${Math.random().toString(36).slice(2, 7)}`, requestedAt: now, requestedBy: "admin@carbon", expiresAt, consumedAt: null, status: "pending" as const },
-        ...prior,
-      ].slice(0, 10),
-    });
+  async function resetPassword(user: User) {
+    try {
+      const res = await request.post<User>(`${API}/${user.id}/reset-password`);
+      setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
+      toast.success("Password reset link sent");
+    } catch {
+      toast.error("Failed to reset password");
+    }
   }
 
-  function cancelInvite(userId: string) {
-    setUsers(users.filter((u) => u.id !== userId));
-    if (selectedId === userId) setSelectedId(null);
+  async function cancelInvite(userId: string) {
+    try {
+      await request.post(`${API}/${userId}/cancel-invite`);
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      if (selectedId === userId) setSelectedId(null);
+      toast.success("Invitation cancelled");
+    } catch {
+      toast.error("Failed to cancel invitation");
+    }
   }
 
-  function resendInvite(user: User) {
-    const now = new Date();
-    update({ ...user, invitedAt: now.toISOString(), inviteExpiresAt: new Date(now.getTime() + 7 * 86_400_000).toISOString() });
+  async function resendInvite(user: User) {
+    try {
+      const res = await request.post<User>(`${API}/${user.id}/resend-invite`);
+      setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
+      toast.success("Invitation resent");
+    } catch {
+      toast.error("Failed to resend invitation");
+    }
+  }
+
+  function requestCancel(userId: string) {
+    setConfirmCancelId(userId);
+  }
+
+  function confirmCancelInvite() {
+    if (confirmCancelId) {
+      cancelInvite(confirmCancelId);
+      setConfirmCancelId(null);
+    }
   }
 
   const statItems = [
@@ -165,14 +191,14 @@ export function UsersPage({ users: propUsers, setUsers: propSetUsers, roles: pro
               <UserListItem key={u.id} user={u} active={u.id === selectedId}
                 onClick={() => setSelectedId(u.id)}
                 onResend={() => resendInvite(u)}
-                onCancel={() => cancelInvite(u.id)} />
+                onCancel={() => requestCancel(u.id)} />
             ))}
           </SplitPanelSidebar>
           <SplitPanelContent empty="Select a user.">
             {selected ? (
               selected.status === "PENDING" ? (
                 <PendingInviteDetail user={selected} roles={roles}
-                  onResend={() => resendInvite(selected)} onCancel={() => cancelInvite(selected.id)} />
+                  onResend={() => resendInvite(selected)} onCancel={() => requestCancel(selected.id)} onSave={update} />
               ) : (
                 <UserDetail user={selected} users={users} roles={roles} onSave={update}
                   onResetPassword={() => resetPassword(selected)} onToggleLock={() => toggleLock(selected)} />
@@ -182,6 +208,19 @@ export function UsersPage({ users: propUsers, setUsers: propSetUsers, roles: pro
         </SplitPanel>
       </div>
       <NewUserModal open={showNew} onClose={() => setShowNew(false)} onCreate={createUser} users={users} roles={roles} />
+
+      {/* Cancel invite confirmation */}
+      <Modal open={!!confirmCancelId} onClose={() => setConfirmCancelId(null)} title="Cancel invitation?"
+        footer={<div className="flex gap-2 justify-end">
+          <Button variant="ghost" onClick={() => setConfirmCancelId(null)}>Keep invitation</Button>
+          <Button variant="destructive" onClick={confirmCancelInvite}>Cancel invitation</Button>
+        </div>}>
+        <p className="text-sm text-content-secondary">
+          This will permanently remove the pending invitation for{" "}
+          <strong>{cancelTarget?.inviteEmail ?? cancelTarget?.email}</strong>.
+          Pre-assigned roles will be discarded.
+        </p>
+      </Modal>
     </>
   );
 }

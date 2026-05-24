@@ -110,7 +110,7 @@ export const getSession = cache(async (): Promise<AuthenticatedSession | null> =
   const user = await prisma.sysUser.findUnique({
     where: { userId: payload.userId },
   });
-  if (!user || user.status !== "ACTIVE") return null;
+  if (!user || user.status !== "ACTIVE" || !user.username) return null;
 
   // 2. Verify entity membership
   const entityUser = await prisma.sysEntityUser.findUnique({

@@ -173,7 +173,7 @@ model SysRoleContractBlacklist {
 // ─── sys_user ───────────────────────────────────────────
 model SysUser {
   userId                           Int       @id @default(autoincrement()) @map("user_id")
-  username                         String    @unique
+  username                         String?   @unique
   passwordHash                     String    @map("password_hash") @db.VarChar(255)
   passwordChangedTimestamp         DateTime? @map("password_changed_timestamp") @db.Timestamp(3)
   passwordErrorTimes               Int       @default(0) @map("password_error_times")
@@ -190,11 +190,13 @@ model SysUser {
   updTime                          DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
   updUserId                        Int       @default(0) @map("upd_user_id")
 
-  entityUsers      SysEntityUser[]
-  userRoles        SysUserRole[]
-  passwordHistory  SysUserPasswordHistory[]
-  permissionScopes SysUserPermissionScope[]
-  userOrgs         SysUserOrg[]
+  entityUsers           SysEntityUser[]
+  userRoles             SysUserRole[]
+  passwordHistory       SysUserPasswordHistory[]
+  permissionScopes      SysUserPermissionScope[]
+  userOrgs              SysUserOrg[]
+  invites               SysInvite[]
+  passwordResetRequests SysPasswordResetRequest[]
 
   @@index([status])
   @@map("sys_user")
@@ -345,4 +347,42 @@ model SysUserOrg {
   @@unique([userId, orgId], map: "uk_sys_user_org")
   @@index([orgId])
   @@map("sys_user_org")
+}
+
+// ─── sys_invite ────────────────────────────────────────
+model SysInvite {
+  inviteId   Int       @id @default(autoincrement()) @map("invite_id")
+  userId     Int       @map("user_id")
+  email      String    @db.VarChar(200)
+  token      String    @unique @db.VarChar(100)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamp(3)
+  consumedAt DateTime? @map("consumed_at") @db.Timestamp(3)
+  status     String    @default("PENDING") @db.VarChar(20)
+  creTime    DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId   Int       @default(0) @map("cre_user_id")
+  resendCount Int       @default(0) @map("resend_count")
+  updTime     DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+
+  user SysUser @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sys_invite")
+}
+
+// ─── sys_password_reset_request ────────────────────────
+model SysPasswordResetRequest {
+  requestId  Int       @id @default(autoincrement()) @map("request_id")
+  userId     Int       @map("user_id")
+  token      String    @unique @db.VarChar(100)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamp(3)
+  consumedAt DateTime? @map("consumed_at") @db.Timestamp(3)
+  status     String    @default("PENDING") @db.VarChar(20)
+  creTime    DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId  Int       @default(0) @map("cre_user_id")
+  updTime    DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+
+  user SysUser @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sys_password_reset_request")
 }

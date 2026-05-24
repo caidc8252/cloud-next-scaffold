@@ -4,7 +4,6 @@ import { useState, useMemo } from "react";
 import { Mail, Info } from "lucide-react";
 import { Alert, AlertDescription, Button, Checkbox, Field, Input, Modal, Textarea } from "@cloud/ui";
 import type { Role, User } from "../types";
-import { SEED_ROLES } from "../mock/seed-roles";
 
 type NewUserModalProps = {
   open: boolean;
@@ -19,7 +18,7 @@ export function NewUserModal({ open, onClose, onCreate, users, roles }: NewUserM
   const [roleIds, setRoleIds] = useState<Set<string>>(new Set());
   const [remark, setRemark] = useState("");
 
-  const adminRoles = roles.length > 0 ? roles : SEED_ROLES.filter((r) => r.contractDefineCode === "ADMIN" && r.roleType === "global");
+  const adminRoles = roles.filter((r) => r.contractDefineCode === "ADMIN" && r.roleType === "global");
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const emailOk = emailRegex.test(email.trim());
