@@ -91,24 +91,37 @@ export function PermissionsCard({
 
           return (
             <div key={group.menuId}>
-              <button type="button"
-                className="flex items-center w-full px-5 py-3 bg-surface-3 border-b border-line-subtle text-left"
-                onClick={() => {
-                  const next = new Set(expanded);
-                  if (isOpen) next.delete(group.menuId); else next.add(group.menuId);
-                  setExpanded(next);
-                }}>
-                {isOpen
-                  ? <ChevronDown size={14} className="text-content-tertiary mr-2 shrink-0" />
-                  : <ChevronRight size={14} className="text-content-tertiary mr-2 shrink-0" />}
-                <span className="flex-1 text-xs font-semibold tracking-wide uppercase text-content-secondary">{group.menuTitle}</span>
-                <span className="text-xs text-content-tertiary mr-3">{groupGranted}/{group.items.length}</span>
+              <div className="flex items-center w-full px-5 py-3 bg-surface-3 border-b border-line-subtle">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  className="flex items-center flex-1 min-w-0 cursor-pointer"
+                  onClick={() => {
+                    const next = new Set(expanded);
+                    if (isOpen) next.delete(group.menuId); else next.add(group.menuId);
+                    setExpanded(next);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      const next = new Set(expanded);
+                      if (isOpen) next.delete(group.menuId); else next.add(group.menuId);
+                      setExpanded(next);
+                    }
+                  }}
+                >
+                  {isOpen
+                    ? <ChevronDown size={14} className="text-content-tertiary mr-2 shrink-0" />
+                    : <ChevronRight size={14} className="text-content-tertiary mr-2 shrink-0" />}
+                  <span className="flex-1 text-xs font-semibold tracking-wide uppercase text-content-secondary">{group.menuTitle}</span>
+                  <span className="text-xs text-content-tertiary mr-3">{groupGranted}/{group.items.length}</span>
+                </div>
                 {!disabled && (
-                  <Button variant="ghost" size="xs" onClick={(e) => { e.stopPropagation(); onToggleGroup(group.menuId, !allGranted); }}>
+                  <Button variant="ghost" size="xs" onClick={() => onToggleGroup(group.menuId, !allGranted)}>
                     {allGranted ? "Revoke all" : "Grant all"}
                   </Button>
                 )}
-              </button>
+              </div>
               {isOpen && (
                 <div className="pb-1">
                   {group.items.map((perm) => (
