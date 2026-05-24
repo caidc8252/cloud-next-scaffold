@@ -15,14 +15,24 @@ type PendingInviteDetailProps = {
   onSave: (u: UserType) => void;
 };
 
-function maskToken(token: string): string {
-  if (token.length <= 8) return "****";
-  return `${token.slice(0, 4)}****${token.slice(-4)}`;
+function buildInviteUrl(token: string): string {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return `${origin}/invite?token=${token}`;
+}
+
+function maskUrl(url: string): string {
+  // Show scheme + host + mask the token portion
+  const idx = url.indexOf("token=");
+  if (idx === -1) return url;
+  const prefix = url.slice(0, idx + 6);
+  const token = url.slice(idx + 6);
+  if (token.length <= 8) return `${prefix}****`;
+  return `${prefix}${token.slice(0, 4)}****${token.slice(-4)}`;
 }
 
 export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }: PendingInviteDetailProps) {
   const [now] = useState(Date.now);
-  const inviteToken = user.inviteToken ?? user.id;
+  const inviteUrl = buildInviteUrl(user.inviteToken ?? user.id);
   const isExpired = !!user.inviteExpiresAt && new Date(user.inviteExpiresAt).getTime() < now;
 
   const adminRoles = roles.filter((r) => r.contractDefineCode === "ADMIN" && r.roleType === "global");
@@ -55,12 +65,12 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
     setEditingRoles(false);
   }
 
-  async function copyToken() {
+  async function copyUrl() {
     try {
-      await navigator.clipboard.writeText(inviteToken);
-      toast.success("Token copied");
+      await navigator.clipboard.writeText(inviteUrl);
+      toast.success("Invite URL copied");
     } catch {
-      toast.error("Failed to copy token");
+      toast.error("Failed to copy URL");
     }
   }
 
@@ -138,11 +148,11 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
             <dl className="grid text-sm" style={{ gridTemplateColumns: "160px 1fr", rowGap: 14, columnGap: 20 }}>
               <dt className="text-content-tertiary font-medium">Email</dt>
               <dd className="text-content-primary">{user.inviteEmail ?? user.email}</dd>
-              <dt className="text-content-tertiary font-medium">Invite token</dt>
+              <dt className="text-content-tertiary font-medium">Invite URL</dt>
               <dd className="text-content-primary flex items-center gap-2">
-                <code className="font-mono text-xs px-1.5 py-0.5 bg-surface-3 rounded border border-line-subtle">{maskToken(inviteToken)}</code>
-                <button type="button" onClick={copyToken}
-                  className="p-1 rounded hover:bg-surface-3 text-content-tertiary hover:text-content-primary transition-colors" title="Copy full token">
+                <code className="font-mono text-xs px-1.5 py-0.5 bg-surface-3 rounded border border-line-subtle truncate max-w-[320px]">{maskUrl(inviteUrl)}</code>
+                <button type="button" onClick={copyUrl}
+                  className="p-1 rounded hover:bg-surface-3 text-content-tertiary hover:text-content-primary transition-colors shrink-0" title="Copy invite URL">
                   <Copy size={13} />
                 </button>
               </dd>
