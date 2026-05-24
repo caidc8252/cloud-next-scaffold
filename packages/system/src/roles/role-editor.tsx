@@ -80,6 +80,9 @@ export function RoleEditor({ role, users, onSave, onDuplicate, onDelete }: RoleE
         </div>
       </div>
       <div className="flex flex-col" style={{ padding: "18px 22px 24px", gap: 16 }}>
+        <PermissionsCard contractDefineCode={draft.contractDefineCode} permissions={draft.permissions}
+          onTogglePerm={togglePerm} onToggleGroup={toggleGroup} disabled={role.builtin} />
+
         <Card>
           <CardHeader><CardTitle>Description</CardTitle></CardHeader>
           <CardContent>
@@ -88,9 +91,6 @@ export function RoleEditor({ role, users, onSave, onDuplicate, onDelete }: RoleE
             <p className="text-xs text-content-tertiary mt-2">Shown when assigning this role to an operator.</p>
           </CardContent>
         </Card>
-
-        <PermissionsCard contractDefineCode={draft.contractDefineCode} permissions={draft.permissions}
-          onTogglePerm={togglePerm} onToggleGroup={toggleGroup} disabled={role.builtin} />
 
         {assignedUsers.length > 0 && (
           <Card>

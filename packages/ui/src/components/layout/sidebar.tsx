@@ -66,7 +66,7 @@ function NavItemRow({ item, pathname }: { item: SidebarNavItem; pathname: string
 
   const childActive = !!item.children?.some((c) => isSubActive(c.href))
   const active = item.href
-    ? pathname.startsWith(item.href) && !item.children
+    ? (item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)) && !item.children
     : false
 
   const [open, setOpen] = React.useState(childActive)

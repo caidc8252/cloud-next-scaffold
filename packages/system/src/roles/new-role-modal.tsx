@@ -40,7 +40,7 @@ export function NewRoleModal({ open, onClose, onCreate, allRoles }: NewRoleModal
         </Field>
         <Field label="Start from" hint="Copy permissions from an existing role">
           <Select value={baseId} onValueChange={(v) => setBaseId(v ?? "none")}>
-            <SelectTrigger><SelectValue placeholder="No base role" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder="No base role" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="none">No base role</SelectItem>
               {allRoles.map((r) => (
