@@ -3,23 +3,37 @@ import { PermissionChecker } from "./index";
 
 describe("PermissionChecker", () => {
   const checker = new PermissionChecker({
-    roles: ["admin", "viewer"],
-    permissions: ["admin.user.read", "admin.user.create", "viewer.report.read"],
+    permissions: ["dashboard:view", "user:read", "user:create", "role:read"],
   });
 
-  it("checks a single permission", () => {
-    expect(checker.has("admin.user.read")).toBe(true);
-    expect(checker.has("admin.user.delete")).toBe(false);
+  it("has() returns true for existing permission", () => {
+    expect(checker.has("dashboard:view")).toBe(true);
   });
 
-  it("checks any permission from a list", () => {
-    expect(checker.has(["admin.user.delete", "viewer.report.read"])).toBe(true);
-    expect(checker.has(["admin.user.delete", "viewer.report.delete"])).toBe(false);
+  it("has() returns false for missing permission", () => {
+    expect(checker.has("user:delete")).toBe(false);
   });
 
-  it("checks object methods through roles", () => {
-    expect(checker.can("user", "read")).toBe(true);
-    expect(checker.can("user", ["delete", "create"])).toBe(true);
-    expect(checker.can("order", ["read", "create"])).toBe(false);
+  it("has() accepts array and returns true if any match", () => {
+    expect(checker.has(["user:delete", "user:read"])).toBe(true);
+  });
+
+  it("has() returns false if no array items match", () => {
+    expect(checker.has(["user:delete", "role:delete"])).toBe(false);
+  });
+
+  it("hasAll() returns true when all permissions present", () => {
+    expect(checker.hasAll(["user:read", "user:create"])).toBe(true);
+  });
+
+  it("hasAll() returns false when any permission missing", () => {
+    expect(checker.hasAll(["user:read", "user:delete"])).toBe(false);
+  });
+
+  it("list() returns all permissions", () => {
+    expect(checker.list()).toEqual(
+      expect.arrayContaining(["dashboard:view", "user:read", "user:create", "role:read"])
+    );
+    expect(checker.list()).toHaveLength(4);
   });
 });

@@ -10,28 +10,40 @@ const SESSION_COOKIE = "sid";
 const SESSION_TTL_SECONDS = 60 * 60 * 12;
 
 type SessionPayload = {
-  userId: string;
+  userId: number;
+  entityId: number;
   expiresAt: number;
 };
 
+export type SessionMenu = {
+  menuId: number;
+  menuTitle: string;
+  path: string | null;
+  icon: string | null;
+  sort: number;
+  parentMenuId: number | null;
+};
+
+export type SessionRole = {
+  roleId: number;
+  roleName: string;
+  roleType: string;
+};
+
 export type AuthenticatedSession = {
-  id: string;
-  account: string;
-  name: string;
-  email: string;
-  role: {
-    id: string;
-    key: string;
-    name: string;
-    menus: Array<{
-      id: string;
-      key: string;
-      label: string;
-      path: string;
-      icon: string;
-      sortOrder: number;
-    }>;
+  id: number;
+  username: string;
+  displayName: string | null;
+  email: string | null;
+  status: string;
+  entity: {
+    entityId: number;
+    entityName: string;
+    contractDefineCode: string;
   };
+  roles: SessionRole[];
+  permissions: string[];
+  menus: SessionMenu[];
 };
 
 async function getPrismaClient() {
@@ -67,10 +79,10 @@ function decodeSession(token: string): SessionPayload | null {
   }
 }
 
-export async function createSession(userId: string) {
+export async function createSession(userId: number, entityId: number) {
   const cookieStore = await cookies();
   const expiresAt = Date.now() + SESSION_TTL_SECONDS * 1000;
-  cookieStore.set(SESSION_COOKIE, encodeSession({ userId, expiresAt }), {
+  cookieStore.set(SESSION_COOKIE, encodeSession({ userId, entityId, expiresAt }), {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
@@ -93,32 +105,111 @@ export const getSession = cache(async (): Promise<AuthenticatedSession | null> =
   if (!payload) return null;
 
   const prisma = await getPrismaClient();
-  const user = await prisma.user.findUnique({
-    where: { id: payload.userId },
-    include: {
-      role: {
-        include: {
-          menus: {
-            orderBy: { sortOrder: "asc" },
-          },
-        },
+
+  // 1. Load user, check active
+  const user = await prisma.sysUser.findUnique({
+    where: { userId: payload.userId },
+  });
+  if (!user || user.status !== "ACTIVE") return null;
+
+  // 2. Verify entity membership
+  const entityUser = await prisma.sysEntityUser.findUnique({
+    where: {
+      entityId_userId: {
+        entityId: payload.entityId,
+        userId: payload.userId,
       },
     },
   });
+  if (!entityUser || entityUser.status !== "ACTIVE") return null;
 
-  if (!user) return null;
+  // 3. Load entity + its active contract
+  const entity = await prisma.sysEntity.findUnique({
+    where: { entityId: payload.entityId },
+  });
+  if (!entity || entity.status !== "ACTIVE") return null;
+
+  const entityContract = await prisma.sysEntityContract.findFirst({
+    where: {
+      authorizedEntityId: payload.entityId,
+      status: "ACTIVE",
+    },
+  });
+  if (!entityContract) return null;
+
+  const contractDefineCode = entityContract.authorizedContractDefineCode;
+
+  // 4. Load roles for user in this entity
+  const userRoles = await prisma.sysUserRole.findMany({
+    where: { userId: payload.userId, entityId: payload.entityId },
+    include: { role: true },
+  });
+
+  const roles: SessionRole[] = userRoles.map((ur) => ({
+    roleId: ur.role.roleId,
+    roleName: ur.role.roleName,
+    roleType: ur.role.roleType,
+  }));
+
+  // 5. Aggregate permissions from all roles
+  const roleIds = userRoles.map((ur) => ur.roleId);
+  const rolePermissions = roleIds.length > 0
+    ? await prisma.sysRolePermission.findMany({
+        where: { roleId: { in: roleIds } },
+        select: { permissionCode: true },
+      })
+    : [];
+
+  const permissions = [...new Set(rolePermissions.map((rp) => rp.permissionCode))];
+
+  // 6. Derive menus from permissions (for this contract)
+  const permissionDetails = permissions.length > 0
+    ? await prisma.sysPermission.findMany({
+        where: { permissionCode: { in: permissions } },
+        select: { permissionMenuId: true },
+      })
+    : [];
+
+  const menuIds = [
+    ...new Set(
+      permissionDetails
+        .map((p) => p.permissionMenuId)
+        .filter((id): id is number => id !== null)
+    ),
+  ];
+
+  const menus: SessionMenu[] = menuIds.length > 0
+    ? (await prisma.sysMenu.findMany({
+        where: {
+          menuId: { in: menuIds },
+          contractDefineCode,
+          isVisible: true,
+        },
+        orderBy: { sort: "asc" },
+      })).map((m) => ({
+        menuId: m.menuId,
+        menuTitle: m.menuTitle,
+        path: m.path,
+        icon: m.icon,
+        sort: m.sort,
+        parentMenuId: m.parentMenuId,
+      }))
+    : [];
 
   return {
-    id: user.id,
-    account: user.account,
-    name: user.name,
+    id: user.userId,
+    username: user.username,
+    displayName: user.displayName,
     email: user.email,
-    role: {
-      id: user.role.id,
-      key: user.role.key,
-      name: user.role.name,
-      menus: user.role.menus,
+    status: user.status,
+    entity: {
+      entityId: entity.entityId,
+      entityName: entity.entityName,
+      contractDefineCode,
     },
+    roles,
+    permissions,
+    menus,
   };
 });
 

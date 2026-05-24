@@ -9,10 +9,16 @@ export default async function PortalLayout({ children }: { children: React.React
   return (
     <PortalShell
       appName={env.NEXT_PUBLIC_APP_NAME}
-      account={session.account}
-      name={session.name}
-      roleName={session.role.name}
-      menus={session.role.menus}
+      account={session.username}
+      name={session.displayName ?? session.username}
+      roleName={session.roles.map((r) => r.roleName).join(", ")}
+      menus={session.menus.map((m) => ({
+        id: String(m.menuId),
+        key: String(m.menuId),
+        label: m.menuTitle,
+        path: m.path ?? "/",
+        icon: m.icon ?? "layout-dashboard",
+      }))}
     >
       {children}
     </PortalShell>

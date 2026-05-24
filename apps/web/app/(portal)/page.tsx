@@ -4,12 +4,12 @@ import { requireSession } from "../../lib/auth";
 
 export default async function DashboardPage() {
   const session = await requireSession();
-  const primaryMenu = session.role.menus[0];
+  const primaryMenu = session.menus[0];
 
   return (
     <Stack gap="var(--space-6)">
       <ContentHeader
-        title={primaryMenu?.label ?? "Workspace"}
+        title={primaryMenu?.menuTitle ?? "Workspace"}
         description="This baseline keeps the classic admin rhythm and layout while staying intentionally minimal."
       >
         <Badge tone="success">Session Active</Badge>
@@ -20,23 +20,24 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader>
               <CardDescription>Current Account</CardDescription>
-              <CardTitle>{session.account}</CardTitle>
+              <CardTitle>{session.username}</CardTitle>
             </CardHeader>
           </Card>
         </GridItem>
         <GridItem>
           <Card>
             <CardHeader>
-              <CardDescription>Current Role</CardDescription>
-              <CardTitle>{session.role.name}</CardTitle>
+              <CardDescription>Entity</CardDescription>
+              <CardTitle>{session.entity.entityName}</CardTitle>
+              <Badge tone="info">{session.entity.contractDefineCode}</Badge>
             </CardHeader>
           </Card>
         </GridItem>
         <GridItem>
           <Card>
             <CardHeader>
-              <CardDescription>Menu Count</CardDescription>
-              <CardTitle>{String(session.role.menus.length)}</CardTitle>
+              <CardDescription>Roles</CardDescription>
+              <CardTitle>{session.roles.map((r) => r.roleName).join(", ")}</CardTitle>
             </CardHeader>
           </Card>
         </GridItem>
@@ -44,7 +45,7 @@ export default async function DashboardPage() {
 
       <Card size="lg">
         <CardHeader>
-          <CardTitle>{primaryMenu?.label ?? "Workspace"}</CardTitle>
+          <CardTitle>{primaryMenu?.menuTitle ?? "Workspace"}</CardTitle>
           <CardDescription>The scaffold ships with a compact but complete default workspace.</CardDescription>
         </CardHeader>
         <CardContent>

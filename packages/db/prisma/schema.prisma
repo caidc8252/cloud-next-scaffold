@@ -7,45 +7,342 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Role {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  name      String
-  users     User[]
-  menus     Menu[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ─── sys_entity ─────────────────────────────────────────
+model SysEntity {
+  entityId         Int      @id @default(autoincrement()) @map("entity_id")
+  entityName       String   @map("entity_name") @db.VarChar(200)
+  country          String   @db.VarChar(8)
+  region           String?  @db.VarChar(100)
+  address          String?  @db.VarChar(500)
+  phoneCountryCode String?  @map("phone_country_code") @db.VarChar(8)
+  phone            String?  @db.VarChar(32)
+  email            String?
+  contactName      String?  @map("contact_name") @db.VarChar(100)
+  status           String   @default("ACTIVE") @db.VarChar(20)
+  remark           String?  @db.VarChar(500)
+  timezone         String?  @db.VarChar(64)
+  license          String?  @db.VarChar(200)
+  creTime          DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId        Int      @default(0) @map("cre_user_id")
+  updTime          DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+  updUserId        Int      @default(0) @map("upd_user_id")
 
-  @@map("role")
+  contracts        SysEntityContract[] @relation("authorized")
+  grantedContracts SysEntityContract[] @relation("authorizing")
+  ownerRelations   SysEntityEntity[]   @relation("owner")
+  targetRelations  SysEntityEntity[]   @relation("target")
+  entityUsers      SysEntityUser[]
+  roles            SysRole[]
+  userRoles        SysUserRole[]
+  orgs             SysOrg[]
+  roleBlacklists   SysRoleContractBlacklist[]
+
+  @@index([entityName], map: "idx_sys_entity_name")
+  @@index([country], map: "idx_sys_entity_country")
+  @@index([status], map: "idx_sys_entity_status")
+  @@map("sys_entity")
 }
 
-model User {
-  id           String   @id @default(cuid())
-  account      String   @unique
-  name         String
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  roleId       String   @map("role_id")
-  role         Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+// ─── sys_contract_define ────────────────────────────────
+model SysContractDefine {
+  contractDefineCode String   @id @map("contract_define_code") @db.VarChar(20)
+  contractName       String   @map("contract_name") @db.VarChar(100)
+  remark             String?  @db.VarChar(500)
+  creTime            DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId          Int      @default(0) @map("cre_user_id")
+  updTime            DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+  updUserId          Int      @default(0) @map("upd_user_id")
 
-  @@index([roleId])
-  @@map("user")
+  entityContracts SysEntityContract[]
+  roles           SysRole[]
+  menus           SysMenu[]
+  roleBlacklists  SysRoleContractBlacklist[]
+
+  @@map("sys_contract_define")
 }
 
-model Menu {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  label     String
-  path      String
-  icon      String
-  sortOrder Int      @default(0) @map("sort_order")
-  roleId    String   @map("role_id")
-  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ─── sys_entity_entity ──────────────────────────────────
+model SysEntityEntity {
+  entityEntityId Int      @id @default(autoincrement()) @map("entity_entity_id")
+  ownerEntityId  Int      @map("owner_entity_id")
+  targetEntityId Int      @map("target_entity_id")
+  status         String   @default("ACTIVE") @db.VarChar(20)
+  creTime        DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
 
+  owner  SysEntity @relation("owner", fields: [ownerEntityId], references: [entityId])
+  target SysEntity @relation("target", fields: [targetEntityId], references: [entityId])
+
+  @@unique([ownerEntityId, targetEntityId], map: "uk_sys_entity_entity")
+  @@index([targetEntityId])
+  @@map("sys_entity_entity")
+}
+
+// ─── sys_entity_contract ────────────────────────────────
+model SysEntityContract {
+  entityContractId             Int       @id @default(autoincrement()) @map("entity_contract_id")
+  authorizedEntityId           Int       @map("authorized_entity_id")
+  authorizedContractDefineCode String    @map("authorized_contract_define_code") @db.VarChar(20)
+  authorizedTimestamp           DateTime? @map("authorized_timestamp") @db.Timestamp(3)
+  authorizingEntityId          Int?      @map("authorizing_entity_id")
+  authorizingUserId            Int?      @map("authorizing_user_id")
+  authorizingUserName          String?   @map("authorizing_user_name") @db.VarChar(100)
+  authorizingIp                String?   @map("authorizing_ip")
+  status                       String    @default("PENDING") @db.VarChar(20)
+  effectiveFrom                DateTime? @map("effective_from") @db.Timestamp(3)
+  effectiveTo                  DateTime? @map("effective_to") @db.Timestamp(3)
+  renewalMethod                String?   @map("renewal_method") @db.VarChar(30)
+  terminatedAt                 DateTime? @map("terminated_at") @db.Timestamp(3)
+  creTime                      DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId                    Int       @default(0) @map("cre_user_id")
+  updTime                      DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+  updUserId                    Int       @default(0) @map("upd_user_id")
+
+  authorizedEntity  SysEntity         @relation("authorized", fields: [authorizedEntityId], references: [entityId])
+  authorizingEntity SysEntity?        @relation("authorizing", fields: [authorizingEntityId], references: [entityId])
+  contractDefine    SysContractDefine @relation(fields: [authorizedContractDefineCode], references: [contractDefineCode])
+
+  @@index([authorizedEntityId])
+  @@index([authorizedContractDefineCode])
+  @@index([authorizingEntityId])
+  @@index([authorizedEntityId, status])
+  @@map("sys_entity_contract")
+}
+
+// ─── sys_role ───────────────────────────────────────────
+model SysRole {
+  roleId             Int      @id @default(autoincrement()) @map("role_id")
+  roleName           String   @map("role_name") @db.VarChar(100)
+  roleType           String   @map("role_type") @db.VarChar(20)
+  contractDefineCode String?  @map("contract_define_code") @db.VarChar(20)
+  entityId           Int?     @map("entity_id")
+  remark             String?  @db.VarChar(500)
+  creTime            DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId          Int      @default(0) @map("cre_user_id")
+  updTime            DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+  updUserId          Int      @default(0) @map("upd_user_id")
+
+  contractDefine SysContractDefine?        @relation(fields: [contractDefineCode], references: [contractDefineCode])
+  entity         SysEntity?                @relation(fields: [entityId], references: [entityId])
+  permissions    SysRolePermission[]
+  userRoles      SysUserRole[]
+  roleBlacklists SysRoleContractBlacklist[]
+
+  @@index([entityId])
+  @@index([contractDefineCode])
+  @@index([roleName])
+  @@map("sys_role")
+}
+
+// ─── sys_role_permission ────────────────────────────────
+model SysRolePermission {
+  rolePermissionId Int      @id @default(autoincrement()) @map("role_permission_id")
+  roleId           Int      @map("role_id")
+  permissionCode   String   @map("permission_code") @db.VarChar(100)
+  creTime          DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId        Int      @default(0) @map("cre_user_id")
+  updTime          DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+  updUserId        Int      @default(0) @map("upd_user_id")
+
+  role       SysRole       @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
+  permission SysPermission @relation(fields: [permissionCode], references: [permissionCode], onDelete: Cascade)
+
+  @@unique([roleId, permissionCode], map: "uk_sys_role_permission")
+  @@index([permissionCode])
+  @@map("sys_role_permission")
+}
+
+// ─── sys_role_contract_blacklist ────────────────────────
+model SysRoleContractBlacklist {
+  roleContractBlacklistId Int      @id @default(autoincrement()) @map("role_contract_blacklist_id")
+  roleId                  Int      @map("role_id")
+  contractDefineCode      String   @map("contract_define_code") @db.VarChar(20)
+  entityId                Int      @map("entity_id")
+  creTime                 DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId               Int      @default(0) @map("cre_user_id")
+
+  role           SysRole           @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
+  contractDefine SysContractDefine @relation(fields: [contractDefineCode], references: [contractDefineCode])
+  entity         SysEntity         @relation(fields: [entityId], references: [entityId])
+
+  @@unique([roleId, contractDefineCode, entityId], map: "uk_sys_role_contract_blacklist")
+  @@index([entityId])
+  @@index([contractDefineCode])
+  @@map("sys_role_contract_blacklist")
+}
+
+// ─── sys_user ───────────────────────────────────────────
+model SysUser {
+  userId                           Int       @id @default(autoincrement()) @map("user_id")
+  username                         String    @unique
+  passwordHash                     String    @map("password_hash") @db.VarChar(255)
+  passwordChangedTimestamp         DateTime? @map("password_changed_timestamp") @db.Timestamp(3)
+  passwordErrorTimes               Int       @default(0) @map("password_error_times")
+  passwordErrorLockExpiredTimestamp DateTime? @map("password_error_lock_expired_timestamp") @db.Timestamp(3)
+  displayName                      String?   @map("display_name") @db.VarChar(100)
+  email                            String?
+  country                          String?   @db.VarChar(8)
+  status                           String    @default("ACTIVE") @db.VarChar(20)
+  lastLoginAt                      DateTime? @map("last_login_at") @db.Timestamp(3)
+  passwordUpdatedAt                DateTime? @map("password_updated_at") @db.Timestamp(3)
+  remark                           String?   @db.VarChar(500)
+  creTime                          DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId                        Int       @default(0) @map("cre_user_id")
+  updTime                          DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+  updUserId                        Int       @default(0) @map("upd_user_id")
+
+  entityUsers      SysEntityUser[]
+  userRoles        SysUserRole[]
+  passwordHistory  SysUserPasswordHistory[]
+  permissionScopes SysUserPermissionScope[]
+  userOrgs         SysUserOrg[]
+
+  @@index([status])
+  @@map("sys_user")
+}
+
+// ─── sys_user_password_history ──────────────────────────
+model SysUserPasswordHistory {
+  userPasswordHistoryId String    @id @default(uuid()) @map("user_password_history_id")
+  userId                Int       @map("user_id")
+  passwordHash          String    @map("password_hash") @db.VarChar(255)
+  creTime               DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
+  changedTimestamp       DateTime? @map("changed_timestamp") @db.Timestamp(3)
+
+  user SysUser @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId, creTime(sort: Desc)])
+  @@map("sys_user_password_history")
+}
+
+// ─── sys_user_role ──────────────────────────────────────
+model SysUserRole {
+  userRoleId Int      @id @default(autoincrement()) @map("user_role_id")
+  entityId   Int      @map("entity_id")
+  userId     Int      @map("user_id")
+  roleId     Int      @map("role_id")
+  creTime    DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId  Int      @default(0) @map("cre_user_id")
+  updTime    DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+  updUserId  Int      @default(0) @map("upd_user_id")
+
+  entity SysEntity @relation(fields: [entityId], references: [entityId])
+  user   SysUser   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  role   SysRole   @relation(fields: [roleId], references: [roleId])
+
+  @@unique([entityId, userId, roleId], map: "uk_sys_user_role")
+  @@index([userId, entityId])
   @@index([roleId])
-  @@map("menu")
+  @@index([entityId])
+  @@map("sys_user_role")
+}
+
+// ─── sys_entity_user ────────────────────────────────────
+model SysEntityUser {
+  entityUserId        Int       @id @default(autoincrement()) @map("entity_user_id")
+  entityId            Int       @map("entity_id")
+  userId              Int       @map("user_id")
+  authorizingType     String    @default("NORMAL") @map("authorizing_type") @db.VarChar(20)
+  authorizingTimestamp DateTime? @map("authorizing_timestamp") @db.Timestamp(3)
+  authorizingUserId   Int?      @map("authorizing_user_id")
+  authorizingUserName String?   @map("authorizing_user_name") @db.VarChar(100)
+  status              String    @default("ACTIVE") @db.VarChar(20)
+  creTime             DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId           Int       @default(0) @map("cre_user_id")
+  updTime             DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+  updUserId           Int       @default(0) @map("upd_user_id")
+
+  entity SysEntity @relation(fields: [entityId], references: [entityId])
+  user   SysUser   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([entityId, userId], map: "uk_sys_entity_user")
+  @@index([userId])
+  @@index([entityId, status])
+  @@map("sys_entity_user")
+}
+
+// ─── sys_menu ───────────────────────────────────────────
+model SysMenu {
+  menuId             Int      @id @default(autoincrement()) @map("menu_id")
+  parentMenuId       Int?     @map("parent_menu_id")
+  contractDefineCode String?  @map("contract_define_code") @db.VarChar(20)
+  menuTitle          String   @map("menu_title") @db.VarChar(100)
+  path               String?  @db.VarChar(200)
+  icon               String?  @db.VarChar(100)
+  sort               Int      @default(0)
+  isVisible          Boolean  @default(true) @map("is_visible")
+  creTime            DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
+  updTime            DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+
+  parent         SysMenu?           @relation("MenuTree", fields: [parentMenuId], references: [menuId])
+  children       SysMenu[]          @relation("MenuTree")
+  contractDefine SysContractDefine? @relation(fields: [contractDefineCode], references: [contractDefineCode])
+  permissions    SysPermission[]
+
+  @@index([parentMenuId])
+  @@index([contractDefineCode])
+  @@map("sys_menu")
+}
+
+// ─── sys_permission ─────────────────────────────────────
+model SysPermission {
+  permissionCode   String   @id @map("permission_code") @db.VarChar(100)
+  permissionMenuId Int?     @map("permission_menu_id")
+  remark           String?  @db.VarChar(500)
+  creTime          DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
+  updTime          DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+
+  menu            SysMenu?            @relation(fields: [permissionMenuId], references: [menuId])
+  rolePermissions SysRolePermission[]
+  userScopes      SysUserPermissionScope[]
+
+  @@index([permissionMenuId])
+  @@map("sys_permission")
+}
+
+// ─── sys_user_permission_scope ──────────────────────────
+model SysUserPermissionScope {
+  userPermissionScopeId Int    @id @default(autoincrement()) @map("user_permission_scope_id")
+  userId                Int    @map("user_id")
+  permissionCode        String @map("permission_code") @db.VarChar(100)
+  scopeKey              String @map("scope_key") @db.VarChar(100)
+  scopeValue            Json   @map("scope_value")
+
+  user       SysUser       @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  permission SysPermission @relation(fields: [permissionCode], references: [permissionCode], onDelete: Cascade)
+
+  @@unique([userId, permissionCode, scopeKey], map: "uk_sys_user_permission_scope")
+  @@map("sys_user_permission_scope")
+}
+
+// ─── sys_org ────────────────────────────────────────────
+model SysOrg {
+  orgId       Int     @id @default(autoincrement()) @map("org_id")
+  entityId    Int     @map("entity_id")
+  orgName     String  @map("org_name") @db.VarChar(200)
+  parentOrgId Int     @default(0) @map("parent_org_id")
+  country     String? @db.VarChar(8)
+  address     String? @db.VarChar(500)
+  phone       String? @db.VarChar(32)
+
+  entity   SysEntity  @relation(fields: [entityId], references: [entityId])
+  userOrgs SysUserOrg[]
+
+  @@index([entityId])
+  @@index([parentOrgId])
+  @@index([entityId, parentOrgId])
+  @@map("sys_org")
+}
+
+// ─── sys_user_org ───────────────────────────────────────
+model SysUserOrg {
+  userOrgId Int @id @default(autoincrement()) @map("user_org_id")
+  userId    Int @map("user_id")
+  orgId     Int @map("org_id")
+
+  user SysUser @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  org  SysOrg  @relation(fields: [orgId], references: [orgId], onDelete: Cascade)
+
+  @@unique([userId, orgId], map: "uk_sys_user_org")
+  @@index([orgId])
+  @@map("sys_user_org")
 }

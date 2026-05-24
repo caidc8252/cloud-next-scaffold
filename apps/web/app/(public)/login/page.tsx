@@ -6,6 +6,8 @@ import { loginAction } from "./actions";
 const ERROR_MESSAGES: Record<string, string> = {
   invalid: "Incorrect account or password.",
   missing: "Enter both account and password.",
+  locked: "Account is locked. Please try again later.",
+  no_entity: "No active organization found for this account.",
 };
 
 export default async function LoginPage(props: {
