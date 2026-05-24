@@ -27,6 +27,16 @@ export const SEED_USERS: User[] = [
       { hashId: "ph-002", changedAt: new Date(now - 105 * day).toISOString() },
       { hashId: "ph-003", changedAt: new Date(now - 195 * day).toISOString() },
     ],
+    passwordResetRequests: [
+      {
+        id: "prr-001",
+        requestedBy: "admin@carbon",
+        requestedAt: new Date(now - 3 * day).toISOString(),
+        expiresAt: new Date(now - 3 * day + 72 * 3_600_000).toISOString(),
+        consumedAt: new Date(now - 3 * day + 2 * 3_600_000).toISOString(),
+        status: "consumed" as const,
+      },
+    ],
   },
   {
     id: "u-jordan",
@@ -93,6 +103,16 @@ export const SEED_USERS: User[] = [
     roleIds: ["r-admin-ops"],
     passwordHistory: [
       { hashId: "ph-030", changedAt: new Date(now - 60 * day).toISOString() },
+    ],
+    passwordResetRequests: [
+      {
+        id: "prr-010",
+        requestedBy: "admin@carbon",
+        requestedAt: new Date(now - 1 * day).toISOString(),
+        expiresAt: new Date(now - 1 * day + 72 * 3_600_000).toISOString(),
+        consumedAt: null,
+        status: "pending" as const,
+      },
     ],
   },
   {
