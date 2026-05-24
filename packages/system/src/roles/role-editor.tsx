@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Copy, Trash2 } from "lucide-react";
-import { Badge, Button, Input, Textarea, Modal, Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
+import { Check, Copy, Trash2 } from "lucide-react";
+import { Badge, Button, Textarea, Modal, Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
 import type { Role, User } from "../types";
 import { relTime } from "../helpers";
 import { PERMISSION_CATALOG } from "../mock";
@@ -51,53 +51,63 @@ export function RoleEditor({ role, users, onSave, onDuplicate, onDelete }: RoleE
   }
 
   return (
-    <div className="p-6 space-y-5">
-      <div>
-        <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-          className="text-lg font-semibold border-0 px-0 shadow-none focus-visible:ring-0"
-          disabled={role.builtin} />
-        <div className="flex items-center gap-3 mt-1 text-xs text-content-tertiary">
-          <span>{role.operatorCount} operators</span>
-          <span>Updated {relTime(role.updatedAt)}</span>
-          <span>by {role.updatedBy}</span>
-          {role.builtin && <Badge variant="outline">SYSTEM</Badge>}
+    <div>
+      <div className="border-b border-line-subtle" style={{ padding: "18px 22px" }}>
+        <div className="flex items-start" style={{ gap: 16 }}>
+          <div className="flex-1 min-w-0">
+            <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+              className="font-semibold tracking-tight text-content-primary bg-transparent outline-none w-full"
+              style={{ fontSize: 20, border: "1px solid transparent", padding: "4px 8px", marginLeft: -8, borderRadius: 6, maxWidth: 400 }}
+              disabled={role.builtin} />
+            <div className="flex items-center flex-wrap text-content-tertiary" style={{ gap: 6, fontSize: 12, marginTop: 6 }}>
+              <span>{role.operatorCount} operators assigned</span>
+              <span style={{ opacity: 0.5 }}>·</span>
+              {role.builtin && <Badge variant="outline">SYSTEM</Badge>}
+            </div>
+            <div className="text-content-tertiary" style={{ fontSize: 12, marginTop: 2 }}>
+              Updated {relTime(role.updatedAt)} by {role.updatedBy}
+            </div>
+          </div>
+          <div className="flex items-center shrink-0" style={{ gap: 6 }}>
+            <Button variant="ghost" size="sm" iconLeft={<Copy size={14} />} onClick={onDuplicate}>Duplicate</Button>
+            <Button variant="ghost-danger" size="sm" iconLeft={<Trash2 size={14} />}
+              onClick={() => setConfirmDelete(true)} disabled={role.builtin}>Delete</Button>
+            <Button variant="primary" size="sm" disabled={!dirty} onClick={() => onSave(draft)}
+              iconLeft={dirty ? undefined : <Check size={14} />}>
+              {dirty ? "Save changes" : "Saved"}
+            </Button>
+          </div>
         </div>
       </div>
-
-      <div className="flex gap-2">
-        <Button variant="ghost" size="sm" iconLeft={<Copy size={14} />} onClick={onDuplicate}>Duplicate</Button>
-        <Button variant="ghost-danger" size="sm" iconLeft={<Trash2 size={14} />}
-          onClick={() => setConfirmDelete(true)} disabled={role.builtin}>Delete</Button>
-        <div className="flex-1" />
-        <Button variant="primary" size="sm" disabled={!dirty} onClick={() => onSave(draft)}>Save changes</Button>
-      </div>
-
-      <Card>
-        <CardHeader><CardTitle>Description</CardTitle></CardHeader>
-        <CardContent>
-          <Textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-            rows={3} disabled={role.builtin} />
-        </CardContent>
-      </Card>
-
-      <PermissionsCard contractDefineCode={draft.contractDefineCode} permissions={draft.permissions}
-        onTogglePerm={togglePerm} onToggleGroup={toggleGroup} disabled={role.builtin} />
-
-      {assignedUsers.length > 0 && (
+      <div className="flex flex-col" style={{ padding: "18px 22px 24px", gap: 16 }}>
         <Card>
-          <CardHeader><CardTitle>Assigned Users ({assignedUsers.length})</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Description</CardTitle></CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {assignedUsers.map((u) => (
-                <div key={u.id} className="flex items-center gap-2 text-sm">
-                  <span className="text-content-primary font-medium">{u.displayName || u.loginName}</span>
-                  <span className="text-content-tertiary">{u.email}</span>
-                </div>
-              ))}
-            </div>
+            <Textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+              rows={3} disabled={role.builtin} />
+            <p className="text-xs text-content-tertiary mt-2">Shown when assigning this role to an operator.</p>
           </CardContent>
         </Card>
-      )}
+
+        <PermissionsCard contractDefineCode={draft.contractDefineCode} permissions={draft.permissions}
+          onTogglePerm={togglePerm} onToggleGroup={toggleGroup} disabled={role.builtin} />
+
+        {assignedUsers.length > 0 && (
+          <Card>
+            <CardHeader><CardTitle>Assigned Users ({assignedUsers.length})</CardTitle></CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {assignedUsers.map((u) => (
+                  <div key={u.id} className="flex items-center gap-2 text-sm">
+                    <span className="text-content-primary font-medium">{u.displayName || u.loginName}</span>
+                    <span className="text-content-tertiary">{u.email}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete role"
         footer={<div className="flex gap-2 justify-end">

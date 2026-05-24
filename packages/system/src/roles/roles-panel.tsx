@@ -77,27 +77,27 @@ export function RolesPanel({ roles: propRoles, setRoles: propSetRoles, users = [
 
   return (
     <>
-      <div className="flex gap-0 border border-line-default rounded-lg overflow-hidden" style={{ height: "calc(100vh - 220px)" }}>
-        <div className="w-[280px] shrink-0 border-r border-line-default flex flex-col bg-surface-1">
-          <div className="p-3 space-y-2 border-b border-line-subtle">
+      <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 18, alignItems: "start" }}>
+        <div className="bg-surface-2 border border-line-default rounded-xl shadow-sm overflow-hidden sticky top-4">
+          <div className="flex gap-2 p-2.5 border-b border-line-subtle">
             <Input prefix={<Search size={14} />} placeholder="Search roles..." value={query}
-              onChange={(e) => setQuery(e.target.value)} inputSize="sm" />
-            <Button variant="primary" size="sm" block onClick={() => setShowNew(true)} iconLeft={<Plus size={14} />}>
+              onChange={(e) => setQuery(e.target.value)} inputSize="sm" className="flex-1" />
+            <Button variant="primary" size="sm" onClick={() => setShowNew(true)} iconLeft={<Plus size={14} />}>
               New role
             </Button>
           </div>
-          <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
+          <div className="flex flex-col max-h-[calc(100vh-240px)] overflow-auto">
             {filtered.map((r) => (
               <RoleListItem key={r.id} role={r} active={r.id === selectedId} onClick={() => setSelectedId(r.id)} />
             ))}
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto bg-surface-1">
+        <div className="bg-surface-2 border border-line-default rounded-xl shadow-sm overflow-hidden">
           {selected ? (
             <RoleEditor role={selected} users={users} onSave={update}
               onDuplicate={() => duplicate(selected)} onDelete={() => deleteRole(selected.id)} />
           ) : (
-            <div className="flex items-center justify-center h-full text-content-tertiary text-sm">Select a role to edit</div>
+            <div className="flex items-center justify-center h-64 text-content-tertiary text-sm">Select a role to edit</div>
           )}
         </div>
       </div>

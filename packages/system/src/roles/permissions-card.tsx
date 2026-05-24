@@ -38,6 +38,8 @@ export function PermissionsCard({
 
   const totalInScope = groups.reduce((n, g) => n + g.items.length, 0);
   const grantedCount = permissions.filter((p) => groups.some((g) => g.items.some((i) => i.code === p))).length;
+  const availableCount = totalInScope - grantedCount;
+  const hiddenCount = filter !== "all" ? totalInScope - filtered.reduce((n, g) => n + g.items.length, 0) : 0;
   const allExpanded = filtered.length > 0 && filtered.every((g) => expanded.has(g.menuId));
 
   function toggleExpandAll() {
@@ -46,10 +48,18 @@ export function PermissionsCard({
   }
 
   return (
-    <div className="border border-line-default rounded-lg">
+    <div className="border border-line-default rounded-xl overflow-hidden">
       <div className="px-4 py-3 border-b border-line-subtle flex items-center justify-between">
-        <div className="text-sm font-medium text-content-primary">
-          Permissions <span className="text-content-tertiary font-normal ml-1.5">{grantedCount} / {totalInScope}</span>
+        <div>
+          <div className="text-sm font-semibold text-content-primary">Permissions</div>
+          <div className="text-xs text-content-tertiary mt-0.5">
+            <span className="font-medium text-content-secondary">{grantedCount}</span> granted
+            <span className="mx-1">·</span>
+            {totalInScope} in scope
+            {hiddenCount > 0 && (
+              <><span className="mx-1">·</span><span className="text-warning">{hiddenCount} hidden</span></>
+            )}
+          </div>
         </div>
         <Button variant="ghost" size="xs" onClick={toggleExpandAll}>
           {allExpanded ? "Collapse all" : "Expand all"}
@@ -57,13 +67,17 @@ export function PermissionsCard({
       </div>
 
       <div className="px-4 py-2 border-b border-line-subtle flex items-center gap-2">
-        <Input prefix={<Search size={14} />} placeholder="Search permissions..." value={query}
+        <Input prefix={<Search size={14} />} placeholder="Search permissions by name…" value={query}
           onChange={(e) => setQuery(e.target.value)} inputSize="sm" className="flex-1" />
         <div className="flex gap-1">
-          {(["all", "granted", "available"] as const).map((f) => (
-            <Button key={f} variant={filter === f ? "secondary" : "ghost"} size="xs"
-              onClick={() => setFilter(f)}>
-              {f === "all" ? "All" : f === "granted" ? "Granted" : "Available"}
+          {([
+            { key: "all" as const, label: "All", count: totalInScope },
+            { key: "granted" as const, label: "Granted", count: grantedCount },
+            { key: "available" as const, label: "Available", count: availableCount },
+          ]).map((f) => (
+            <Button key={f.key} variant={filter === f.key ? "secondary" : "ghost"} size="xs"
+              onClick={() => setFilter(f.key)}>
+              {f.label} <span className="ml-1 text-content-tertiary">{f.count}</span>
             </Button>
           ))}
         </div>
@@ -78,7 +92,7 @@ export function PermissionsCard({
           return (
             <div key={group.menuId}>
               <button type="button"
-                className="flex items-center w-full px-4 py-2.5 hover:bg-surface-hover text-left"
+                className="flex items-center w-full px-5 py-3 bg-surface-3 border-b border-line-subtle text-left"
                 onClick={() => {
                   const next = new Set(expanded);
                   if (isOpen) next.delete(group.menuId); else next.add(group.menuId);
@@ -87,7 +101,7 @@ export function PermissionsCard({
                 {isOpen
                   ? <ChevronDown size={14} className="text-content-tertiary mr-2 shrink-0" />
                   : <ChevronRight size={14} className="text-content-tertiary mr-2 shrink-0" />}
-                <span className="flex-1 text-sm font-medium text-content-primary">{group.menuTitle}</span>
+                <span className="flex-1 font-semibold tracking-wide uppercase text-content-secondary" style={{ fontSize: 12.5 }}>{group.menuTitle}</span>
                 <span className="text-xs text-content-tertiary mr-3">{groupGranted}/{group.items.length}</span>
                 {!disabled && (
                   <Button variant="ghost" size="xs" onClick={(e) => { e.stopPropagation(); onToggleGroup(group.menuId, !allGranted); }}>
@@ -98,11 +112,11 @@ export function PermissionsCard({
               {isOpen && (
                 <div className="pb-1">
                   {group.items.map((perm) => (
-                    <div key={perm.code} className="flex items-center gap-3 pl-10 pr-4 py-2 hover:bg-surface-hover">
+                    <div key={perm.code} className="flex items-center gap-3 px-5 py-3 border-b border-line-subtle hover:bg-surface-hover">
                       <Switch checked={grantedSet.has(perm.code)} onCheckedChange={() => onTogglePerm(perm.code)}
                         disabled={disabled} size="sm" />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm text-content-primary">{perm.label}</div>
+                        <div className="font-medium text-content-primary" style={{ fontSize: 13.5 }}>{perm.label}</div>
                         <div className="text-xs text-content-tertiary">{perm.desc}</div>
                       </div>
                       <Badge variant="outline" className="shrink-0 font-mono text-xs">{perm.code}</Badge>
