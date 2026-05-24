@@ -67,16 +67,6 @@ export async function loginAction(formData: FormData) {
     redirect("/login?error=invalid");
   }
 
-  // Find user's active entity (default to first one)
-  const entityUser = await prisma.sysEntityUser.findFirst({
-    where: { userId: user.userId, status: "ACTIVE" },
-    include: { entity: true },
-  });
-
-  if (!entityUser || entityUser.entity.status !== "ACTIVE") {
-    redirect("/login?error=no_entity");
-  }
-
   // Login success: reset error count, update last login
   await prisma.sysUser.update({
     where: { userId: user.userId },
@@ -87,6 +77,27 @@ export async function loginAction(formData: FormData) {
     },
   });
 
-  await createSession(user.userId, entityUser.entityId);
-  redirect("/");
+  // Check all entity-user relationships
+  const entityUsers = await prisma.sysEntityUser.findMany({
+    where: { userId: user.userId },
+    include: { entity: true },
+  });
+
+  const activeEntityUsers = entityUsers.filter(
+    (eu) => eu.status === "ACTIVE" && eu.entity.status === "ACTIVE",
+  );
+
+  if (activeEntityUsers.length === 1) {
+    await createSession(user.userId, activeEntityUsers[0].entityId);
+    redirect("/");
+  }
+
+  if (activeEntityUsers.length > 1) {
+    await createSession(user.userId, null);
+    redirect("/select-entity");
+  }
+
+  // No active entities
+  await createSession(user.userId, null);
+  redirect("/locked");
 }
