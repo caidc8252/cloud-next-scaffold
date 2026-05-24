@@ -132,7 +132,7 @@ export function UsersPage({ users: propUsers, setUsers: propSetUsers, roles: pro
               selected.status === "PENDING" ? (
                 <PendingInviteDetail user={selected} roles={roles} onResend={() => resendInvite(selected)} onCancel={() => cancelInvite(selected.id)} />
               ) : (
-                <UserDetail user={selected} allUsers={users} roles={roles} onSave={update}
+                <UserDetail user={selected} roles={roles} onSave={update}
                   onResetPassword={() => resetPassword(selected)} onToggleLock={() => toggleLock(selected)} />
               )
             ) : (

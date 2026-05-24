@@ -81,7 +81,7 @@ export function PermissionsCard({
                 className="flex items-center w-full px-4 py-2.5 hover:bg-surface-hover text-left"
                 onClick={() => {
                   const next = new Set(expanded);
-                  isOpen ? next.delete(group.menuId) : next.add(group.menuId);
+                  if (isOpen) next.delete(group.menuId); else next.add(group.menuId);
                   setExpanded(next);
                 }}>
                 {isOpen

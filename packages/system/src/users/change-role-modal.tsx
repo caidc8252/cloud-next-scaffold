@@ -17,7 +17,7 @@ export function ChangeRoleModal({ open, onClose, user, roles, onSave }: ChangeRo
 
   function toggle(roleId: string) {
     const next = new Set(selected);
-    next.has(roleId) ? next.delete(roleId) : next.add(roleId);
+    if (next.has(roleId)) next.delete(roleId); else next.add(roleId);
     setSelected(next);
   }
 

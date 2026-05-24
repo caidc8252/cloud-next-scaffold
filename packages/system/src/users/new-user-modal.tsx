@@ -52,7 +52,7 @@ export function NewUserModal({ open, onClose, onCreate, users, roles }: NewUserM
 
   function toggleRole(set: Set<string>, setFn: (s: Set<string>) => void, id: string) {
     const next = new Set(set);
-    next.has(id) ? next.delete(id) : next.add(id);
+    if (next.has(id)) next.delete(id); else next.add(id);
     setFn(next);
   }
 

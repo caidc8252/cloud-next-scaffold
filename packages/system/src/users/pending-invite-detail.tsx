@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Mail, RefreshCw, X } from "lucide-react";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
 import type { Role, User } from "../types";
@@ -9,7 +10,8 @@ type PendingInviteDetailProps = { user: User; roles: Role[]; onResend: () => voi
 
 export function PendingInviteDetail({ user, roles, onResend, onCancel }: PendingInviteDetailProps) {
   const userRoles = roles.filter((r) => user.roleIds.includes(r.id));
-  const isExpired = user.inviteExpiresAt ? new Date(user.inviteExpiresAt).getTime() < Date.now() : false;
+  const [now] = useState(Date.now);
+  const isExpired = user.inviteExpiresAt ? new Date(user.inviteExpiresAt).getTime() < now : false;
 
   return (
     <div className="p-6 space-y-5">

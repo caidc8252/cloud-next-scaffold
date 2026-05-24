@@ -11,19 +11,20 @@ import { ResetPasswordModal } from "./reset-password-modal";
 import { ChangeRoleModal } from "./change-role-modal";
 
 type UserDetailProps = {
-  user: User; allUsers: User[]; roles: Role[];
+  user: User; roles: Role[];
   onSave: (u: User) => void; onResetPassword: () => void; onToggleLock: () => void;
 };
 
 const STATUS_TONE = { ACTIVE: "success", LOCKED: "error", PENDING: "warning" } as const;
 
-export function UserDetail({ user, allUsers, roles, onSave, onResetPassword, onToggleLock }: UserDetailProps) {
+export function UserDetail({ user, roles, onSave, onResetPassword, onToggleLock }: UserDetailProps) {
   const [showEdit, setShowEdit] = useState(false);
   const [showReset, setShowReset] = useState(false);
   const [showRole, setShowRole] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  const pwAgeDays = user.passwordChangedTimestamp ? Math.floor((Date.now() - user.passwordChangedTimestamp) / 86_400_000) : null;
+  const [now] = useState(Date.now);
+  const pwAgeDays = user.passwordChangedTimestamp ? Math.floor((now - user.passwordChangedTimestamp) / 86_400_000) : null;
   const pwExpired = pwAgeDays !== null && pwAgeDays >= PASSWORD_POLICY.expiryDays;
   const userRoles = roles.filter((r) => user.roleIds.includes(r.id));
   const isLocked = user.status === "LOCKED";

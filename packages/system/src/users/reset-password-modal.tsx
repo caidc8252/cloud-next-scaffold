@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button, Modal } from "@cloud/ui";
 import type { User } from "../types";
 import { PASSWORD_POLICY } from "../mock/password-policy";
@@ -8,7 +9,8 @@ import { relTime } from "../helpers";
 type ResetPasswordModalProps = { open: boolean; onClose: () => void; user: User; onConfirm: () => void };
 
 export function ResetPasswordModal({ open, onClose, user, onConfirm }: ResetPasswordModalProps) {
-  const pwAge = user.passwordChangedTimestamp ? Math.floor((Date.now() - user.passwordChangedTimestamp) / 86_400_000) : null;
+  const [now] = useState(Date.now);
+  const pwAge = user.passwordChangedTimestamp ? Math.floor((now - user.passwordChangedTimestamp) / 86_400_000) : null;
 
   return (
     <Modal open={open} onClose={onClose} title="Reset password"
