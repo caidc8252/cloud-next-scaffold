@@ -11,7 +11,7 @@ const SESSION_TTL_SECONDS = 60 * 60 * 12;
 
 type SessionPayload = {
   userId: number;
-  entityId: number;
+  entityId: number | null;
   expiresAt: number;
 };
 
@@ -28,6 +28,12 @@ export type SessionRole = {
   roleId: number;
   roleName: string;
   roleType: string;
+};
+
+export type PartialSession = {
+  id: number;
+  username: string;
+  displayName: string | null;
 };
 
 export type AuthenticatedSession = {
@@ -79,7 +85,7 @@ function decodeSession(token: string): SessionPayload | null {
   }
 }
 
-export async function createSession(userId: number, entityId: number) {
+export async function createSession(userId: number, entityId: number | null) {
   const cookieStore = await cookies();
   const expiresAt = Date.now() + SESSION_TTL_SECONDS * 1000;
   cookieStore.set(SESSION_COOKIE, encodeSession({ userId, entityId, expiresAt }), {
@@ -103,6 +109,7 @@ export const getSession = cache(async (): Promise<AuthenticatedSession | null> =
 
   const payload = decodeSession(token);
   if (!payload) return null;
+  if (payload.entityId === null) return null;
 
   const prisma = await getPrismaClient();
 
@@ -228,10 +235,83 @@ export const getSession = cache(async (): Promise<AuthenticatedSession | null> =
   };
 });
 
+export const getPartialSession = cache(async (): Promise<PartialSession | null> => {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  if (!token) return null;
+
+  const payload = decodeSession(token);
+  if (!payload) return null;
+
+  const prisma = await getPrismaClient();
+  const user = await prisma.sysUser.findUnique({
+    where: { userId: payload.userId },
+  });
+  if (!user || user.status !== "ACTIVE" || !user.username) return null;
+
+  return {
+    id: user.userId,
+    username: user.username,
+    displayName: user.displayName,
+  };
+});
+
+export async function upgradeSession(entityId: number) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  if (!token) return;
+
+  const payload = decodeSession(token);
+  if (!payload) return;
+
+  const expiresAt = Date.now() + SESSION_TTL_SECONDS * 1000;
+  cookieStore.set(SESSION_COOKIE, encodeSession({ userId: payload.userId, entityId, expiresAt }), {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: SESSION_TTL_SECONDS,
+  });
+}
+
+export async function downgradeSession() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  if (!token) return;
+
+  const payload = decodeSession(token);
+  if (!payload) return;
+
+  const expiresAt = Date.now() + SESSION_TTL_SECONDS * 1000;
+  cookieStore.set(SESSION_COOKIE, encodeSession({ userId: payload.userId, entityId: null, expiresAt }), {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: SESSION_TTL_SECONDS,
+  });
+}
+
 export async function requireSession() {
   const session = await getSession();
-  if (!session) {
+  if (session) return session;
+
+  const partial = await getPartialSession();
+  if (!partial) {
     redirect("/api/auth/logout");
   }
-  return session;
+
+  const prisma = await getPrismaClient();
+  const entityUsers = await prisma.sysEntityUser.findMany({
+    where: { userId: partial.id },
+    select: { status: true },
+  });
+
+  const hasActive = entityUsers.some((eu) => eu.status === "ACTIVE");
+  if (hasActive) {
+    redirect("/select-entity");
+  }
+
+  await downgradeSession();
+  redirect("/locked");
 }
