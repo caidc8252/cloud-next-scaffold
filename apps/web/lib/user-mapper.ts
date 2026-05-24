@@ -19,7 +19,7 @@ type UserRow = {
   updTime: Date;
   passwordHistory: { userPasswordHistoryId: string; changedTimestamp: Date | null }[];
   userRoles: { roleId: number }[];
-  entityUsers: { authorizingType: string }[];
+  entityUsers: { authorizingType: string; status: string }[];
   invites: {
     email: string;
     token: string;
@@ -47,6 +47,8 @@ export function toClientUser(
 ): User {
   const latestInvite = row.invites[0] ?? null;
   const isPending = row.status === "PENDING";
+  const entityUserStatus = row.entityUsers[0]?.status ?? row.status;
+  const mappedStatus: User["status"] = isPending ? "PENDING" : (entityUserStatus === "ACTIVE" ? "ACTIVE" : "INACTIVE");
 
   return {
     id: String(row.userId),
@@ -54,7 +56,7 @@ export function toClientUser(
     displayName: row.displayName ?? "",
     email: isPending ? "" : (row.email ?? ""),
     country: row.country ?? "",
-    status: row.status as User["status"],
+    status: mappedStatus,
     lastLoginAt: row.lastLoginAt?.toISOString() ?? null,
     passwordChangedTimestamp: row.passwordChangedTimestamp?.getTime() ?? 0,
     passwordErrorTimes: row.passwordErrorTimes,
@@ -105,7 +107,7 @@ export const USER_INCLUDE = {
     orderBy: { creTime: "desc" as const },
   },
   userRoles: { select: { roleId: true } },
-  entityUsers: { select: { authorizingType: true } },
+  entityUsers: { select: { authorizingType: true, status: true } },
   invites: {
     where: { status: "PENDING" },
     orderBy: { creTime: "desc" as const },

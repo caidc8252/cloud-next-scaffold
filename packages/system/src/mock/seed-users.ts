@@ -89,7 +89,7 @@ export const SEED_USERS: User[] = [
     displayName: "Marcus Reilly",
     email: "marcus.r@company.com",
     country: "GB",
-    status: "LOCKED",
+    status: "INACTIVE",
     lastLoginAt: new Date(now - 3 * day).toISOString(),
     passwordChangedTimestamp: now - 60 * day,
     passwordErrorTimes: 5,

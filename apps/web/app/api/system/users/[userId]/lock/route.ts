@@ -6,7 +6,7 @@ import {
   notFoundResponse,
   internalErrorResponse,
 } from "@cloud/request/server";
-import { ERR_INVALID_ID, ERR_USER_NOT_FOUND, ERR_USER_LOCK_INVALID_STATUS } from "@cloud/request/error-codes";
+import { ERR_INVALID_ID, ERR_USER_NOT_FOUND } from "@cloud/request/error-codes";
 import { getSession } from "../../../../../../lib/auth";
 import { toClientUser, USER_INCLUDE } from "../../../../../../lib/user-mapper";
 
@@ -22,42 +22,28 @@ export async function POST(
     const userId = Number(rawId);
     if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID, "Invalid user ID.");
 
+    if (userId === session.id) {
+      return badRequestResponse(ERR_INVALID_ID, "Cannot disable your own account.");
+    }
+
     const entityId = session.entity.entityId;
     const link = await prisma.sysEntityUser.findUnique({
       where: { entityId_userId: { entityId, userId } },
     });
-    if (!link || link.status !== "ACTIVE") return notFoundResponse(ERR_USER_NOT_FOUND, "User not found.");
+    if (!link) return notFoundResponse(ERR_USER_NOT_FOUND, "User not found in this entity.");
 
-    const user = await prisma.sysUser.findUniqueOrThrow({ where: { userId } });
-
-    if (user.status === "LOCKED") {
-      await prisma.sysUser.update({
-        where: { userId },
-        data: {
-          status: "ACTIVE",
-          passwordErrorTimes: 0,
-          passwordErrorLockExpiredTimestamp: null,
-          updUserId: session.id,
-        },
-      });
-    } else if (user.status === "ACTIVE") {
-      await prisma.sysUser.update({
-        where: { userId },
-        data: {
-          status: "LOCKED",
-          passwordErrorLockExpiredTimestamp: new Date(Date.now() + 30 * 60_000),
-          updUserId: session.id,
-        },
-      });
-    } else {
-      return badRequestResponse(ERR_USER_LOCK_INVALID_STATUS, "Cannot lock/unlock a user with status " + user.status);
-    }
+    // Toggle entity-user status
+    const newStatus = link.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    await prisma.sysEntityUser.update({
+      where: { entityId_userId: { entityId, userId } },
+      data: { status: newStatus, updUserId: session.id },
+    });
 
     const updated = await prisma.sysUser.findUniqueOrThrow({
       where: { userId },
       include: {
         ...USER_INCLUDE,
-        entityUsers: { where: { entityId }, select: { authorizingType: true } },
+        entityUsers: { where: { entityId }, select: { authorizingType: true, status: true } },
         userRoles: { where: { entityId }, select: { roleId: true } },
       },
     });

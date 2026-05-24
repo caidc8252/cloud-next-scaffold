@@ -15,7 +15,7 @@ import { NewUserModal } from "./new-user-modal";
 const API = "/api/system/users";
 
 type UsersPageProps = { initialUsers: User[]; initialRoles: Role[] };
-type StatusFilter = "all" | "active" | "locked" | "pending";
+type StatusFilter = "all" | "active" | "inactive" | "pending";
 
 export function UsersPage({ initialUsers, initialRoles }: UsersPageProps) {
   const [users, setUsers] = useState(initialUsers);
@@ -30,7 +30,7 @@ export function UsersPage({ initialUsers, initialRoles }: UsersPageProps) {
   const stats = useMemo(() => ({
     total: users.length,
     active: users.filter((u) => u.status === "ACTIVE").length,
-    locked: users.filter((u) => u.status === "LOCKED").length,
+    inactive: users.filter((u) => u.status === "INACTIVE").length,
     pending: users.filter((u) => u.status === "PENDING").length,
   }), [users]);
 
@@ -81,7 +81,7 @@ export function UsersPage({ initialUsers, initialRoles }: UsersPageProps) {
     try {
       const res = await request.post<User>(`${API}/${user.id}/lock`);
       setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
-      toast.success(user.status === "LOCKED" ? "User unlocked" : "User locked");
+      toast.success(user.status === "INACTIVE" ? "User enabled" : "User disabled");
     } catch (err) {
       toastError(err);
     }
@@ -133,7 +133,7 @@ export function UsersPage({ initialUsers, initialRoles }: UsersPageProps) {
     { label: "Total", value: stats.total, color: undefined, filterKey: "all" },
     { label: "Active", value: stats.active, color: "var(--color-success-700)", filterKey: "active" },
     { label: "Pending", value: stats.pending, color: stats.pending ? "var(--color-warning-700)" : undefined, filterKey: "pending" },
-    { label: "Locked", value: stats.locked, color: stats.locked ? "var(--color-error-700)" : undefined, filterKey: "locked" },
+    { label: "Disabled", value: stats.inactive, color: stats.inactive ? "var(--color-error-700)" : undefined, filterKey: "inactive" },
   ];
 
   return (

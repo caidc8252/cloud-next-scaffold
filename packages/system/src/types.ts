@@ -53,7 +53,7 @@ export type User = {
   displayName: string;
   email: string;
   country: string;
-  status: "ACTIVE" | "LOCKED" | "PENDING";
+  status: "ACTIVE" | "INACTIVE" | "PENDING";
   lastLoginAt: string | null;
   passwordChangedTimestamp: number;
   passwordErrorTimes: number;

@@ -6,7 +6,7 @@ import { UsersPage } from "@cloud/system";
 
 async function loadUsers(entityId: number) {
   const entityUserLinks = await prisma.sysEntityUser.findMany({
-    where: { entityId, status: "ACTIVE" },
+    where: { entityId },
     select: { userId: true },
   });
   const userIds = entityUserLinks.map((eu) => eu.userId);
@@ -16,7 +16,7 @@ async function loadUsers(entityId: number) {
     where: { userId: { in: userIds } },
     include: {
       ...USER_INCLUDE,
-      entityUsers: { where: { entityId }, select: { authorizingType: true } },
+      entityUsers: { where: { entityId }, select: { authorizingType: true, status: true } },
       userRoles: { where: { entityId }, select: { roleId: true } },
     },
     orderBy: { creTime: "asc" },

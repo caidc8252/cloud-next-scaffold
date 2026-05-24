@@ -33,7 +33,7 @@ export async function GET() {
       where: { userId: { in: userIds } },
       include: {
         ...USER_INCLUDE,
-        entityUsers: { where: { entityId }, select: { authorizingType: true } },
+        entityUsers: { where: { entityId }, select: { authorizingType: true, status: true } },
         userRoles: { where: { entityId }, select: { roleId: true } },
       },
       orderBy: { creTime: "asc" },
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
       where: { userId: user.userId },
       include: {
         ...USER_INCLUDE,
-        entityUsers: { where: { entityId }, select: { authorizingType: true } },
+        entityUsers: { where: { entityId }, select: { authorizingType: true, status: true } },
         userRoles: { where: { entityId }, select: { roleId: true } },
       },
     });

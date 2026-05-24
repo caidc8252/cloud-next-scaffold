@@ -35,8 +35,7 @@ export function UserDetail({ user, users, roles, onSave, onResetPassword, onTogg
   }
 
   const dirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify(user), [draft, user]);
-  const locked = user.status === "LOCKED";
-  const lockedUntil = user.passwordErrorLockExpiredTimestamp;
+  const disabled = user.status === "INACTIVE";
   const displayInitials = initials(user.displayName || user.loginName);
 
   const [now] = useState(Date.now);
@@ -61,7 +60,7 @@ export function UserDetail({ user, users, roles, onSave, onResetPassword, onTogg
       {/* Header */}
       <div className="flex items-start gap-4 border-b border-line-subtle" style={{ padding: "18px 22px" }}>
         <div className="shrink-0 grid place-items-center text-white font-semibold text-xl"
-          style={{ width: 56, height: 56, borderRadius: 12, background: avatarGradient(locked), letterSpacing: "-0.02em" }}>
+          style={{ width: 56, height: 56, borderRadius: 12, background: avatarGradient(disabled), letterSpacing: "-0.02em" }}>
           {displayInitials}
         </div>
         <div className="flex-1 min-w-0">
@@ -71,7 +70,7 @@ export function UserDetail({ user, users, roles, onSave, onResetPassword, onTogg
               style={{ border: "1px solid transparent", padding: "4px 8px", marginLeft: -8, borderRadius: 6, maxWidth: 400 }} />
             <span className="font-mono font-semibold uppercase shrink-0"
               style={{ fontSize: 9.5, letterSpacing: "0.06em", padding: "1px 5px", borderRadius: 3, border: "1px solid",
-                ...(locked
+                ...(disabled
                   ? { color: "var(--color-error-700)", background: "var(--color-error-50)", borderColor: "oklch(70% 0.16 25 / 0.25)" }
                   : { color: "var(--color-success-700)", background: "var(--color-success-50)", borderColor: "oklch(58% 0.14 152 / 0.25)" }),
               }}>
@@ -88,8 +87,8 @@ export function UserDetail({ user, users, roles, onSave, onResetPassword, onTogg
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <Button variant="ghost" size="sm" iconLeft={<KeyRound size={14} />} onClick={() => setConfirmReset(true)}>Reset password</Button>
-          <Button variant={locked ? "primary" : "ghost"} size="sm" iconLeft={<Shield size={14} />}
-            onClick={() => setConfirmLock(true)}>{locked ? "Unlock" : "Lock"}</Button>
+          <Button variant={disabled ? "primary" : "ghost"} size="sm" iconLeft={<Shield size={14} />}
+            onClick={() => setConfirmLock(true)}>{disabled ? "Enable" : "Disable"}</Button>
           <Button variant="primary" size="sm" disabled={!dirty} onClick={save}
             iconLeft={dirty ? undefined : <Check size={14} />}>{dirty ? "Save changes" : "Saved"}</Button>
         </div>
@@ -97,15 +96,12 @@ export function UserDetail({ user, users, roles, onSave, onResetPassword, onTogg
 
       {/* Body */}
       <div className="flex flex-col gap-4" style={{ padding: "18px 22px 24px" }}>
-        {/* Locked banner */}
-        {locked && lockedUntil && (
+        {/* Disabled banner */}
+        {disabled && (
           <Alert variant="error">
             <AlertTriangle size={14} />
             <AlertDescription>
-              <strong>Account locked</strong> — {user.passwordErrorTimes >= PASSWORD_POLICY.maxErrorTimes
-                ? `${user.passwordErrorTimes} consecutive failed login attempts triggered an auto-lock.`
-                : "Account locked by administrator."}
-              {" "}Auto-unlocks at <strong>{fmtDateTime(lockedUntil)}</strong> ({relTime(new Date(lockedUntil).toISOString())}).
+              <strong>Account disabled</strong> — this user&apos;s access to the current organization has been disabled by an administrator.
             </AlertDescription>
           </Alert>
         )}
@@ -288,14 +284,14 @@ export function UserDetail({ user, users, roles, onSave, onResetPassword, onTogg
       {/* Confirm lock modal */}
       {confirmLock && (
         <ConfirmModal open={confirmLock} onClose={() => setConfirmLock(false)}
-          title={locked ? "Unlock account?" : "Lock account?"}
+          title={disabled ? "Enable account?" : "Disable account?"}
           onConfirm={() => { setConfirmLock(false); onToggleLock(); }}
-          confirmLabel={locked ? "Unlock" : "Lock account"}
-          confirmVariant={locked ? "primary" : "destructive"}>
+          confirmLabel={disabled ? "Enable" : "Disable account"}
+          confirmVariant={disabled ? "primary" : "destructive"}>
           <p className="text-sm text-content-secondary">
-            {locked
-              ? <>Unlock <strong>{user.displayName}</strong> — they will be able to log in immediately. Failed-attempt counter resets.</>
-              : <>Locks <strong>{user.displayName}</strong> for {PASSWORD_POLICY.lockDurationMinutes} minutes. Active sessions are revoked.</>}
+            {disabled
+              ? <>Enable <strong>{user.displayName}</strong> — they will be able to access this organization immediately.</>
+              : <>Disable <strong>{user.displayName}</strong>&apos;s access to this organization. Their roles and permissions will not be loaded.</>}
           </p>
         </ConfirmModal>
       )}

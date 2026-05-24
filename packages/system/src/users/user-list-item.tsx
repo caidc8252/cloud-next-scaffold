@@ -15,13 +15,13 @@ type UserListItemProps = {
 
 const STATUS_STYLE = {
   ACTIVE: { color: "var(--color-success-700)", background: "var(--color-success-50)", borderColor: "oklch(58% 0.14 152 / 0.25)" },
-  LOCKED: { color: "var(--color-error-700)", background: "var(--color-error-50)", borderColor: "oklch(70% 0.16 25 / 0.25)" },
+  INACTIVE: { color: "var(--color-error-700)", background: "var(--color-error-50)", borderColor: "oklch(70% 0.16 25 / 0.25)" },
   PENDING: { color: "var(--color-warning-700)", background: "var(--color-warning-50)", borderColor: "oklch(75% 0.13 80 / 0.3)" },
   EXPIRED: { color: "var(--color-error-700)", background: "var(--color-error-50)", borderColor: "oklch(70% 0.16 25 / 0.25)" },
 } as const;
 
 function avatarGradient(status: User["status"], expired: boolean): string {
-  if (status === "LOCKED") return "linear-gradient(135deg, oklch(70% 0.13 25), oklch(58% 0.16 25))";
+  if (status === "INACTIVE") return "linear-gradient(135deg, oklch(70% 0.13 25), oklch(58% 0.16 25))";
   if (status === "PENDING" && expired) return "linear-gradient(135deg, oklch(70% 0.13 25), oklch(58% 0.16 25))";
   if (status === "PENDING") return "linear-gradient(135deg, oklch(78% 0.1 80), oklch(64% 0.14 80))";
   return "linear-gradient(135deg, var(--color-primary-500), var(--color-accent-600))";
@@ -31,7 +31,7 @@ export function UserListItem({ user, active, onClick, onResend, onCancel }: User
   const [now] = useState(Date.now);
   const isPending = user.status === "PENDING";
   const isExpired = isPending && !!user.inviteExpiresAt && new Date(user.inviteExpiresAt).getTime() < now;
-  const locked = user.status === "LOCKED";
+  const disabled = user.status === "INACTIVE";
   const displayName = user.displayName || user.loginName || "?";
   const badgeKey = isExpired ? "EXPIRED" : user.status;
 
@@ -55,7 +55,7 @@ export function UserListItem({ user, active, onClick, onResend, onCancel }: User
           {isPending
             ? <span className="text-content-tertiary italic font-medium">{isExpired ? "Invitation expired" : "Invitation sent"}</span>
             : <span className="truncate">{displayName}</span>}
-          {locked && <Shield size={11} className="text-error shrink-0" />}
+          {disabled && <Shield size={11} className="text-error shrink-0" />}
         </div>
         <div className="font-mono text-xs text-content-tertiary mt-0.5 truncate">
           {isPending ? user.inviteEmail ?? user.email : `@${user.loginName}`}

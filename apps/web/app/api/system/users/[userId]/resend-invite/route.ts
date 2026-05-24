@@ -43,7 +43,7 @@ export async function POST(
       where: { userId },
       include: {
         ...USER_INCLUDE,
-        entityUsers: { where: { entityId }, select: { authorizingType: true } },
+        entityUsers: { where: { entityId }, select: { authorizingType: true, status: true } },
         userRoles: { where: { entityId }, select: { roleId: true } },
       },
     });
