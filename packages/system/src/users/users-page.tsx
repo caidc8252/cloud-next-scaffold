@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Search, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { toastError } from "@cloud/request/error-toast";
 import { Button, Input, Modal, SplitPanel, SplitPanelSidebar, SplitPanelContent } from "@cloud/ui";
 import { request } from "@cloud/request/client";
 import type { Role, User } from "../types";
@@ -59,8 +60,8 @@ export function UsersPage({ initialUsers, initialRoles }: UsersPageProps) {
       });
       setUsers((prev) => prev.map((u) => (u.id === next.id ? res.data : u)));
       toast.success("User saved");
-    } catch {
-      toast.error("Failed to save user");
+    } catch (err) {
+      toastError(err);
     }
   }
 
@@ -71,8 +72,8 @@ export function UsersPage({ initialUsers, initialRoles }: UsersPageProps) {
       setSelectedId(res.data.id);
       setShowNew(false);
       toast.success("Invitation sent");
-    } catch {
-      toast.error("Failed to create invitation");
+    } catch (err) {
+      toastError(err);
     }
   }
 
@@ -81,8 +82,8 @@ export function UsersPage({ initialUsers, initialRoles }: UsersPageProps) {
       const res = await request.post<User>(`${API}/${user.id}/lock`);
       setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
       toast.success(user.status === "LOCKED" ? "User unlocked" : "User locked");
-    } catch {
-      toast.error("Failed to toggle lock");
+    } catch (err) {
+      toastError(err);
     }
   }
 
@@ -91,8 +92,8 @@ export function UsersPage({ initialUsers, initialRoles }: UsersPageProps) {
       const res = await request.post<User>(`${API}/${user.id}/reset-password`);
       setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
       toast.success("Password reset link sent");
-    } catch {
-      toast.error("Failed to reset password");
+    } catch (err) {
+      toastError(err);
     }
   }
 
@@ -102,8 +103,8 @@ export function UsersPage({ initialUsers, initialRoles }: UsersPageProps) {
       setUsers((prev) => prev.filter((u) => u.id !== userId));
       if (selectedId === userId) setSelectedId(null);
       toast.success("Invitation cancelled");
-    } catch {
-      toast.error("Failed to cancel invitation");
+    } catch (err) {
+      toastError(err);
     }
   }
 
@@ -112,8 +113,8 @@ export function UsersPage({ initialUsers, initialRoles }: UsersPageProps) {
       const res = await request.post<User>(`${API}/${user.id}/resend-invite`);
       setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
       toast.success("Invitation resent");
-    } catch {
-      toast.error("Failed to resend invitation");
+    } catch (err) {
+      toastError(err);
     }
   }
 

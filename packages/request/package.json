@@ -6,13 +6,19 @@
   "exports": {
     ".": "./src/index.ts",
     "./server": "./src/server.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./error-codes": "./src/error-codes.ts",
+    "./error-toast": "./src/error-toast.ts"
   },
   "dependencies": {
     "client-only": "^0.0.1",
     "server-only": "^0.0.1"
   },
   "peerDependencies": {
-    "next": "^16.0.0"
+    "next": "^16.0.0",
+    "sonner": "^2.0.0"
+  },
+  "devDependencies": {
+    "sonner": "^2.0.7"
   }
 }

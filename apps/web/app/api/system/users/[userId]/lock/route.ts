@@ -4,7 +4,9 @@ import {
   badRequestResponse,
   unauthorizedResponse,
   notFoundResponse,
+  internalErrorResponse,
 } from "@cloud/request/server";
+import { ERR_INVALID_ID, ERR_USER_NOT_FOUND, ERR_USER_LOCK_INVALID_STATUS } from "@cloud/request/error-codes";
 import { getSession } from "../../../../../../lib/auth";
 import { toClientUser, USER_INCLUDE } from "../../../../../../lib/user-mapper";
 
@@ -15,52 +17,54 @@ export async function POST(
   const session = await getSession();
   if (!session) return unauthorizedResponse();
 
-  const { userId: rawId } = await params;
-  const userId = Number(rawId);
-  if (!Number.isFinite(userId)) return badRequestResponse("Invalid user ID.");
+  try {
+    const { userId: rawId } = await params;
+    const userId = Number(rawId);
+    if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID, "Invalid user ID.");
 
-  const entityId = session.entity.entityId;
-  const link = await prisma.sysEntityUser.findUnique({
-    where: { entityId_userId: { entityId, userId } },
-  });
-  if (!link || link.status !== "ACTIVE") return notFoundResponse("User not found.");
+    const entityId = session.entity.entityId;
+    const link = await prisma.sysEntityUser.findUnique({
+      where: { entityId_userId: { entityId, userId } },
+    });
+    if (!link || link.status !== "ACTIVE") return notFoundResponse(ERR_USER_NOT_FOUND, "User not found.");
 
-  const user = await prisma.sysUser.findUniqueOrThrow({ where: { userId } });
+    const user = await prisma.sysUser.findUniqueOrThrow({ where: { userId } });
 
-  if (user.status === "LOCKED") {
-    // Unlock
-    await prisma.sysUser.update({
+    if (user.status === "LOCKED") {
+      await prisma.sysUser.update({
+        where: { userId },
+        data: {
+          status: "ACTIVE",
+          passwordErrorTimes: 0,
+          passwordErrorLockExpiredTimestamp: null,
+          updUserId: session.id,
+        },
+      });
+    } else if (user.status === "ACTIVE") {
+      await prisma.sysUser.update({
+        where: { userId },
+        data: {
+          status: "LOCKED",
+          passwordErrorLockExpiredTimestamp: new Date(Date.now() + 30 * 60_000),
+          updUserId: session.id,
+        },
+      });
+    } else {
+      return badRequestResponse(ERR_USER_LOCK_INVALID_STATUS, "Cannot lock/unlock a user with status " + user.status);
+    }
+
+    const updated = await prisma.sysUser.findUniqueOrThrow({
       where: { userId },
-      data: {
-        status: "ACTIVE",
-        passwordErrorTimes: 0,
-        passwordErrorLockExpiredTimestamp: null,
-        updUserId: session.id,
+      include: {
+        ...USER_INCLUDE,
+        entityUsers: { where: { entityId }, select: { authorizingType: true } },
+        userRoles: { where: { entityId }, select: { roleId: true } },
       },
     });
-  } else if (user.status === "ACTIVE") {
-    // Lock for 30 minutes
-    await prisma.sysUser.update({
-      where: { userId },
-      data: {
-        status: "LOCKED",
-        passwordErrorLockExpiredTimestamp: new Date(Date.now() + 30 * 60_000),
-        updUserId: session.id,
-      },
-    });
-  } else {
-    return badRequestResponse("Cannot lock/unlock a user with status " + user.status);
+
+    const nameMap = new Map([[session.id, session.username]]);
+    return successResponse(toClientUser(updated, nameMap, nameMap));
+  } catch (error) {
+    return internalErrorResponse(error);
   }
-
-  const updated = await prisma.sysUser.findUniqueOrThrow({
-    where: { userId },
-    include: {
-      ...USER_INCLUDE,
-      entityUsers: { where: { entityId }, select: { authorizingType: true } },
-      userRoles: { where: { entityId }, select: { roleId: true } },
-    },
-  });
-
-  const nameMap = new Map([[session.id, session.username]]);
-  return successResponse(toClientUser(updated, nameMap, nameMap));
 }

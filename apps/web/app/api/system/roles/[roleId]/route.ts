@@ -5,7 +5,15 @@ import {
   unauthorizedResponse,
   notFoundResponse,
   noContentResponse,
+  internalErrorResponse,
 } from "@cloud/request/server";
+import {
+  ERR_INVALID_ID,
+  ERR_INVALID_JSON,
+  ERR_ROLE_NOT_FOUND,
+  ERR_ROLE_DELETE_BUILTIN,
+  ERR_ROLE_DELETE_ASSIGNED,
+} from "@cloud/request/error-codes";
 import { getSession } from "../../../../../lib/auth";
 import { toClientRole } from "../../../../../lib/role-mapper";
 
@@ -16,56 +24,60 @@ export async function PUT(
   const session = await getSession();
   if (!session) return unauthorizedResponse();
 
-  const { roleId: rawId } = await params;
-  const roleId = Number(rawId);
-  if (!Number.isFinite(roleId)) return badRequestResponse("Invalid role ID.");
-
-  const existing = await prisma.sysRole.findUnique({ where: { roleId } });
-  if (!existing || (existing.entityId !== null && existing.entityId !== session.entity.entityId)) {
-    return notFoundResponse("Role not found.");
-  }
-
-  let body: { name?: string; description?: string; permissions?: string[] };
   try {
-    body = await req.json();
-  } catch {
-    return badRequestResponse("Invalid JSON body.");
-  }
+    const { roleId: rawId } = await params;
+    const roleId = Number(rawId);
+    if (!Number.isFinite(roleId)) return badRequestResponse(ERR_INVALID_ID, "Invalid role ID.");
 
-  const isBuiltin = existing.roleType === "BUILTIN";
-
-  const dataUpdate: Record<string, unknown> = { updUserId: session.id };
-  if (!isBuiltin) {
-    if (body.name !== undefined) dataUpdate.roleName = body.name.trim();
-    if (body.description !== undefined) dataUpdate.remark = body.description.trim() || null;
-  }
-
-  await prisma.$transaction(async (tx) => {
-    await tx.sysRole.update({ where: { roleId }, data: dataUpdate });
-
-    if (body.permissions !== undefined) {
-      await tx.sysRolePermission.deleteMany({ where: { roleId } });
-      if (body.permissions.length > 0) {
-        await tx.sysRolePermission.createMany({
-          data: body.permissions.map((code) => ({
-            roleId,
-            permissionCode: code,
-            creUserId: session.id,
-          })),
-        });
-      }
+    const existing = await prisma.sysRole.findUnique({ where: { roleId } });
+    if (!existing || (existing.entityId !== null && existing.entityId !== session.entity.entityId)) {
+      return notFoundResponse(ERR_ROLE_NOT_FOUND, "Role not found.");
     }
-  });
 
-  const updated = await prisma.sysRole.findUniqueOrThrow({
-    where: { roleId },
-    include: {
-      permissions: { select: { permissionCode: true } },
-      _count: { select: { userRoles: true } },
-    },
-  });
+    let body: { name?: string; description?: string; permissions?: string[] };
+    try {
+      body = await req.json();
+    } catch {
+      return badRequestResponse(ERR_INVALID_JSON, "Invalid JSON body.");
+    }
 
-  return successResponse(toClientRole(updated, session.username));
+    const isBuiltin = existing.roleType === "BUILTIN";
+
+    const dataUpdate: Record<string, unknown> = { updUserId: session.id };
+    if (!isBuiltin) {
+      if (body.name !== undefined) dataUpdate.roleName = body.name.trim();
+      if (body.description !== undefined) dataUpdate.remark = body.description.trim() || null;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.sysRole.update({ where: { roleId }, data: dataUpdate });
+
+      if (body.permissions !== undefined) {
+        await tx.sysRolePermission.deleteMany({ where: { roleId } });
+        if (body.permissions.length > 0) {
+          await tx.sysRolePermission.createMany({
+            data: body.permissions.map((code) => ({
+              roleId,
+              permissionCode: code,
+              creUserId: session.id,
+            })),
+          });
+        }
+      }
+    });
+
+    const updated = await prisma.sysRole.findUniqueOrThrow({
+      where: { roleId },
+      include: {
+        permissions: { select: { permissionCode: true } },
+        _count: { select: { userRoles: true } },
+      },
+    });
+
+    return successResponse(toClientRole(updated, session.username));
+  } catch (error) {
+    return internalErrorResponse(error);
+  }
 }
 
 export async function DELETE(
@@ -75,25 +87,29 @@ export async function DELETE(
   const session = await getSession();
   if (!session) return unauthorizedResponse();
 
-  const { roleId: rawId } = await params;
-  const roleId = Number(rawId);
-  if (!Number.isFinite(roleId)) return badRequestResponse("Invalid role ID.");
+  try {
+    const { roleId: rawId } = await params;
+    const roleId = Number(rawId);
+    if (!Number.isFinite(roleId)) return badRequestResponse(ERR_INVALID_ID, "Invalid role ID.");
 
-  const existing = await prisma.sysRole.findUnique({ where: { roleId } });
-  if (!existing || (existing.entityId !== null && existing.entityId !== session.entity.entityId)) {
-    return notFoundResponse("Role not found.");
+    const existing = await prisma.sysRole.findUnique({ where: { roleId } });
+    if (!existing || (existing.entityId !== null && existing.entityId !== session.entity.entityId)) {
+      return notFoundResponse(ERR_ROLE_NOT_FOUND, "Role not found.");
+    }
+
+    if (existing.roleType === "BUILTIN") {
+      return badRequestResponse(ERR_ROLE_DELETE_BUILTIN, "Cannot delete a builtin role.");
+    }
+
+    const assignedCount = await prisma.sysUserRole.count({ where: { roleId } });
+    if (assignedCount > 0) {
+      return badRequestResponse(ERR_ROLE_DELETE_ASSIGNED, `Cannot delete role with ${assignedCount} assigned user(s). Reassign them first.`);
+    }
+
+    await prisma.sysRole.delete({ where: { roleId } });
+
+    return noContentResponse();
+  } catch (error) {
+    return internalErrorResponse(error);
   }
-
-  if (existing.roleType === "BUILTIN") {
-    return badRequestResponse("Cannot delete a builtin role.");
-  }
-
-  const assignedCount = await prisma.sysUserRole.count({ where: { roleId } });
-  if (assignedCount > 0) {
-    return badRequestResponse(`Cannot delete role with ${assignedCount} assigned user(s). Reassign them first.`);
-  }
-
-  await prisma.sysRole.delete({ where: { roleId } });
-
-  return noContentResponse();
 }

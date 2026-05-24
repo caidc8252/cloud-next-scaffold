@@ -12,4 +12,6 @@ export type SuccessBody<T> = {
 
 export type ErrorBody = {
   message: string;
+  code: string;
+  traceId: string;
 };

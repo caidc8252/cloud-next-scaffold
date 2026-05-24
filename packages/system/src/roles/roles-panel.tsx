@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Search, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { toastError } from "@cloud/request/error-toast";
 import { Button, Input, SplitPanel, SplitPanelSidebar, SplitPanelContent } from "@cloud/ui";
 import { request } from "@cloud/request/client";
 import type { Role, User } from "../types";
@@ -40,8 +41,8 @@ export function RolesPanel({ initialRoles, users = [] }: RolesPanelProps) {
       });
       setRoles((prev) => prev.map((r) => (r.id === next.id ? res.data : r)));
       toast.success("Role saved");
-    } catch {
-      toast.error("Failed to save role");
+    } catch (err) {
+      toastError(err);
     }
   }
 
@@ -57,8 +58,8 @@ export function RolesPanel({ initialRoles, users = [] }: RolesPanelProps) {
       setSelectedId(res.data.id);
       setShowNew(false);
       toast.success(`Role "${draft.name}" created`);
-    } catch {
-      toast.error("Failed to create role");
+    } catch (err) {
+      toastError(err);
     }
   }
 
@@ -71,8 +72,8 @@ export function RolesPanel({ initialRoles, users = [] }: RolesPanelProps) {
         return next;
       });
       toast.success("Role deleted");
-    } catch {
-      toast.error("Failed to delete role");
+    } catch (err) {
+      toastError(err);
     }
   }
 
@@ -86,8 +87,8 @@ export function RolesPanel({ initialRoles, users = [] }: RolesPanelProps) {
       setRoles((prev) => [...prev, res.data]);
       setSelectedId(res.data.id);
       toast.success(`Role duplicated as "${r.name} (copy)"`);
-    } catch {
-      toast.error("Failed to duplicate role");
+    } catch (err) {
+      toastError(err);
     }
   }
 
