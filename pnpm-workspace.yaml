@@ -5,6 +5,7 @@ packages:
   - "packages/permissions"
   - "packages/request"
   - "packages/security"
+  - "packages/system"
   - "packages/ui"
 
 catalog:

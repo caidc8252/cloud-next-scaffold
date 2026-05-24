@@ -23,6 +23,7 @@
       "@cloud/request/server": ["./packages/request/src/server.ts"],
       "@cloud/request/client": ["./packages/request/src/client.ts"],
       "@cloud/security/server": ["./packages/security/src/server/index.ts"],
+      "@cloud/system": ["./packages/system/src/index.ts"],
       "@cloud/ui": ["./packages/ui/src/index.ts"],
       "@cloud/ui/*": ["./packages/ui/src/*"]
     }
@@ -37,6 +38,8 @@
     "packages/permissions/src/**/*.ts",
     "packages/request/src/**/*.ts",
     "packages/security/**/*.ts",
+    "packages/system/src/**/*.ts",
+    "packages/system/src/**/*.tsx",
     "packages/ui/src/**/*.ts",
     "packages/ui/src/**/*.tsx"
   ],
