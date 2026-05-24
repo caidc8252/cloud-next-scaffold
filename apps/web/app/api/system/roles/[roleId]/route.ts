@@ -1,0 +1,99 @@
+import { prisma } from "@cloud/db";
+import {
+  successResponse,
+  badRequestResponse,
+  unauthorizedResponse,
+  notFoundResponse,
+  noContentResponse,
+} from "@cloud/request/server";
+import { getSession } from "../../../../../lib/auth";
+import { toClientRole } from "../../../../../lib/role-mapper";
+
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ roleId: string }> },
+) {
+  const session = await getSession();
+  if (!session) return unauthorizedResponse();
+
+  const { roleId: rawId } = await params;
+  const roleId = Number(rawId);
+  if (!Number.isFinite(roleId)) return badRequestResponse("Invalid role ID.");
+
+  const existing = await prisma.sysRole.findUnique({ where: { roleId } });
+  if (!existing || (existing.entityId !== null && existing.entityId !== session.entity.entityId)) {
+    return notFoundResponse("Role not found.");
+  }
+
+  let body: { name?: string; description?: string; permissions?: string[] };
+  try {
+    body = await req.json();
+  } catch {
+    return badRequestResponse("Invalid JSON body.");
+  }
+
+  const isBuiltin = existing.roleType === "BUILTIN";
+
+  const dataUpdate: Record<string, unknown> = { updUserId: session.id };
+  if (!isBuiltin) {
+    if (body.name !== undefined) dataUpdate.roleName = body.name.trim();
+    if (body.description !== undefined) dataUpdate.remark = body.description.trim() || null;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.sysRole.update({ where: { roleId }, data: dataUpdate });
+
+    if (body.permissions !== undefined) {
+      await tx.sysRolePermission.deleteMany({ where: { roleId } });
+      if (body.permissions.length > 0) {
+        await tx.sysRolePermission.createMany({
+          data: body.permissions.map((code) => ({
+            roleId,
+            permissionCode: code,
+            creUserId: session.id,
+          })),
+        });
+      }
+    }
+  });
+
+  const updated = await prisma.sysRole.findUniqueOrThrow({
+    where: { roleId },
+    include: {
+      permissions: { select: { permissionCode: true } },
+      _count: { select: { userRoles: true } },
+    },
+  });
+
+  return successResponse(toClientRole(updated, session.username));
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ roleId: string }> },
+) {
+  const session = await getSession();
+  if (!session) return unauthorizedResponse();
+
+  const { roleId: rawId } = await params;
+  const roleId = Number(rawId);
+  if (!Number.isFinite(roleId)) return badRequestResponse("Invalid role ID.");
+
+  const existing = await prisma.sysRole.findUnique({ where: { roleId } });
+  if (!existing || (existing.entityId !== null && existing.entityId !== session.entity.entityId)) {
+    return notFoundResponse("Role not found.");
+  }
+
+  if (existing.roleType === "BUILTIN") {
+    return badRequestResponse("Cannot delete a builtin role.");
+  }
+
+  const assignedCount = await prisma.sysUserRole.count({ where: { roleId } });
+  if (assignedCount > 0) {
+    return badRequestResponse(`Cannot delete role with ${assignedCount} assigned user(s). Reassign them first.`);
+  }
+
+  await prisma.sysRole.delete({ where: { roleId } });
+
+  return noContentResponse();
+}

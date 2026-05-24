@@ -6,12 +6,11 @@ import type { Role, User } from "../types";
 import { RolesPanel } from "./roles-panel";
 
 type RolesPageProps = {
-  roles?: Role[];
-  setRoles?: (roles: Role[]) => void;
+  initialRoles: Role[];
   users?: User[];
 };
 
-export function RolesPage({ roles, setRoles, users }: RolesPageProps) {
+export function RolesPage({ initialRoles, users }: RolesPageProps) {
   return (
     <div>
       <div className="mb-6">
@@ -30,7 +29,7 @@ export function RolesPage({ roles, setRoles, users }: RolesPageProps) {
             platform-wide notifications, API keys, and global audit.
           </AlertDescription>
         </Alert>
-        <RolesPanel roles={roles} setRoles={setRoles} users={users} />
+        <RolesPanel initialRoles={initialRoles} users={users} />
       </div>
     </div>
   );

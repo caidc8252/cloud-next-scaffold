@@ -2,25 +2,24 @@
 
 import { useState, useMemo } from "react";
 import { Search, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { Button, Input, SplitPanel, SplitPanelSidebar, SplitPanelContent } from "@cloud/ui";
+import { request } from "@cloud/request/client";
 import type { Role, User } from "../types";
-import { SEED_ROLES } from "../mock";
 import { RoleListItem } from "./role-list-item";
 import { RoleEditor } from "./role-editor";
 import { NewRoleModal } from "./new-role-modal";
 
+const API_BASE = "/api/system/roles";
+
 type RolesPanelProps = {
-  roles?: Role[];
-  setRoles?: (roles: Role[]) => void;
+  initialRoles: Role[];
   users?: User[];
 };
 
-export function RolesPanel({ roles: propRoles, setRoles: propSetRoles, users = [] }: RolesPanelProps) {
-  const [localRoles, setLocalRoles] = useState(SEED_ROLES);
-  const roles = propRoles ?? localRoles;
-  const setRoles = propSetRoles ?? setLocalRoles;
-
-  const [selectedId, setSelectedId] = useState<string | null>(roles[0]?.id ?? null);
+export function RolesPanel({ initialRoles, users = [] }: RolesPanelProps) {
+  const [roles, setRoles] = useState<Role[]>(initialRoles);
+  const [selectedId, setSelectedId] = useState<string | null>(initialRoles[0]?.id ?? null);
   const [query, setQuery] = useState("");
   const [showNew, setShowNew] = useState(false);
 
@@ -32,47 +31,64 @@ export function RolesPanel({ roles: propRoles, setRoles: propSetRoles, users = [
 
   const selected = roles.find((r) => r.id === selectedId) ?? null;
 
-  function update(next: Role) {
-    setRoles(roles.map((r) => (r.id === next.id ? { ...next, updatedAt: new Date().toISOString(), updatedBy: "admin@carbon" } : r)));
+  async function update(next: Role) {
+    try {
+      const res = await request.put<Role>(`${API_BASE}/${next.id}`, {
+        name: next.name,
+        description: next.description,
+        permissions: next.permissions,
+      });
+      setRoles((prev) => prev.map((r) => (r.id === next.id ? res.data : r)));
+      toast.success("Role saved");
+    } catch {
+      toast.error("Failed to save role");
+    }
   }
 
-  function createRole(draft: { name: string; description: string; baseId: string | null }) {
+  async function createRole(draft: { name: string; description: string; baseId: string | null }) {
     const base = draft.baseId ? roles.find((r) => r.id === draft.baseId) : null;
-    const newRole: Role = {
-      id: `r-${Math.random().toString(36).slice(2, 7)}`,
-      name: draft.name,
-      description: draft.description,
-      builtin: false,
-      operatorCount: 0,
-      roleType: "global",
-      contractDefineCode: "ADMIN",
-      permissions: base ? [...base.permissions] : [],
-      updatedAt: new Date().toISOString(),
-      updatedBy: "admin@carbon",
-    };
-    setRoles([...roles, newRole]);
-    setSelectedId(newRole.id);
-    setShowNew(false);
+    try {
+      const res = await request.post<Role>(API_BASE, {
+        name: draft.name,
+        description: draft.description,
+        permissions: base ? base.permissions : [],
+      });
+      setRoles((prev) => [...prev, res.data]);
+      setSelectedId(res.data.id);
+      setShowNew(false);
+      toast.success(`Role "${draft.name}" created`);
+    } catch {
+      toast.error("Failed to create role");
+    }
   }
 
-  function deleteRole(id: string) {
-    const next = roles.filter((r) => r.id !== id);
-    setRoles(next);
-    setSelectedId(next[0]?.id ?? null);
+  async function deleteRole(id: string) {
+    try {
+      await request.delete(`${API_BASE}/${id}`);
+      setRoles((prev) => {
+        const next = prev.filter((r) => r.id !== id);
+        setSelectedId(next[0]?.id ?? null);
+        return next;
+      });
+      toast.success("Role deleted");
+    } catch {
+      toast.error("Failed to delete role");
+    }
   }
 
-  function duplicate(r: Role) {
-    const newRole: Role = {
-      ...r,
-      id: `r-${Math.random().toString(36).slice(2, 7)}`,
-      name: `${r.name} (copy)`,
-      builtin: false,
-      operatorCount: 0,
-      updatedAt: new Date().toISOString(),
-      updatedBy: "admin@carbon",
-    };
-    setRoles([...roles, newRole]);
-    setSelectedId(newRole.id);
+  async function duplicate(r: Role) {
+    try {
+      const res = await request.post<Role>(API_BASE, {
+        name: `${r.name} (copy)`,
+        description: r.description,
+        permissions: r.permissions,
+      });
+      setRoles((prev) => [...prev, res.data]);
+      setSelectedId(res.data.id);
+      toast.success(`Role duplicated as "${r.name} (copy)"`);
+    } catch {
+      toast.error("Failed to duplicate role");
+    }
   }
 
   return (
