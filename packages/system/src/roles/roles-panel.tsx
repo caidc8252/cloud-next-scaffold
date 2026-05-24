@@ -78,7 +78,7 @@ export function RolesPanel({ roles: propRoles, setRoles: propSetRoles, users = [
   return (
     <>
       <SplitPanel>
-        <SplitPanelSidebar>
+        <SplitPanelSidebar header={
           <div className="flex gap-2 p-2.5">
             <Input prefix={<Search size={14} />} placeholder="Search roles..." value={query}
               onChange={(e) => setQuery(e.target.value)} inputSize="sm" className="flex-1" />
@@ -86,6 +86,7 @@ export function RolesPanel({ roles: propRoles, setRoles: propSetRoles, users = [
               New role
             </Button>
           </div>
+        }>
           {filtered.map((r) => (
             <RoleListItem key={r.id} role={r} active={r.id === selectedId} onClick={() => setSelectedId(r.id)} />
           ))}

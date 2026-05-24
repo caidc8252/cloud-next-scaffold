@@ -34,19 +34,17 @@ export function SplitPanel({
 }
 
 export interface SplitPanelSidebarProps extends React.HTMLAttributes<HTMLDivElement> {
+  header?: React.ReactNode;
   maxHeight?: string;
 }
 
 export function SplitPanelSidebar({
+  header,
   maxHeight = "calc(100vh - 240px)",
   className,
   children,
   ...props
 }: SplitPanelSidebarProps) {
-  const childArray = React.Children.toArray(children);
-  const header = childArray[0];
-  const list = childArray.slice(1);
-
   return (
     <div
       className={cn(
@@ -62,7 +60,7 @@ export function SplitPanelSidebar({
         className="flex flex-col overflow-auto"
         style={{ maxHeight }}
       >
-        {list}
+        {children}
       </div>
     </div>
   );
