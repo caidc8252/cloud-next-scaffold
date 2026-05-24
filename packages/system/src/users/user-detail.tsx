@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Pencil, Lock, Unlock, KeyRound, UserCog, AlertTriangle } from "lucide-react";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Collapsible, CollapsibleTrigger, CollapsibleContent } from "@cloud/ui";
+import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle, Collapsible, CollapsibleTrigger, CollapsibleContent } from "@cloud/ui";
 import type { Role, User } from "../types";
 import { relTime, fmtDate, fmtDateTime } from "../helpers";
 import { PASSWORD_POLICY } from "../mock/password-policy";
@@ -51,15 +51,15 @@ export function UserDetail({ user, roles, onSave, onResetPassword, onToggleLock 
 
       {/* Locked banner */}
       {isLocked && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-error-bg text-sm text-error">
+        <Alert variant="error">
           <AlertTriangle size={14} />
-          <span>
+          <AlertDescription>
             Account locked — {user.passwordErrorTimes}/{PASSWORD_POLICY.maxErrorTimes} failed attempts.
             {user.passwordErrorLockExpiredTimestamp && (
               <> Auto-unlock at {fmtDateTime(new Date(user.passwordErrorLockExpiredTimestamp).toISOString())}.</>
             )}
-          </span>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Account info */}

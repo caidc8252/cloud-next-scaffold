@@ -56,15 +56,15 @@ export function RoleEditor({ role, users, onSave, onDuplicate, onDelete }: RoleE
         <div className="flex items-start" style={{ gap: 16 }}>
           <div className="flex-1 min-w-0">
             <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              className="font-semibold tracking-tight text-content-primary bg-transparent outline-none w-full"
-              style={{ fontSize: 20, border: "1px solid transparent", padding: "4px 8px", marginLeft: -8, borderRadius: 6, maxWidth: 400 }}
+              className="text-xl font-semibold tracking-tight text-content-primary bg-transparent outline-none w-full"
+              style={{ border: "1px solid transparent", padding: "4px 8px", marginLeft: -8, borderRadius: 6, maxWidth: 400 }}
               disabled={role.builtin} />
-            <div className="flex items-center flex-wrap text-content-tertiary" style={{ gap: 6, fontSize: 12, marginTop: 6 }}>
+            <div className="flex items-center flex-wrap gap-1.5 mt-1.5 text-xs text-content-tertiary">
               <span>{role.operatorCount} operators assigned</span>
               <span style={{ opacity: 0.5 }}>·</span>
               {role.builtin && <Badge variant="outline">SYSTEM</Badge>}
             </div>
-            <div className="text-content-tertiary" style={{ fontSize: 12, marginTop: 2 }}>
+            <div className="text-xs text-content-tertiary mt-0.5">
               Updated {relTime(role.updatedAt)} by {role.updatedBy}
             </div>
           </div>

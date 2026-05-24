@@ -101,7 +101,7 @@ export function PermissionsCard({
                 {isOpen
                   ? <ChevronDown size={14} className="text-content-tertiary mr-2 shrink-0" />
                   : <ChevronRight size={14} className="text-content-tertiary mr-2 shrink-0" />}
-                <span className="flex-1 font-semibold tracking-wide uppercase text-content-secondary" style={{ fontSize: 12.5 }}>{group.menuTitle}</span>
+                <span className="flex-1 text-xs font-semibold tracking-wide uppercase text-content-secondary">{group.menuTitle}</span>
                 <span className="text-xs text-content-tertiary mr-3">{groupGranted}/{group.items.length}</span>
                 {!disabled && (
                   <Button variant="ghost" size="xs" onClick={(e) => { e.stopPropagation(); onToggleGroup(group.menuId, !allGranted); }}>
@@ -116,7 +116,7 @@ export function PermissionsCard({
                       <Switch checked={grantedSet.has(perm.code)} onCheckedChange={() => onTogglePerm(perm.code)}
                         disabled={disabled} size="sm" />
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-content-primary" style={{ fontSize: 13.5 }}>{perm.label}</div>
+                        <div className="text-sm font-medium text-content-primary">{perm.label}</div>
                         <div className="text-xs text-content-tertiary">{perm.desc}</div>
                       </div>
                       <Badge variant="outline" className="shrink-0 font-mono text-xs">{perm.code}</Badge>
