@@ -125,9 +125,14 @@ export function PermissionsCard({
               {isOpen && (
                 <div className="pb-1">
                   {group.items.map((perm) => (
-                    <div key={perm.code} className="flex items-center gap-3 px-5 py-3 border-b border-line-subtle hover:bg-surface-hover">
+                    <div key={perm.code}
+                      role={disabled ? undefined : "button"}
+                      tabIndex={disabled ? undefined : 0}
+                      className={`flex items-center gap-3 px-5 py-3 border-b border-line-subtle hover:bg-surface-hover${disabled ? "" : " cursor-pointer select-none"}`}
+                      onClick={disabled ? undefined : () => onTogglePerm(perm.code)}
+                      onKeyDown={disabled ? undefined : (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onTogglePerm(perm.code); } }}>
                       <Switch checked={grantedSet.has(perm.code)} onCheckedChange={() => onTogglePerm(perm.code)}
-                        disabled={disabled} size="sm" />
+                        disabled={disabled} size="sm" onClick={(e) => e.stopPropagation()} />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-content-primary">{perm.label}</div>
                         <div className="text-xs text-content-tertiary">{perm.desc}</div>

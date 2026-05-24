@@ -10,6 +10,7 @@ import type { Role, User } from "../types";
 import { RoleListItem } from "./role-list-item";
 import { RoleEditor } from "./role-editor";
 import { NewRoleModal } from "./new-role-modal";
+import { DuplicateRoleModal } from "./duplicate-role-modal";
 
 const API_BASE = "/api/system/roles";
 
@@ -23,6 +24,7 @@ export function RolesPanel({ initialRoles, users = [] }: RolesPanelProps) {
   const [selectedId, setSelectedId] = useState<string | null>(initialRoles[0]?.id ?? null);
   const [query, setQuery] = useState("");
   const [showNew, setShowNew] = useState(false);
+  const [duplicateSource, setDuplicateSource] = useState<Role | null>(null);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return roles;
@@ -77,16 +79,17 @@ export function RolesPanel({ initialRoles, users = [] }: RolesPanelProps) {
     }
   }
 
-  async function duplicate(r: Role) {
+  async function duplicate(source: Role, newName: string) {
     try {
       const res = await request.post<Role>(API_BASE, {
-        name: `${r.name} (copy)`,
-        description: r.description,
-        permissions: r.permissions,
+        name: newName,
+        description: source.description,
+        permissions: source.permissions,
       });
       setRoles((prev) => [...prev, res.data]);
       setSelectedId(res.data.id);
-      toast.success(`Role duplicated as "${r.name} (copy)"`);
+      setDuplicateSource(null);
+      toast.success(`Role duplicated as "${newName}"`);
     } catch (err) {
       toastError(err);
     }
@@ -111,11 +114,13 @@ export function RolesPanel({ initialRoles, users = [] }: RolesPanelProps) {
         <SplitPanelContent empty="Select a role to edit">
           {selected ? (
             <RoleEditor role={selected} users={users} onSave={update}
-              onDuplicate={() => duplicate(selected)} onDelete={() => deleteRole(selected.id)} />
+              onDuplicate={() => setDuplicateSource(selected)} onDelete={() => deleteRole(selected.id)} />
           ) : null}
         </SplitPanelContent>
       </SplitPanel>
       <NewRoleModal open={showNew} onClose={() => setShowNew(false)} onCreate={createRole} allRoles={roles} />
+      <DuplicateRoleModal source={duplicateSource} onClose={() => setDuplicateSource(null)}
+        onDuplicate={(name) => duplicateSource && duplicate(duplicateSource, name)} />
     </>
   );
 }

@@ -4,11 +4,14 @@ import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon
 
 // Toast notification container. Place once in the root layout; call toast() anywhere to show a notification.
 // Theme auto-tracks the app's light/dark preference. Accepts all ToasterProps (position, duration, richColors, etc.).
+const TOAST_DURATION = 4_000
+
 const Toaster = ({ ...props }: ToasterProps) => {
   const { preference: theme } = useTheme()
 
   return (
     <Sonner
+      duration={TOAST_DURATION}
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       icons={{
@@ -25,11 +28,12 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-border": "var(--color-line-default)",
           "--border-radius": "var(--radius-lg)",
           "--width":         "340px",
+          "--toast-duration": `${TOAST_DURATION}ms`,
         } as React.CSSProperties
       }
       toastOptions={{
         classNames: {
-          toast:       "cn-toast px-3 py-2.5 gap-2 text-xs shadow-3 font-sans items-start",
+          toast:       "cn-toast cn-toast-countdown px-3 py-2.5 gap-2 text-xs shadow-3 font-sans items-start",
           icon:        "shrink-0 self-start mt-px [&_svg]:size-3.5",
           content:     "gap-0.5",
           title:       "text-xs font-medium text-content-primary leading-snug",

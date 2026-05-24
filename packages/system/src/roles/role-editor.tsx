@@ -56,8 +56,8 @@ export function RoleEditor({ role, users, onSave, onDuplicate, onDelete }: RoleE
         <div className="flex items-start" style={{ gap: 16 }}>
           <div className="flex-1 min-w-0">
             <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              className="text-xl font-semibold tracking-tight text-content-primary bg-transparent outline-none w-full"
-              style={{ border: "1px solid transparent", padding: "4px 8px", marginLeft: -8, borderRadius: 6, maxWidth: 400 }}
+              className="text-xl font-semibold tracking-tight text-content-primary bg-transparent outline-none w-full hover:border-line-default focus:border-primary focus:ring-1 focus:ring-primary/30"
+              style={{ border: "1px solid transparent", padding: "4px 8px", marginLeft: -8, borderRadius: 6, maxWidth: 400, transition: "border-color 0.15s, box-shadow 0.15s" }}
               disabled={role.builtin} />
             <div className="flex items-center flex-wrap gap-1.5 mt-1.5 text-xs text-content-tertiary">
               <span>{role.operatorCount} operators assigned</span>

@@ -129,11 +129,11 @@ export function UsersPage({ initialUsers, initialRoles }: UsersPageProps) {
     }
   }
 
-  const statItems = [
-    { label: "Total", value: stats.total, color: undefined },
-    { label: "Active", value: stats.active, color: "var(--color-success-700)" },
-    { label: "Pending", value: stats.pending, color: stats.pending ? "var(--color-warning-700)" : undefined },
-    { label: "Locked", value: stats.locked, color: stats.locked ? "var(--color-error-700)" : undefined },
+  const statItems: { label: string; value: number; color: string | undefined; filterKey: StatusFilter }[] = [
+    { label: "Total", value: stats.total, color: undefined, filterKey: "all" },
+    { label: "Active", value: stats.active, color: "var(--color-success-700)", filterKey: "active" },
+    { label: "Pending", value: stats.pending, color: stats.pending ? "var(--color-warning-700)" : undefined, filterKey: "pending" },
+    { label: "Locked", value: stats.locked, color: stats.locked ? "var(--color-error-700)" : undefined, filterKey: "locked" },
   ];
 
   return (
@@ -152,35 +152,26 @@ export function UsersPage({ initialUsers, initialRoles }: UsersPageProps) {
         </div>
 
         <div className="grid grid-cols-4 gap-3.5 mb-5">
-          {statItems.map((s) => (
-            <div key={s.label} className="bg-surface-2 border border-line-default rounded-xl shadow-sm px-4 py-4">
-              <div className="text-xs text-content-tertiary">{s.label}</div>
-              <div className="text-2xl font-semibold mt-1 tabular-nums" style={s.color ? { color: s.color } : undefined}>
-                {s.value}
-              </div>
-            </div>
-          ))}
+          {statItems.map((s) => {
+            const isActive = statusFilter === s.filterKey;
+            return (
+              <button key={s.label} type="button"
+                className={`text-left bg-surface-2 border rounded-xl shadow-sm px-4 py-4 transition-colors cursor-pointer ${isActive ? "border-primary ring-1 ring-primary/30" : "border-line-default hover:border-line-hover"}`}
+                onClick={() => setStatusFilter(isActive ? "all" : s.filterKey)}>
+                <div className="text-xs text-content-tertiary">{s.label}</div>
+                <div className="text-2xl font-semibold mt-1 tabular-nums" style={s.color ? { color: s.color } : undefined}>
+                  {s.value}
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         <SplitPanel sidebarWidth={360}>
           <SplitPanelSidebar header={
-            <div className="flex flex-col gap-2 p-2.5">
+            <div className="p-2.5">
               <Input prefix={<Search size={13} />} placeholder="Search by name, login or email…" value={query}
                 onChange={(e) => setQuery(e.target.value)} inputSize="sm" />
-              <div className="flex gap-1 flex-wrap">
-                {([
-                  { key: "all" as const, label: "All", count: stats.total },
-                  { key: "active" as const, label: "Active", count: stats.active },
-                  { key: "pending" as const, label: "Pending", count: stats.pending },
-                  { key: "locked" as const, label: "Locked", count: stats.locked },
-                ] as const).map((f) => (
-                  <button key={f.key} type="button"
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${statusFilter === f.key ? "bg-surface-3 text-content-primary" : "text-content-tertiary hover:text-content-secondary"}`}
-                    onClick={() => setStatusFilter(f.key)}>
-                    {f.label}<span className="text-content-tertiary">{f.count}</span>
-                  </button>
-                ))}
-              </div>
             </div>
           }>
             {filtered.length === 0 && (

@@ -31,4 +31,66 @@
     width: 0.875rem;  /* 14px = size-3.5 */
     height: 0.875rem;
   }
+
+}
+
+/* ─── Toast enhancements (outside @layer for sonner specificity) ─── */
+
+/* Countdown progress bar at the bottom of every toast */
+.cn-toast.cn-toast-countdown {
+  position: relative;
+  overflow: hidden !important;
+}
+
+.cn-toast.cn-toast-countdown::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--color-primary-400);
+  transform-origin: left;
+  animation: toast-countdown var(--toast-duration, 4000ms) linear forwards;
+  z-index: 1;
+}
+
+/* Pause countdown when hovering — syncs with sonner's built-in hover pause */
+.cn-toast.cn-toast-countdown:hover::after {
+  animation-play-state: paused;
+}
+
+@keyframes toast-countdown {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+/* Error toast: hover-to-show copy button pinned to toast top-right */
+.cn-toast .cn-error-toast-copy {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--color-content-secondary);
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-line-default);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 2;
+}
+
+.cn-toast:hover .cn-error-toast-copy {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cn-error-toast-copy:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-content-primary);
 }
