@@ -23,7 +23,7 @@ export function fmtDate(iso: string): string {
   });
 }
 
-export function fmtDateTime(iso: string): string {
+export function fmtDateTime(iso: string | number): string {
   return new Date(iso).toLocaleString("en-US", {
     month: "short",
     day: "numeric",

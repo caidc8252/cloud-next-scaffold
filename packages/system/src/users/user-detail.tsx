@@ -1,154 +1,393 @@
 "use client";
 
-import { useState } from "react";
-import { Pencil, Lock, Unlock, KeyRound, UserCog, AlertTriangle } from "lucide-react";
-import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle, Collapsible, CollapsibleTrigger, CollapsibleContent } from "@cloud/ui";
-import type { Role, User } from "../types";
-import { relTime, fmtDate, fmtDateTime } from "../helpers";
+import { useState, useMemo } from "react";
+import { User, Mail, Globe, Clock, Check, ChevronDown, Shield, KeyRound, Copy, Lock, Unlock, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle, Field, Input, Modal, Switch, Textarea } from "@cloud/ui";
+import type { Role, User as UserType, PasswordResetRequest } from "../types";
+import { relTime, fmtDate, fmtDateTime, initials } from "../helpers";
 import { PASSWORD_POLICY } from "../mock/password-policy";
-import { EditUserModal } from "./edit-user-modal";
-import { ResetPasswordModal } from "./reset-password-modal";
-import { ChangeRoleModal } from "./change-role-modal";
+import { SEED_ROLES } from "../mock/seed-roles";
 
 type UserDetailProps = {
-  user: User; roles: Role[];
-  onSave: (u: User) => void; onResetPassword: () => void; onToggleLock: () => void;
+  user: UserType;
+  users: UserType[];
+  roles: Role[];
+  onSave: (u: UserType) => void;
+  onResetPassword: () => void;
+  onToggleLock: () => void;
 };
 
-const STATUS_TONE = { ACTIVE: "success", LOCKED: "error", PENDING: "warning" } as const;
+function avatarGradient(locked: boolean): string {
+  if (locked) return "linear-gradient(135deg, oklch(70% 0.13 25), oklch(58% 0.16 25))";
+  return "linear-gradient(135deg, var(--color-primary-500), var(--color-accent-600))";
+}
 
-export function UserDetail({ user, roles, onSave, onResetPassword, onToggleLock }: UserDetailProps) {
-  const [showEdit, setShowEdit] = useState(false);
-  const [showReset, setShowReset] = useState(false);
-  const [showRole, setShowRole] = useState(false);
+export function UserDetail({ user, users, roles, onSave, onResetPassword, onToggleLock }: UserDetailProps) {
+  const [draft, setDraft] = useState(user);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmLock, setConfirmLock] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [policyOpen, setPolicyOpen] = useState(false);
+
+  const [prevId, setPrevId] = useState(user.id);
+  if (user.id !== prevId) {
+    setPrevId(user.id);
+    setDraft(user);
+  }
+
+  const dirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify(user), [draft, user]);
+  const locked = user.status === "LOCKED";
+  const lockedUntil = user.passwordErrorLockExpiredTimestamp;
+  const displayInitials = initials(user.displayName || user.loginName);
 
   const [now] = useState(Date.now);
-  const pwAgeDays = user.passwordChangedTimestamp ? Math.floor((now - user.passwordChangedTimestamp) / 86_400_000) : null;
+  const pwAgeDays = draft.passwordChangedTimestamp ? Math.floor((now - draft.passwordChangedTimestamp) / 86_400_000) : null;
   const pwExpired = pwAgeDays !== null && pwAgeDays >= PASSWORD_POLICY.expiryDays;
-  const userRoles = roles.filter((r) => user.roleIds.includes(r.id));
-  const isLocked = user.status === "LOCKED";
+
+  const adminRoles = SEED_ROLES.filter((r) => r.contractDefineCode === "ADMIN" && r.roleType === "global");
+  const assignedRoles = adminRoles.filter((r) => (draft.roleIds ?? []).includes(r.id));
+
+  function toggleRole(roleId: string) {
+    const ids = draft.roleIds.includes(roleId) ? draft.roleIds.filter((id) => id !== roleId) : [...draft.roleIds, roleId];
+    setDraft({ ...draft, roleIds: ids });
+  }
+
+  function save() { onSave(draft); }
+
+  const reqs = user.passwordResetRequests ?? [];
+  const latestReq = reqs[0] ?? null;
 
   return (
-    <div className="p-6 space-y-5">
+    <div>
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-semibold text-content-primary">{user.displayName || user.loginName}</h2>
-            <Badge tone={STATUS_TONE[user.status]}>{user.status}</Badge>
-          </div>
-          <div className="text-sm text-content-tertiary mt-0.5">@{user.loginName}</div>
+      <div className="flex items-start gap-4 border-b border-line-subtle" style={{ padding: "18px 22px" }}>
+        <div className="shrink-0 grid place-items-center text-white font-semibold text-xl"
+          style={{ width: 56, height: 56, borderRadius: 12, background: avatarGradient(locked), letterSpacing: "-0.02em" }}>
+          {displayInitials}
         </div>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" iconLeft={<Pencil size={14} />} onClick={() => setShowEdit(true)}>Edit</Button>
-          <Button variant={isLocked ? "ghost" : "ghost-danger"} size="sm"
-            iconLeft={isLocked ? <Unlock size={14} /> : <Lock size={14} />} onClick={onToggleLock}>
-            {isLocked ? "Unlock" : "Lock"}
-          </Button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <input value={draft.displayName} onChange={(e) => setDraft({ ...draft, displayName: e.target.value })}
+              className="text-xl font-semibold tracking-tight text-content-primary bg-transparent outline-none"
+              style={{ border: "1px solid transparent", padding: "4px 8px", marginLeft: -8, borderRadius: 6, maxWidth: 400 }} />
+            <span className="font-mono font-semibold uppercase shrink-0"
+              style={{ fontSize: 9.5, letterSpacing: "0.06em", padding: "1px 5px", borderRadius: 3, border: "1px solid",
+                ...(locked
+                  ? { color: "var(--color-error-700)", background: "var(--color-error-50)", borderColor: "oklch(70% 0.16 25 / 0.25)" }
+                  : { color: "var(--color-success-700)", background: "var(--color-success-50)", borderColor: "oklch(58% 0.14 152 / 0.25)" }),
+              }}>
+              {user.status}
+            </span>
+            {draft.authorizingType === "ADMIN" && <Badge variant="outline" title="Implicit admin — bypasses role checks">ADMIN</Badge>}
+          </div>
+          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-xs text-content-tertiary mt-1.5">
+            <span className="inline-flex items-center gap-1.5"><User size={12} /> @{user.loginName}</span>
+            <span className="inline-flex items-center gap-1.5"><Mail size={12} /> {user.email}</span>
+            <span className="inline-flex items-center gap-1.5"><Globe size={12} /> {user.country}</span>
+            {user.lastLoginAt && <span className="inline-flex items-center gap-1.5"><Clock size={12} /> Last login {relTime(user.lastLoginAt)}</span>}
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Button variant="ghost" size="sm" iconLeft={<KeyRound size={14} />} onClick={() => setConfirmReset(true)}>Reset password</Button>
+          <Button variant={locked ? "primary" : "ghost"} size="sm" iconLeft={<Shield size={14} />}
+            onClick={() => setConfirmLock(true)}>{locked ? "Unlock" : "Lock"}</Button>
+          <Button variant="primary" size="sm" disabled={!dirty} onClick={save}
+            iconLeft={dirty ? undefined : <Check size={14} />}>{dirty ? "Save changes" : "Saved"}</Button>
         </div>
       </div>
 
-      {/* Locked banner */}
-      {isLocked && (
-        <Alert variant="error">
-          <AlertTriangle size={14} />
-          <AlertDescription>
-            Account locked — {user.passwordErrorTimes}/{PASSWORD_POLICY.maxErrorTimes} failed attempts.
-            {user.passwordErrorLockExpiredTimestamp && (
-              <> Auto-unlock at {fmtDateTime(new Date(user.passwordErrorLockExpiredTimestamp).toISOString())}.</>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* Body */}
+      <div className="flex flex-col gap-4" style={{ padding: "18px 22px 24px" }}>
+        {/* Locked banner */}
+        {locked && lockedUntil && (
+          <Alert variant="error">
+            <AlertTriangle size={14} />
+            <AlertDescription>
+              <strong>Account locked</strong> — {user.passwordErrorTimes >= PASSWORD_POLICY.maxErrorTimes
+                ? `${user.passwordErrorTimes} consecutive failed login attempts triggered an auto-lock.`
+                : "Account locked by administrator."}
+              {" "}Auto-unlocks at <strong>{fmtDateTime(lockedUntil)}</strong> ({relTime(new Date(lockedUntil).toISOString())}).
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {/* Account info */}
-      <Card>
-        <CardHeader><CardTitle>Account Information</CardTitle></CardHeader>
-        <CardContent>
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-            <div><dt className="text-content-tertiary">Login name</dt><dd className="text-content-primary font-medium">{user.loginName}</dd></div>
-            <div><dt className="text-content-tertiary">Email</dt><dd className="text-content-primary">{user.email || "—"}</dd></div>
-            <div><dt className="text-content-tertiary">Country</dt><dd className="text-content-primary">{user.country || "—"}</dd></div>
-            <div><dt className="text-content-tertiary">Auth type</dt><dd className="text-content-primary">{user.authorizingType}</dd></div>
-            <div><dt className="text-content-tertiary">Created</dt><dd className="text-content-primary">{fmtDate(user.createdAt)}</dd></div>
-            <div><dt className="text-content-tertiary">Remark</dt><dd className="text-content-primary">{user.remark || "—"}</dd></div>
-          </dl>
-        </CardContent>
-      </Card>
+        {/* Password state */}
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Password state</CardTitle>
+              <p className="text-xs text-content-tertiary mt-0.5">Enforcement is governed by the platform-wide password policy (below).</p>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-2.5">
+              <StatCell label="Password age" value={pwAgeDays !== null ? `${pwAgeDays}d` : "—"}
+                sub={pwExpired ? `Expired ${pwAgeDays! - PASSWORD_POLICY.expiryDays}d ago` : `expires in ${PASSWORD_POLICY.expiryDays - (pwAgeDays ?? 0)}d`}
+                tone={pwExpired ? "danger" : pwAgeDays !== null && pwAgeDays >= PASSWORD_POLICY.expiryDays - 14 ? "warn" : "ok"} />
+              <StatCell label="Failed attempts"
+                value={<>{user.passwordErrorTimes}<span className="text-xs text-content-tertiary font-medium"> / {PASSWORD_POLICY.maxErrorTimes}</span></>}
+                sub={`auto-lock at ${PASSWORD_POLICY.maxErrorTimes}`}
+                tone={user.passwordErrorTimes >= 3 ? "danger" : user.passwordErrorTimes > 0 ? "warn" : "ok"} />
+              <StatCell label="Changed" value={String(user.passwordChangeTimes)} sub="total resets" />
+              <StatCell label="History size"
+                value={<>{(user.passwordHistory ?? []).length}<span className="text-xs text-content-tertiary font-medium"> / {PASSWORD_POLICY.historySize}</span></>}
+                sub="last hashes kept" />
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Password & security */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between w-full">
-            <CardTitle>Password & Security</CardTitle>
-            <Button variant="ghost" size="sm" iconLeft={<KeyRound size={14} />} onClick={() => setShowReset(true)}>Reset password</Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-            <div><dt className="text-content-tertiary">Password age</dt>
-              <dd className={pwExpired ? "text-error font-medium" : "text-content-primary"}>
-                {pwAgeDays !== null ? `${pwAgeDays} days` : "—"}{pwExpired && " (EXPIRED)"}
-              </dd></div>
-            <div><dt className="text-content-tertiary">Last changed</dt>
-              <dd className="text-content-primary">{user.passwordUpdatedAt ? relTime(user.passwordUpdatedAt) : "—"}</dd></div>
-            <div><dt className="text-content-tertiary">Failed attempts</dt>
-              <dd className={user.passwordErrorTimes > 0 ? "text-warning font-medium" : "text-content-primary"}>
-                {user.passwordErrorTimes} / {PASSWORD_POLICY.maxErrorTimes}
-              </dd></div>
-            <div><dt className="text-content-tertiary">Password changes</dt>
-              <dd className="text-content-primary">{user.passwordChangeTimes}</dd></div>
-          </dl>
-        </CardContent>
-      </Card>
+        {/* Profile */}
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Profile</CardTitle>
+              <p className="text-xs text-content-tertiary mt-0.5">Only the remark is editable here.</p>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Login name" hint="Set at registration. Cannot be changed.">
+                <Input value={draft.loginName} disabled readOnly />
+              </Field>
+              <Field label="Email" hint="Verified during onboarding. Cannot be changed.">
+                <Input value={draft.email} disabled readOnly />
+              </Field>
+              <Field label="Country" hint="Set at registration. Cannot be changed.">
+                <Input value={draft.country} disabled readOnly />
+              </Field>
+              <Field label="Authorizing type" hint="Fixed at account creation.">
+                <Input value={draft.authorizingType === "ADMIN" ? "ADMIN — full access" : "NORMAL — permissions via role"} disabled readOnly />
+              </Field>
+              <div className="col-span-2">
+                <Field label="Remark" hint="Internal note. Visible only to platform admins.">
+                  <Textarea rows={3} value={draft.remark} onChange={(e) => setDraft({ ...draft, remark: e.target.value })}
+                    placeholder="Optional notes about this user." />
+                </Field>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Roles */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between w-full">
-            <CardTitle>Roles</CardTitle>
-            <Button variant="ghost" size="sm" iconLeft={<UserCog size={14} />} onClick={() => setShowRole(true)}>Change role</Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {userRoles.map((r) => <Badge key={r.id} variant="secondary">{r.name}</Badge>)}
-            {userRoles.length === 0 && <span className="text-sm text-content-tertiary">No roles assigned</span>}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Password history */}
-      {user.passwordHistory.length > 0 && (
-        <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
-          <Card>
-            <CardHeader>
-              <CollapsibleTrigger className="flex items-center justify-between w-full">
-                <CardTitle>Password History ({user.passwordHistory.length})</CardTitle>
-                <span className="text-xs text-content-tertiary">{historyOpen ? "Hide" : "Show"}</span>
-              </CollapsibleTrigger>
-            </CardHeader>
-            <CollapsibleContent>
-              <CardContent>
-                <div className="space-y-1.5">
-                  {user.passwordHistory.map((h) => (
-                    <div key={h.hashId} className="flex items-center justify-between text-sm">
-                      <code className="text-xs font-mono text-content-tertiary">{h.hashId}</code>
-                      <span className="text-content-tertiary">{relTime(h.changedAt)}</span>
+        {/* Roles */}
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Roles</CardTitle>
+              <p className="text-xs text-content-tertiary mt-0.5">
+                {assignedRoles.length} of {adminRoles.length} assigned
+                {draft.authorizingType === "ADMIN" && <span className="text-warning"> · ADMIN type bypasses role checks anyway.</span>}
+              </p>
+            </div>
+          </CardHeader>
+          <div>
+            {adminRoles.map((r) => {
+              const on = draft.roleIds.includes(r.id);
+              const usersWithRole = users.filter((u) => (u.roleIds ?? []).includes(r.id));
+              return (
+                <div key={r.id} className="flex items-center gap-2.5 px-5 py-3 border-b border-line-subtle last:border-b-0">
+                  <Switch checked={on} onCheckedChange={() => toggleRole(r.id)} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-content-primary flex items-center gap-2">
+                      {r.name}
+                      {r.builtin && <Badge variant="outline">SYSTEM</Badge>}
                     </div>
-                  ))}
+                    <div className="text-xs text-content-tertiary mt-0.5">{r.description} · {r.permissions.length} perms</div>
+                  </div>
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-surface-3 border border-line-subtle text-content-secondary text-xs font-semibold shrink-0">
+                    <User size={11} /> {usersWithRole.length}
+                  </span>
                 </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
+              );
+            })}
+          </div>
+        </Card>
+
+        {/* Password history */}
+        <Card>
+          <button type="button" className="flex items-center justify-between w-full px-5 py-3.5 text-left hover:bg-surface-3 transition-colors"
+            onClick={() => setHistoryOpen(!historyOpen)}>
+            <div>
+              <div className="text-sm font-semibold">Password history</div>
+              <p className="text-xs text-content-tertiary mt-0.5">
+                Last {PASSWORD_POLICY.historySize} password hashes — none of these may be re-used.
+              </p>
+            </div>
+            <ChevronDown size={14} className={`text-content-tertiary transition-transform ${historyOpen ? "rotate-180" : ""}`} />
+          </button>
+          {historyOpen && (
+            <div className="text-xs">
+              {(user.passwordHistory ?? []).length === 0 && (
+                <div className="px-4 py-6 text-center text-sm text-content-tertiary">No history yet.</div>
+              )}
+              {(user.passwordHistory ?? []).map((h, i) => (
+                <div key={h.hashId} className="grid items-center border-b border-line-subtle last:border-b-0"
+                  style={{ gridTemplateColumns: "24px 1fr auto", gap: 10, padding: "10px 14px" }}>
+                  <div className="mx-auto rounded-full"
+                    style={{ width: 8, height: 8, background: i === 0 ? "var(--color-success-700)" : "var(--color-content-tertiary)" }} />
+                  <div>
+                    <div className="font-mono font-medium text-xs text-content-primary">{fmtDate(h.changedAt)}</div>
+                    <div className="text-xs text-content-tertiary tabular-nums">{i === 0 ? "current" : relTime(h.changedAt)}</div>
+                  </div>
+                  <code className="text-xs text-content-tertiary">#{h.hashId}</code>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* Password policy */}
+        <Card>
+          <button type="button" className="flex items-center justify-between w-full px-5 py-3.5 text-left hover:bg-surface-3 transition-colors"
+            onClick={() => setPolicyOpen(!policyOpen)}>
+            <div>
+              <div className="text-sm font-semibold">Password policy</div>
+              <p className="text-xs text-content-tertiary mt-0.5">Platform-wide. Edit in System → Settings → Security.</p>
+            </div>
+            <ChevronDown size={14} className={`text-content-tertiary transition-transform ${policyOpen ? "rotate-180" : ""}`} />
+          </button>
+          {policyOpen && (
+            <div className="flex flex-col">
+              <PolicyRow icon={<Check size={13} />} name="Length" desc={`Minimum ${PASSWORD_POLICY.minLength} characters`} val={`≥ ${PASSWORD_POLICY.minLength}`} />
+              <PolicyRow icon={<Shield size={13} />} name="Character set" desc="Must contain upper, lower, digit and symbol" val="ABC · abc · 0-9 · @#" />
+              <PolicyRow icon={<AlertTriangle size={13} />} name="Lockout" desc={`After ${PASSWORD_POLICY.maxErrorTimes} consecutive failed attempts, lock for ${PASSWORD_POLICY.lockDurationMinutes}m`} val={`${PASSWORD_POLICY.maxErrorTimes} · ${PASSWORD_POLICY.lockDurationMinutes}m`} />
+              <PolicyRow icon={<Clock size={13} />} name="Expiry" desc={`Force password change every ${PASSWORD_POLICY.expiryDays} days`} val={`${PASSWORD_POLICY.expiryDays}d`} />
+              <PolicyRow icon={<Copy size={13} />} name="History" desc={`Last ${PASSWORD_POLICY.historySize} passwords cannot be reused`} val={`${PASSWORD_POLICY.historySize}`} />
+            </div>
+          )}
+        </Card>
+
+        {/* Most recent password reset */}
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Most recent password reset</CardTitle>
+              <p className="text-xs text-content-tertiary mt-0.5">Reset links are sent to the user's email and are valid for 72 hours.</p>
+            </div>
+          </CardHeader>
+          {latestReq ? <ResetRecord req={latestReq} email={user.email} /> : (
+            <div className="px-4 py-6 text-center text-sm text-content-tertiary">No reset requests on record for this account.</div>
+          )}
+        </Card>
+      </div>
+
+      {/* Confirm reset modal */}
+      {confirmReset && (
+        <ConfirmModal open={confirmReset} onClose={() => setConfirmReset(false)} title="Send password reset link?"
+          onConfirm={() => { setConfirmReset(false); onResetPassword(); }} confirmLabel="Send reset link" confirmVariant="primary">
+          <p className="text-sm text-content-secondary">
+            A password-reset link will be emailed to <strong>{user.email}</strong>.
+          </p>
+          <ul className="mt-3 pl-4 text-sm text-content-secondary list-disc space-y-1">
+            <li>Valid for <strong>72 hours</strong></li>
+            <li>Single use — link expires once {user.displayName} sets the new password</li>
+            <li>They'll be asked to enter the new password twice for confirmation</li>
+            <li>Any earlier pending reset link for this account will be invalidated</li>
+          </ul>
+        </ConfirmModal>
       )}
 
-      {/* Modals */}
-      <EditUserModal open={showEdit} onClose={() => setShowEdit(false)} user={user} onSave={onSave} />
-      <ResetPasswordModal open={showReset} onClose={() => setShowReset(false)} user={user} onConfirm={onResetPassword} />
-      <ChangeRoleModal open={showRole} onClose={() => setShowRole(false)} user={user} roles={roles} onSave={onSave} />
+      {/* Confirm lock modal */}
+      {confirmLock && (
+        <ConfirmModal open={confirmLock} onClose={() => setConfirmLock(false)}
+          title={locked ? "Unlock account?" : "Lock account?"}
+          onConfirm={() => { setConfirmLock(false); onToggleLock(); }}
+          confirmLabel={locked ? "Unlock" : "Lock account"}
+          confirmVariant={locked ? "primary" : "destructive"}>
+          <p className="text-sm text-content-secondary">
+            {locked
+              ? <>Unlock <strong>{user.displayName}</strong> — they will be able to log in immediately. Failed-attempt counter resets.</>
+              : <>Locks <strong>{user.displayName}</strong> for {PASSWORD_POLICY.lockDurationMinutes} minutes. Active sessions are revoked.</>}
+          </p>
+        </ConfirmModal>
+      )}
     </div>
+  );
+}
+
+// ── Sub-components (file-private) ──
+
+function StatCell({ label, value, sub, tone }: {
+  label: string; value: React.ReactNode; sub: string; tone?: "ok" | "warn" | "danger";
+}) {
+  const valColor = tone === "danger" ? "var(--color-error-700)" : tone === "warn" ? "var(--color-warning-700)" : tone === "ok" ? "var(--color-success-700)" : undefined;
+  return (
+    <div className="bg-surface-3 border border-line-subtle rounded-lg px-3.5 py-3">
+      <div className="text-xs font-medium uppercase tracking-wide text-content-tertiary" style={{ fontSize: 10.5 }}>{label}</div>
+      <div className="text-lg font-semibold mt-1 tabular-nums" style={valColor ? { color: valColor } : undefined}>{value}</div>
+      <div className="text-xs text-content-tertiary mt-0.5">{sub}</div>
+    </div>
+  );
+}
+
+function PolicyRow({ icon, name, desc, val }: { icon: React.ReactNode; name: string; desc: string; val: string }) {
+  return (
+    <div className="flex items-start gap-3 px-4 py-3 border-b border-line-subtle last:border-b-0">
+      <div className="grid place-items-center shrink-0 bg-surface-3 text-content-secondary" style={{ width: 28, height: 28, borderRadius: 8 }}>
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-semibold text-content-primary">{name}</div>
+        <div className="text-xs text-content-tertiary mt-0.5">{desc}</div>
+      </div>
+      <span className="text-xs font-semibold font-mono shrink-0 px-2.5 py-1 rounded-md"
+        style={{ color: "var(--color-primary-700)", background: "var(--color-primary-50)", border: "1px solid oklch(60% 0.14 262 / 0.2)" }}>
+        {val}
+      </span>
+    </div>
+  );
+}
+
+function ResetRecord({ req, email }: { req: PasswordResetRequest; email: string }) {
+  const effectiveStatus = req.status === "pending" && new Date(req.expiresAt).getTime() < Date.now() ? "expired" : req.status;
+  const statusStyle = {
+    pending: { color: "var(--color-warning-700)", background: "var(--color-warning-50)", borderColor: "oklch(75% 0.14 75 / 0.3)" },
+    consumed: { color: "var(--color-success-700)", background: "var(--color-success-50)", borderColor: "oklch(58% 0.14 152 / 0.25)" },
+    expired: { color: "var(--color-content-tertiary)", background: "var(--color-surface-3)", borderColor: "var(--color-line-subtle)" },
+    superseded: { color: "var(--color-content-tertiary)", background: "var(--color-surface-3)", borderColor: "var(--color-line-subtle)" },
+  }[effectiveStatus];
+  const statusLabel = { pending: "Pending", consumed: "Consumed", expired: "Expired", superseded: "Superseded" }[effectiveStatus];
+
+  return (
+    <div className="flex gap-3.5 px-5 py-4">
+      <div className="grid place-items-center shrink-0"
+        style={{ width: 36, height: 36, borderRadius: 10, background: "var(--color-info-50)", color: "var(--color-info-700)", border: "1px solid oklch(60% 0.14 230 / 0.25)" }}>
+        <Mail size={16} />
+      </div>
+      <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+        <div className="flex items-center gap-2.5">
+          <span className="text-sm text-content-primary flex-1">Reset link sent to <strong>{email}</strong></span>
+          <span className="font-mono font-semibold uppercase shrink-0"
+            style={{ fontSize: 10, letterSpacing: "0.06em", padding: "3px 8px", borderRadius: 999, border: "1px solid", ...statusStyle }}>
+            {statusLabel}
+          </span>
+        </div>
+        <div className="text-xs text-content-secondary flex items-center gap-1.5 flex-wrap">
+          <span>Requested by <strong className="text-content-primary">{req.requestedBy}</strong></span>
+          <span className="text-content-tertiary">·</span>
+          <span>{relTime(req.requestedAt)} ({fmtDateTime(req.requestedAt)})</span>
+        </div>
+        <div className="text-xs text-content-secondary">
+          {effectiveStatus === "pending" && <>Expires <strong>{relTime(req.expiresAt)}</strong> · Valid for 72h, single-use</>}
+          {effectiveStatus === "consumed" && "User has set a new password."}
+          {effectiveStatus === "expired" && "Link expired without use — admin may issue a new one."}
+          {effectiveStatus === "superseded" && "This link was invalidated when a newer reset was triggered."}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmModal({ open, onClose, title, onConfirm, confirmLabel, confirmVariant, children }: {
+  open: boolean; onClose: () => void; title: string; onConfirm: () => void;
+  confirmLabel: string; confirmVariant: "primary" | "destructive"; children: React.ReactNode;
+}) {
+  return (
+    <Modal open={open} onClose={onClose} title={title}
+      footer={<div className="flex gap-2 justify-end">
+        <Button variant="ghost" onClick={onClose}>Cancel</Button>
+        <Button variant={confirmVariant} onClick={onConfirm}>{confirmLabel}</Button>
+      </div>}>
+      {children}
+    </Modal>
   );
 }
