@@ -57,5 +57,5 @@ export default async function SystemUsersPage() {
     loadUsers(entityId),
     loadRoles(entityId),
   ]);
-  return <UsersPage initialUsers={initialUsers} initialRoles={initialRoles} />;
+  return <UsersPage initialUsers={initialUsers} initialRoles={initialRoles} currentUserId={String(session.id)} />;
 }

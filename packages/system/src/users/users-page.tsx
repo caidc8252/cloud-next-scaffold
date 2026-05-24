@@ -14,10 +14,10 @@ import { NewUserModal } from "./new-user-modal";
 
 const API = "/api/system/users";
 
-type UsersPageProps = { initialUsers: User[]; initialRoles: Role[] };
+type UsersPageProps = { initialUsers: User[]; initialRoles: Role[]; currentUserId: string };
 type StatusFilter = "all" | "active" | "inactive" | "pending";
 
-export function UsersPage({ initialUsers, initialRoles }: UsersPageProps) {
+export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPageProps) {
   const [users, setUsers] = useState(initialUsers);
   const roles = initialRoles;
 
@@ -192,7 +192,7 @@ export function UsersPage({ initialUsers, initialRoles }: UsersPageProps) {
                 <PendingInviteDetail user={selected} roles={roles}
                   onResend={() => resendInvite(selected)} onCancel={() => requestCancel(selected.id)} onSave={update} />
               ) : (
-                <UserDetail user={selected} users={users} roles={roles} onSave={update}
+                <UserDetail user={selected} users={users} roles={roles} currentUserId={currentUserId} onSave={update}
                   onResetPassword={() => resetPassword(selected)} onToggleLock={() => toggleLock(selected)} />
               )
             ) : null}

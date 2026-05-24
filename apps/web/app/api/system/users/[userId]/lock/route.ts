@@ -6,7 +6,7 @@ import {
   notFoundResponse,
   internalErrorResponse,
 } from "@cloud/request/server";
-import { ERR_INVALID_ID, ERR_USER_NOT_FOUND } from "@cloud/request/error-codes";
+import { ERR_INVALID_ID, ERR_USER_NOT_FOUND, ERR_USER_PROTECTED } from "@cloud/request/error-codes";
 import { getSession } from "../../../../../../lib/auth";
 import { toClientUser, USER_INCLUDE } from "../../../../../../lib/user-mapper";
 
@@ -31,6 +31,10 @@ export async function POST(
       where: { entityId_userId: { entityId, userId } },
     });
     if (!link) return notFoundResponse(ERR_USER_NOT_FOUND, "User not found in this entity.");
+
+    if (link.authorizingType === "ADMIN") {
+      return badRequestResponse(ERR_USER_PROTECTED, "Cannot disable an ADMIN user.");
+    }
 
     // Toggle entity-user status
     const newStatus = link.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";

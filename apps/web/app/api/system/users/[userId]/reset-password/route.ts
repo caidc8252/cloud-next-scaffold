@@ -7,7 +7,7 @@ import {
   notFoundResponse,
   internalErrorResponse,
 } from "@cloud/request/server";
-import { ERR_INVALID_ID, ERR_USER_NOT_FOUND, ERR_USER_RESET_PW_PENDING } from "@cloud/request/error-codes";
+import { ERR_INVALID_ID, ERR_USER_NOT_FOUND, ERR_USER_RESET_PW_PENDING, ERR_USER_PROTECTED } from "@cloud/request/error-codes";
 import { getSession } from "../../../../../../lib/auth";
 import { toClientUser, USER_INCLUDE } from "../../../../../../lib/user-mapper";
 
@@ -28,6 +28,10 @@ export async function POST(
       where: { entityId_userId: { entityId, userId } },
     });
     if (!link || link.status !== "ACTIVE") return notFoundResponse(ERR_USER_NOT_FOUND, "User not found.");
+
+    if (userId === session.id || link.authorizingType === "ADMIN") {
+      return badRequestResponse(ERR_USER_PROTECTED, "Cannot reset password for this user.");
+    }
 
     const user = await prisma.sysUser.findUniqueOrThrow({ where: { userId } });
     if (user.status === "PENDING") {

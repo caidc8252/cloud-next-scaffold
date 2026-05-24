@@ -6,15 +6,14 @@ import {
   notFoundResponse,
   internalErrorResponse,
 } from "@cloud/request/server";
-import { ERR_INVALID_ID, ERR_INVALID_JSON, ERR_USER_NOT_FOUND } from "@cloud/request/error-codes";
+import { ERR_INVALID_ID, ERR_INVALID_JSON, ERR_USER_NOT_FOUND, ERR_USER_PROTECTED } from "@cloud/request/error-codes";
 import { getSession } from "../../../../../lib/auth";
 import { toClientUser, USER_INCLUDE } from "../../../../../lib/user-mapper";
 
 async function findUserInEntity(userId: number, entityId: number) {
-  const link = await prisma.sysEntityUser.findUnique({
+  return prisma.sysEntityUser.findUnique({
     where: { entityId_userId: { entityId, userId } },
   });
-  return link?.status === "ACTIVE" ? link : null;
 }
 
 export async function PUT(
@@ -30,13 +29,21 @@ export async function PUT(
     if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID, "Invalid user ID.");
 
     const entityId = session.entity.entityId;
-    if (!await findUserInEntity(userId, entityId)) return notFoundResponse(ERR_USER_NOT_FOUND, "User not found.");
+    const link = await findUserInEntity(userId, entityId);
+    if (!link) return notFoundResponse(ERR_USER_NOT_FOUND, "User not found.");
+
+    const isProtected = userId === session.id || link.authorizingType === "ADMIN";
 
     let body: { displayName?: string; remark?: string; roleIds?: string[] };
     try {
       body = await req.json();
     } catch {
       return badRequestResponse(ERR_INVALID_JSON, "Invalid JSON body.");
+    }
+
+    // Protected users can only have remark updated
+    if (isProtected && (body.displayName !== undefined || body.roleIds !== undefined)) {
+      return badRequestResponse(ERR_USER_PROTECTED, "This user can only have remark updated.");
     }
 
     await prisma.$transaction(async (tx) => {

@@ -11,6 +11,7 @@ type UserDetailProps = {
   user: UserType;
   users: UserType[];
   roles: Role[];
+  currentUserId: string;
   onSave: (u: UserType) => void;
   onResetPassword: () => void;
   onToggleLock: () => void;
@@ -21,7 +22,7 @@ function avatarGradient(locked: boolean): string {
   return "linear-gradient(135deg, var(--color-primary-500), var(--color-accent-600))";
 }
 
-export function UserDetail({ user, users, roles, onSave, onResetPassword, onToggleLock }: UserDetailProps) {
+export function UserDetail({ user, users, roles, currentUserId, onSave, onResetPassword, onToggleLock }: UserDetailProps) {
   const [draft, setDraft] = useState(user);
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmLock, setConfirmLock] = useState(false);
@@ -36,6 +37,7 @@ export function UserDetail({ user, users, roles, onSave, onResetPassword, onTogg
 
   const dirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify(user), [draft, user]);
   const disabled = user.status === "INACTIVE";
+  const isProtected = user.id === currentUserId || user.authorizingType === "ADMIN";
   const displayInitials = initials(user.displayName || user.loginName);
 
   const [now] = useState(Date.now);
@@ -66,7 +68,8 @@ export function UserDetail({ user, users, roles, onSave, onResetPassword, onTogg
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2.5 flex-wrap">
             <input value={draft.displayName} onChange={(e) => setDraft({ ...draft, displayName: e.target.value })}
-              className="text-xl font-semibold tracking-tight text-content-primary bg-transparent outline-none"
+              disabled={isProtected} readOnly={isProtected}
+              className="text-xl font-semibold tracking-tight text-content-primary bg-transparent outline-none disabled:cursor-default"
               style={{ border: "1px solid transparent", padding: "4px 8px", marginLeft: -8, borderRadius: 6, maxWidth: 400 }} />
             <span className="font-mono font-semibold uppercase shrink-0"
               style={{ fontSize: 9.5, letterSpacing: "0.06em", padding: "1px 5px", borderRadius: 3, border: "1px solid",
@@ -86,9 +89,9 @@ export function UserDetail({ user, users, roles, onSave, onResetPassword, onTogg
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <Button variant="ghost" size="sm" iconLeft={<KeyRound size={14} />} onClick={() => setConfirmReset(true)}>Reset password</Button>
+          <Button variant="ghost" size="sm" iconLeft={<KeyRound size={14} />} onClick={() => setConfirmReset(true)} disabled={isProtected}>Reset password</Button>
           <Button variant={disabled ? "primary" : "ghost"} size="sm" iconLeft={<Shield size={14} />}
-            onClick={() => setConfirmLock(true)}>{disabled ? "Enable" : "Disable"}</Button>
+            onClick={() => setConfirmLock(true)} disabled={isProtected}>{disabled ? "Enable" : "Disable"}</Button>
           <Button variant="primary" size="sm" disabled={!dirty} onClick={save}
             iconLeft={dirty ? undefined : <Check size={14} />}>{dirty ? "Save changes" : "Saved"}</Button>
         </div>
@@ -180,7 +183,7 @@ export function UserDetail({ user, users, roles, onSave, onResetPassword, onTogg
               const usersWithRole = users.filter((u) => (u.roleIds ?? []).includes(r.id));
               return (
                 <div key={r.id} className="flex items-center gap-2.5 px-5 py-3 border-b border-line-subtle last:border-b-0">
-                  <Switch checked={on} onCheckedChange={() => toggleRole(r.id)} size="sm" />
+                  <Switch checked={on} onCheckedChange={() => toggleRole(r.id)} size="sm" disabled={isProtected} />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold text-content-primary flex items-center gap-2">
                       {r.name}
