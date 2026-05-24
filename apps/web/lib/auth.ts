@@ -158,16 +158,26 @@ export const getSession = cache(async (): Promise<AuthenticatedSession | null> =
     roleType: ur.role.roleType,
   }));
 
-  // 5. Aggregate permissions from all roles
-  const roleIds = userRoles.map((ur) => ur.roleId);
-  const rolePermissions = roleIds.length > 0
-    ? await prisma.sysRolePermission.findMany({
-        where: { roleId: { in: roleIds } },
-        select: { permissionCode: true },
-      })
-    : [];
+  // 5. Aggregate permissions
+  let permissions: string[];
 
-  const permissions = [...new Set(rolePermissions.map((rp) => rp.permissionCode))];
+  if (entityUser.authorizingType === "ADMIN") {
+    // ADMIN gets all permissions under this contract's menus
+    const allPerms = await prisma.sysPermission.findMany({
+      where: { menu: { contractDefineCode } },
+      select: { permissionCode: true },
+    });
+    permissions = allPerms.map((p) => p.permissionCode);
+  } else {
+    const roleIds = userRoles.map((ur) => ur.roleId);
+    const rolePermissions = roleIds.length > 0
+      ? await prisma.sysRolePermission.findMany({
+          where: { roleId: { in: roleIds } },
+          select: { permissionCode: true },
+        })
+      : [];
+    permissions = [...new Set(rolePermissions.map((rp) => rp.permissionCode))];
+  }
 
   // 6. Derive menus from permissions (for this contract)
   const permissionDetails = permissions.length > 0
