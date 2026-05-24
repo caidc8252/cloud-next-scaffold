@@ -7,10 +7,11 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "lucide-react": "catalog:"
+    "lucide-react": "catalog:",
+    "sonner": "^1.7.4"
   },
   "peerDependencies": {
-    "react": "^19",
-    "@cloud/ui": "workspace:*"
+    "@cloud/ui": "workspace:*",
+    "react": "^19"
   }
 }
