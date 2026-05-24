@@ -15,6 +15,7 @@
     "@cloud/db": "workspace:*",
     "@cloud/request": "workspace:*",
     "@cloud/security": "workspace:*",
+    "@cloud/system": "workspace:*",
     "@cloud/ui": "workspace:*",
     "lucide-react": "catalog:",
     "next": "catalog:",

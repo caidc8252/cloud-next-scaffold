@@ -16,8 +16,9 @@ export default async function PortalLayout({ children }: { children: React.React
         id: String(m.menuId),
         key: String(m.menuId),
         label: m.menuTitle,
-        path: m.path ?? "/",
+        path: m.path,
         icon: m.icon ?? "layout-dashboard",
+        parentMenuId: m.parentMenuId ? String(m.parentMenuId) : null,
       }))}
     >
       {children}

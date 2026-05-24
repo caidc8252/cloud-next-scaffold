@@ -178,23 +178,38 @@ export const getSession = cache(async (): Promise<AuthenticatedSession | null> =
     ),
   ];
 
-  const menus: SessionMenu[] = menuIds.length > 0
+  // Fetch leaf menus (menus directly linked from permissions)
+  const leafMenus: SessionMenu[] = menuIds.length > 0
     ? (await prisma.sysMenu.findMany({
-        where: {
-          menuId: { in: menuIds },
-          contractDefineCode,
-          isVisible: true,
-        },
+        where: { menuId: { in: menuIds }, contractDefineCode, isVisible: true },
         orderBy: { sort: "asc" },
       })).map((m) => ({
-        menuId: m.menuId,
-        menuTitle: m.menuTitle,
-        path: m.path,
-        icon: m.icon,
-        sort: m.sort,
-        parentMenuId: m.parentMenuId,
+        menuId: m.menuId, menuTitle: m.menuTitle, path: m.path,
+        icon: m.icon, sort: m.sort, parentMenuId: m.parentMenuId,
       }))
     : [];
+
+  // Fetch parent menus (for sidebar tree grouping)
+  const parentIds = [...new Set(
+    leafMenus.map((m) => m.parentMenuId).filter((id): id is number => id !== null),
+  )];
+
+  const parentMenus: SessionMenu[] = parentIds.length > 0
+    ? (await prisma.sysMenu.findMany({
+        where: { menuId: { in: parentIds }, isVisible: true },
+        orderBy: { sort: "asc" },
+      })).map((m) => ({
+        menuId: m.menuId, menuTitle: m.menuTitle, path: m.path,
+        icon: m.icon, sort: m.sort, parentMenuId: m.parentMenuId,
+      }))
+    : [];
+
+  // Merge and deduplicate
+  const menuMap = new Map<number, SessionMenu>();
+  for (const m of [...parentMenus, ...leafMenus]) {
+    if (!menuMap.has(m.menuId)) menuMap.set(m.menuId, m);
+  }
+  const menus = [...menuMap.values()].sort((a, b) => a.sort - b.sort);
 
   return {
     id: user.userId,

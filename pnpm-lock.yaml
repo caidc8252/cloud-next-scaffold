@@ -114,6 +114,9 @@ importers:
       '@cloud/security':
         specifier: workspace:*
         version: link:../../packages/security
+      '@cloud/system':
+        specifier: workspace:*
+        version: link:../../packages/system
       '@cloud/ui':
         specifier: workspace:*
         version: link:../../packages/ui

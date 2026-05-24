@@ -95,6 +95,61 @@ async function main() {
     },
   });
 
+  // 6b. System parent menu
+  const systemMenu = await prisma.sysMenu.upsert({
+    where: { menuId: 2 },
+    update: { menuTitle: "System", icon: "settings", sort: 100, contractDefineCode: "ADMIN" },
+    create: { menuTitle: "System", path: null, icon: "settings", sort: 100, contractDefineCode: "ADMIN" },
+  });
+
+  // 6c. System → Roles menu
+  const rolesMenu = await prisma.sysMenu.upsert({
+    where: { menuId: 3 },
+    update: { menuTitle: "Roles", path: "/system/roles", icon: "shield", sort: 101, parentMenuId: systemMenu.menuId, contractDefineCode: "ADMIN" },
+    create: { menuTitle: "Roles", path: "/system/roles", icon: "shield", sort: 101, parentMenuId: systemMenu.menuId, contractDefineCode: "ADMIN" },
+  });
+
+  // 6d. System → Users menu
+  const usersMenu = await prisma.sysMenu.upsert({
+    where: { menuId: 4 },
+    update: { menuTitle: "Users", path: "/system/users", icon: "users", sort: 102, parentMenuId: systemMenu.menuId, contractDefineCode: "ADMIN" },
+    create: { menuTitle: "Users", path: "/system/users", icon: "users", sort: 102, parentMenuId: systemMenu.menuId, contractDefineCode: "ADMIN" },
+  });
+
+  // 6e. Permissions for Roles menu
+  const rolesPermissions = [
+    { permissionCode: "roles.VIEW", remark: "View role list and details" },
+    { permissionCode: "roles.ADD", remark: "Create new role" },
+    { permissionCode: "roles.UPD", remark: "Edit role name, description, permissions" },
+    { permissionCode: "roles.DELETE", remark: "Delete non-builtin role" },
+    { permissionCode: "roles.DUPLICATE", remark: "Copy an existing role" },
+  ];
+  for (const p of rolesPermissions) {
+    await prisma.sysPermission.upsert({
+      where: { permissionCode: p.permissionCode },
+      update: { permissionMenuId: rolesMenu.menuId, remark: p.remark },
+      create: { permissionCode: p.permissionCode, permissionMenuId: rolesMenu.menuId, remark: p.remark },
+    });
+  }
+
+  // 6f. Permissions for Users menu
+  const usersPermissions = [
+    { permissionCode: "users.VIEW", remark: "View user list and details" },
+    { permissionCode: "users.ADD", remark: "Create user (direct mode)" },
+    { permissionCode: "users.INVITE", remark: "Invite user (email mode, placeholder)" },
+    { permissionCode: "users.UPD", remark: "Edit user display name, email, remark" },
+    { permissionCode: "users.LOCK", remark: "Lock / unlock user account" },
+    { permissionCode: "users.RESETPW", remark: "Force-reset user password" },
+    { permissionCode: "users.CHANGE_ROLE", remark: "Change user's assigned role" },
+  ];
+  for (const p of usersPermissions) {
+    await prisma.sysPermission.upsert({
+      where: { permissionCode: p.permissionCode },
+      update: { permissionMenuId: usersMenu.menuId, remark: p.remark },
+      create: { permissionCode: p.permissionCode, permissionMenuId: usersMenu.menuId, remark: p.remark },
+    });
+  }
+
   // 7. GLOBAL admin role
   const adminRole = await prisma.sysRole.upsert({
     where: { roleId: 1 },
@@ -106,14 +161,21 @@ async function main() {
     },
   });
 
-  // 8. Bind permission to role
-  const existingRolePerm = await prisma.sysRolePermission.findFirst({
-    where: { roleId: adminRole.roleId, permissionCode: "dashboard:view" },
-  });
-  if (!existingRolePerm) {
-    await prisma.sysRolePermission.create({
-      data: { roleId: adminRole.roleId, permissionCode: "dashboard:view" },
+  // 8. Bind all permissions to admin role
+  const allPermissionCodes = [
+    "dashboard:view",
+    "roles.VIEW", "roles.ADD", "roles.UPD", "roles.DELETE", "roles.DUPLICATE",
+    "users.VIEW", "users.ADD", "users.INVITE", "users.UPD", "users.LOCK", "users.RESETPW", "users.CHANGE_ROLE",
+  ];
+  for (const code of allPermissionCodes) {
+    const exists = await prisma.sysRolePermission.findFirst({
+      where: { roleId: adminRole.roleId, permissionCode: code },
     });
+    if (!exists) {
+      await prisma.sysRolePermission.create({
+        data: { roleId: adminRole.roleId, permissionCode: code },
+      });
+    }
   }
 
   // 9. Admin user
