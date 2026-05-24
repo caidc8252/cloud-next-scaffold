@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Search, Plus } from "lucide-react";
-import { Button, Input } from "@cloud/ui";
+import { Button, Input, SplitPanel, SplitPanelSidebar, SplitPanelContent } from "@cloud/ui";
 import type { Role, User } from "../types";
 import { SEED_USERS } from "../mock/seed-users";
 import { SEED_ROLES } from "../mock/seed-roles";
@@ -34,7 +34,9 @@ export function UsersPage({ users: propUsers, setUsers: propSetUsers, roles: pro
 
   const filtered = useMemo(() => {
     let list = users;
-    if (statusFilter !== "all") list = list.filter((u) => u.status === statusFilter.toUpperCase());
+    if (statusFilter !== "all") {
+      list = list.filter((u) => u.status === statusFilter.toUpperCase());
+    }
     if (query.trim()) {
       const q = query.toLowerCase();
       list = list.filter((u) =>
@@ -50,30 +52,21 @@ export function UsersPage({ users: propUsers, setUsers: propSetUsers, roles: pro
     setUsers(users.map((u) => (u.id === next.id ? { ...next, updatedAt: new Date().toISOString() } : u)));
   }
 
-  function createUser(draft: { email: string; roleIds: string[]; remark: string; mode: "direct" | "invite"; loginName?: string; displayName?: string; tempPassword?: string }) {
-    if (draft.mode === "direct") {
-      const newUser: User = {
-        id: `u-${Math.random().toString(36).slice(2, 7)}`, loginName: draft.loginName ?? "", displayName: draft.displayName ?? "",
-        email: draft.email, country: "", status: "ACTIVE", lastLoginAt: null, passwordChangedTimestamp: Date.now(),
-        passwordErrorTimes: 0, passwordChangeTimes: 0, passwordErrorLockExpiredTimestamp: null,
-        passwordUpdatedAt: new Date().toISOString(), remark: draft.remark, createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(), authorizingType: "NORMAL", roleIds: draft.roleIds, passwordHistory: [],
-      };
-      setUsers([...users, newUser]);
-      setSelectedId(newUser.id);
-    } else {
-      const newUser: User = {
-        id: `u-inv-${Math.random().toString(36).slice(2, 7)}`, loginName: "", displayName: "", email: "", country: "",
-        status: "PENDING", lastLoginAt: null, passwordChangedTimestamp: 0, passwordErrorTimes: 0, passwordChangeTimes: 0,
-        passwordErrorLockExpiredTimestamp: null, passwordUpdatedAt: null, remark: draft.remark,
-        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), authorizingType: "NORMAL",
-        roleIds: draft.roleIds, passwordHistory: [], invitedAt: new Date().toISOString(), invitedBy: "admin",
-        inviteExpiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString(),
-        inviteToken: `inv-${Math.random().toString(36).slice(2, 10)}`, inviteEmail: draft.email,
-      };
-      setUsers([...users, newUser]);
-      setSelectedId(newUser.id);
-    }
+  function createUser(draft: { email: string; roleIds: string[]; remark: string }) {
+    const id = `u-inv-${Math.random().toString(36).slice(2, 7)}`;
+    const now = new Date().toISOString();
+    const newUser: User = {
+      id, loginName: "", displayName: "", email: draft.email, country: "",
+      status: "PENDING", lastLoginAt: null, passwordChangedTimestamp: 0,
+      passwordErrorTimes: 0, passwordChangeTimes: 0, passwordErrorLockExpiredTimestamp: null,
+      passwordUpdatedAt: null, remark: draft.remark, createdAt: now, updatedAt: now,
+      authorizingType: "NORMAL", roleIds: draft.roleIds, passwordHistory: [],
+      invitedAt: now, invitedBy: "admin@carbon",
+      inviteExpiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString(),
+      inviteToken: id, inviteEmail: draft.email,
+    };
+    setUsers([newUser, ...users]);
+    setSelectedId(newUser.id);
     setShowNew(false);
   }
 
@@ -85,9 +78,18 @@ export function UsersPage({ users: propUsers, setUsers: propSetUsers, roles: pro
   }
 
   function resetPassword(user: User) {
-    update({ ...user, passwordChangedTimestamp: Date.now(), passwordChangeTimes: user.passwordChangeTimes + 1,
-      passwordUpdatedAt: new Date().toISOString(), passwordErrorTimes: 0,
-      passwordHistory: [{ hashId: `ph-${Math.random().toString(36).slice(2, 6)}`, changedAt: new Date().toISOString() }, ...user.passwordHistory] });
+    const now = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + 72 * 3_600_000).toISOString();
+    const prior = (user.passwordResetRequests ?? []).map((r) =>
+      r.status === "pending" ? { ...r, status: "superseded" as const } : r,
+    );
+    update({
+      ...user,
+      passwordResetRequests: [
+        { id: `prr-${Math.random().toString(36).slice(2, 7)}`, requestedAt: now, requestedBy: "admin@carbon", expiresAt, consumedAt: null, status: "pending" as const },
+        ...prior,
+      ].slice(0, 10),
+    });
   }
 
   function cancelInvite(userId: string) {
@@ -99,47 +101,84 @@ export function UsersPage({ users: propUsers, setUsers: propSetUsers, roles: pro
     update({ ...user, invitedAt: new Date().toISOString(), inviteExpiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString() });
   }
 
+  const statItems = [
+    { label: "Total", value: stats.total, color: undefined },
+    { label: "Active", value: stats.active, color: "var(--color-success-700)" },
+    { label: "Pending", value: stats.pending, color: stats.pending ? "var(--color-warning-700)" : undefined },
+    { label: "Locked", value: stats.locked, color: stats.locked ? "var(--color-error-700)" : undefined },
+  ];
+
   return (
     <>
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-content-primary">Users</h1>
-          <p className="text-sm text-content-secondary mt-1">Manage platform staff accounts and their role assignments.</p>
+      <div>
+        <div className="flex items-start justify-between mb-5">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-content-primary mb-1">Users</h1>
+            <p className="text-sm text-content-secondary">
+              Carbon platform staff accounts. Roles are picked from <strong>System → Roles</strong>.
+            </p>
+          </div>
+          <Button variant="primary" size="sm" iconLeft={<Plus size={14} />} onClick={() => setShowNew(true)}>
+            New user
+          </Button>
         </div>
 
-        <div className="flex gap-0 border border-line-default rounded-lg overflow-hidden" style={{ height: "calc(100vh - 180px)" }}>
-          <div className="w-[320px] shrink-0 border-r border-line-default flex flex-col bg-surface-1">
-            <div className="p-3 space-y-2 border-b border-line-subtle">
-              <Input prefix={<Search size={14} />} placeholder="Search users…" value={query}
+        <div className="grid grid-cols-4 gap-3.5 mb-5">
+          {statItems.map((s) => (
+            <div key={s.label} className="bg-surface-2 border border-line-default rounded-xl shadow-sm px-4 py-4">
+              <div className="text-xs text-content-tertiary">{s.label}</div>
+              <div className="text-2xl font-semibold mt-1 tabular-nums" style={s.color ? { color: s.color } : undefined}>
+                {s.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <SplitPanel sidebarWidth={360}>
+          <SplitPanelSidebar header={
+            <div className="flex flex-col gap-2 p-2.5">
+              <Input prefix={<Search size={13} />} placeholder="Search by name, login or email…" value={query}
                 onChange={(e) => setQuery(e.target.value)} inputSize="sm" />
-              <div className="flex gap-1">
-                {([["all", `All (${stats.total})`], ["active", `Active (${stats.active})`],
-                  ["locked", `Locked (${stats.locked})`], ["pending", `Pending (${stats.pending})`]] as const).map(([key, label]) => (
-                  <Button key={key} variant={statusFilter === key ? "secondary" : "ghost"} size="xs"
-                    onClick={() => setStatusFilter(key)}>{label}</Button>
+              <div className="flex gap-1 flex-wrap">
+                {([
+                  { key: "all" as const, label: "All", count: stats.total },
+                  { key: "active" as const, label: "Active", count: stats.active },
+                  { key: "pending" as const, label: "Pending", count: stats.pending },
+                  { key: "locked" as const, label: "Locked", count: stats.locked },
+                ] as const).map((f) => (
+                  <button key={f.key} type="button"
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${statusFilter === f.key ? "bg-surface-3 text-content-primary" : "text-content-tertiary hover:text-content-secondary"}`}
+                    onClick={() => setStatusFilter(f.key)}>
+                    {f.label}<span className="text-content-tertiary">{f.count}</span>
+                  </button>
                 ))}
               </div>
-              <Button variant="primary" size="sm" block onClick={() => setShowNew(true)} iconLeft={<Plus size={14} />}>New user</Button>
             </div>
-            <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
-              {filtered.map((u) => (
-                <UserListItem key={u.id} user={u} active={u.id === selectedId} onClick={() => setSelectedId(u.id)} />
-              ))}
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto bg-surface-1">
+          }>
+            {filtered.length === 0 && (
+              <div className="px-4 py-8 text-center text-sm text-content-tertiary">
+                {query ? `No users match "${query}"` : "No users in this filter."}
+              </div>
+            )}
+            {filtered.map((u) => (
+              <UserListItem key={u.id} user={u} active={u.id === selectedId}
+                onClick={() => setSelectedId(u.id)}
+                onResend={() => resendInvite(u)}
+                onCancel={() => cancelInvite(u.id)} />
+            ))}
+          </SplitPanelSidebar>
+          <SplitPanelContent empty="Select a user.">
             {selected ? (
               selected.status === "PENDING" ? (
-                <PendingInviteDetail user={selected} roles={roles} onResend={() => resendInvite(selected)} onCancel={() => cancelInvite(selected.id)} />
+                <PendingInviteDetail user={selected} roles={roles}
+                  onResend={() => resendInvite(selected)} onCancel={() => cancelInvite(selected.id)} />
               ) : (
-                <UserDetail user={selected} roles={roles} onSave={update}
+                <UserDetail user={selected} users={users} roles={roles} onSave={update}
                   onResetPassword={() => resetPassword(selected)} onToggleLock={() => toggleLock(selected)} />
               )
-            ) : (
-              <div className="flex items-center justify-center h-full text-content-tertiary text-sm">Select a user to view details</div>
-            )}
-          </div>
-        </div>
+            ) : null}
+          </SplitPanelContent>
+        </SplitPanel>
       </div>
       <NewUserModal open={showNew} onClose={() => setShowNew(false)} onCreate={createUser} users={users} roles={roles} />
     </>
