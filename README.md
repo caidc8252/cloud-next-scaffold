@@ -6,14 +6,16 @@
 
 - `apps/web`：单个后台应用
 - `packages/ui`：基础 UI 组件与样式
-- `packages/request`：通用请求封装
+- `packages/request`：通用请求封装与错误码
 - `packages/config`：环境变量校验
 - `packages/db`：Prisma + PostgreSQL 数据层
-- `packages/security`：密码哈希等安全能力
-- 登录页、基础登录态
-- 用户 / 角色 / 菜单三张基础表
+- `packages/security`：密码哈希、RSA 加解密
+- `packages/permissions`：权限判断工具（PermissionChecker）
+- `packages/system`：系统管理页面组件（用户管理、角色管理）
+- 登录页、登录态、Entity 选择页、锁定说明页
+- 完整的 Entity / 合同 / 用户 / 角色 / 权限 / 菜单 数据模型
 - 左侧菜单 + 顶部导航 layout
-- 默认一条工作台菜单和一个管理员种子账号
+- 默认管理员种子账号
 
 ## 启动当前仓库
 
@@ -41,33 +43,134 @@ pnpm dev
 - `packages/permissions`
 - `packages/request`
 - `packages/security`
+- `packages/system`
 - `packages/ui`
-
-## 开发方式
-
-当前仓库不再提供 `init:project` 生成新项目。
-
-推荐工作方式：
-
-- 直接在 `apps/web` 下开发业务页面和路由
-- 直接在 `packages/*` 下维护共享能力
-- 把当前仓库本体当作你的项目基线
 
 ## 仓库结构
 
 ```txt
 apps/
-  web/
+  web/                    # 后台应用
+    app/
+      (public)/           # 登录前页面（login, select-entity, locked）
+      (portal)/           # 登录后页面（system/users, system/roles）
+      api/                # API 路由
+    lib/
+      auth.ts             # 登录态核心（session, 权限聚合, 菜单推导）
+      user-mapper.ts      # 用户数据映射
+      role-mapper.ts      # 角色数据映射
 packages/
-  config/
-  db/
-  permissions/
-  request/
-  security/
-  ui/
+  config/                 # 环境变量校验
+  db/                     # Prisma schema + 种子数据
+  permissions/            # PermissionChecker
+  request/                # 请求封装 + 响应辅助 + 错误码
+  security/               # argon2 密码哈希, RSA 加解密
+  system/                 # 系统管理 UI 组件
+  ui/                     # 基础 UI 组件
 scripts/
-  prisma.mjs
+  prisma.mjs              # Prisma 统一调用脚本
 ```
+
+## 数据模型
+
+当前基线采用 Entity（组织）+ Contract（合同）驱动的多租户权限模型。
+
+### 核心表关系
+
+```
+Entity ──┬── EntityContract ── ContractDefine ── Menu ── Permission
+         ├── EntityUser ── User
+         └── Role ── RolePermission ── Permission
+              └── UserRole（entity + user + role 三方关联）
+```
+
+### 关键概念
+
+| 概念 | 说明 |
+|------|------|
+| Entity | 组织/租户。用户通过 EntityUser 关联到 Entity |
+| ContractDefine | 合同类型，决定该 Entity 可使用哪些菜单和权限 |
+| EntityUser | 用户与组织的关联，包含 `authorizingType`（NORMAL/ADMIN）和 `status`（ACTIVE/INACTIVE） |
+| Role | 角色，归属于 Entity，通过 RolePermission 关联权限 |
+| Permission | 权限码，关联到 Menu |
+| Menu | 菜单树，归属于 ContractDefine |
+
+### 两种锁定机制
+
+1. **密码错误锁定（用户级）**：连续错误 5 次自动锁定 `sys_user.status = LOCKED`，30 分钟后自动解锁
+2. **管理员停用（Entity-User 级）**：管理员手动切换 `sys_entity_user.status` ACTIVE/INACTIVE，只影响该用户在该组织内的访问
+
+### ADMIN 授权类型
+
+当 `EntityUser.authorizingType = ADMIN` 时：
+- 自动获取该 Entity 合同下的所有权限，无需配置角色
+- 角色仍正常加载但不影响权限
+- 管理员不能对 ADMIN 用户执行停用、重置密码、角色变更等操作，只能修改备注
+
+## 登录与鉴权
+
+### 登录流程
+
+```
+密码验证通过
+  → 仅一个 ACTIVE Entity → 直接进入后台
+  → 多个 Entity，有 ACTIVE → 跳转 /select-entity 选择
+  → 所有 Entity 都被停用 → 跳转 /locked 说明页
+```
+
+### Session
+
+核心文件：`apps/web/lib/auth.ts`
+
+- `getSession()` — 获取完整会话（含 entity、roles、permissions、menus），未登录返回 null
+- `getPartialSession()` — 获取部分会话（仅用户信息），用于 Entity 选择页和锁定页
+- `requireSession()` — 要求完整登录态，根据失败原因跳转不同页面
+- `createSession(userId, entityId)` — 创建 session，entityId 可为 null（部分 session）
+- `upgradeSession(entityId)` — 选择 Entity 后升级为完整 session
+- `downgradeSession()` — 被锁定时降级为部分 session
+
+Session 内包含的数据：
+
+```typescript
+{
+  id, username, displayName, email, status,
+  entity: { entityId, entityName, contractDefineCode },
+  roles: SessionRole[],
+  permissions: string[],    // 权限码数组
+  menus: SessionMenu[]      // 菜单树
+}
+```
+
+权限聚合路径：
+- 普通用户：`UserRole → Role → RolePermission → Permission`
+- ADMIN 用户：直接加载 ContractDefine 下所有 Permission
+
+### 权限判断
+
+```ts
+import { PermissionChecker } from "@cloud/permissions";
+
+const checker = new PermissionChecker(session);
+checker.has("system.user.create");        // 有其中一个即可
+checker.has(["user.read", "user.write"]); // OR
+checker.hasAll(["user.read", "user.write"]); // AND
+```
+
+## 用户管理
+
+### 用户邀请
+
+通过邮箱邀请新用户，生成邀请链接 `https://{域名}/invite?token=xxx`。邀请人可预分配角色，受邀人完成注册后角色生效。
+
+### 用户操作权限
+
+| 操作 | 普通用户 | ADMIN 用户 / 自己 |
+|------|----------|-------------------|
+| 修改备注 | 可以 | 可以 |
+| 修改显示名 | 可以 | 禁止 |
+| 修改角色 | 可以 | 禁止 |
+| 停用/启用 | 可以 | 禁止 |
+| 重置密码 | 可以 | 禁止 |
 
 ## 开发指南
 
@@ -78,234 +181,73 @@ scripts/
 - API 路由放在 `apps/web/app/api`
 - 共享服务端逻辑优先放在 `apps/web/lib` 或 `packages/*`
 
-当前基线已经把后台壳子接在 `app/(portal)` 上，所以大多数业务页面都应该加在这个分组里。
-
 ### 怎么加一个后台页面
 
 1. 在 `apps/web/app/(portal)` 下创建新目录，例如 `reports/page.tsx`
-2. 默认导出一个 App Router 页面组件
-3. 页面里如果需要登录态，直接调用 `requireSession()`
-
-示例：
+2. 页面里调用 `requireSession()` 保护登录态
 
 ```tsx
 import { requireSession } from "../../lib/auth";
 
 export default async function ReportsPage() {
   const session = await requireSession();
-
-  return <div>Hello, {session.name}</div>;
+  return <div>Hello, {session.displayName}</div>;
 }
 ```
 
 ### 怎么加菜单
 
-当前基线的菜单来自数据库里的 `menu` 表，不是写死在前端代码里。
+菜单来自数据库 `sys_menu` 表，通过 Permission 关联到用户可见范围。
 
-相关模型在：
-- `packages/db/prisma/schema.prisma`
-- `packages/db/prisma/seed.ts`
+添加方式：
+1. 修改 `packages/db/prisma/seed.ts`，执行 `pnpm db:seed`
+2. 或用 `pnpm db:studio` 直接改表
 
-当前 `Menu` 结构：
-- `key`
-- `label`
-- `path`
-- `icon`
-- `sortOrder`
-- `roleId`
-
-最直接的做法有两种：
-
-1. 修改 seed
-适合默认基线菜单、初始化项目时就要存在的菜单。
-
-```ts
-await prisma.menu.upsert({
-  where: { key: "reports" },
-  update: {
-    label: "Reports",
-    path: "/reports",
-    icon: "layout-dashboard",
-    sortOrder: 2,
-    roleId: adminRole.id,
-  },
-  create: {
-    key: "reports",
-    label: "Reports",
-    path: "/reports",
-    icon: "layout-dashboard",
-    sortOrder: 2,
-    roleId: adminRole.id,
-  },
-});
-```
-
-改完后执行：
-
-```bash
-pnpm db:seed
-```
-
-2. 用 Prisma Studio 直接改表
-适合本地调试或临时验证。
-
-```bash
-pnpm db:studio
-```
-
-要让菜单真正可访问，还需要确保：
-- `path` 对应的页面文件已经存在
-- 该菜单挂在当前用户角色对应的 `roleId` 下
-
-### 怎么做鉴权
-
-当前基线内置的是“登录态鉴权”，核心文件是 `apps/web/lib/auth.ts`。
-
-最常用的两个入口：
-
-- `getSession()`
-  - 获取当前会话
-  - 未登录时返回 `null`
-- `requireSession()`
-  - 要求必须登录
-  - 未登录时会跳转到登出路由并清理状态
-
-页面鉴权示例：
-
-```tsx
-import { requireSession } from "../../lib/auth";
-
-export default async function ProtectedPage() {
-  const session = await requireSession();
-  return <div>{session.account}</div>;
-}
-```
-
-API 鉴权示例：
-
-```ts
-import { requireSession } from "../../../lib/auth";
-import { successResponse, unauthorizedResponse } from "@cloud/request/server";
-
-export async function GET() {
-  const session = await requireSession().catch(() => null);
-  if (!session) {
-    return unauthorizedResponse();
-  }
-
-  return successResponse({ account: session.account });
-}
-```
-
-### 怎么做权限判断
-
-当前仓库已经带上 `packages/permissions`，但注意：
-
-- 现在默认基线里只有 `user / role / menu`
-- 还没有独立的 permission 表
-- 所以 `@cloud/permissions` 目前是一个可复用的权限判断工具，不是完整权限系统
-
-核心类：
-
-```ts
-import { PermissionChecker } from "@cloud/permissions";
-```
-
-用法示例：
-
-```ts
-const checker = new PermissionChecker({
-  roles: ["admin"],
-  permissions: ["admin.report.read", "admin.report.export"],
-});
-
-checker.has("admin.report.read");
-checker.can("report", "read");
-checker.can("report", ["read", "export"]);
-```
-
-如果你要做真正的细粒度鉴权，建议下一步补：
-
-- permission 表
-- role 与 permission 的关系
-- 登录态中的 permission 聚合
-
-然后再在页面或 API 中统一调用 `PermissionChecker`。
+菜单可访问的前提：
+- `path` 对应的页面已存在
+- 菜单关联了 Permission
+- 用户的角色包含该 Permission（或用户为 ADMIN 类型）
 
 ### 怎么请求接口
 
-统一请求封装在 `packages/request`。
-
-客户端请求：
+客户端：
 
 ```ts
 import { request } from "@cloud/request/client";
 
 const result = await request.get<{ items: string[] }>("/api/health");
-console.log(result.data);
+await request.post("/api/reports", { name: "Weekly Report" });
 ```
 
-带 query：
+服务端响应：
 
 ```ts
-await request.get("/api/reports", {
-  query: { page: 1, limit: 20 },
-});
-```
-
-POST 示例：
-
-```ts
-await request.post("/api/reports", {
-  name: "Weekly Report",
-});
-```
-
-服务端返回建议统一走 `@cloud/request/server`：
-
-```ts
-import {
-  badRequestResponse,
-  createdResponse,
-  successResponse,
-} from "@cloud/request/server";
+import { successResponse, badRequestResponse, unauthorizedResponse } from "@cloud/request/server";
 
 export async function GET() {
   return successResponse({ ok: true });
 }
-
-export async function POST() {
-  return createdResponse({ id: "new-id" });
-}
 ```
 
-可用的响应辅助包括：
-
-- `successResponse`
-- `createdResponse`
-- `noContentResponse`
-- `badRequestResponse`
-- `unauthorizedResponse`
-- `forbiddenResponse`
-- `notFoundResponse`
-
-### 一个最常见的开发流程
+### 典型开发流程
 
 1. 在 `app/(portal)` 下加页面
-2. 在 `packages/db/prisma/seed.ts` 或数据库里加菜单
-3. 用 `requireSession()` 先把登录态保护起来
-4. 用 `app/api/*` 新增接口
+2. 在 seed 或数据库里加菜单 + 权限
+3. 用 `requireSession()` 保护页面
+4. 在 `app/api/*` 新增接口
 5. 前端用 `@cloud/request/client` 调接口
-6. 如果需要更细权限，再把 `@cloud/permissions` 接进来
+6. 用 `PermissionChecker` 做细粒度权限判断
 
 ## 常用命令
 
 ```bash
-pnpm dev
-pnpm db:setup
-pnpm db:studio
-pnpm lint
-pnpm exec tsc --noEmit
-pnpm --filter web build
-pnpm test
+pnpm dev              # 启动开发服务器
+pnpm db:setup         # 初始化数据库（generate + push + seed）
+pnpm db:generate      # 生成 Prisma Client
+pnpm db:seed          # 执行种子数据
+pnpm db:studio        # 打开 Prisma Studio
+pnpm lint             # ESLint 检查
+pnpm test             # 运行测试
+pnpm exec tsc --noEmit  # TypeScript 类型检查
+pnpm --filter web build # 构建 Web 应用
 ```
