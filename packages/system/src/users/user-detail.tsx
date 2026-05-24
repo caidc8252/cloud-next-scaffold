@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { User, Mail, Globe, Clock, Check, ChevronDown, Shield, KeyRound, Copy, Lock, Unlock, AlertTriangle } from "lucide-react";
+import { User, Mail, Globe, Clock, Check, ChevronDown, Shield, KeyRound, Copy, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle, Field, Input, Modal, Switch, Textarea } from "@cloud/ui";
 import type { Role, User as UserType, PasswordResetRequest } from "../types";
 import { relTime, fmtDate, fmtDateTime, initials } from "../helpers";
@@ -44,7 +44,7 @@ export function UserDetail({ user, users, roles, onSave, onResetPassword, onTogg
   const pwAgeDays = draft.passwordChangedTimestamp ? Math.floor((now - draft.passwordChangedTimestamp) / 86_400_000) : null;
   const pwExpired = pwAgeDays !== null && pwAgeDays >= PASSWORD_POLICY.expiryDays;
 
-  const adminRoles = SEED_ROLES.filter((r) => r.contractDefineCode === "ADMIN" && r.roleType === "global");
+  const adminRoles = (roles.length > 0 ? roles : SEED_ROLES).filter((r) => r.contractDefineCode === "ADMIN" && r.roleType === "global");
   const assignedRoles = adminRoles.filter((r) => (draft.roleIds ?? []).includes(r.id));
 
   function toggleRole(roleId: string) {
@@ -261,7 +261,7 @@ export function UserDetail({ user, users, roles, onSave, onResetPassword, onTogg
           <CardHeader>
             <div>
               <CardTitle>Most recent password reset</CardTitle>
-              <p className="text-xs text-content-tertiary mt-0.5">Reset links are sent to the user's email and are valid for 72 hours.</p>
+              <p className="text-xs text-content-tertiary mt-0.5">Reset links are sent to the user&apos;s email and are valid for 72 hours.</p>
             </div>
           </CardHeader>
           {latestReq ? <ResetRecord req={latestReq} email={user.email} /> : (
@@ -280,7 +280,7 @@ export function UserDetail({ user, users, roles, onSave, onResetPassword, onTogg
           <ul className="mt-3 pl-4 text-sm text-content-secondary list-disc space-y-1">
             <li>Valid for <strong>72 hours</strong></li>
             <li>Single use — link expires once {user.displayName} sets the new password</li>
-            <li>They'll be asked to enter the new password twice for confirmation</li>
+            <li>They&apos;ll be asked to enter the new password twice for confirmation</li>
             <li>Any earlier pending reset link for this account will be invalidated</li>
           </ul>
         </ConfirmModal>
@@ -338,7 +338,8 @@ function PolicyRow({ icon, name, desc, val }: { icon: React.ReactNode; name: str
 }
 
 function ResetRecord({ req, email }: { req: PasswordResetRequest; email: string }) {
-  const effectiveStatus = req.status === "pending" && new Date(req.expiresAt).getTime() < Date.now() ? "expired" : req.status;
+  const [now] = useState(Date.now);
+  const effectiveStatus = req.status === "pending" && new Date(req.expiresAt).getTime() < now ? "expired" : req.status;
   const statusStyle = {
     pending: { color: "var(--color-warning-700)", background: "var(--color-warning-50)", borderColor: "oklch(75% 0.14 75 / 0.3)" },
     consumed: { color: "var(--color-success-700)", background: "var(--color-success-50)", borderColor: "oklch(58% 0.14 152 / 0.25)" },

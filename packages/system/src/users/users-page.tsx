@@ -98,7 +98,8 @@ export function UsersPage({ users: propUsers, setUsers: propSetUsers, roles: pro
   }
 
   function resendInvite(user: User) {
-    update({ ...user, invitedAt: new Date().toISOString(), inviteExpiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString() });
+    const now = new Date();
+    update({ ...user, invitedAt: now.toISOString(), inviteExpiresAt: new Date(now.getTime() + 7 * 86_400_000).toISOString() });
   }
 
   const statItems = [

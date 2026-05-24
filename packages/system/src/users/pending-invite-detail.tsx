@@ -1,7 +1,7 @@
 "use client";
 
 import { Mail, User, Clock, Shield } from "lucide-react";
-import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
+import { Alert, AlertDescription, Button, Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
 import type { Role, User as UserType } from "../types";
 import { fmtDateTime, relTime } from "../helpers";
 
