@@ -16,9 +16,9 @@
   },
   "peerDependencies": {
     "next": "^16.0.0",
-    "sonner": "^2.0.0"
+    "sonner": "^1.5.0"
   },
   "devDependencies": {
-    "sonner": "^2.0.7"
+    "sonner": "^1.7.4"
   }
 }
