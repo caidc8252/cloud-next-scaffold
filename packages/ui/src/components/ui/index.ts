@@ -17,7 +17,7 @@ export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants } from './ta
 export { Modal, type ModalProps } from './modal'
 export { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger, MenuItem, type MenuItemProps } from './popover'
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip'
-export { Toaster } from './sonner'
+export { Toaster, toast } from './sonner'
 export { Table, type TableProps, type TableColumn, type SortDir } from './table'
 export { Pagination, type PaginationProps } from './pagination'
 export { ThemeToggle } from './theme-toggle'
@@ -36,6 +36,15 @@ export {
   BreadcrumbPage, BreadcrumbSeparator, BreadcrumbEllipsis,
 } from './breadcrumb'
 export { Calendar, CalendarDayButton } from './calendar'
+export { DatePicker, type DatePickerProps } from './date-picker'
+export {
+  DateRangePicker,
+  DEFAULT_RANGE_PRESETS,
+  type DateRangePickerProps,
+  type DateRange,
+  type DateRangePreset,
+} from './date-range-picker'
+export { DateTimePicker, type DateTimePickerProps } from './date-time-picker'
 export {
   type CarouselApi, Carousel, CarouselContent, CarouselItem,
   CarouselPrevious, CarouselNext, CarouselDots, useCarousel,
@@ -82,6 +91,7 @@ export {
 } from './navigation-menu'
 export {
   Progress, ProgressTrack, ProgressIndicator, ProgressLabel, ProgressValue,
+  type ProgressProps, type ProgressTone,
 } from './progress'
 export { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './resizable'
 export { ScrollArea, ScrollBar } from './scroll-area'
@@ -93,4 +103,7 @@ export {
 export { Skeleton } from './skeleton'
 export { Slider } from './slider'
 export { Spinner, type SpinnerProps } from './spinner'
+export { Stepper, type StepperProps } from './stepper'
 export { Textarea } from './textarea'
+export { Toggle, toggleVariants, type ToggleProps } from './toggle'
+export { ToggleGroup, type ToggleGroupProps } from './toggle-group'

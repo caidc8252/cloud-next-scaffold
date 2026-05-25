@@ -1,8 +1,10 @@
 "use client";
 
+import { Fragment } from "react";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Shield, Users, Settings } from "lucide-react";
-import { AppHeader, Layout, Sidebar, type BreadcrumbItemDef, type SidebarSection } from "@cloud/ui/components/layout";
+import { AppHeader, Layout, Sidebar, type SidebarSection } from "@cloud/ui/components/layout";
+import { BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@cloud/ui";
 import { UserMenu } from "./user-menu";
 
 type PortalShellProps = {
@@ -31,13 +33,32 @@ function getMenuIcon(icon: string) {
   }
 }
 
-function buildBreadcrumbs(pathname: string, menus: PortalShellProps["menus"]): BreadcrumbItemDef[] {
+// 面包屑由调用方提供 JSX 片段，AppHeader 只负责外壳。这样未来的详情页可以按段
+// 自己决定怎么渲染（例如根据 path 中的 id 异步取实体名）。
+function buildBreadcrumbs(pathname: string, menus: PortalShellProps["menus"]): React.ReactNode {
   const current = menus.find((m) => m.path === pathname);
   const label = current?.label ?? "Workspace";
-  if (pathname === "/") return [{ label }];
-  const parent = current?.parentMenuId ? menus.find((m) => m.id === current.parentMenuId) : null;
-  if (parent) return [{ label: "Console", href: "/" }, { label: parent.label }, { label }];
-  return [{ label: "Console", href: "/" }, { label }];
+  const items: Array<{ label: string; href?: string }> =
+    pathname === "/"
+      ? [{ label }]
+      : current?.parentMenuId
+        ? [
+            { label: "Console", href: "/" },
+            { label: menus.find((m) => m.id === current.parentMenuId)?.label ?? "" },
+            { label },
+          ]
+        : [{ label: "Console", href: "/" }, { label }];
+
+  return items.map((c, i) => (
+    <Fragment key={i}>
+      {i > 0 && <BreadcrumbSeparator />}
+      <BreadcrumbItem>
+        {c.href
+          ? <BreadcrumbLink href={c.href}>{c.label}</BreadcrumbLink>
+          : <BreadcrumbPage>{c.label}</BreadcrumbPage>}
+      </BreadcrumbItem>
+    </Fragment>
+  ));
 }
 
 export function PortalShell({ appName, account, name, roleName, menus, children }: PortalShellProps) {

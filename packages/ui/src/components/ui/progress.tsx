@@ -4,13 +4,29 @@ import { Progress as ProgressPrimitive } from "@base-ui/react/progress"
 
 import { cn } from "../../lib/utils"
 
+type ProgressTone = "success" | "warning" | "error" | "info"
+
+const toneIndicatorMap: Record<ProgressTone, string> = {
+  success: "bg-success",
+  warning: "bg-warning",
+  error: "bg-error",
+  info: "bg-info",
+}
+
+interface ProgressProps extends ProgressPrimitive.Root.Props {
+  // Status color for the indicator. Omit for the default brand color.
+  tone?: ProgressTone
+}
+
 // Horizontal bar showing numeric completion percentage via the value prop (0–100).
+// tone: 'success'|'warning'|'error'|'info' swaps the indicator color; omit for default brand color.
 function Progress({
   className,
   children,
   value,
+  tone,
   ...props
-}: ProgressPrimitive.Root.Props) {
+}: ProgressProps) {
   return (
     <ProgressPrimitive.Root
       value={value}
@@ -20,7 +36,7 @@ function Progress({
     >
       {children}
       <ProgressTrack>
-        <ProgressIndicator />
+        <ProgressIndicator className={tone ? toneIndicatorMap[tone] : undefined} />
       </ProgressTrack>
     </ProgressPrimitive.Root>
   )
@@ -81,6 +97,6 @@ export {
   ProgressIndicator,
   ProgressLabel,
   ProgressValue,
+  type ProgressProps,
+  type ProgressTone,
 }
-
-
