@@ -67,6 +67,20 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 共享服务端逻辑优先放在 `apps/web/lib` 或 `packages/*`
 - 当前基线已经把后台壳子接在 `app/(portal)` 上，大多数业务页面默认加在这里
 
+### 共享能力复用
+
+- `packages/*` 是项目级共享能力，开始实现前先检查现有包和导出，优先复用，避免在 `apps/*` 里重复造轮子
+- 除非明确确认现有能力不满足需求，否则不要在业务代码里重新实现一套相同职责的工具、组件、鉴权、请求封装或数据库访问逻辑
+- 需要新增共享能力时，先判断它是否应该沉淀到 `packages/*`；如果只是当前业务页面私有逻辑，优先放在业务目录，不要过早抽公共层
+- 默认先通过包导出和源码快速了解能力边界，再开始编码；如果已有同职责实现，优先接入而不是平行再写一份
+- 当前包职责可以先按下面理解：
+  - `@cloud/ui`：共享 UI 组件、布局组件、主题能力、通用样式工具
+  - `@cloud/request`：客户端请求封装、服务端响应辅助、错误码和错误提示
+  - `@cloud/permissions`：权限判断、服务端权限聚合、客户端权限上下文
+  - `@cloud/db`：Prisma Client、数据库 schema、seed、数据库脚本入口
+  - `@cloud/security`：服务端密码哈希与校验等安全基础能力
+  - `@cloud/config`：环境变量读取、配置校验、密码策略等基础配置能力
+
 ### 页面开发
 
 - 新增后台页面时，优先在 `apps/web/app/(portal)` 下创建路由目录和 `page.tsx`
@@ -117,6 +131,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## 代码规范
 
 - 除非专门提及，否则默认使用 TypeScript，尽可能把类型写好
+- 除非特地指出，否则不要修改 `packages/*` 下面的代码
 - 不要用 JSDoc，用 TypeScript 类型系统，不要 `any`
 - 命名
   - 变量和函数使用驼峰命名法（camelCase）
