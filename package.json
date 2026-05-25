@@ -7,7 +7,7 @@
     "dev": "pnpm --filter web dev",
     "dev:web": "pnpm --filter web dev",
     "build": "pnpm db:generate && pnpm -r --filter './apps/*' build",
-    "lint": "eslint apps/web packages/config/src packages/db packages/permissions packages/request/src packages/security packages/ui/src scripts/prisma.mjs eslint.config.mjs vitest.config.mts",
+    "lint": "eslint apps/web packages/config/src packages/db packages/i18n/src packages/permissions packages/request/src packages/security packages/ui/src scripts/prisma.mjs eslint.config.mjs vitest.config.mts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run --passWithNoTests",
@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@fontsource-variable/geist": "^5.2.8",
+    "@testing-library/react": "^16.1.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

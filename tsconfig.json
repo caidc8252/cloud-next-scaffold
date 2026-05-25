@@ -18,6 +18,9 @@
       "@/*": ["./packages/ui/src/*"],
       "@cloud/config": ["./packages/config/src/index.ts"],
       "@cloud/db": ["./packages/db/src/index.ts"],
+      "@cloud/i18n": ["./packages/i18n/src/index.ts"],
+      "@cloud/i18n/client": ["./packages/i18n/src/client.tsx"],
+      "@cloud/i18n/server": ["./packages/i18n/src/server.ts"],
       "@cloud/permissions": ["./packages/permissions/src/index.ts"],
       "@cloud/permissions/server": ["./packages/permissions/src/server/index.ts"],
       "@cloud/request": ["./packages/request/src/index.ts"],
@@ -35,12 +38,17 @@
     "packages/config/src/**/*.ts",
     "packages/config/test/**/*.ts",
     "packages/db/**/*.ts",
+    "packages/i18n/src/**/*.ts",
+    "packages/i18n/src/**/*.tsx",
+    "packages/i18n/test/**/*.ts",
     "packages/permissions/**/*.ts",
     "packages/permissions/**/*.tsx",
     "packages/request/src/**/*.ts",
     "packages/security/**/*.ts",
     "packages/ui/src/**/*.ts",
-    "packages/ui/src/**/*.tsx"
+    "packages/ui/src/**/*.tsx",
+    "packages/ui/test/**/*.ts",
+    "packages/ui/test/**/*.tsx"
   ],
   "exclude": ["node_modules"]
 }
