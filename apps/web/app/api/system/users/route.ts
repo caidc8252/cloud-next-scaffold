@@ -4,6 +4,7 @@ import {
   successResponse,
   badRequestResponse,
   unauthorizedResponse,
+  forbiddenResponse,
   createdResponse,
   internalErrorResponse,
 } from "@cloud/request/server";
@@ -12,14 +13,12 @@ import {
   ERR_USER_EMAIL_INVALID,
   ERR_USER_EMAIL_TAKEN,
 } from "@cloud/request/error-codes";
-import { getSession } from "../../../../lib/auth";
+import { AuthzError, assertPermissions } from "@cloud/permissions/server";
 import { toClientUser, USER_INCLUDE, collectAuxUserIds } from "../../../../lib/user-mapper";
 
 export async function GET() {
-  const session = await getSession();
-  if (!session) return unauthorizedResponse();
-
   try {
+    const session = await assertPermissions({ all: ["users.VIEW"] });
     const entityId = session.entity.entityId;
 
     const entityUserLinks = await prisma.sysEntityUser.findMany({
@@ -47,15 +46,19 @@ export async function GET() {
 
     return successResponse(rows.map((r) => toClientUser(r, nameMap, nameMap)));
   } catch (error) {
+    if (error instanceof AuthzError) {
+      return error.status === 401
+        ? unauthorizedResponse(error.code, "Unauthorized.")
+        : forbiddenResponse(error.code, "Forbidden.");
+    }
+
     return internalErrorResponse(error);
   }
 }
 
 export async function POST(req: Request) {
-  const session = await getSession();
-  if (!session) return unauthorizedResponse();
-
   try {
+    const session = await assertPermissions({ all: ["users.INVITE"] });
     let body: { email?: string; roleIds?: string[]; remark?: string };
     try {
       body = await req.json();
@@ -138,6 +141,12 @@ export async function POST(req: Request) {
     const nameMap = new Map([[session.id, session.username]]);
     return createdResponse(toClientUser(full, nameMap, nameMap));
   } catch (error) {
+    if (error instanceof AuthzError) {
+      return error.status === 401
+        ? unauthorizedResponse(error.code, "Unauthorized.")
+        : forbiddenResponse(error.code, "Forbidden.");
+    }
+
     return internalErrorResponse(error);
   }
 }

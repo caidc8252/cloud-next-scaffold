@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getPartialSession, upgradeSession } from "../../../lib/auth";
+import { getPartialSession, upgradeSession } from "@cloud/permissions/server";
 
 export async function selectEntityAction(formData: FormData) {
   const partial = await getPartialSession();

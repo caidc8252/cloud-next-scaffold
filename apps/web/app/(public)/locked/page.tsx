@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
-import { getPartialSession, getSession } from "../../../lib/auth";
+import { getPartialSession, getSession } from "@cloud/permissions/server";
 
 export default async function LockedPage() {
   const session = await getSession();

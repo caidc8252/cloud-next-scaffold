@@ -4,21 +4,20 @@ import {
   successResponse,
   badRequestResponse,
   unauthorizedResponse,
+  forbiddenResponse,
   notFoundResponse,
   internalErrorResponse,
 } from "@cloud/request/server";
 import { ERR_INVALID_ID, ERR_USER_NOT_FOUND, ERR_USER_RESET_PW_PENDING, ERR_USER_PROTECTED } from "@cloud/request/error-codes";
-import { getSession } from "../../../../../../lib/auth";
+import { AuthzError, assertPermissions } from "@cloud/permissions/server";
 import { toClientUser, USER_INCLUDE } from "../../../../../../lib/user-mapper";
 
 export async function POST(
   _req: Request,
   { params }: { params: Promise<{ userId: string }> },
 ) {
-  const session = await getSession();
-  if (!session) return unauthorizedResponse();
-
   try {
+    const session = await assertPermissions({ all: ["users.RESETPW"] });
     const { userId: rawId } = await params;
     const userId = Number(rawId);
     if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID, "Invalid user ID.");
@@ -69,6 +68,12 @@ export async function POST(
     const nameMap = new Map([[session.id, session.username]]);
     return successResponse(toClientUser(updated, nameMap, nameMap));
   } catch (error) {
+    if (error instanceof AuthzError) {
+      return error.status === 401
+        ? unauthorizedResponse(error.code, "Unauthorized.")
+        : forbiddenResponse(error.code, "Forbidden.");
+    }
+
     return internalErrorResponse(error);
   }
 }

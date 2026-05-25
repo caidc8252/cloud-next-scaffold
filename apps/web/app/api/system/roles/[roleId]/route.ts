@@ -3,6 +3,7 @@ import {
   successResponse,
   badRequestResponse,
   unauthorizedResponse,
+  forbiddenResponse,
   notFoundResponse,
   noContentResponse,
   internalErrorResponse,
@@ -14,17 +15,15 @@ import {
   ERR_ROLE_DELETE_BUILTIN,
   ERR_ROLE_DELETE_ASSIGNED,
 } from "@cloud/request/error-codes";
-import { getSession } from "../../../../../lib/auth";
+import { AuthzError, assertPermissions } from "@cloud/permissions/server";
 import { toClientRole } from "../../../../../lib/role-mapper";
 
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ roleId: string }> },
 ) {
-  const session = await getSession();
-  if (!session) return unauthorizedResponse();
-
   try {
+    const session = await assertPermissions({ all: ["roles.UPD"] });
     const { roleId: rawId } = await params;
     const roleId = Number(rawId);
     if (!Number.isFinite(roleId)) return badRequestResponse(ERR_INVALID_ID, "Invalid role ID.");
@@ -76,6 +75,12 @@ export async function PUT(
 
     return successResponse(toClientRole(updated, session.username));
   } catch (error) {
+    if (error instanceof AuthzError) {
+      return error.status === 401
+        ? unauthorizedResponse(error.code, "Unauthorized.")
+        : forbiddenResponse(error.code, "Forbidden.");
+    }
+
     return internalErrorResponse(error);
   }
 }
@@ -84,10 +89,8 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ roleId: string }> },
 ) {
-  const session = await getSession();
-  if (!session) return unauthorizedResponse();
-
   try {
+    const session = await assertPermissions({ all: ["roles.DELETE"] });
     const { roleId: rawId } = await params;
     const roleId = Number(rawId);
     if (!Number.isFinite(roleId)) return badRequestResponse(ERR_INVALID_ID, "Invalid role ID.");
@@ -110,6 +113,12 @@ export async function DELETE(
 
     return noContentResponse();
   } catch (error) {
+    if (error instanceof AuthzError) {
+      return error.status === 401
+        ? unauthorizedResponse(error.code, "Unauthorized.")
+        : forbiddenResponse(error.code, "Forbidden.");
+    }
+
     return internalErrorResponse(error);
   }
 }

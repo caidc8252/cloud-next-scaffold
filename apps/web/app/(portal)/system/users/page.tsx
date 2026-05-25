@@ -1,5 +1,5 @@
 import { prisma } from "@cloud/db";
-import { requireSession } from "../../../../lib/auth";
+import { requirePermissions } from "@cloud/permissions/server";
 import { toClientUser, USER_INCLUDE, collectAuxUserIds } from "../../../../lib/user-mapper";
 import { toClientRole } from "../../../../lib/role-mapper";
 import { UsersPage } from "../../../../system";
@@ -51,7 +51,7 @@ async function loadRoles(entityId: number) {
 }
 
 export default async function SystemUsersPage() {
-  const session = await requireSession();
+  const session = await requirePermissions({ all: ["users.VIEW"] });
   const entityId = session.entity.entityId;
   const [initialUsers, initialRoles] = await Promise.all([
     loadUsers(entityId),

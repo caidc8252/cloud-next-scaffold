@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { Badge, Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
-import { getPartialSession, getSession } from "../../../lib/auth";
+import { getPartialSession, getSession } from "@cloud/permissions/server";
 import { selectEntityAction } from "./actions";
 
 export default async function SelectEntityPage() {

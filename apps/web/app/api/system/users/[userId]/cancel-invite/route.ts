@@ -2,21 +2,20 @@ import { prisma } from "@cloud/db";
 import {
   badRequestResponse,
   unauthorizedResponse,
+  forbiddenResponse,
   notFoundResponse,
   noContentResponse,
   internalErrorResponse,
 } from "@cloud/request/server";
 import { ERR_INVALID_ID, ERR_USER_NOT_FOUND, ERR_USER_CANCEL_NOT_PENDING } from "@cloud/request/error-codes";
-import { getSession } from "../../../../../../lib/auth";
+import { AuthzError, assertPermissions } from "@cloud/permissions/server";
 
 export async function POST(
   _req: Request,
   { params }: { params: Promise<{ userId: string }> },
 ) {
-  const session = await getSession();
-  if (!session) return unauthorizedResponse();
-
   try {
+    await assertPermissions({ all: ["users.INVITE"] });
     const { userId: rawId } = await params;
     const userId = Number(rawId);
     if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID, "Invalid user ID.");
@@ -31,6 +30,12 @@ export async function POST(
 
     return noContentResponse();
   } catch (error) {
+    if (error instanceof AuthzError) {
+      return error.status === 401
+        ? unauthorizedResponse(error.code, "Unauthorized.")
+        : forbiddenResponse(error.code, "Forbidden.");
+    }
+
     return internalErrorResponse(error);
   }
 }

@@ -7,6 +7,8 @@ export {
   upgradeSession,
 } from "./actions.ts";
 export { getPartialSession, getSession, requireSession } from "./dal.ts";
+export { AuthzError } from "./errors.ts";
+export { assertPermissions, hasPermissions, requirePermissions } from "./permissions.ts";
 export {
   decodeSession,
   encodeSession,

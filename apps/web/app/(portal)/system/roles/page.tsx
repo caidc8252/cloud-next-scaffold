@@ -1,5 +1,5 @@
 import { prisma } from "@cloud/db";
-import { requireSession } from "../../../../lib/auth";
+import { requirePermissions } from "@cloud/permissions/server";
 import { toClientRole } from "../../../../lib/role-mapper";
 import { RolesPage, type PermissionGroup } from "../../../../system";
 
@@ -50,7 +50,7 @@ async function loadPermissionGroups(contractDefineCode: string): Promise<Permiss
 }
 
 export default async function SystemRolesPage() {
-  const session = await requireSession();
+  const session = await requirePermissions({ all: ["roles.VIEW"] });
   const [initialRoles, permissionGroups] = await Promise.all([
     loadRoles(session.entity.entityId),
     loadPermissionGroups(session.entity.contractDefineCode),

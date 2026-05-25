@@ -1,9 +1,9 @@
 import { ContentHeader, Grid, GridItem, Stack } from "@cloud/ui/components/layout";
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@cloud/ui/components/ui";
-import { requireSession } from "../../lib/auth";
+import { requirePermissions } from "@cloud/permissions/server";
 
 export default async function DashboardPage() {
-  const session = await requireSession();
+  const session = await requirePermissions({ all: ["dashboard:view"] });
   const primaryMenu = session.menus[0];
 
   return (

@@ -1,5 +1,5 @@
 import { getEnv } from "@cloud/config";
-import { requireSession } from "../../lib/auth";
+import { requireSession } from "@cloud/permissions/server";
 import { PortalShell } from "./_components/portal-shell";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {

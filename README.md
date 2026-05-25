@@ -157,6 +157,18 @@ checker.has(["user.read", "user.write"]); // OR
 checker.hasAll(["user.read", "user.write"]); // AND
 ```
 
+服务端如果需要在 page / Server Action / Route Handler 里做权限守卫，优先使用 `@cloud/permissions/server`：
+
+```ts
+import { requirePermissions, assertPermissions } from "@cloud/permissions/server";
+
+// page / layout / server action
+const session = await requirePermissions({ all: ["users.VIEW"] });
+
+// route handler
+const session = await assertPermissions({ any: ["roles.VIEW", "roles.UPD"] });
+```
+
 前端如果已经拿到权限数组，也可以通过 `@cloud/permissions/client` 做 UI 级权限判断：
 
 ```tsx
@@ -258,10 +270,11 @@ export async function GET() {
 
 1. 在 `app/(portal)` 下加页面
 2. 在 seed 或数据库里加菜单 + 权限
-3. 用 `requireSession()` 保护页面
+3. 用 `requireSession()` 或 `requirePermissions()` 保护页面
 4. 在 `app/api/*` 新增接口
-5. 前端用 `@cloud/request/client` 调接口
-6. 用 `PermissionChecker` 做细粒度权限判断
+5. 在 route handler 里优先用 `assertPermissions()` 做接口权限校验
+6. 前端用 `@cloud/request/client` 调接口
+7. 用 `PermissionChecker` 或 `@cloud/permissions/client` 做 UI 级权限判断
 
 ## 常用命令
 

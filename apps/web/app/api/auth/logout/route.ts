@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { destroySession } from "../../../../lib/auth";
+import { destroySession } from "@cloud/permissions/server";
 
 export async function GET(request: Request) {
   await destroySession();

@@ -3,18 +3,17 @@ import {
   successResponse,
   badRequestResponse,
   unauthorizedResponse,
+  forbiddenResponse,
   createdResponse,
   internalErrorResponse,
 } from "@cloud/request/server";
 import { ERR_INVALID_JSON, ERR_ROLE_NAME_SHORT } from "@cloud/request/error-codes";
-import { getSession } from "../../../../lib/auth";
+import { AuthzError, assertPermissions } from "@cloud/permissions/server";
 import { toClientRole } from "../../../../lib/role-mapper";
 
 export async function GET() {
-  const session = await getSession();
-  if (!session) return unauthorizedResponse();
-
   try {
+    const session = await assertPermissions({ all: ["roles.VIEW"] });
     const roles = await prisma.sysRole.findMany({
       where: { OR: [{ entityId: session.entity.entityId }, { entityId: null }] },
       include: {
@@ -39,15 +38,19 @@ export async function GET() {
 
     return successResponse(data);
   } catch (error) {
+    if (error instanceof AuthzError) {
+      return error.status === 401
+        ? unauthorizedResponse(error.code, "Unauthorized.")
+        : forbiddenResponse(error.code, "Forbidden.");
+    }
+
     return internalErrorResponse(error);
   }
 }
 
 export async function POST(req: Request) {
-  const session = await getSession();
-  if (!session) return unauthorizedResponse();
-
   try {
+    const session = await assertPermissions({ all: ["roles.ADD"] });
     let body: { name?: string; description?: string; permissions?: string[] };
     try {
       body = await req.json();
@@ -88,6 +91,12 @@ export async function POST(req: Request) {
 
     return createdResponse(toClientRole(role, session.username));
   } catch (error) {
+    if (error instanceof AuthzError) {
+      return error.status === 401
+        ? unauthorizedResponse(error.code, "Unauthorized.")
+        : forbiddenResponse(error.code, "Forbidden.");
+    }
+
     return internalErrorResponse(error);
   }
 }

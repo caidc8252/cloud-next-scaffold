@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { verifyPassword } from "@cloud/security/server";
-import { createSession } from "../../../lib/auth";
+import { createSession } from "@cloud/permissions/server";
 
 const loginSchema = z.object({
   account: z.string().trim().min(1, "Enter your account."),

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Label } from "@cloud/ui";
-import { getSession } from "../../../lib/auth";
+import { getSession } from "@cloud/permissions/server";
 import { loginAction } from "./actions";
 
 const ERROR_MESSAGES: Record<string, string> = {
