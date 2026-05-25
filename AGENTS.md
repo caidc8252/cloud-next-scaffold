@@ -76,7 +76,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 当前包职责可以先按下面理解：
   - `@cloud/ui`：共享 UI 组件、布局组件、主题能力、通用样式工具
   - `@cloud/request`：客户端请求封装、服务端响应辅助、错误码和错误提示
-  - `@cloud/permissions`：权限判断、服务端权限聚合、客户端权限上下文
+  - `@cloud/permissions`：权限判断、服务端权限聚合、服务端权限守卫、客户端权限上下文
   - `@cloud/db`：Prisma Client、数据库 schema、seed、数据库脚本入口
   - `@cloud/security`：服务端密码哈希与校验等安全基础能力
   - `@cloud/config`：环境变量读取、配置校验、密码策略等基础配置能力
@@ -85,7 +85,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 - 新增后台页面时，优先在 `apps/web/app/(portal)` 下创建路由目录和 `page.tsx`
 - App Router 页面组件默认使用服务端组件，除非有明确交互需求再加 `"use client"`
-- 需要登录态的页面，直接调用 `requireSession()`
+- 只需要登录态的页面，调用 `requireSession()`
+- 页面本身有明确权限要求时，优先调用 `requirePermissions()`，不要只在前端做按钮显隐
 
 ### 菜单约定
 
@@ -99,15 +100,32 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ### 鉴权与权限
 
-- 登录态鉴权核心文件是 `apps/web/lib/auth.ts`
+- 登录态与权限守卫优先直接从 `@cloud/permissions/server` 引入，不要在业务代码里继续写很深的相对路径
+- `apps/web/lib/auth.ts` 目前只保留兼容导出，默认不要作为新代码入口
 - `getSession()` 用于读取会话，未登录时返回 `null`
 - `requireSession()` 用于强制登录，未登录时会跳转并清理状态
-- `packages/permissions` 当前只是权限判断工具，不是完整权限系统
-- 默认基线只有 `user / role / menu`，还没有独立的 `permission` 表
-- 如果要做细粒度权限，优先补齐：
-  - `permission` 表
-  - `role` 与 `permission` 的关系
-  - 登录态中的 `permission` 聚合
+- `assertPermissions()` 用于接口 / Route Handler 的服务端权限校验
+  - 未登录时抛 401
+  - 已登录但缺权限时抛 403
+- `requirePermissions()` 用于 page / layout / Server Action 的服务端权限校验
+  - 未登录时跳转登出链路
+  - 已登录但缺权限时跳转 `/403`
+- `packages/permissions` 已承载：
+  - 登录态读取与 session 聚合
+  - 服务端权限守卫
+  - 客户端权限上下文与 UI 级判断
+- 前端权限控制只能用于体验层，不是安全边界
+  - 隐藏按钮、菜单可以放在前端
+  - 真正的读写保护必须落在服务端守卫上
+- 后端接口不要只做 `getSession()` 判断后直接执行敏感操作
+  - 只要接口存在明确权限要求，优先改为 `assertPermissions()`
+- 页面不要只靠 layout 或客户端组件兜权限
+  - 权限判断要尽量贴近实际页面和数据入口
+- 当前默认权限模型已经包含 `permission` 表，以及 `role -> permission -> menu` 聚合链路
+- 如果要新增细粒度权限，优先保持下面这条链路一致：
+  - `packages/db/prisma/seed.ts` 补权限码
+  - 角色绑定权限
+  - 页面、接口接入对应的服务端守卫
 
 ### 接口与请求
 
@@ -115,15 +133,21 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 客户端使用 `@cloud/request/client`
 - 服务端响应优先使用 `@cloud/request/server` 提供的响应辅助函数
 - 新增接口时，优先放在 `apps/web/app/api/*`
+- Route Handler 默认同时做两层判断：
+  - 登录态 / 权限：优先用 `assertPermissions()`
+  - 业务归属校验：例如 `entityId`、`roleId`、`userId` 是否属于当前租户
+- 不要把“前端看不到入口”当作接口安全前提
 
 ### 默认开发链路
 
 1. 在 `app/(portal)` 下新增页面
 2. 在 `packages/db/prisma/seed.ts` 或数据库里补齐菜单
-3. 用 `requireSession()` 先接好登录态保护
-4. 在 `app/api/*` 下新增接口
-5. 前端通过 `@cloud/request/client` 调接口
-6. 需要更细权限时，再接入 `@cloud/permissions`
+3. 判断页面是“只需登录”还是“需要明确权限”
+4. 页面分别接 `requireSession()` 或 `requirePermissions()`
+5. 在 `app/api/*` 下新增接口
+6. 接口优先用 `assertPermissions()` 做服务端权限守卫
+7. 前端通过 `@cloud/request/client` 调接口
+8. 最后再补客户端的按钮显隐和交互细节
 
 
 
