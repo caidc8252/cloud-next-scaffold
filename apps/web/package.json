@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.8",
-    "@cloud/auth": "workspace:*",
     "@cloud/config": "workspace:*",
     "@cloud/db": "workspace:*",
+    "@cloud/permissions": "workspace:*",
     "@cloud/request": "workspace:*",
     "@cloud/security": "workspace:*",
     "@cloud/ui": "workspace:*",

@@ -10,8 +10,8 @@
 - `packages/config`：环境变量校验
 - `packages/db`：Prisma + PostgreSQL 数据层
 - `packages/security`：密码哈希、RSA 加解密
-- `packages/permissions`：权限判断工具（PermissionChecker）
-- `packages/system`：系统管理页面组件（用户管理、角色管理）
+- `packages/permissions`：权限判断 + 服务端登录态与前端权限 hook
+- `apps/web/system`：系统管理页面组件（用户管理、角色管理）
 - 登录页、登录态、Entity 选择页、锁定说明页
 - 完整的 Entity / 合同 / 用户 / 角色 / 权限 / 菜单 数据模型
 - 左侧菜单 + 顶部导航 layout
@@ -43,7 +43,6 @@ pnpm dev
 - `packages/permissions`
 - `packages/request`
 - `packages/security`
-- `packages/system`
 - `packages/ui`
 
 ## 仓库结构
@@ -56,16 +55,16 @@ apps/
       (portal)/           # 登录后页面（system/users, system/roles）
       api/                # API 路由
     lib/
-      auth.ts             # 登录态核心（session, 权限聚合, 菜单推导）
+      auth.ts             # 鉴权兼容导出，实际实现位于 packages/permissions
       user-mapper.ts      # 用户数据映射
       role-mapper.ts      # 角色数据映射
+    system/               # 系统管理业务 UI（users, roles）
 packages/
   config/                 # 环境变量校验
   db/                     # Prisma schema + 种子数据
-  permissions/            # PermissionChecker
+  permissions/            # PermissionChecker + 登录态、DAL、session cookie + client hooks
   request/                # 请求封装 + 响应辅助 + 错误码
   security/               # argon2 密码哈希, RSA 加解密
-  system/                 # 系统管理 UI 组件
   ui/                     # 基础 UI 组件
 scripts/
   prisma.mjs              # Prisma 统一调用脚本
@@ -120,7 +119,9 @@ Entity ──┬── EntityContract ── ContractDefine ── Menu ── P
 
 ### Session
 
-核心文件：`apps/web/lib/auth.ts`
+核心实现：`packages/permissions/src/server/*`
+
+`apps/web/lib/auth.ts` 当前只保留兼容导出，内部转发到 `@cloud/permissions/server`，避免应用侧相对路径 import 一次性大面积改动。
 
 - `getSession()` — 获取完整会话（含 entity、roles、permissions、menus），未登录返回 null
 - `getPartialSession()` — 获取部分会话（仅用户信息），用于 Entity 选择页和锁定页
@@ -154,6 +155,30 @@ const checker = new PermissionChecker(session);
 checker.has("system.user.create");        // 有其中一个即可
 checker.has(["user.read", "user.write"]); // OR
 checker.hasAll(["user.read", "user.write"]); // AND
+```
+
+前端如果已经拿到权限数组，也可以通过 `@cloud/permissions/client` 做 UI 级权限判断：
+
+```tsx
+"use client";
+
+import { Can, PermissionsProvider, useCan } from "@cloud/permissions/client";
+
+function CreateButton() {
+  const canCreate = useCan({ any: ["system.user.create"] });
+  return canCreate ? <button>Create user</button> : null;
+}
+
+export function UsersActions({ permissions }: { permissions: string[] }) {
+  return (
+    <PermissionsProvider permissions={permissions}>
+      <CreateButton />
+      <Can all={["system.user.read", "system.user.write"]}>
+        <button>Bulk edit</button>
+      </Can>
+    </PermissionsProvider>
+  );
+}
 ```
 
 ## 用户管理

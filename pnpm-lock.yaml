@@ -102,15 +102,15 @@ importers:
 
   apps/web:
     dependencies:
-      '@cloud/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
       '@cloud/config':
         specifier: workspace:*
         version: link:../../packages/config
       '@cloud/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@cloud/permissions':
+        specifier: workspace:*
+        version: link:../../packages/permissions
       '@cloud/request':
         specifier: workspace:*
         version: link:../../packages/request
@@ -158,24 +158,6 @@ importers:
         specifier: ^5
         version: 5.9.3
 
-  packages/auth:
-    dependencies:
-      '@cloud/config':
-        specifier: workspace:*
-        version: link:../config
-      '@cloud/db':
-        specifier: workspace:*
-        version: link:../db
-      next:
-        specifier: ^16.0.0
-        version: 16.2.6(@babel/core@7.29.0)(@playwright/test@1.60.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      react:
-        specifier: 'catalog:'
-        version: 19.2.4
-      server-only:
-        specifier: 'catalog:'
-        version: 0.0.1
-
   packages/config:
     dependencies:
       dotenv:
@@ -198,7 +180,23 @@ importers:
         specifier: ^4.20.6
         version: 4.21.0
 
-  packages/permissions: {}
+  packages/permissions:
+    dependencies:
+      '@cloud/config':
+        specifier: workspace:*
+        version: link:../config
+      '@cloud/db':
+        specifier: workspace:*
+        version: link:../db
+      next:
+        specifier: ^16.0.0
+        version: 16.2.6(@babel/core@7.29.0)(@playwright/test@1.60.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.4
+      server-only:
+        specifier: 'catalog:'
+        version: 0.0.1
 
   packages/request:
     dependencies:
