@@ -1,6 +1,3 @@
-import { PERMISSION_CATALOG, MENU_TREE } from "./mock";
-import type { PermissionEntry } from "./types";
-
 export function relTime(iso: string | null | undefined): string {
   if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -49,33 +46,4 @@ export function initials(name: string): string {
     .slice(0, 2)
     .map((w) => w[0]?.toUpperCase() ?? "")
     .join("");
-}
-
-export type PermissionGroup = {
-  menuId: string;
-  menuTitle: string;
-  items: PermissionEntry[];
-};
-
-export function permissionGroupsForContract(contractDefineCode: string): PermissionGroup[] {
-  const menus = MENU_TREE.filter((m) => m.contractDefineCode === contractDefineCode);
-  if (menus.length === 0) return [];
-
-  const groups: PermissionGroup[] = [];
-
-  for (const menu of menus) {
-    const items = PERMISSION_CATALOG.filter((p) => p.menuId === menu.id);
-    if (items.length > 0) {
-      groups.push({ menuId: menu.id, menuTitle: menu.title, items });
-    }
-  }
-
-  return groups;
-}
-
-export function permAppliesToContract(permCode: string, contractDefineCode: string): boolean {
-  const perm = PERMISSION_CATALOG.find((p) => p.code === permCode);
-  if (!perm) return false;
-  const menu = MENU_TREE.find((m) => m.id === perm.menuId);
-  return menu?.contractDefineCode === contractDefineCode;
 }

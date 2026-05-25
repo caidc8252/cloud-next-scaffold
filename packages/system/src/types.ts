@@ -1,28 +1,13 @@
-export type PasswordPolicy = {
-  minLength: number;
-  requireUpper: boolean;
-  requireLower: boolean;
-  requireDigit: boolean;
-  requireSymbol: boolean;
-  maxErrorTimes: number;
-  lockDurationMinutes: number;
-  historySize: number;
-  expiryDays: number;
-};
-
-export type PermissionEntry = {
+export type PermissionItem = {
   code: string;
-  menuId: string;
   label: string;
   desc: string;
 };
 
-export type MenuNode = {
-  id: string;
-  parentId: string | null;
-  title: string;
-  icon: string;
-  contractDefineCode: string;
+export type PermissionGroup = {
+  menuId: string;
+  menuTitle: string;
+  items: PermissionItem[];
 };
 
 export type Role = {

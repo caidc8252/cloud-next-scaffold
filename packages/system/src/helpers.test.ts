@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { relTime, hueFor, permissionGroupsForContract } from "./helpers";
+import { relTime, hueFor } from "./helpers";
 
 describe("relTime", () => {
   it("returns 'just now' for timestamps within 60s", () => {
@@ -39,29 +39,5 @@ describe("hueFor", () => {
 
   it("returns a number", () => {
     expect(typeof hueFor("Bob")).toBe("number");
-  });
-});
-
-describe("permissionGroupsForContract", () => {
-  it("returns groups for ADMIN contract", () => {
-    const groups = permissionGroupsForContract("ADMIN");
-    expect(groups.length).toBeGreaterThan(0);
-    expect(groups.every((g) => g.menuTitle.length > 0)).toBe(true);
-  });
-
-  it("each group has items with code and label", () => {
-    const groups = permissionGroupsForContract("ADMIN");
-    for (const g of groups) {
-      expect(g.items.length).toBeGreaterThan(0);
-      for (const item of g.items) {
-        expect(item.code).toBeTruthy();
-        expect(item.label).toBeTruthy();
-      }
-    }
-  });
-
-  it("returns empty array for unknown contract", () => {
-    const groups = permissionGroupsForContract("UNKNOWN");
-    expect(groups).toEqual([]);
   });
 });
