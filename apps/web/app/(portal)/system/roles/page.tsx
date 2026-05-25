@@ -2,6 +2,7 @@ import { prisma } from "@cloud/db";
 import { requireSession } from "../../../../lib/auth";
 import { toClientRole } from "../../../../lib/role-mapper";
 import { RolesPage } from "@cloud/system";
+import type { PermissionGroup } from "@cloud/system";
 
 async function loadRoles(entityId: number) {
   const roles = await prisma.sysRole.findMany({
@@ -25,8 +26,35 @@ async function loadRoles(entityId: number) {
   return roles.map((r) => toClientRole(r, updaterMap.get(r.updUserId) ?? "system"));
 }
 
+async function loadPermissionGroups(contractDefineCode: string): Promise<PermissionGroup[]> {
+  const menus = await prisma.sysMenu.findMany({
+    where: { contractDefineCode, isVisible: true },
+    include: {
+      permissions: {
+        select: { permissionCode: true, label: true, remark: true },
+      },
+    },
+    orderBy: { sort: "asc" },
+  });
+
+  return menus
+    .filter((m) => m.permissions.length > 0)
+    .map((m) => ({
+      menuId: String(m.menuId),
+      menuTitle: m.menuTitle,
+      items: m.permissions.map((p) => ({
+        code: p.permissionCode,
+        label: p.label ?? p.permissionCode,
+        desc: p.remark ?? "",
+      })),
+    }));
+}
+
 export default async function SystemRolesPage() {
   const session = await requireSession();
-  const initialRoles = await loadRoles(session.entity.entityId);
-  return <RolesPage initialRoles={initialRoles} />;
+  const [initialRoles, permissionGroups] = await Promise.all([
+    loadRoles(session.entity.entityId),
+    loadPermissionGroups(session.entity.contractDefineCode),
+  ]);
+  return <RolesPage initialRoles={initialRoles} permissionGroups={permissionGroups} />;
 }
