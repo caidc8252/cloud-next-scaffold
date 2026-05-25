@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./password-policy": "./src/password-policy.ts"
   },
   "dependencies": {
     "dotenv": "^16.6.1",
