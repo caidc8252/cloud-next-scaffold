@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { toastError } from "@cloud/request/error-toast";
 import { Button, Input, SplitPanel, SplitPanelSidebar, SplitPanelContent } from "@cloud/ui";
 import { request } from "@cloud/request/client";
-import type { Role, User } from "../types";
+import type { Role, User, PermissionGroup } from "../types";
 import { RoleListItem } from "./role-list-item";
 import { RoleEditor } from "./role-editor";
 import { NewRoleModal } from "./new-role-modal";
@@ -17,9 +17,10 @@ const API_BASE = "/api/system/roles";
 type RolesPanelProps = {
   initialRoles: Role[];
   users?: User[];
+  permissionGroups: PermissionGroup[];
 };
 
-export function RolesPanel({ initialRoles, users = [] }: RolesPanelProps) {
+export function RolesPanel({ initialRoles, users = [], permissionGroups }: RolesPanelProps) {
   const [roles, setRoles] = useState<Role[]>(initialRoles);
   const [selectedId, setSelectedId] = useState<string | null>(initialRoles[0]?.id ?? null);
   const [query, setQuery] = useState("");
@@ -113,7 +114,7 @@ export function RolesPanel({ initialRoles, users = [] }: RolesPanelProps) {
         </SplitPanelSidebar>
         <SplitPanelContent empty="Select a role to edit">
           {selected ? (
-            <RoleEditor role={selected} users={users} onSave={update}
+            <RoleEditor role={selected} users={users} permissionGroups={permissionGroups} onSave={update}
               onDuplicate={() => setDuplicateSource(selected)} onDelete={() => deleteRole(selected.id)} />
           ) : null}
         </SplitPanelContent>

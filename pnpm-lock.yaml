@@ -206,6 +206,9 @@ importers:
 
   packages/system:
     dependencies:
+      '@cloud/config':
+        specifier: workspace:*
+        version: link:../config
       '@cloud/request':
         specifier: workspace:*
         version: link:../request

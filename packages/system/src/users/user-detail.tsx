@@ -5,7 +5,7 @@ import { User, Mail, Globe, Clock, Check, ChevronDown, Shield, KeyRound, Copy, A
 import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle, Field, Input, Modal, Switch, Textarea } from "@cloud/ui";
 import type { Role, User as UserType, PasswordResetRequest } from "../types";
 import { relTime, fmtDate, fmtDateTime, initials } from "../helpers";
-import { PASSWORD_POLICY } from "../mock/password-policy";
+import { PASSWORD_POLICY } from "@cloud/config/password-policy";
 
 type UserDetailProps = {
   user: UserType;

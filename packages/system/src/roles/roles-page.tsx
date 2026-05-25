@@ -2,15 +2,16 @@
 
 import { Shield } from "lucide-react";
 import { Alert, AlertDescription } from "@cloud/ui";
-import type { Role, User } from "../types";
+import type { Role, User, PermissionGroup } from "../types";
 import { RolesPanel } from "./roles-panel";
 
 type RolesPageProps = {
   initialRoles: Role[];
   users?: User[];
+  permissionGroups: PermissionGroup[];
 };
 
-export function RolesPage({ initialRoles, users }: RolesPageProps) {
+export function RolesPage({ initialRoles, users, permissionGroups }: RolesPageProps) {
   return (
     <div>
       <div className="mb-6">
@@ -29,7 +30,7 @@ export function RolesPage({ initialRoles, users }: RolesPageProps) {
             platform-wide notifications, API keys, and global audit.
           </AlertDescription>
         </Alert>
-        <RolesPanel initialRoles={initialRoles} users={users} />
+        <RolesPanel initialRoles={initialRoles} users={users} permissionGroups={permissionGroups} />
       </div>
     </div>
   );

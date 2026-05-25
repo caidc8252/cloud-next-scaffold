@@ -3,10 +3,10 @@
 import { useState, useMemo } from "react";
 import { Search, ChevronDown, ChevronRight } from "lucide-react";
 import { Badge, Button, Input, Switch } from "@cloud/ui";
-import { permissionGroupsForContract } from "../helpers";
+import type { PermissionGroup } from "../types";
 
 type PermissionsCardProps = {
-  contractDefineCode: string;
+  groups: PermissionGroup[];
   permissions: string[];
   onTogglePerm: (code: string) => void;
   onToggleGroup: (menuId: string, grant: boolean) => void;
@@ -14,14 +14,13 @@ type PermissionsCardProps = {
 };
 
 export function PermissionsCard({
-  contractDefineCode, permissions, onTogglePerm, onToggleGroup, disabled,
+  groups, permissions, onTogglePerm, onToggleGroup, disabled,
 }: PermissionsCardProps) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "granted" | "available">("all");
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
 
   const grantedSet = useMemo(() => new Set(permissions), [permissions]);
-  const groups = useMemo(() => permissionGroupsForContract(contractDefineCode), [contractDefineCode]);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();

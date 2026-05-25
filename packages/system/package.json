@@ -7,6 +7,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@cloud/config": "workspace:*",
     "@cloud/request": "workspace:*",
     "lucide-react": "catalog:",
     "sonner": "^1.7.4"

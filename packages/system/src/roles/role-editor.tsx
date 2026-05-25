@@ -3,20 +3,20 @@
 import { useState, useMemo } from "react";
 import { Check, Copy, Trash2 } from "lucide-react";
 import { Badge, Button, Textarea, Modal, Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
-import type { Role, User } from "../types";
+import type { Role, User, PermissionGroup } from "../types";
 import { relTime } from "../helpers";
-import { PERMISSION_CATALOG } from "../mock";
 import { PermissionsCard } from "./permissions-card";
 
 type RoleEditorProps = {
   role: Role;
   users: User[];
+  permissionGroups: PermissionGroup[];
   onSave: (r: Role) => void;
   onDuplicate: () => void;
   onDelete: () => void;
 };
 
-export function RoleEditor({ role, users, onSave, onDuplicate, onDelete }: RoleEditorProps) {
+export function RoleEditor({ role, users, permissionGroups, onSave, onDuplicate, onDelete }: RoleEditorProps) {
   const [draft, setDraft] = useState(role);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -39,7 +39,8 @@ export function RoleEditor({ role, users, onSave, onDuplicate, onDelete }: RoleE
   }
 
   function toggleGroup(menuId: string, grant: boolean) {
-    const groupCodes = PERMISSION_CATALOG.filter((p) => p.menuId === menuId).map((p) => p.code);
+    const group = permissionGroups.find((g) => g.menuId === menuId);
+    const groupCodes = group ? group.items.map((p) => p.code) : [];
     let perms: string[];
     if (grant) {
       perms = [...new Set([...draft.permissions, ...groupCodes])];
@@ -80,7 +81,7 @@ export function RoleEditor({ role, users, onSave, onDuplicate, onDelete }: RoleE
         </div>
       </div>
       <div className="flex flex-col" style={{ padding: "18px 22px 24px", gap: 16 }}>
-        <PermissionsCard contractDefineCode={draft.contractDefineCode} permissions={draft.permissions}
+        <PermissionsCard groups={permissionGroups} permissions={draft.permissions}
           onTogglePerm={togglePerm} onToggleGroup={toggleGroup} disabled={role.builtin} />
 
         <Card>
