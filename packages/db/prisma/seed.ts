@@ -118,35 +118,35 @@ async function main() {
 
   // 6e. Permissions for Roles menu
   const rolesPermissions = [
-    { permissionCode: "roles.VIEW", label: "View Roles", remark: "View role list and details" },
-    { permissionCode: "roles.ADD", label: "Create Role", remark: "Create new role" },
-    { permissionCode: "roles.UPD", label: "Edit Role", remark: "Edit role name, description, permissions" },
-    { permissionCode: "roles.DELETE", label: "Delete Role", remark: "Delete non-builtin role" },
-    { permissionCode: "roles.DUPLICATE", label: "Duplicate Role", remark: "Copy an existing role" },
+    { permissionCode: "roles.VIEW", remark: "View role list and details" },
+    { permissionCode: "roles.ADD", remark: "Create new role" },
+    { permissionCode: "roles.UPD", remark: "Edit role name, description, permissions" },
+    { permissionCode: "roles.DELETE", remark: "Delete non-builtin role" },
+    { permissionCode: "roles.DUPLICATE", remark: "Copy an existing role" },
   ];
   for (const p of rolesPermissions) {
     await prisma.sysPermission.upsert({
       where: { permissionCode: p.permissionCode },
-      update: { permissionMenuId: rolesMenu.menuId, label: p.label, remark: p.remark },
-      create: { permissionCode: p.permissionCode, permissionMenuId: rolesMenu.menuId, label: p.label, remark: p.remark },
+      update: { permissionMenuId: rolesMenu.menuId, remark: p.remark },
+      create: { permissionCode: p.permissionCode, permissionMenuId: rolesMenu.menuId, remark: p.remark },
     });
   }
 
   // 6f. Permissions for Users menu
   const usersPermissions = [
-    { permissionCode: "users.VIEW", label: "View Users", remark: "View user list and details" },
-    { permissionCode: "users.ADD", label: "Create User", remark: "Create user (direct mode)" },
-    { permissionCode: "users.INVITE", label: "Invite User", remark: "Invite user (email mode, placeholder)" },
-    { permissionCode: "users.UPD", label: "Edit User", remark: "Edit user display name, email, remark" },
-    { permissionCode: "users.LOCK", label: "Lock/Unlock User", remark: "Lock / unlock user account" },
-    { permissionCode: "users.RESETPW", label: "Reset Password", remark: "Force-reset user password" },
-    { permissionCode: "users.CHANGE_ROLE", label: "Change Role", remark: "Change user's assigned role" },
+    { permissionCode: "users.VIEW", remark: "View user list and details" },
+    { permissionCode: "users.ADD", remark: "Create user (direct mode)" },
+    { permissionCode: "users.INVITE", remark: "Invite user (email mode, placeholder)" },
+    { permissionCode: "users.UPD", remark: "Edit user display name, email, remark" },
+    { permissionCode: "users.LOCK", remark: "Lock / unlock user account" },
+    { permissionCode: "users.RESETPW", remark: "Force-reset user password" },
+    { permissionCode: "users.CHANGE_ROLE", remark: "Change user's assigned role" },
   ];
   for (const p of usersPermissions) {
     await prisma.sysPermission.upsert({
       where: { permissionCode: p.permissionCode },
-      update: { permissionMenuId: usersMenu.menuId, label: p.label, remark: p.remark },
-      create: { permissionCode: p.permissionCode, permissionMenuId: usersMenu.menuId, label: p.label, remark: p.remark },
+      update: { permissionMenuId: usersMenu.menuId, remark: p.remark },
+      create: { permissionCode: p.permissionCode, permissionMenuId: usersMenu.menuId, remark: p.remark },
     });
   }
 

@@ -26,6 +26,13 @@ async function loadRoles(entityId: number) {
   return roles.map((r) => toClientRole(r, updaterMap.get(r.updUserId) ?? "system"));
 }
 
+function labelFromCode(code: string): string {
+  const [module, action] = code.split(".");
+  const fmt = (s: string) =>
+    s.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return `${fmt(module)} ${fmt(action ?? "")}`.trim();
+}
+
 async function loadPermissionGroups(contractDefineCode: string): Promise<PermissionGroup[]> {
   const menus = await prisma.sysMenu.findMany({
     where: { contractDefineCode, isVisible: true },
@@ -44,7 +51,7 @@ async function loadPermissionGroups(contractDefineCode: string): Promise<Permiss
       menuTitle: m.menuTitle,
       items: m.permissions.map((p) => ({
         code: p.permissionCode,
-        label: p.label ?? p.permissionCode,
+        label: p.label ?? labelFromCode(p.permissionCode),
         desc: p.remark ?? "",
       })),
     }));
