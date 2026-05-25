@@ -61,13 +61,14 @@ function NavSubItem({ href, label, active }: { href: string; label: string; acti
 }
 
 function NavItemRow({ item, pathname }: { item: SidebarNavItem; pathname: string }) {
-  const isSubActive = (href: string) =>
+  // pathname 完全等于 href 或以 "href/" 开头才算匹配。这样根路径 "/" 只在
+  // 严格 === "/" 时命中（"/" + "/" = "//" 不会匹配任何 Next pathname），同时
+  // 避免 "/users" 被 "/users-archive" 误激活。
+  const matches = (href: string) =>
     pathname === href || pathname.startsWith(href + '/')
 
-  const childActive = !!item.children?.some((c) => isSubActive(c.href))
-  const active = item.href
-    ? (item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)) && !item.children
-    : false
+  const childActive = !!item.children?.some((c) => matches(c.href))
+  const active = item.href ? matches(item.href) && !item.children : false
 
   const [open, setOpen] = React.useState(childActive)
 
@@ -107,7 +108,7 @@ function NavItemRow({ item, pathname }: { item: SidebarNavItem; pathname: string
                 key={sub.href}
                 href={sub.href}
                 label={sub.label}
-                active={isSubActive(sub.href)}
+                active={matches(sub.href)}
               />
             ))}
           </div>

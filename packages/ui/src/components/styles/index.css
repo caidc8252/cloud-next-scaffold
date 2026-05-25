@@ -1,3 +1,8 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/geist";
+@source "../..";
+
 @custom-variant dark (&:is(.dark *, [data-theme="dark"] *));
 
 .dark, [data-theme="dark"] { color-scheme: dark; }

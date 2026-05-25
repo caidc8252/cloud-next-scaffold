@@ -1,0 +1,19 @@
+{
+  "name": "@cloud/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts",
+    "./client": "./src/client.tsx"
+  },
+  "dependencies": {
+    "next-intl": "catalog:",
+    "server-only": "catalog:"
+  },
+  "peerDependencies": {
+    "next": "^16.0.0",
+    "react": "catalog:"
+  }
+}

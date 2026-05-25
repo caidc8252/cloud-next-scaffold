@@ -7,9 +7,9 @@ const appRoot = dirname(fileURLToPath(import.meta.url));
 loadEnv({ path: join(appRoot, "../../.env") });
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@cloud/config", "@cloud/db", "@cloud/request", "@cloud/security", "@cloud/ui"],
+  transpilePackages: ["@cloud/config", "@cloud/db", "@cloud/i18n", "@cloud/request", "@cloud/security", "@cloud/ui"],
   experimental: {
-    optimizePackageImports: ["@cloud/ui", "lucide-react"],
+    optimizePackageImports: ["@cloud/i18n", "@cloud/ui", "lucide-react"],
   },
   turbopack: {
     root: join(appRoot, "../.."),

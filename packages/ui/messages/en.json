@@ -6,6 +6,22 @@
         "users": "Users",
         "permissions": "Permissions"
       }
+    },
+    "datePicker": {
+      "placeholder": {
+        "date": "Pick a date",
+        "range": "Pick a range",
+        "dateTime": "Pick a date and time"
+      },
+      "presets": {
+        "today": "Today",
+        "last7": "Last 7 days",
+        "last30": "Last 30 days",
+        "thisMonth": "This month",
+        "lastMonth": "Last month"
+      },
+      "clear": "Clear",
+      "ok": "OK"
     }
   }
 }

@@ -6,29 +6,17 @@ import { cn } from '../../lib/utils'
 import {
   Breadcrumb,
   BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
 } from '../ui/breadcrumb'
 
-export interface BreadcrumbItemDef {
-  label: string
-  href?: string
-}
-
 interface AppHeaderProps {
-  breadcrumbs?: BreadcrumbItemDef[]
+  /** Breadcrumb items as a render slot. Caller renders <BreadcrumbItem>s; this wrapper provides <Breadcrumb><BreadcrumbList>. */
+  breadcrumbs?: React.ReactNode
   onSearchClick?: () => void
   onNotificationClick?: () => void
   searchPlaceholder?: string
   className?: string
 }
 
-// Top application bar with breadcrumb trail (left) and search/notification actions (right).
-// breadcrumbs: {label, href?}[] — items without href render as the current page (plain text, no link).
-// onSearchClick: shows a ⌘K search button when provided; omit to hide.
-// onNotificationClick: bell icon button; always rendered but click handler is optional.
 function AppHeader({
   breadcrumbs,
   onSearchClick,
@@ -38,22 +26,9 @@ function AppHeader({
 }: AppHeaderProps) {
   return (
     <div className={cn('flex items-center gap-3 w-full', className)}>
-      {breadcrumbs && breadcrumbs.length > 0 && (
+      {breadcrumbs && (
         <Breadcrumb>
-          <BreadcrumbList>
-            {breadcrumbs.map((crumb, i) => (
-              <React.Fragment key={i}>
-                {i > 0 && <BreadcrumbSeparator />}
-                <BreadcrumbItem>
-                  {crumb.href ? (
-                    <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink>
-                  ) : (
-                    <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                  )}
-                </BreadcrumbItem>
-              </React.Fragment>
-            ))}
-          </BreadcrumbList>
+          <BreadcrumbList>{breadcrumbs}</BreadcrumbList>
         </Breadcrumb>
       )}
 
@@ -83,5 +58,3 @@ function AppHeader({
 }
 
 export { AppHeader }
-
-

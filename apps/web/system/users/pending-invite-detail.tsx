@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Mail, User, Clock, Shield, Copy, Pencil, AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
-import { Alert, AlertDescription, Button, Card, CardContent, CardHeader, CardTitle, Checkbox } from "@cloud/ui";
+import { Alert, AlertDescription, Button, Card, CardContent, CardHeader, CardTitle, Checkbox, toast } from "@cloud/ui";
 import type { Role, User as UserType } from "../types";
 import { fmtDateTime, relTime } from "../helpers";
 

@@ -66,31 +66,19 @@
 }
 
 /* Error toast: hover-to-show copy button pinned to toast top-right */
-.cn-toast .cn-error-toast-copy {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  padding: 3px 10px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1.5;
-  color: var(--color-content-secondary);
-  background: var(--color-surface-3);
-  border: 1px solid var(--color-line-default);
-  cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s;
-  z-index: 2;
+.cn-error-toast-copy {
+  @apply absolute right-2.5 top-2.5;
+  @apply px-2.5 py-0.5;
+  @apply rounded-md border text-xs font-medium leading-normal;
+  @apply text-content-secondary bg-surface-3 border-line-default;
+  @apply cursor-pointer z-10;
+  @apply opacity-0 pointer-events-none transition-opacity duration-150;
 }
 
 .cn-toast:hover .cn-error-toast-copy {
-  opacity: 1;
-  pointer-events: auto;
+  @apply opacity-100 pointer-events-auto;
 }
 
 .cn-error-toast-copy:hover {
-  background: var(--color-surface-hover);
-  color: var(--color-content-primary);
+  @apply bg-surface-hover text-content-primary;
 }

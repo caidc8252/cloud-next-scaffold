@@ -6,6 +6,22 @@
         "users": "用户",
         "permissions": "权限"
       }
+    },
+    "datePicker": {
+      "placeholder": {
+        "date": "选择日期",
+        "range": "选择日期范围",
+        "dateTime": "选择日期和时间"
+      },
+      "presets": {
+        "today": "今天",
+        "last7": "过去 7 天",
+        "last30": "过去 30 天",
+        "thisMonth": "本月",
+        "lastMonth": "上月"
+      },
+      "clear": "清除",
+      "ok": "确定"
     }
   }
 }

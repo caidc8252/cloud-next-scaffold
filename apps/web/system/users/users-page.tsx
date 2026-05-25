@@ -2,9 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { Search, Plus } from "lucide-react";
-import { toast } from "sonner";
 import { toastError } from "@cloud/request/error-toast";
-import { Button, Input, Modal, SplitPanel, SplitPanelSidebar, SplitPanelContent } from "@cloud/ui";
+import { Button, Input, Modal, SplitPanel, SplitPanelSidebar, SplitPanelContent, toast } from "@cloud/ui";
 import { request } from "@cloud/request/client";
 import type { Role, User } from "../types";
 import { UserListItem } from "./user-list-item";

@@ -6,6 +6,22 @@
         "users": "ユーザー",
         "permissions": "権限"
       }
+    },
+    "datePicker": {
+      "placeholder": {
+        "date": "日付を選択",
+        "range": "期間を選択",
+        "dateTime": "日付と時刻を選択"
+      },
+      "presets": {
+        "today": "今日",
+        "last7": "過去 7 日間",
+        "last30": "過去 30 日間",
+        "thisMonth": "今月",
+        "lastMonth": "先月"
+      },
+      "clear": "クリア",
+      "ok": "OK"
     }
   }
 }
