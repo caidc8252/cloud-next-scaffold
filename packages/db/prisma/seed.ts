@@ -1,5 +1,35 @@
 import { prisma } from "../src/index.ts";
 
+// ─── Initial permission definitions ────────────────────
+// label is auto-generated from code: "module.ACTION_NAME" → "Module Action Name"
+function labelFromCode(code: string): string {
+  const [module, action] = code.split(".");
+  const fmt = (s: string) =>
+    s.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return `${fmt(module)} ${fmt(action ?? "")}`.trim();
+}
+
+type PermissionDef = { code: string; menuKey: string; remark: string };
+
+const PERMISSIONS: PermissionDef[] = [
+  // Dashboard
+  { code: "dashboard:view", menuKey: "dashboard", remark: "View dashboard" },
+  // Roles
+  { code: "roles.VIEW", menuKey: "roles", remark: "View role list and details" },
+  { code: "roles.ADD", menuKey: "roles", remark: "Create new role" },
+  { code: "roles.UPD", menuKey: "roles", remark: "Edit role name, description, permissions" },
+  { code: "roles.DELETE", menuKey: "roles", remark: "Delete non-builtin role" },
+  { code: "roles.DUPLICATE", menuKey: "roles", remark: "Copy an existing role" },
+  // Users
+  { code: "users.VIEW", menuKey: "users", remark: "View user list and details" },
+  { code: "users.ADD", menuKey: "users", remark: "Create user (direct mode)" },
+  { code: "users.INVITE", menuKey: "users", remark: "Invite user (email mode, placeholder)" },
+  { code: "users.UPD", menuKey: "users", remark: "Edit user display name, email, remark" },
+  { code: "users.LOCK", menuKey: "users", remark: "Lock / unlock user account" },
+  { code: "users.RESETPW", menuKey: "users", remark: "Force-reset user password" },
+  { code: "users.CHANGE_ROLE", menuKey: "users", remark: "Change user's assigned role" },
+];
+
 const DEFAULT_PASSWORD = "ChangeMe!123";
 const DEFAULT_PASSWORD_HASH =
   "$argon2id$v=19$m=19456,t=2,p=1$Ev3lJmDRsEa0Nbomhgn47A$1lT4/JCDbV5hT5+63bxLMZBMyUinbkuEiAko+NTT96g";
@@ -84,17 +114,6 @@ async function main() {
     },
   });
 
-  // 6. Permission for dashboard
-  await prisma.sysPermission.upsert({
-    where: { permissionCode: "dashboard:view" },
-    update: { permissionMenuId: dashboardMenu.menuId },
-    create: {
-      permissionCode: "dashboard:view",
-      permissionMenuId: dashboardMenu.menuId,
-      remark: "View dashboard",
-    },
-  });
-
   // 6b. System parent menu
   const systemMenu = await prisma.sysMenu.upsert({
     where: { menuId: 2 },
@@ -116,37 +135,20 @@ async function main() {
     create: { menuTitle: "Users", path: "/system/users", icon: "users", sort: 102, parentMenuId: systemMenu.menuId, contractDefineCode: "ADMIN" },
   });
 
-  // 6e. Permissions for Roles menu
-  const rolesPermissions = [
-    { permissionCode: "roles.VIEW", remark: "View role list and details" },
-    { permissionCode: "roles.ADD", remark: "Create new role" },
-    { permissionCode: "roles.UPD", remark: "Edit role name, description, permissions" },
-    { permissionCode: "roles.DELETE", remark: "Delete non-builtin role" },
-    { permissionCode: "roles.DUPLICATE", remark: "Copy an existing role" },
-  ];
-  for (const p of rolesPermissions) {
-    await prisma.sysPermission.upsert({
-      where: { permissionCode: p.permissionCode },
-      update: { permissionMenuId: rolesMenu.menuId, remark: p.remark },
-      create: { permissionCode: p.permissionCode, permissionMenuId: rolesMenu.menuId, remark: p.remark },
-    });
-  }
+  // 6e. Seed all permissions
+  const menuKeyMap: Record<string, number> = {
+    dashboard: dashboardMenu.menuId,
+    roles: rolesMenu.menuId,
+    users: usersMenu.menuId,
+  };
 
-  // 6f. Permissions for Users menu
-  const usersPermissions = [
-    { permissionCode: "users.VIEW", remark: "View user list and details" },
-    { permissionCode: "users.ADD", remark: "Create user (direct mode)" },
-    { permissionCode: "users.INVITE", remark: "Invite user (email mode, placeholder)" },
-    { permissionCode: "users.UPD", remark: "Edit user display name, email, remark" },
-    { permissionCode: "users.LOCK", remark: "Lock / unlock user account" },
-    { permissionCode: "users.RESETPW", remark: "Force-reset user password" },
-    { permissionCode: "users.CHANGE_ROLE", remark: "Change user's assigned role" },
-  ];
-  for (const p of usersPermissions) {
+  for (const p of PERMISSIONS) {
+    const menuId = menuKeyMap[p.menuKey];
+    const label = labelFromCode(p.code);
     await prisma.sysPermission.upsert({
-      where: { permissionCode: p.permissionCode },
-      update: { permissionMenuId: usersMenu.menuId, remark: p.remark },
-      create: { permissionCode: p.permissionCode, permissionMenuId: usersMenu.menuId, remark: p.remark },
+      where: { permissionCode: p.code },
+      update: { permissionMenuId: menuId, label, remark: p.remark },
+      create: { permissionCode: p.code, permissionMenuId: menuId, label, remark: p.remark },
     });
   }
 
@@ -162,12 +164,7 @@ async function main() {
   });
 
   // 8. Bind all permissions to admin role
-  const allPermissionCodes = [
-    "dashboard:view",
-    "roles.VIEW", "roles.ADD", "roles.UPD", "roles.DELETE", "roles.DUPLICATE",
-    "users.VIEW", "users.ADD", "users.INVITE", "users.UPD", "users.LOCK", "users.RESETPW", "users.CHANGE_ROLE",
-  ];
-  for (const code of allPermissionCodes) {
+  for (const code of PERMISSIONS.map((p) => p.code)) {
     const exists = await prisma.sysRolePermission.findFirst({
       where: { roleId: adminRole.roleId, permissionCode: code },
     });
