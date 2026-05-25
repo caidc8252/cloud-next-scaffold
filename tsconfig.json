@@ -16,6 +16,8 @@
     "incremental": true,
     "paths": {
       "@/*": ["./packages/ui/src/*"],
+      "@cloud/auth": ["./packages/auth/src/index.ts"],
+      "@cloud/auth/server": ["./packages/auth/src/server/index.ts"],
       "@cloud/config": ["./packages/config/src/index.ts"],
       "@cloud/db": ["./packages/db/src/index.ts"],
       "@cloud/permissions": ["./packages/permissions/src/index.ts"],
@@ -23,7 +25,6 @@
       "@cloud/request/server": ["./packages/request/src/server.ts"],
       "@cloud/request/client": ["./packages/request/src/client.ts"],
       "@cloud/security/server": ["./packages/security/src/server/index.ts"],
-      "@cloud/system": ["./packages/system/src/index.ts"],
       "@cloud/ui": ["./packages/ui/src/index.ts"],
       "@cloud/ui/*": ["./packages/ui/src/*"]
     }
@@ -32,14 +33,14 @@
     "apps/web/**/*.ts",
     "apps/web/**/*.tsx",
     "apps/web/next-env.d.ts",
+    "packages/auth/**/*.ts",
+    "packages/auth/**/*.tsx",
     "packages/config/src/**/*.ts",
     "packages/config/test/**/*.ts",
     "packages/db/**/*.ts",
     "packages/permissions/src/**/*.ts",
     "packages/request/src/**/*.ts",
     "packages/security/**/*.ts",
-    "packages/system/src/**/*.ts",
-    "packages/system/src/**/*.tsx",
     "packages/ui/src/**/*.ts",
     "packages/ui/src/**/*.tsx"
   ],

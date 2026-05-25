@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button, Field, Input, Modal } from "@cloud/ui";
 import type { Role } from "../types";
 
@@ -11,12 +11,19 @@ type DuplicateRoleModalProps = {
 };
 
 export function DuplicateRoleModal({ source, onClose, onDuplicate }: DuplicateRoleModalProps) {
-  const [name, setName] = useState("");
+  if (!source) return null;
 
-  useEffect(() => {
-    if (source) setName(`${source.name} (copy)`);
-  }, [source]);
+  return <DuplicateRoleModalBody key={source.id} source={source} onClose={onClose} onDuplicate={onDuplicate} />;
+}
 
+type DuplicateRoleModalBodyProps = {
+  source: Role;
+  onClose: () => void;
+  onDuplicate: (name: string) => void;
+};
+
+function DuplicateRoleModalBody({ source, onClose, onDuplicate }: DuplicateRoleModalBodyProps) {
+  const [name, setName] = useState(`${source.name} (copy)`);
   const valid = name.trim().length > 1;
 
   function handleSubmit() {
@@ -24,14 +31,14 @@ export function DuplicateRoleModal({ source, onClose, onDuplicate }: DuplicateRo
   }
 
   return (
-    <Modal open={!!source} onClose={onClose} title="Duplicate role"
+    <Modal open onClose={onClose} title="Duplicate role"
       footer={<div className="flex gap-2 justify-end">
         <Button variant="ghost" onClick={onClose}>Cancel</Button>
         <Button variant="primary" disabled={!valid} onClick={handleSubmit}>Duplicate</Button>
       </div>}>
       <div className="space-y-3">
         <p className="text-sm text-content-secondary">
-          Create a copy of <strong>{source?.name}</strong> with all its permissions.
+          Create a copy of <strong>{source.name}</strong> with all its permissions.
         </p>
         <Field label="New role name" required>
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter role name"

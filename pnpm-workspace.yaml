@@ -1,11 +1,11 @@
 packages:
   - "apps/web"
+  - "packages/auth"
   - "packages/config"
   - "packages/db"
   - "packages/permissions"
   - "packages/request"
   - "packages/security"
-  - "packages/system"
   - "packages/ui"
 
 catalog:

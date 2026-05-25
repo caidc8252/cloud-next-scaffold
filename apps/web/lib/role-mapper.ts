@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Role } from "@cloud/system";
+import type { Role } from "../system/types";
 
 type RoleRow = {
   roleId: number;

@@ -2,7 +2,7 @@ import { prisma } from "@cloud/db";
 import { requireSession } from "../../../../lib/auth";
 import { toClientUser, USER_INCLUDE, collectAuxUserIds } from "../../../../lib/user-mapper";
 import { toClientRole } from "../../../../lib/role-mapper";
-import { UsersPage } from "@cloud/system";
+import { UsersPage } from "../../../../system";
 
 async function loadUsers(entityId: number) {
   const entityUserLinks = await prisma.sysEntityUser.findMany({

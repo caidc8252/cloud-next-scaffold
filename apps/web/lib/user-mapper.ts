@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { User, PasswordResetRequest } from "@cloud/system";
+import type { User, PasswordResetRequest } from "../system/types";
 
 type UserRow = {
   userId: number;
