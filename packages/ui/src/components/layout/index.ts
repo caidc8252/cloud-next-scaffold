@@ -1,6 +1,7 @@
 export * from './sidebar'
 export * from './content-header'
 export * from './app-header'
+export * from './breadcrumbs'
 export * from './layout'
 export * from './list-item'
 export * from './split-panel'

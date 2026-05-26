@@ -3,7 +3,6 @@ import { getEnv } from "@cloud/config";
 import { AppHeader, Layout, Sidebar, type SidebarSection } from "@cloud/ui/components/layout";
 import { requireSession } from "../../lib/auth";
 import { UserMenu } from "./_components/user-menu";
-import { PortalBreadcrumbs } from "./_components/portal-breadcrumbs";
 
 type Menu = {
   id: string;
@@ -60,7 +59,13 @@ function buildSidebarSections(menus: Menu[]): SidebarSection[] {
   return sections;
 }
 
-export default async function PortalLayout({ children }: { children: React.ReactNode }) {
+export default async function PortalLayout({
+  children,
+  breadcrumbs,
+}: {
+  children: React.ReactNode;
+  breadcrumbs: React.ReactNode;
+}) {
   const env = getEnv();
   const session = await requireSession();
 
@@ -90,7 +95,7 @@ export default async function PortalLayout({ children }: { children: React.React
           }
         />
       }
-      header={<AppHeader breadcrumbs={<PortalBreadcrumbs menus={menus} />} />}
+      header={<AppHeader breadcrumbs={breadcrumbs} />}
     >
       {children}
     </Layout>
