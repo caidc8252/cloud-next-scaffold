@@ -39,9 +39,14 @@
 - `apps/web/.env` 负责应用展示名等 app 级变量。
 - Prisma 统一通过根脚本 [scripts/prisma.mjs](/d:/codes/cloud-frontend2/scripts/prisma.mjs) 触发，避免 workspace 下 `.env` 路径不一致。
 - `packages/config` 会主动加载根 `.env`，否则 Next 应用构建时拿不到数据库配置。
-- `packages/permissions` 同时承载 `PermissionChecker`、服务端登录态实现，以及 `@cloud/permissions/client` 提供的前端权限 hook；`apps/web/lib/auth.ts` 只做兼容转发。
+- `packages/permissions` 同时承载 `PermissionChecker`、服务端登录态实现，以及 `@cloud/permissions/client` 提供的前端权限 hook。业务代码统一从 `@cloud/permissions/server` 引用，不再保留 `apps/web/lib/auth.ts` 兼容转发。
 - `packages/storage` 统一承载 Amazon S3 上传会话、STS 临时凭证和服务端上传；业务代码连接 S3 默认走 `@cloud/storage/server`。
-- 系统管理页面组件（users / roles）属于 `apps/web` 业务代码，当前放在 `apps/web/system`，不再单独维护 `packages/system`。
+- 系统管理页面组件（users / roles）属于 `apps/web` 业务代码，按 Next.js 惯例放在 `app/(portal)/system/<feature>/` 下：
+  - `page.tsx` 服务端入口（鉴权 + 数据加载）
+  - `_components/`：客户端组件（list / detail / modal 等）
+  - `_server/`：服务端工具（mapper、纯查询逻辑），文件需 `import "server-only"`
+  - 跨 feature 共享的类型 / helper 放 `app/(portal)/system/_shared/`
+- 跨目录引用一律走 `@/...` 路径别名（tsconfig 已配置），不要再写 `../../../..`。
 
 ## Next.js 约束
 
