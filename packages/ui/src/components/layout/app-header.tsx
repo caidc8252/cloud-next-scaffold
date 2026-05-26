@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Search, Bell } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import {
   Breadcrumb,
@@ -12,7 +12,8 @@ interface AppHeaderProps {
   /** Breadcrumb items as a render slot. Caller renders <BreadcrumbItem>s; this wrapper provides <Breadcrumb><BreadcrumbList>. */
   breadcrumbs?: React.ReactNode
   onSearchClick?: () => void
-  onNotificationClick?: () => void
+  /** Notification render slot (e.g. a Popover-anchored bell). Owned entirely by the caller so it can wire badges, popovers, etc. */
+  notification?: React.ReactNode
   searchPlaceholder?: string
   className?: string
 }
@@ -20,7 +21,7 @@ interface AppHeaderProps {
 function AppHeader({
   breadcrumbs,
   onSearchClick,
-  onNotificationClick,
+  notification,
   searchPlaceholder = 'Search…',
   className,
 }: AppHeaderProps) {
@@ -47,12 +48,7 @@ function AppHeader({
         </button>
       )}
 
-      <button
-        onClick={onNotificationClick}
-        className="flex items-center justify-center w-8 h-8 rounded-lg text-content-secondary hover:bg-surface-hover hover:text-content-primary transition-colors cursor-pointer"
-      >
-        <Bell size={15} />
-      </button>
+      {notification}
     </div>
   )
 }

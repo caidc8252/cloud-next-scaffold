@@ -12,6 +12,7 @@ import {
   CommandList,
 } from "@cloud/ui";
 import { getMenuIcon } from "./menu-icon";
+import { NotificationBell } from "./notification-bell";
 
 type Menu = {
   id: string;
@@ -131,7 +132,11 @@ export function PortalHeader({
 
   return (
     <>
-      <AppHeader breadcrumbs={breadcrumbs} onSearchClick={() => setOpen(true)} />
+      <AppHeader
+        breadcrumbs={breadcrumbs}
+        onSearchClick={() => setOpen(true)}
+        notification={<NotificationBell />}
+      />
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Search menus…" />
         <CommandList>
