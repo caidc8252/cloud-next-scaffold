@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Mail, Info } from "lucide-react";
 import { Alert, AlertDescription, Button, Checkbox, Field, Input, Modal, Textarea } from "@cloud/ui";
-import type { Role, User } from "../types";
+import type { Role, User } from "@/app/(portal)/system/_shared/types";
 
 type NewUserModalProps = {
   open: boolean;

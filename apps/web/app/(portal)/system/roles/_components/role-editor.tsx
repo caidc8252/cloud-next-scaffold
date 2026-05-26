@@ -3,8 +3,8 @@
 import { useState, useMemo } from "react";
 import { Check, Copy, Trash2 } from "lucide-react";
 import { Badge, Button, Textarea, Modal, Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
-import type { Role, User, PermissionGroup } from "../types";
-import { relTime } from "../helpers";
+import type { Role, User, PermissionGroup } from "@/app/(portal)/system/_shared/types";
+import { relTime } from "@/app/(portal)/system/_shared/helpers";
 import { PermissionsCard } from "./permissions-card";
 
 type RoleEditorProps = {

@@ -9,7 +9,7 @@ import {
 } from "@cloud/request/server";
 import { ERR_INVALID_ID, ERR_USER_NOT_FOUND, ERR_USER_PROTECTED } from "@cloud/request/error-codes";
 import { AuthzError, assertPermissions } from "@cloud/permissions/server";
-import { toClientUser, USER_INCLUDE } from "../../../../../../lib/user-mapper";
+import { toClientUser, USER_INCLUDE } from "@/app/(portal)/system/users/_server/user-mapper";
 
 export async function POST(
   _req: Request,

@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Role } from "../system/types";
+import type { Role } from "@/app/(portal)/system/_shared/types";
 
 type RoleRow = {
   roleId: number;

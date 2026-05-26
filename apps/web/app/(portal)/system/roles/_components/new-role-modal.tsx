@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, Field, Input, Textarea, Modal, Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@cloud/ui";
-import type { Role } from "../types";
+import type { Role } from "@/app/(portal)/system/_shared/types";
 
 type NewRoleModalProps = {
   open: boolean;

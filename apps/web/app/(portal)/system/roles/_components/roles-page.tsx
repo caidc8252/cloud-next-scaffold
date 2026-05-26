@@ -1,11 +1,20 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, Shield } from "lucide-react";
 import { toastError } from "@cloud/request/error-toast";
-import { Button, Input, SplitPanel, SplitPanelSidebar, SplitPanelContent, toast } from "@cloud/ui";
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  Input,
+  SplitPanel,
+  SplitPanelSidebar,
+  SplitPanelContent,
+  toast,
+} from "@cloud/ui";
 import { request } from "@cloud/request/client";
-import type { Role, User, PermissionGroup } from "../types";
+import type { Role, User, PermissionGroup } from "@/app/(portal)/system/_shared/types";
 import { RoleListItem } from "./role-list-item";
 import { RoleEditor } from "./role-editor";
 import { NewRoleModal } from "./new-role-modal";
@@ -13,13 +22,13 @@ import { DuplicateRoleModal } from "./duplicate-role-modal";
 
 const API_BASE = "/api/system/roles";
 
-type RolesPanelProps = {
+type RolesPageProps = {
   initialRoles: Role[];
   users?: User[];
   permissionGroups: PermissionGroup[];
 };
 
-export function RolesPanel({ initialRoles, users = [], permissionGroups }: RolesPanelProps) {
+export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesPageProps) {
   const [roles, setRoles] = useState<Role[]>(initialRoles);
   const [selectedId, setSelectedId] = useState<string | null>(initialRoles[0]?.id ?? null);
   const [query, setQuery] = useState("");
@@ -96,31 +105,48 @@ export function RolesPanel({ initialRoles, users = [], permissionGroups }: Roles
   }
 
   return (
-    <>
-      <SplitPanel>
-        <SplitPanelSidebar header={
-          <div className="flex gap-2 p-2.5">
-            <Input prefix={<Search size={14} />} placeholder="Search roles..." value={query}
-              onChange={(e) => setQuery(e.target.value)} inputSize="sm" className="flex-1" />
-            <Button variant="primary" size="sm" onClick={() => setShowNew(true)} iconLeft={<Plus size={14} />}>
-              New role
-            </Button>
-          </div>
-        }>
-          {filtered.map((r) => (
-            <RoleListItem key={r.id} role={r} active={r.id === selectedId} onClick={() => setSelectedId(r.id)} />
-          ))}
-        </SplitPanelSidebar>
-        <SplitPanelContent empty="Select a role to edit">
-          {selected ? (
-            <RoleEditor role={selected} users={users} permissionGroups={permissionGroups} onSave={update}
-              onDuplicate={() => setDuplicateSource(selected)} onDelete={() => deleteRole(selected.id)} />
-          ) : null}
-        </SplitPanelContent>
-      </SplitPanel>
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight text-content-primary mb-1">Roles</h1>
+        <p className="text-sm text-content-secondary">
+          Carbon platform roles — assignable only to Carbon staff (see <strong>System &rarr; Users</strong>).
+          <span className="text-content-tertiary"> All roles here are bound to the <code className="font-mono text-xs">ADMIN</code> contract.</span>
+        </p>
+      </div>
+      <div className="flex flex-col gap-3.5">
+        <Alert variant="info">
+          <Shield size={14} />
+          <AlertDescription>
+            <strong>Internal scope.</strong> These roles are not visible to customer operators.
+            They govern access to the Carbon admin platform itself — managing other staff users,
+            platform-wide notifications, API keys, and global audit.
+          </AlertDescription>
+        </Alert>
+        <SplitPanel>
+          <SplitPanelSidebar header={
+            <div className="flex gap-2 p-2.5">
+              <Input prefix={<Search size={14} />} placeholder="Search roles..." value={query}
+                onChange={(e) => setQuery(e.target.value)} inputSize="sm" className="flex-1" />
+              <Button variant="primary" size="sm" onClick={() => setShowNew(true)} iconLeft={<Plus size={14} />}>
+                New role
+              </Button>
+            </div>
+          }>
+            {filtered.map((r) => (
+              <RoleListItem key={r.id} role={r} active={r.id === selectedId} onClick={() => setSelectedId(r.id)} />
+            ))}
+          </SplitPanelSidebar>
+          <SplitPanelContent empty="Select a role to edit">
+            {selected ? (
+              <RoleEditor role={selected} users={users} permissionGroups={permissionGroups} onSave={update}
+                onDuplicate={() => setDuplicateSource(selected)} onDelete={() => deleteRole(selected.id)} />
+            ) : null}
+          </SplitPanelContent>
+        </SplitPanel>
+      </div>
       <NewRoleModal open={showNew} onClose={() => setShowNew(false)} onCreate={createRole} allRoles={roles} />
       <DuplicateRoleModal source={duplicateSource} onClose={() => setDuplicateSource(null)}
         onDuplicate={(name) => duplicateSource && duplicate(duplicateSource, name)} />
-    </>
+    </div>
   );
 }

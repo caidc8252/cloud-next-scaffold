@@ -1,8 +1,8 @@
 import { prisma } from "@cloud/db";
 import { requirePermissions } from "@cloud/permissions/server";
-import { toClientUser, USER_INCLUDE, collectAuxUserIds } from "../../../../lib/user-mapper";
-import { toClientRole } from "../../../../lib/role-mapper";
-import { UsersPage } from "../../../../system";
+import { toClientUser, USER_INCLUDE, collectAuxUserIds } from "@/app/(portal)/system/users/_server/user-mapper";
+import { toClientRole } from "@/app/(portal)/system/roles/_server/role-mapper";
+import { UsersPage } from "@/app/(portal)/system/users/_components/users-page";
 
 async function loadUsers(entityId: number) {
   const entityUserLinks = await prisma.sysEntityUser.findMany({

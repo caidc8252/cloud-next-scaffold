@@ -2,7 +2,7 @@
 
 import { Shield } from "lucide-react";
 import { Badge, ListItem } from "@cloud/ui";
-import type { Role } from "../types";
+import type { Role } from "@/app/(portal)/system/_shared/types";
 
 type RoleListItemProps = {
   role: Role;
