@@ -41,14 +41,10 @@ export function PortalBreadcrumbs({ menus }: { menus: Menu[] }) {
   const chain = ancestorChain(menus, current);
   const trimmed = chain.length > 1 ? chain.slice(1) : chain;
 
-  const items: BreadcrumbsItem[] = trimmed.map((m, i) => {
-    const isLast = i === trimmed.length - 1;
-    return {
-      label: m.label,
-      // Non-last segments link back to their page; the last is the current page.
-      href: !isLast && m.path ? m.path : undefined,
-    };
-  });
+  // Menu-tree pages render without hrefs — the breadcrumb shows location,
+  // not back-navigation. Detail pages that want clickable ancestors should
+  // supply their own slot at @breadcrumbs/<route>/page.tsx and add href there.
+  const items: BreadcrumbsItem[] = trimmed.map((m) => ({ label: m.label }));
 
   return <Breadcrumbs items={items} />;
 }

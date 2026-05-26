@@ -6,8 +6,9 @@ import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
  *
  * Default behavior: matches pathname against session.menus exactly, walks up
  * the parentMenuId chain, drops the L1 group (pure grouping, not navigable),
- * and renders the rest (L2 onwards). Intermediate segments link back to their
- * page; the last segment is the current page.
+ * and renders the rest (L2 onwards) as PLAIN labels (no hrefs). Menu-tree
+ * pages show their location, they do not offer click-to-navigate-back —
+ * users switch among siblings via the sidebar.
  *
  * Menu hierarchy convention (max depth 3):
  *   L1 = group only, NO path  (e.g. "System", "Workspace")
@@ -16,8 +17,8 @@ import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
  *
  * Examples:
  *   /system/roles                       → [Roles]
- *   /workspace/device/sample-order      → [Device (linked), Sample Order]
- *   /system/roles/[id]                  → custom slot, see Case B
+ *   /workspace/device/sample-order      → [Device, Sample Order]   (no links)
+ *   /system/roles/[id]                  → custom slot, see Case B (Roles linked)
  *
  * Every route under (portal) that does not have its own slot file falls
  * through to this component.
@@ -29,7 +30,8 @@ import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
  * Case A — Static menu page (pathname equals an entry in sys_menu.path,
  *          e.g. /system/roles or /workspace/device/sample-order)
  *   Nothing to do. Default walks the ancestor chain, drops the L1 group,
- *   and renders intermediate segments as links (last segment = current page).
+ *   and renders all segments as plain labels — none are clickable. To
+ *   navigate among menu pages, users use the sidebar.
  *   Prerequisite: the menu row exists in packages/db/prisma/seed.ts (with
  *   correct parentMenuId chain) and has been applied via `pnpm db:seed`.
  *
