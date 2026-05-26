@@ -9,6 +9,7 @@
 - 当前开发方式是直接在仓库本体上迭代，不再提供 `init:project` 生成新项目。
 - 当前默认工作区：
   - `apps/web`
+  - `packages/cache`
   - `packages/config`
   - `packages/db`
   - `packages/permissions`
@@ -33,6 +34,7 @@
 ## 环境与脚本约束
 
 - 根 `.env` 负责数据库和认证密钥。
+- Redis 连接配置统一走根 `.env` 的 `REDIS_URL`，本地开发由 `docker-compose.yml` 启动 Redis。
 - `apps/web/.env` 负责应用展示名等 app 级变量。
 - Prisma 统一通过根脚本 [scripts/prisma.mjs](/d:/codes/cloud-frontend2/scripts/prisma.mjs) 触发，避免 workspace 下 `.env` 路径不一致。
 - `packages/config` 会主动加载根 `.env`，否则 Next 应用构建时拿不到数据库配置。

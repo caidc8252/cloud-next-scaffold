@@ -11,7 +11,8 @@ loadEnv({ path: path.resolve(here, "../../../.env") });
 const envSchema = z.object({
   NEXT_PUBLIC_APP_NAME: z.string().min(1),
   DATABASE_URL: z.string().min(1),
-  AUTH_SESSION_SECRET: z.string().min(16)
+  REDIS_URL: z.string().default("redis://localhost:6379"),
+  AUTH_SESSION_SECRET: z.string().min(16),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

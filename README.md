@@ -8,6 +8,7 @@
 - `packages/ui`：基础 UI 组件与样式
 - `packages/request`：通用请求封装与错误码
 - `packages/config`：环境变量校验
+- `packages/cache`：Redis 客户端与 JSON KV 缓存封装
 - `packages/db`：Prisma + PostgreSQL 数据层
 - `packages/security`：密码哈希、RSA 加解密
 - `packages/permissions`：权限判断 + 服务端登录态与前端权限 hook
@@ -39,6 +40,7 @@ pnpm dev
 
 - `apps/web`
 - `packages/config`
+- `packages/cache`
 - `packages/db`
 - `packages/permissions`
 - `packages/request`
@@ -60,6 +62,7 @@ apps/
       role-mapper.ts      # 角色数据映射
     system/               # 系统管理业务 UI（users, roles）
 packages/
+  cache/                  # Redis client + JSON KV cache
   config/                 # 环境变量校验
   db/                     # Prisma schema + 种子数据
   permissions/            # PermissionChecker + 登录态、DAL、session cookie + client hooks
@@ -85,14 +88,14 @@ Entity ──┬── EntityContract ── ContractDefine ── Menu ── P
 
 ### 关键概念
 
-| 概念 | 说明 |
-|------|------|
-| Entity | 组织/租户。用户通过 EntityUser 关联到 Entity |
-| ContractDefine | 合同类型，决定该 Entity 可使用哪些菜单和权限 |
-| EntityUser | 用户与组织的关联，包含 `authorizingType`（NORMAL/ADMIN）和 `status`（ACTIVE/INACTIVE） |
-| Role | 角色，归属于 Entity，通过 RolePermission 关联权限 |
-| Permission | 权限码，关联到 Menu |
-| Menu | 菜单树，归属于 ContractDefine |
+| 概念           | 说明                                                                                   |
+| -------------- | -------------------------------------------------------------------------------------- |
+| Entity         | 组织/租户。用户通过 EntityUser 关联到 Entity                                           |
+| ContractDefine | 合同类型，决定该 Entity 可使用哪些菜单和权限                                           |
+| EntityUser     | 用户与组织的关联，包含 `authorizingType`（NORMAL/ADMIN）和 `status`（ACTIVE/INACTIVE） |
+| Role           | 角色，归属于 Entity，通过 RolePermission 关联权限                                      |
+| Permission     | 权限码，关联到 Menu                                                                    |
+| Menu           | 菜单树，归属于 ContractDefine                                                          |
 
 ### 两种锁定机制
 
@@ -102,6 +105,7 @@ Entity ──┬── EntityContract ── ContractDefine ── Menu ── P
 ### ADMIN 授权类型
 
 当 `EntityUser.authorizingType = ADMIN` 时：
+
 - 自动获取该 Entity 合同下的所有权限，无需配置角色
 - 角色仍正常加载但不影响权限
 - 管理员不能对 ADMIN 用户执行停用、重置密码、角色变更等操作，只能修改备注
@@ -143,6 +147,7 @@ Session 内包含的数据：
 ```
 
 权限聚合路径：
+
 - 普通用户：`UserRole → Role → RolePermission → Permission`
 - ADMIN 用户：直接加载 ContractDefine 下所有 Permission
 
@@ -152,7 +157,7 @@ Session 内包含的数据：
 import { PermissionChecker } from "@cloud/permissions";
 
 const checker = new PermissionChecker(session);
-checker.has("system.user.create");        // 有其中一个即可
+checker.has("system.user.create"); // 有其中一个即可
 checker.has(["user.read", "user.write"]); // OR
 checker.hasAll(["user.read", "user.write"]); // AND
 ```
@@ -201,13 +206,13 @@ export function UsersActions({ permissions }: { permissions: string[] }) {
 
 ### 用户操作权限
 
-| 操作 | 普通用户 | ADMIN 用户 / 自己 |
-|------|----------|-------------------|
-| 修改备注 | 可以 | 可以 |
-| 修改显示名 | 可以 | 禁止 |
-| 修改角色 | 可以 | 禁止 |
-| 停用/启用 | 可以 | 禁止 |
-| 重置密码 | 可以 | 禁止 |
+| 操作       | 普通用户 | ADMIN 用户 / 自己 |
+| ---------- | -------- | ----------------- |
+| 修改备注   | 可以     | 可以              |
+| 修改显示名 | 可以     | 禁止              |
+| 修改角色   | 可以     | 禁止              |
+| 停用/启用  | 可以     | 禁止              |
+| 重置密码   | 可以     | 禁止              |
 
 ## 开发指南
 
@@ -237,10 +242,12 @@ export default async function ReportsPage() {
 菜单来自数据库 `sys_menu` 表，通过 Permission 关联到用户可见范围。
 
 添加方式：
+
 1. 修改 `packages/db/prisma/seed.ts`，执行 `pnpm db:seed`
 2. 或用 `pnpm db:studio` 直接改表
 
 菜单可访问的前提：
+
 - `path` 对应的页面已存在
 - 菜单关联了 Permission
 - 用户的角色包含该 Permission（或用户为 ADMIN 类型）

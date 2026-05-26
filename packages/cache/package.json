@@ -1,0 +1,13 @@
+{
+  "name": "@cloud/cache",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@cloud/config": "workspace:*",
+    "ioredis": "catalog:"
+  }
+}
