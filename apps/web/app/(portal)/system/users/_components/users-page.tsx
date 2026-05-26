@@ -155,7 +155,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
             const isActive = statusFilter === s.filterKey;
             return (
               <button key={s.label} type="button"
-                className={`text-left bg-surface-2 border rounded-xl shadow-sm px-4 py-4 transition-colors cursor-pointer ${isActive ? "border-primary ring-1 ring-primary/30" : "border-line-default hover:border-line-hover"}`}
+                className={`text-left bg-surface-2 border rounded-xl shadow-sm px-4 py-4 transition-colors cursor-pointer ${isActive ? "border-primary ring-1 ring-primary/30" : "border-line-default hover:border-line-strong"}`}
                 onClick={() => setStatusFilter(isActive ? "all" : s.filterKey)}>
                 <div className="text-xs text-content-tertiary">{s.label}</div>
                 <div className="text-2xl font-semibold mt-1 tabular-nums" style={s.color ? { color: s.color } : undefined}>

@@ -71,11 +71,9 @@ export function NewUserModal({ open, onClose, onCreate, users, roles }: NewUserM
             {adminRoles.map((r) => {
               const on = roleIds.has(r.id);
               return (
-                <label key={r.id} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors"
-                  style={{
-                    background: on ? "var(--color-primary-50)" : "var(--color-surface-3)",
-                    borderColor: on ? "oklch(60% 0.14 262 / 0.3)" : "var(--color-line-subtle)",
-                  }}>
+                <label key={r.id} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors ${
+                  on ? "bg-primary-50 border-primary/30" : "bg-surface-3 border-line-subtle"
+                }`}>
                   <Checkbox checked={on} onCheckedChange={() => toggleRole(r.id)} />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold">{r.name}</div>

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { User, Mail, Globe, Clock, Check, ChevronDown, Shield, KeyRound, Copy, AlertTriangle } from "lucide-react";
-import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle, Field, Input, Modal, Switch, Textarea } from "@cloud/ui";
+import { User, Mail, Globe, Clock, Check, Shield, KeyRound, Copy, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle, Collapsible, CollapsibleContent, CollapsibleTrigger, Field, Input, Modal, Switch, Textarea } from "@cloud/ui";
 import type { Role, User as UserType, PasswordResetRequest } from "@/app/(portal)/system/_shared/types";
 import { relTime, fmtDate, fmtDateTime, initials } from "@/app/(portal)/system/_shared/helpers";
 import { PASSWORD_POLICY } from "@cloud/config/password-policy";
@@ -18,7 +18,7 @@ type UserDetailProps = {
 };
 
 function avatarGradient(locked: boolean): string {
-  if (locked) return "linear-gradient(135deg, oklch(70% 0.13 25), oklch(58% 0.16 25))";
+  if (locked) return "linear-gradient(135deg, var(--color-error-500), var(--color-error-700))";
   return "linear-gradient(135deg, var(--color-primary-500), var(--color-accent-600))";
 }
 
@@ -61,8 +61,8 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
     <div>
       {/* Header */}
       <div className="flex items-start gap-4 border-b border-line-subtle" style={{ padding: "18px 22px" }}>
-        <div className="shrink-0 grid place-items-center text-white font-semibold text-xl"
-          style={{ width: 56, height: 56, borderRadius: 12, background: avatarGradient(disabled), letterSpacing: "-0.02em" }}>
+        <div className="shrink-0 grid place-items-center text-content-inverse font-semibold text-xl tracking-tight"
+          style={{ width: 56, height: 56, borderRadius: 12, background: avatarGradient(disabled) }}>
           {displayInitials}
         </div>
         <div className="flex-1 min-w-0">
@@ -71,12 +71,13 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
               disabled={isProtected} readOnly={isProtected}
               className="text-xl font-semibold tracking-tight text-content-primary bg-transparent outline-none disabled:cursor-default"
               style={{ border: "1px solid transparent", padding: "4px 8px", marginLeft: -8, borderRadius: 6, maxWidth: 400 }} />
-            <span className="font-mono font-semibold uppercase shrink-0"
-              style={{ fontSize: 9.5, letterSpacing: "0.06em", padding: "1px 5px", borderRadius: 3, border: "1px solid",
-                ...(disabled
-                  ? { color: "var(--color-error-700)", background: "var(--color-error-50)", borderColor: "oklch(70% 0.16 25 / 0.25)" }
-                  : { color: "var(--color-success-700)", background: "var(--color-success-50)", borderColor: "oklch(58% 0.14 152 / 0.25)" }),
-              }}>
+            <span
+              className={`font-mono font-semibold uppercase shrink-0 border text-xs tracking-wider ${
+                disabled
+                  ? "text-error-strong bg-error-bg border-error/25"
+                  : "text-success-strong bg-success-bg border-success/25"
+              }`}
+              style={{ padding: "1px 5px", borderRadius: 3 }}>
               {user.status}
             </span>
             {draft.authorizingType === "ADMIN" && <Badge variant="outline" title="Implicit admin — bypasses role checks">ADMIN</Badge>}
@@ -202,18 +203,16 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
 
         {/* Password history */}
         <Card>
-          <button type="button" className="flex items-center justify-between w-full px-5 py-3.5 text-left hover:bg-surface-3 transition-colors"
-            onClick={() => setHistoryOpen(!historyOpen)}>
-            <div>
-              <div className="text-sm font-semibold">Password history</div>
-              <p className="text-xs text-content-tertiary mt-0.5">
-                Last {PASSWORD_POLICY.historySize} password hashes — none of these may be re-used.
-              </p>
-            </div>
-            <ChevronDown size={14} className={`text-content-tertiary transition-transform ${historyOpen ? "rotate-180" : ""}`} />
-          </button>
-          {historyOpen && (
-            <div className="text-xs">
+          <Collapsible open={historyOpen} onOpenChange={setHistoryOpen} className="border-0 rounded-none bg-transparent">
+            <CollapsibleTrigger className="px-5 py-3.5 hover:bg-surface-3">
+              <div className="text-left">
+                <div className="text-sm font-semibold">Password history</div>
+                <p className="text-xs text-content-tertiary mt-0.5 font-normal">
+                  Last {PASSWORD_POLICY.historySize} password hashes — none of these may be re-used.
+                </p>
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="p-0 text-xs text-content-primary">
               {(user.passwordHistory ?? []).length === 0 && (
                 <div className="px-4 py-6 text-center text-sm text-content-tertiary">No history yet.</div>
               )}
@@ -229,29 +228,27 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
                   <code className="text-xs text-content-tertiary">#{h.hashId}</code>
                 </div>
               ))}
-            </div>
-          )}
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
 
         {/* Password policy */}
         <Card>
-          <button type="button" className="flex items-center justify-between w-full px-5 py-3.5 text-left hover:bg-surface-3 transition-colors"
-            onClick={() => setPolicyOpen(!policyOpen)}>
-            <div>
-              <div className="text-sm font-semibold">Password policy</div>
-              <p className="text-xs text-content-tertiary mt-0.5">Platform-wide. Edit in System → Settings → Security.</p>
-            </div>
-            <ChevronDown size={14} className={`text-content-tertiary transition-transform ${policyOpen ? "rotate-180" : ""}`} />
-          </button>
-          {policyOpen && (
-            <div className="flex flex-col">
+          <Collapsible open={policyOpen} onOpenChange={setPolicyOpen} className="border-0 rounded-none bg-transparent">
+            <CollapsibleTrigger className="px-5 py-3.5 hover:bg-surface-3">
+              <div className="text-left">
+                <div className="text-sm font-semibold">Password policy</div>
+                <p className="text-xs text-content-tertiary mt-0.5 font-normal">Platform-wide. Edit in System → Settings → Security.</p>
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="flex flex-col p-0 text-content-primary">
               <PolicyRow icon={<Check size={13} />} name="Length" desc={`Minimum ${PASSWORD_POLICY.minLength} characters`} val={`≥ ${PASSWORD_POLICY.minLength}`} />
               <PolicyRow icon={<Shield size={13} />} name="Character set" desc="Must contain upper, lower, digit and symbol" val="ABC · abc · 0-9 · @#" />
               <PolicyRow icon={<AlertTriangle size={13} />} name="Lockout" desc={`After ${PASSWORD_POLICY.maxErrorTimes} consecutive failed attempts, lock for ${PASSWORD_POLICY.lockDurationMinutes}m`} val={`${PASSWORD_POLICY.maxErrorTimes} · ${PASSWORD_POLICY.lockDurationMinutes}m`} />
               <PolicyRow icon={<Clock size={13} />} name="Expiry" desc={`Force password change every ${PASSWORD_POLICY.expiryDays} days`} val={`${PASSWORD_POLICY.expiryDays}d`} />
               <PolicyRow icon={<Copy size={13} />} name="History" desc={`Last ${PASSWORD_POLICY.historySize} passwords cannot be reused`} val={`${PASSWORD_POLICY.historySize}`} />
-            </div>
-          )}
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
 
         {/* Most recent password reset */}
@@ -310,7 +307,7 @@ function StatCell({ label, value, sub, tone }: {
   const valColor = tone === "danger" ? "var(--color-error-700)" : tone === "warn" ? "var(--color-warning-700)" : tone === "ok" ? "var(--color-success-700)" : undefined;
   return (
     <div className="bg-surface-3 border border-line-subtle rounded-lg px-3.5 py-3">
-      <div className="text-xs font-medium uppercase tracking-wide text-content-tertiary" style={{ fontSize: 10.5 }}>{label}</div>
+      <div className="text-xs font-medium uppercase tracking-wide text-content-tertiary">{label}</div>
       <div className="text-lg font-semibold mt-1 tabular-nums" style={valColor ? { color: valColor } : undefined}>{value}</div>
       <div className="text-xs text-content-tertiary mt-0.5">{sub}</div>
     </div>
@@ -327,8 +324,7 @@ function PolicyRow({ icon, name, desc, val }: { icon: React.ReactNode; name: str
         <div className="text-sm font-semibold text-content-primary">{name}</div>
         <div className="text-xs text-content-tertiary mt-0.5">{desc}</div>
       </div>
-      <span className="text-xs font-semibold font-mono shrink-0 px-2.5 py-1 rounded-md"
-        style={{ color: "var(--color-primary-700)", background: "var(--color-primary-50)", border: "1px solid oklch(60% 0.14 262 / 0.2)" }}>
+      <span className="text-xs font-semibold font-mono shrink-0 px-2.5 py-1 rounded-md border border-primary/20 text-primary-700 bg-primary-50">
         {val}
       </span>
     </div>
@@ -338,25 +334,26 @@ function PolicyRow({ icon, name, desc, val }: { icon: React.ReactNode; name: str
 function ResetRecord({ req, email }: { req: PasswordResetRequest; email: string }) {
   const [now] = useState(Date.now);
   const effectiveStatus = req.status === "pending" && new Date(req.expiresAt).getTime() < now ? "expired" : req.status;
-  const statusStyle = {
-    pending: { color: "var(--color-warning-700)", background: "var(--color-warning-50)", borderColor: "oklch(75% 0.14 75 / 0.3)" },
-    consumed: { color: "var(--color-success-700)", background: "var(--color-success-50)", borderColor: "oklch(58% 0.14 152 / 0.25)" },
-    expired: { color: "var(--color-content-tertiary)", background: "var(--color-surface-3)", borderColor: "var(--color-line-subtle)" },
-    superseded: { color: "var(--color-content-tertiary)", background: "var(--color-surface-3)", borderColor: "var(--color-line-subtle)" },
+  const statusBadgeClass = {
+    pending: "text-warning-strong bg-warning-bg border-warning/30",
+    consumed: "text-success-strong bg-success-bg border-success/25",
+    expired: "text-content-tertiary bg-surface-3 border-line-subtle",
+    superseded: "text-content-tertiary bg-surface-3 border-line-subtle",
   }[effectiveStatus];
   const statusLabel = { pending: "Pending", consumed: "Consumed", expired: "Expired", superseded: "Superseded" }[effectiveStatus];
 
   return (
     <div className="flex gap-3.5 px-5 py-4">
-      <div className="grid place-items-center shrink-0"
-        style={{ width: 36, height: 36, borderRadius: 10, background: "var(--color-info-50)", color: "var(--color-info-700)", border: "1px solid oklch(60% 0.14 230 / 0.25)" }}>
+      <div className="grid place-items-center shrink-0 bg-info-bg text-info-strong border border-info/25"
+        style={{ width: 36, height: 36, borderRadius: 10 }}>
         <Mail size={16} />
       </div>
       <div className="flex-1 min-w-0 flex flex-col gap-1.5">
         <div className="flex items-center gap-2.5">
           <span className="text-sm text-content-primary flex-1">Reset link sent to <strong>{email}</strong></span>
-          <span className="font-mono font-semibold uppercase shrink-0"
-            style={{ fontSize: 10, letterSpacing: "0.06em", padding: "3px 8px", borderRadius: 999, border: "1px solid", ...statusStyle }}>
+          <span
+            className={`font-mono font-semibold uppercase shrink-0 border text-xs tracking-wider ${statusBadgeClass}`}
+            style={{ padding: "3px 8px", borderRadius: 999 }}>
             {statusLabel}
           </span>
         </div>

@@ -74,18 +74,18 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
   }
 
   const headerGradient = isExpired
-    ? "linear-gradient(135deg, oklch(70% 0.13 25), oklch(58% 0.16 25))"
-    : "linear-gradient(135deg, oklch(78% 0.1 80), oklch(64% 0.14 80))";
+    ? "linear-gradient(135deg, var(--color-error-500), var(--color-error-700))"
+    : "linear-gradient(135deg, var(--color-warning-500), var(--color-warning-700))";
 
-  const badgeStyle = isExpired
-    ? { color: "var(--color-error-700)", background: "var(--color-error-50)", borderColor: "oklch(70% 0.16 25 / 0.25)" }
-    : { color: "var(--color-warning-700)", background: "var(--color-warning-50)", borderColor: "oklch(75% 0.13 80 / 0.3)" };
+  const badgeClass = isExpired
+    ? "text-error-strong bg-error-bg border-error/25"
+    : "text-warning-strong bg-warning-bg border-warning/30";
 
   return (
     <div>
       {/* Header */}
       <div className="flex items-start gap-4 border-b border-line-subtle" style={{ padding: "18px 22px" }}>
-        <div className="shrink-0 grid place-items-center text-white"
+        <div className="shrink-0 grid place-items-center text-content-inverse"
           style={{ width: 56, height: 56, borderRadius: 12, background: headerGradient }}>
           <Mail size={22} />
         </div>
@@ -94,8 +94,9 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
             <span className="text-xl font-semibold tracking-tight text-content-primary">
               {isExpired ? "Invitation expired" : "Invitation sent"}
             </span>
-            <span className="font-mono font-semibold uppercase shrink-0"
-              style={{ fontSize: 9.5, letterSpacing: "0.06em", padding: "1px 5px", borderRadius: 3, border: "1px solid", ...badgeStyle }}>
+            <span
+              className={`font-mono font-semibold uppercase shrink-0 border text-xs tracking-wider ${badgeClass}`}
+              style={{ padding: "1px 5px", borderRadius: 3 }}>
               {isExpired ? "EXPIRED" : "PENDING"}
             </span>
           </div>
@@ -150,10 +151,9 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
               <dt className="text-content-tertiary font-medium">Invite URL</dt>
               <dd className="text-content-primary flex items-center gap-2">
                 <code className="font-mono text-xs px-1.5 py-0.5 bg-surface-3 rounded border border-line-subtle truncate max-w-[320px]">{maskUrl(inviteUrl)}</code>
-                <button type="button" onClick={copyUrl}
-                  className="p-1 rounded hover:bg-surface-3 text-content-tertiary hover:text-content-primary transition-colors shrink-0" title="Copy invite URL">
-                  <Copy size={13} />
-                </button>
+                <Button variant="ghost" size="icon-xs" onClick={copyUrl} title="Copy invite URL">
+                  <Copy />
+                </Button>
               </dd>
               <dt className="text-content-tertiary font-medium">Invited by</dt>
               <dd className="text-content-primary">{user.invitedBy}</dd>
@@ -193,11 +193,9 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
                   {adminRoles.map((r) => {
                     const on = draftRoleIds.has(r.id);
                     return (
-                      <label key={r.id} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors"
-                        style={{
-                          background: on ? "var(--color-primary-50)" : "var(--color-surface-3)",
-                          borderColor: on ? "oklch(60% 0.14 262 / 0.3)" : "var(--color-line-subtle)",
-                        }}>
+                      <label key={r.id} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors ${
+                        on ? "bg-primary-50 border-primary/30" : "bg-surface-3 border-line-subtle"
+                      }`}>
                         <Checkbox checked={on} onCheckedChange={() => toggleRole(r.id)} />
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-semibold">{r.name}</div>

@@ -70,7 +70,7 @@ import {
  *   the bell, do not separate them.
  */
 export function NotificationBell() {
-  const count = 0;
+  const count = 10;
 
   return (
     <Popover>
@@ -83,7 +83,7 @@ export function NotificationBell() {
           >
             <Bell size={15} />
             {count > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-error text-[10px] font-medium leading-4 text-white text-center">
+              <span className="absolute -top-1 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-error text-[10px] font-medium leading-4 text-content-inverse text-center">
                 {count > 99 ? "99+" : count}
               </span>
             )}
