@@ -28,7 +28,7 @@ function buildGroups(menus: Menu[]): Group[] {
   const byId = new Map(menus.map((m) => [m.id, m]));
   const groups = new Map<string, Group>();
   const ROOT_KEY = "__root__";
-  const ROOT_LABEL = "Workspace";
+  const ROOT_LABEL = "Home";
 
   for (const m of menus) {
     if (!m.path) continue;

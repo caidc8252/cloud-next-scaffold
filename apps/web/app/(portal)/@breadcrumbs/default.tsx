@@ -4,19 +4,34 @@ import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
 /**
  * Fallback entry for the portal breadcrumb parallel-route slot (@breadcrumbs).
  *
- * Default behavior: matches pathname against session.menus exactly and renders
- * "parent menu / current menu". Every route under (portal) that does not have
- * its own slot file falls through to this component.
+ * Default behavior: matches pathname against session.menus exactly, walks up
+ * the parentMenuId chain, drops the L1 group (pure grouping, not navigable),
+ * and renders the rest (L2 onwards). Intermediate segments link back to their
+ * page; the last segment is the current page.
+ *
+ * Menu hierarchy convention (max depth 3):
+ *   L1 = group only, NO path  (e.g. "System", "Workspace")
+ *   L2 = page,        has path (e.g. "Roles" → /system/roles)
+ *   L3 = sub-page,    has path (e.g. "Sample Order" → /workspace/device/sample-order)
+ *
+ * Examples:
+ *   /system/roles                       → [Roles]
+ *   /workspace/device/sample-order      → [Device (linked), Sample Order]
+ *   /system/roles/[id]                  → custom slot, see Case B
+ *
+ * Every route under (portal) that does not have its own slot file falls
+ * through to this component.
  *
  * ────────────────────────────────────────────────────────────────
  * Decision table for adding new pages
  * ────────────────────────────────────────────────────────────────
  *
  * Case A — Static menu page (pathname equals an entry in sys_menu.path,
- *          e.g. /system/roles)
- *   Nothing to do. Default renders "parent / current" automatically.
- *   Prerequisite: the menu row exists in packages/db/prisma/seed.ts and
- *   has been applied via `pnpm db:seed`.
+ *          e.g. /system/roles or /workspace/device/sample-order)
+ *   Nothing to do. Default walks the ancestor chain, drops the L1 group,
+ *   and renders intermediate segments as links (last segment = current page).
+ *   Prerequisite: the menu row exists in packages/db/prisma/seed.ts (with
+ *   correct parentMenuId chain) and has been applied via `pnpm db:seed`.
  *
  * Case B — Detail page (pathname contains a dynamic segment,
  *          e.g. /system/roles/[id])
@@ -36,15 +51,15 @@ import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
  *            const role = await getRoleById(Number(id));
  *            return (
  *              <Breadcrumbs items={[
- *                { label: "System" },
  *                { label: "Roles", href: "/system/roles" },
  *                { label: role?.roleName ?? `#${id}` },
  *              ]} />
  *            );
  *          }
  *
- *     3. Add href to intermediate clickable crumbs (linking back up the tree);
- *        leave href off the last item — it is the current page.
+ *     3. Skip the L1 group label — breadcrumbs start at L2 (mirrors the
+ *        default behavior in Case A). Intermediate segments carry `href` so
+ *        users can click back up the tree; the last (current page) has none.
  *
  *     4. The business page typically reads the same record. Put the loader in
  *        e.g. system/<feature>/loader.ts and wrap it in React `cache()` so the
@@ -63,7 +78,15 @@ import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
  *       getPermissionByCode(permissionId),
  *     ]);
  *
- *   Add href on parent dynamic crumbs (e.g. role name → /system/roles/[id]).
+ *   Render with the same L1-skip rule:
+ *     <Breadcrumbs items={[
+ *       { label: "Roles", href: "/system/roles" },
+ *       { label: role.roleName, href: `/system/roles/${id}` },
+ *       { label: "Permissions" },
+ *       { label: permission.label },
+ *     ]} />
+ *   Every parent dynamic crumb (e.g. role name → /system/roles/[id]) must
+ *   carry href so users can navigate back up.
  *
  * Case D — Slow data, must not block the main content
  *   Add loading.tsx in the same slot directory; return a skeleton

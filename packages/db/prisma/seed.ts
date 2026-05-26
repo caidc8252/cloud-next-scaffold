@@ -96,39 +96,45 @@ async function main() {
   }
 
   // 5. ADMIN menu
-  const dashboardMenu = await prisma.sysMenu.upsert({
+  //
+  // Menu hierarchy convention (max depth 3):
+  //   L1 = top-level group, path MUST be null (pure grouping, not navigable)
+  //   L2 = direct child of L1, has path (real page)
+  //   L3 = direct child of L2, has path (real page)
+  //
+  // Breadcrumb skips the L1 group (see apps/web/app/(portal)/@breadcrumbs/default.tsx).
+  // Sidebar uses L1 as the section heading and renders L2 (and any L3 children
+  // nested under them).
+
+  // 5a. Home group (L1) — pure grouping, no path
+  const homeMenu = await prisma.sysMenu.upsert({
     where: { menuId: 1 },
-    update: {
-      menuTitle: "Workspace",
-      path: "/",
-      icon: "layout-dashboard",
-      sort: 1,
-      contractDefineCode: "ADMIN",
-    },
-    create: {
-      menuTitle: "Workspace",
-      path: "/",
-      icon: "layout-dashboard",
-      sort: 1,
-      contractDefineCode: "ADMIN",
-    },
+    update: { menuTitle: "Home", path: null, icon: null, sort: 1, contractDefineCode: "ADMIN" },
+    create: { menuTitle: "Home", path: null, icon: null, sort: 1, contractDefineCode: "ADMIN" },
   });
 
-  // 6b. System parent menu
+  // 5b. Home → Dashboard menu (L2)
+  const dashboardMenu = await prisma.sysMenu.upsert({
+    where: { menuId: 5 },
+    update: { menuTitle: "Dashboard", path: "/dashboard", icon: "layout-dashboard", sort: 2, parentMenuId: homeMenu.menuId, contractDefineCode: "ADMIN" },
+    create: { menuTitle: "Dashboard", path: "/dashboard", icon: "layout-dashboard", sort: 2, parentMenuId: homeMenu.menuId, contractDefineCode: "ADMIN" },
+  });
+
+  // 6b. System parent menu (L1)
   const systemMenu = await prisma.sysMenu.upsert({
     where: { menuId: 2 },
     update: { menuTitle: "System", icon: "settings", sort: 100, contractDefineCode: "ADMIN" },
     create: { menuTitle: "System", path: null, icon: "settings", sort: 100, contractDefineCode: "ADMIN" },
   });
 
-  // 6c. System → Roles menu
+  // 6c. System → Roles menu (L2)
   const rolesMenu = await prisma.sysMenu.upsert({
     where: { menuId: 3 },
     update: { menuTitle: "Roles", path: "/system/roles", icon: "shield", sort: 101, parentMenuId: systemMenu.menuId, contractDefineCode: "ADMIN" },
     create: { menuTitle: "Roles", path: "/system/roles", icon: "shield", sort: 101, parentMenuId: systemMenu.menuId, contractDefineCode: "ADMIN" },
   });
 
-  // 6d. System → Users menu
+  // 6d. System → Users menu (L2)
   const usersMenu = await prisma.sysMenu.upsert({
     where: { menuId: 4 },
     update: { menuTitle: "Users", path: "/system/users", icon: "users", sort: 102, parentMenuId: systemMenu.menuId, contractDefineCode: "ADMIN" },
