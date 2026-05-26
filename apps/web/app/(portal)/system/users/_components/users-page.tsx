@@ -5,7 +5,7 @@ import { Search, Plus } from "lucide-react";
 import { toastError } from "@cloud/request/error-toast";
 import { Button, Input, Modal, SplitPanel, SplitPanelSidebar, SplitPanelContent, toast } from "@cloud/ui";
 import { request } from "@cloud/request/client";
-import type { Role, User } from "../types";
+import type { Role, User } from "@/app/(portal)/system/_shared/types";
 import { UserListItem } from "./user-list-item";
 import { UserDetail } from "./user-detail";
 import { PendingInviteDetail } from "./pending-invite-detail";

@@ -1,6 +1,6 @@
 import { getEnv } from "@cloud/config";
 import { Layout, Sidebar, type SidebarSection } from "@cloud/ui/components/layout";
-import { requireSession } from "../../lib/auth";
+import { requireSession } from "@cloud/permissions/server";
 import { UserMenu } from "./_components/user-menu";
 import { getMenuIcon } from "./_components/menu-icon";
 import { PortalHeader } from "./_components/portal-header";

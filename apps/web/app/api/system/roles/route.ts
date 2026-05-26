@@ -9,7 +9,7 @@ import {
 } from "@cloud/request/server";
 import { ERR_INVALID_JSON, ERR_ROLE_NAME_SHORT } from "@cloud/request/error-codes";
 import { AuthzError, assertPermissions } from "@cloud/permissions/server";
-import { toClientRole } from "../../../../lib/role-mapper";
+import { toClientRole } from "@/app/(portal)/system/roles/_server/role-mapper";
 
 export async function GET() {
   try {

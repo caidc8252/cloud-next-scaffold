@@ -1,4 +1,4 @@
-import { requireSession } from "../../../lib/auth";
+import { requireSession } from "@cloud/permissions/server";
 import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
 
 /**
@@ -22,6 +22,27 @@ import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
  *
  * Every route under (portal) that does not have its own slot file falls
  * through to this component.
+ *
+ * ────────────────────────────────────────────────────────────────
+ * Hard rule — shared loader for any route with a custom slot
+ * ────────────────────────────────────────────────────────────────
+ * If a route has its own @breadcrumbs/<route>/page.tsx slot (typically all
+ * dynamic-segment detail pages, see Case B/C), the business page's data
+ * loader MUST be:
+ *   1. extracted to <feature>/_server/loader.ts (NOT inline in page.tsx), and
+ *   2. wrapped with React `cache()`.
+ *
+ * Why: the slot and the business page render in parallel branches. Without a
+ * shared, request-cached loader you get either (a) two divergent copies of the
+ * same query (one in the slot file, one in the page file), or (b) two DB
+ * roundtrips per request for the exact same record. `React.cache()` collapses
+ * same-args calls within one request to a single execution; sharing the file
+ * keeps the two branches from drifting.
+ *
+ * List pages whose slot falls through to this default DO NOT need this —
+ * the default only reads session.menus, not business data — so keeping loaders
+ * inline in page.tsx is fine for Case A. The rule kicks in the moment a route
+ * grows a custom slot.
  *
  * ────────────────────────────────────────────────────────────────
  * Decision table for adding new pages

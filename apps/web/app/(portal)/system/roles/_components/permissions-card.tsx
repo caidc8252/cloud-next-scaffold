@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Search, ChevronDown, ChevronRight } from "lucide-react";
 import { Badge, Button, Input, Switch } from "@cloud/ui";
-import type { PermissionGroup } from "../types";
+import type { PermissionGroup } from "@/app/(portal)/system/_shared/types";
 
 type PermissionsCardProps = {
   groups: PermissionGroup[];

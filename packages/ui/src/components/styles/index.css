@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
 @source "../..";
 
 @custom-variant dark (&:is(.dark *, [data-theme="dark"] *));
@@ -128,8 +129,8 @@
   --text-5xl: 48px;
 
   /* ─── Fonts ─── */
-  --font-family-sans: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --font-family-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-family-sans: "Geist Variable", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-family-mono: "Geist Mono Variable", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --font-sans: var(--font-family-sans);
   --font-mono: var(--font-family-mono);
 

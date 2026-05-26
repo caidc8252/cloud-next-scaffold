@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { User, PasswordResetRequest } from "../system/types";
+import type { User, PasswordResetRequest } from "@/app/(portal)/system/_shared/types";
 
 type UserRow = {
   userId: number;

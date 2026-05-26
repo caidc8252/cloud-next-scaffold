@@ -14,7 +14,7 @@ import {
   ERR_USER_EMAIL_TAKEN,
 } from "@cloud/request/error-codes";
 import { AuthzError, assertPermissions } from "@cloud/permissions/server";
-import { toClientUser, USER_INCLUDE, collectAuxUserIds } from "../../../../lib/user-mapper";
+import { toClientUser, USER_INCLUDE, collectAuxUserIds } from "@/app/(portal)/system/users/_server/user-mapper";
 
 export async function GET() {
   try {

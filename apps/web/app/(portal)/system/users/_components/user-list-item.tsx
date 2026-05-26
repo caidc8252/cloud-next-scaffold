@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Mail, Shield, RefreshCw, X } from "lucide-react";
-import type { User } from "../types";
-import { relTime, initials } from "../helpers";
+import type { User } from "@/app/(portal)/system/_shared/types";
+import { relTime, initials } from "@/app/(portal)/system/_shared/helpers";
 
 type UserListItemProps = {
   user: User;

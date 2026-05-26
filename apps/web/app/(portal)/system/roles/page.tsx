@@ -1,7 +1,8 @@
 import { prisma } from "@cloud/db";
 import { requirePermissions } from "@cloud/permissions/server";
-import { toClientRole } from "../../../../lib/role-mapper";
-import { RolesPage, type PermissionGroup } from "../../../../system";
+import { toClientRole } from "@/app/(portal)/system/roles/_server/role-mapper";
+import { RolesPage } from "@/app/(portal)/system/roles/_components/roles-page";
+import type { PermissionGroup } from "@/app/(portal)/system/_shared/types";
 
 async function loadRoles(entityId: number) {
   const roles = await prisma.sysRole.findMany({
