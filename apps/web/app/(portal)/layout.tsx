@@ -1,8 +1,9 @@
-import { LayoutDashboard, Shield, Users, Settings } from "lucide-react";
 import { getEnv } from "@cloud/config";
-import { AppHeader, Layout, Sidebar, type SidebarSection } from "@cloud/ui/components/layout";
+import { Layout, Sidebar, type SidebarSection } from "@cloud/ui/components/layout";
 import { requireSession } from "../../lib/auth";
 import { UserMenu } from "./_components/user-menu";
+import { getMenuIcon } from "./_components/menu-icon";
+import { PortalHeader } from "./_components/portal-header";
 
 type Menu = {
   id: string;
@@ -11,16 +12,6 @@ type Menu = {
   icon: string;
   parentMenuId: string | null;
 };
-
-function getMenuIcon(icon: string) {
-  switch (icon) {
-    case "shield": return <Shield size={14} />;
-    case "users": return <Users size={14} />;
-    case "settings": return <Settings size={14} />;
-    case "layout-dashboard":
-    default: return <LayoutDashboard size={14} />;
-  }
-}
 
 function buildSidebarSections(menus: Menu[]): SidebarSection[] {
   const topLevel = menus.filter((m) => !m.parentMenuId);
@@ -95,7 +86,7 @@ export default async function PortalLayout({
           }
         />
       }
-      header={<AppHeader breadcrumbs={breadcrumbs} />}
+      header={<PortalHeader menus={menus} breadcrumbs={breadcrumbs} />}
     >
       {children}
     </Layout>
