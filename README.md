@@ -9,6 +9,7 @@
 - `packages/request`：通用请求封装与错误码
 - `packages/config`：环境变量校验
 - `packages/cache`：Redis 客户端与 JSON KV 缓存封装
+- `packages/storage`：Amazon S3 上传会话与服务端上传封装
 - `packages/db`：Prisma + PostgreSQL 数据层
 - `packages/security`：密码哈希、RSA 加解密
 - `packages/permissions`：权限判断 + 服务端登录态与前端权限 hook
@@ -45,6 +46,7 @@ pnpm dev
 - `packages/permissions`
 - `packages/request`
 - `packages/security`
+- `packages/storage`
 - `packages/ui`
 
 ## 仓库结构
@@ -68,6 +70,7 @@ packages/
   permissions/            # PermissionChecker + 登录态、DAL、session cookie + client hooks
   request/                # 请求封装 + 响应辅助 + 错误码
   security/               # argon2 密码哈希, RSA 加解密
+  storage/                # Amazon S3 上传会话 + 服务端上传
   ui/                     # 基础 UI 组件
 scripts/
   prisma.mjs              # Prisma 统一调用脚本
@@ -197,6 +200,55 @@ export function UsersActions({ permissions }: { permissions: string[] }) {
   );
 }
 ```
+
+## S3 存储
+
+Amazon S3 相关能力统一走 `@cloud/storage/server` / `@cloud/storage/client`，不要在业务代码里直接初始化 AWS SDK 客户端。
+
+服务端可用 `createS3UploadSession()` 生成带临时 STS 凭证的上传会话，适合前端直传；也可用 `uploadFileToS3FromServer()` 由服务端直接上传文件。
+
+```ts
+import { createS3UploadSession, uploadFileToS3FromServer } from "@cloud/storage/server";
+
+const s3Config = {
+  bucket: process.env.AWS_S3_BUCKET!,
+  regionId: process.env.AWS_REGION!,
+  directoryPrefix: "uploads",
+  stsRoleArn: process.env.AWS_S3_UPLOAD_ROLE_ARN,
+  stsExternalId: process.env.AWS_S3_UPLOAD_EXTERNAL_ID,
+};
+
+const session = await createS3UploadSession(s3Config, {
+  filename: "contract.pdf",
+  contentType: "application/pdf",
+  size: 1024,
+  directory: "contracts",
+});
+
+const storedObject = await uploadFileToS3FromServer(s3Config, {
+  body: new Uint8Array([1, 2, 3]),
+  filename: "debug.bin",
+  contentType: "application/octet-stream",
+});
+```
+
+`s3Config` 必填 `bucket` 和 `regionId`。默认 `uploadUrl` 会生成 `https://{bucket}.s3.{regionId}.amazonaws.com`；如果接 CDN 或自定义域名，可传 `uploadUrl`。未配置 `stsRoleArn` 时使用 `GetFederationToken`，配置后使用 `AssumeRole`。
+
+浏览器直传使用 `@cloud/storage/client`：
+
+```ts
+import { uploadFileToS3FromBrowser } from "@cloud/storage/client";
+
+await uploadFileToS3FromBrowser({
+  file,
+  session,
+  onProgress: ({ percent, isMultipart }) => {
+    console.log(percent, isMultipart);
+  },
+});
+```
+
+当前默认策略：`<= 5 MB` 的浏览器文件走服务端上传，`> 5 MB` 走浏览器直传；直传中超过 100 MB 时自动使用 multipart upload。当前 Web 演示页面位于 `/storage/s3-upload`，小文件会调用 `/api/storage/s3-upload-server`，大文件会通过 `/api/storage/s3-upload-session` 获取临时上传会话。
 
 ## 用户管理
 

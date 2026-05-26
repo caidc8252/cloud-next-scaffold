@@ -28,6 +28,9 @@
       "@cloud/request/server": ["./packages/request/src/server.ts"],
       "@cloud/request/client": ["./packages/request/src/client.ts"],
       "@cloud/security/server": ["./packages/security/src/server/index.ts"],
+      "@cloud/storage": ["./packages/storage/src/index.ts"],
+      "@cloud/storage/client": ["./packages/storage/src/client/index.ts"],
+      "@cloud/storage/server": ["./packages/storage/src/server/index.ts"],
       "@cloud/ui": ["./packages/ui/src/index.ts"],
       "@cloud/ui/*": ["./packages/ui/src/*"]
     }
@@ -48,6 +51,8 @@
     "packages/permissions/**/*.tsx",
     "packages/request/src/**/*.ts",
     "packages/security/**/*.ts",
+    "packages/storage/src/**/*.ts",
+    "packages/storage/test/**/*.ts",
     "packages/ui/src/**/*.ts",
     "packages/ui/src/**/*.tsx",
     "packages/ui/test/**/*.ts",

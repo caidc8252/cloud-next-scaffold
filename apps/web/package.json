@@ -15,6 +15,7 @@
     "@cloud/permissions": "workspace:*",
     "@cloud/request": "workspace:*",
     "@cloud/security": "workspace:*",
+    "@cloud/storage": "workspace:*",
     "@cloud/ui": "workspace:*",
     "lucide-react": "catalog:",
     "next": "catalog:",

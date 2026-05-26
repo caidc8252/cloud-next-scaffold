@@ -1,0 +1,36 @@
+{
+  "name": "@cloud/storage",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./client": {
+      "types": "./src/client/index.ts",
+      "import": "./src/client/index.ts",
+      "default": "./src/client/index.ts"
+    },
+    "./server": {
+      "types": "./src/server/index.ts",
+      "import": "./src/server/index.ts",
+      "default": "./src/server/index.ts"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "@aws-sdk/client-s3": "catalog:",
+    "@aws-sdk/client-sts": "catalog:",
+    "@aws-sdk/lib-storage": "catalog:",
+    "@smithy/node-http-handler": "catalog:",
+    "client-only": "catalog:",
+    "https-proxy-agent": "catalog:",
+    "server-only": "catalog:"
+  }
+}

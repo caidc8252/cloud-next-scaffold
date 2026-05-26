@@ -1,0 +1,1 @@
+export const SERVER_S3_UPLOAD_THRESHOLD_BYTES = 5 * 1024 * 1024;

@@ -15,6 +15,7 @@
   - `packages/permissions`
   - `packages/request`
   - `packages/security`
+  - `packages/storage`
   - `packages/ui`
 
 ## 基线约束
@@ -39,6 +40,7 @@
 - Prisma 统一通过根脚本 [scripts/prisma.mjs](/d:/codes/cloud-frontend2/scripts/prisma.mjs) 触发，避免 workspace 下 `.env` 路径不一致。
 - `packages/config` 会主动加载根 `.env`，否则 Next 应用构建时拿不到数据库配置。
 - `packages/permissions` 同时承载 `PermissionChecker`、服务端登录态实现，以及 `@cloud/permissions/client` 提供的前端权限 hook；`apps/web/lib/auth.ts` 只做兼容转发。
+- `packages/storage` 统一承载 Amazon S3 上传会话、STS 临时凭证和服务端上传；业务代码连接 S3 默认走 `@cloud/storage/server`。
 - 系统管理页面组件（users / roles）属于 `apps/web` 业务代码，当前放在 `apps/web/system`，不再单独维护 `packages/system`。
 
 ## Next.js 约束

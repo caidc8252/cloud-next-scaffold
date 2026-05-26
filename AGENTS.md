@@ -79,7 +79,16 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - `@cloud/permissions`：权限判断、服务端权限聚合、服务端权限守卫、客户端权限上下文
   - `@cloud/db`：Prisma Client、数据库 schema、seed、数据库脚本入口
   - `@cloud/security`：服务端密码哈希与校验等安全基础能力
+  - `@cloud/storage`：Amazon S3 上传会话、浏览器直传、服务端上传和存储配置归一化
   - `@cloud/config`：环境变量读取、配置校验、密码策略等基础配置能力
+
+### 存储与 S3
+
+- 连接 Amazon S3、生成临时上传凭证、服务端上传文件时，统一通过 `@cloud/storage/server`
+- 浏览器直传 S3 时，统一通过 `@cloud/storage/client`，大文件分片上传也在此包内处理
+- 默认上传策略：`<= 5 MB` 的浏览器文件可走服务端 `uploadFileToS3FromServer()`，`> 5 MB` 走 `createS3UploadSession()` + `uploadFileToS3FromBrowser()` 直传；直传中 `> 100 MB` 默认 multipart
+- 不要在业务代码里直接 new AWS SDK 的 `S3Client` / `STSClient`，除非先确认 `@cloud/storage` 无法覆盖需求并同步沉淀包能力
+- S3 配置由业务侧从环境变量读取后显式传入 storage package，storage package 不直接读取 `.env`
 
 ### 页面开发
 
