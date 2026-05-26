@@ -1,9 +1,9 @@
-import { LayoutDashboard, Shield, Users, Settings } from "lucide-react";
 import { getEnv } from "@cloud/config";
-import { AppHeader, Layout, Sidebar, type SidebarSection } from "@cloud/ui/components/layout";
+import { Layout, Sidebar, type SidebarSection } from "@cloud/ui/components/layout";
 import { requireSession } from "../../lib/auth";
 import { UserMenu } from "./_components/user-menu";
-import { PortalBreadcrumbs } from "./_components/portal-breadcrumbs";
+import { getMenuIcon } from "./_components/menu-icon";
+import { PortalHeader } from "./_components/portal-header";
 
 type Menu = {
   id: string;
@@ -13,27 +13,25 @@ type Menu = {
   parentMenuId: string | null;
 };
 
-function getMenuIcon(icon: string) {
-  switch (icon) {
-    case "shield": return <Shield size={14} />;
-    case "users": return <Users size={14} />;
-    case "settings": return <Settings size={14} />;
-    case "layout-dashboard":
-    default: return <LayoutDashboard size={14} />;
-  }
-}
-
+// Three-level model:
+//   L1 = top-level group (no path, only used for sidebar section heading + breadcrumb skip)
+//   L2 = child of L1 (has path, rendered as a sidebar item; may have L3 children)
+//   L3 = child of L2 (has path, rendered as a nested sub-item)
+// Seed data adheres to this convention; the fallback below is a defensive net
+// for accidental top-level leaves and should not be the documented design.
 function buildSidebarSections(menus: Menu[]): SidebarSection[] {
   const topLevel = menus.filter((m) => !m.parentMenuId);
   const childrenOf = (parentId: string) => menus.filter((m) => m.parentMenuId === parentId);
 
   const sections: SidebarSection[] = [];
 
-  // 顶级叶子菜单（无子菜单且自带 path）归到 Workspace 区
+  // Safety net: any top-level menu that violates the L1-group convention
+  // (has a path AND no children) gets bucketed under "Home" so it stays
+  // reachable. Seed data should never trigger this — fix the seed instead.
   const topLeaves = topLevel.filter((m) => m.path && childrenOf(m.id).length === 0);
   if (topLeaves.length > 0) {
     sections.push({
-      label: "Workspace",
+      label: "Home",
       items: topLeaves.map((m) => ({
         href: m.path!,
         icon: getMenuIcon(m.icon),
@@ -42,25 +40,45 @@ function buildSidebarSections(menus: Menu[]): SidebarSection[] {
     });
   }
 
-  // 其余顶级分组各自成一段
+  // L1 groups: each becomes a section, with its L2 children as items.
+  // Each L2 with L3 descendants exposes them via `children` (SidebarSubItem[]).
   const topGroups = topLevel.filter((m) => !m.path || childrenOf(m.id).length > 0);
   for (const group of topGroups) {
-    const children = childrenOf(group.id);
-    if (children.length > 0) {
-      sections.push({
-        label: group.label,
-        items: children.map((c) => ({
-          href: c.path ?? "#",
+    const l2 = childrenOf(group.id);
+    if (l2.length === 0) continue;
+
+    sections.push({
+      label: group.label,
+      items: l2.map((c) => {
+        const l3 = childrenOf(c.id);
+        if (l3.length === 0) {
+          return {
+            href: c.path ?? "#",
+            icon: getMenuIcon(c.icon),
+            label: c.label,
+          };
+        }
+        return {
           icon: getMenuIcon(c.icon),
           label: c.label,
-        })),
-      });
-    }
+          children: l3.map((g) => ({
+            href: g.path ?? "#",
+            label: g.label,
+          })),
+        };
+      }),
+    });
   }
   return sections;
 }
 
-export default async function PortalLayout({ children }: { children: React.ReactNode }) {
+export default async function PortalLayout({
+  children,
+  breadcrumbs,
+}: {
+  children: React.ReactNode;
+  breadcrumbs: React.ReactNode;
+}) {
   const env = getEnv();
   const session = await requireSession();
 
@@ -90,7 +108,7 @@ export default async function PortalLayout({ children }: { children: React.React
           }
         />
       }
-      header={<AppHeader breadcrumbs={<PortalBreadcrumbs menus={menus} />} />}
+      header={<PortalHeader menus={menus} breadcrumbs={breadcrumbs} />}
     >
       {children}
     </Layout>

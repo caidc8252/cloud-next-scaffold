@@ -52,7 +52,7 @@ function CommandDialog({
         >
           <DialogPrimitive.Title className="sr-only">{title}</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">{description}</DialogPrimitive.Description>
-          {children}
+          <CommandPrimitive>{children}</CommandPrimitive>
         </DialogPrimitive.Popup>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
