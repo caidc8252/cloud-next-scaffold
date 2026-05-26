@@ -1,4 +1,4 @@
-import { requireSession } from "../../../lib/auth";
+import { requireSession } from "@cloud/permissions/server";
 import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
 
 /**
