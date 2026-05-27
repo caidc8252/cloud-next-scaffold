@@ -34,10 +34,12 @@
 
 ## 环境与脚本约束
 
+- Node.js 版本必须 `>=20.19.0`。Prisma 7 的安装脚本会拒绝更低版本。
 - 根 `.env` 负责数据库和认证密钥。
 - Redis 连接配置统一走根 `.env` 的 `REDIS_URL`，本地开发由 `docker-compose.yml` 启动 Redis。
 - `apps/web/.env` 负责应用展示名等 app 级变量。
-- Prisma 统一通过根脚本 [scripts/prisma.mjs](/d:/codes/cloud-frontend2/scripts/prisma.mjs) 触发，避免 workspace 下 `.env` 路径不一致。
+- Prisma 统一通过根脚本 [scripts/prisma.mjs](/d:/codes/cloud-scaffold/scripts/prisma.mjs) 触发，避免 workspace 下 `.env` 路径不一致。
+- Prisma 7 的 CLI 配置位于 `packages/db/prisma.config.ts`，Client 生成到 `packages/db/generated/prisma`，此目录不提交，构建前必须先执行 `pnpm db:generate`。
 - `packages/config` 会主动加载根 `.env`，否则 Next 应用构建时拿不到数据库配置。
 - `packages/permissions` 同时承载 `PermissionChecker`、服务端登录态实现，以及 `@cloud/permissions/client` 提供的前端权限 hook。业务代码统一从 `@cloud/permissions/server` 引用，不再保留 `apps/web/lib/auth.ts` 兼容转发。
 - `packages/storage` 统一承载 Amazon S3 上传会话、STS 临时凭证和服务端上传；业务代码连接 S3 默认走 `@cloud/storage/server`。

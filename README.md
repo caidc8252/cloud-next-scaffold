@@ -21,6 +21,8 @@
 
 ## 启动当前仓库
 
+要求 Node.js `>=20.19.0`（Prisma 7 要求）。
+
 ```bash
 pnpm install
 cp .env.example .env
@@ -75,6 +77,8 @@ packages/
 scripts/
   prisma.mjs              # Prisma 统一调用脚本
 ```
+
+Prisma 7 使用 `packages/db/prisma.config.ts` 作为 CLI 配置入口，Prisma Client 生成到 `packages/db/generated/prisma`。该目录不提交到 git，首次启动、构建前需要执行 `pnpm db:generate`。
 
 ## 数据模型
 

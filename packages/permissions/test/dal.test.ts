@@ -61,7 +61,8 @@ function buildToken(userId: number, entityId: number | null) {
 
 beforeEach(() => {
   vi.resetModules();
-  process.env.AUTH_SESSION_SECRET = "test-secret";
+  process.env.NEXT_PUBLIC_APP_NAME = "Cloud Scaffold";
+  process.env.AUTH_SESSION_SECRET = "test-session-secret";
   cookieStore.get.mockReset();
   redirectMock.mockClear();
   prismaMock.sysEntityContract.findFirst.mockReset();
