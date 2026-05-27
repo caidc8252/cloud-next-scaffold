@@ -1,26 +1,13 @@
 import { redirect } from "next/navigation";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Label } from "@cloud/ui";
+import { Badge, Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
 import { getSession } from "@cloud/permissions/server";
-import { loginAction } from "./actions";
+import { LoginForm } from "./_components/login-form";
 
-const ERROR_MESSAGES: Record<string, string> = {
-  invalid: "Incorrect account or password.",
-  missing: "Enter both account and password.",
-  locked: "Account is locked. Please try again later.",
-  no_entity: "No active organization found for this account.",
-};
-
-export default async function LoginPage(props: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export default async function LoginPage() {
   const session = await getSession();
   if (session) {
     redirect("/");
   }
-
-  const searchParams = await props.searchParams;
-  const errorKey = typeof searchParams.error === "string" ? searchParams.error : "";
-  const errorMessage = errorKey ? ERROR_MESSAGES[errorKey] ?? "Sign in failed. Please try again." : null;
 
   return (
     <main className="login-screen">
@@ -35,24 +22,7 @@ export default async function LoginPage(props: {
           </div>
         </CardHeader>
         <CardContent className="login-card__body">
-          {errorMessage ? <div className="error-banner">{errorMessage}</div> : null}
-          <form action={loginAction} className="form-grid">
-            <div className="field-grid">
-              <Label htmlFor="account">Account</Label>
-              <Input id="account" name="account" autoComplete="username" placeholder="admin" />
-            </div>
-            <div className="field-grid">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                placeholder="ChangeMe!123"
-              />
-            </div>
-            <Button type="submit">Sign in</Button>
-          </form>
+          <LoginForm />
           <p className="login-note">
             Seeded account: <strong>admin</strong> / <strong>ChangeMe!123</strong>
           </p>
