@@ -128,11 +128,11 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
     }
   }
 
-  const statItems: { label: string; value: number; color: string | undefined; filterKey: StatusFilter }[] = [
-    { label: "Total", value: stats.total, color: undefined, filterKey: "all" },
-    { label: "Active", value: stats.active, color: "var(--color-success-700)", filterKey: "active" },
-    { label: "Pending", value: stats.pending, color: stats.pending ? "var(--color-warning-700)" : undefined, filterKey: "pending" },
-    { label: "Disabled", value: stats.inactive, color: stats.inactive ? "var(--color-error-700)" : undefined, filterKey: "inactive" },
+  const statItems: { label: string; value: number; colorClass: string; filterKey: StatusFilter }[] = [
+    { label: "Total", value: stats.total, colorClass: "", filterKey: "all" },
+    { label: "Active", value: stats.active, colorClass: "text-success-strong", filterKey: "active" },
+    { label: "Pending", value: stats.pending, colorClass: stats.pending ? "text-warning-strong" : "", filterKey: "pending" },
+    { label: "Disabled", value: stats.inactive, colorClass: stats.inactive ? "text-error-strong" : "", filterKey: "inactive" },
   ];
 
   return (
@@ -158,7 +158,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
                 className={`text-left bg-surface-2 border rounded-xl shadow-sm px-4 py-4 transition-colors cursor-pointer ${isActive ? "border-primary ring-1 ring-primary/30" : "border-line-default hover:border-line-strong"}`}
                 onClick={() => setStatusFilter(isActive ? "all" : s.filterKey)}>
                 <div className="text-xs text-content-tertiary">{s.label}</div>
-                <div className="text-2xl font-semibold mt-1 tabular-nums" style={s.color ? { color: s.color } : undefined}>
+                <div className={`text-2xl font-semibold mt-1 tabular-nums ${s.colorClass}`}>
                   {s.value}
                 </div>
               </button>

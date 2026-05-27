@@ -22,10 +22,10 @@ const STATUS_BADGE_CLASS = {
 } as const;
 
 function avatarGradient(status: User["status"], expired: boolean): string {
-  if (status === "INACTIVE") return "linear-gradient(135deg, var(--color-error-500), var(--color-error-700))";
-  if (status === "PENDING" && expired) return "linear-gradient(135deg, var(--color-error-500), var(--color-error-700))";
-  if (status === "PENDING") return "linear-gradient(135deg, var(--color-warning-500), var(--color-warning-700))";
-  return "linear-gradient(135deg, var(--color-primary-500), var(--color-accent-600))";
+  if (status === "INACTIVE") return "bg-linear-to-br from-error-500 to-error-700";
+  if (status === "PENDING" && expired) return "bg-linear-to-br from-error-500 to-error-700";
+  if (status === "PENDING") return "bg-linear-to-br from-warning-500 to-warning-700";
+  return "bg-linear-to-br from-primary-500 to-accent-600";
 }
 
 export function UserListItem({ user, active, onClick, onResend, onCancel }: UserListItemProps) {
@@ -45,8 +45,7 @@ export function UserListItem({ user, active, onClick, onResend, onCancel }: User
       className={`flex items-center gap-3 w-full px-3.5 py-3 text-left transition-colors border-b border-line-subtle last:border-b-0 hover:bg-surface-hover cursor-pointer ${active ? "bg-primary-50" : ""}`}
     >
       <div
-        className="shrink-0 grid place-items-center text-content-inverse font-semibold text-xs tracking-tight"
-        style={{ width: 36, height: 36, borderRadius: 10, background: avatarGradient(user.status, isExpired) }}
+        className={`shrink-0 grid place-items-center text-content-inverse font-semibold text-xs tracking-tight size-9 rounded-lg ${avatarGradient(user.status, isExpired)}`}
       >
         {isPending ? <Mail size={14} /> : initials(displayName)}
       </div>
@@ -62,8 +61,7 @@ export function UserListItem({ user, active, onClick, onResend, onCancel }: User
         </div>
         <div className="flex items-center gap-1.5 mt-0.5 text-xs">
           <span
-            className={`font-mono font-semibold uppercase border text-xs tracking-wider ${STATUS_BADGE_CLASS[badgeKey]}`}
-            style={{ padding: "1px 5px", borderRadius: 3 }}
+            className={`font-mono font-semibold uppercase border text-xs tracking-wider ${STATUS_BADGE_CLASS[badgeKey]} py-px px-1.5 rounded-sm`}
           >
             {badgeKey}
           </span>

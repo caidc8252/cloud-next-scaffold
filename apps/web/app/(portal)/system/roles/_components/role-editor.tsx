@@ -53,23 +53,22 @@ export function RoleEditor({ role, users, permissionGroups, onSave, onDuplicate,
 
   return (
     <div>
-      <div className="border-b border-line-subtle" style={{ padding: "18px 22px" }}>
-        <div className="flex items-start" style={{ gap: 16 }}>
+      <div className="border-b border-line-subtle py-4 px-5">
+        <div className="flex items-start gap-4">
           <div className="flex-1 min-w-0">
             <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              className="text-xl font-semibold tracking-tight text-content-primary bg-transparent outline-none w-full hover:border-line-default focus:border-primary focus:ring-1 focus:ring-primary/30"
-              style={{ border: "1px solid transparent", padding: "4px 8px", marginLeft: -8, borderRadius: 6, maxWidth: 400, transition: "border-color 0.15s, box-shadow 0.15s" }}
+              className="text-xl font-semibold tracking-tight text-content-primary bg-transparent outline-none w-full hover:border-line-default focus:border-primary focus:ring-1 focus:ring-primary/30 border border-transparent py-1 px-2 -ml-2 rounded-md max-w-sm transition duration-150"
               disabled={role.builtin} />
             <div className="flex items-center flex-wrap gap-1.5 mt-1.5 text-xs text-content-tertiary">
               <span>{role.operatorCount} operators assigned</span>
-              <span style={{ opacity: 0.5 }}>·</span>
+              <span className="opacity-50">·</span>
               {role.builtin && <Badge variant="outline">SYSTEM</Badge>}
             </div>
             <div className="text-xs text-content-tertiary mt-0.5">
               Updated {relTime(role.updatedAt)} by {role.updatedBy}
             </div>
           </div>
-          <div className="flex items-center shrink-0" style={{ gap: 6 }}>
+          <div className="flex items-center shrink-0 gap-1.5">
             <Button variant="ghost" size="sm" iconLeft={<Copy size={14} />} onClick={onDuplicate}>Duplicate</Button>
             <Button variant="ghost-danger" size="sm" iconLeft={<Trash2 size={14} />}
               onClick={() => setConfirmDelete(true)} disabled={role.builtin}>Delete</Button>
@@ -80,7 +79,7 @@ export function RoleEditor({ role, users, permissionGroups, onSave, onDuplicate,
           </div>
         </div>
       </div>
-      <div className="flex flex-col" style={{ padding: "18px 22px 24px", gap: 16 }}>
+      <div className="flex flex-col pt-4 px-5 pb-6 gap-4">
         <PermissionsCard groups={permissionGroups} permissions={draft.permissions}
           onTogglePerm={togglePerm} onToggleGroup={toggleGroup} disabled={role.builtin} />
 
