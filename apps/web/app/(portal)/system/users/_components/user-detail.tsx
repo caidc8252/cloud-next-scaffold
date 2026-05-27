@@ -330,7 +330,7 @@ function ResetRecord({ req, email }: { req: PasswordResetRequest; email: string 
   const [now] = useState(Date.now);
   const effectiveStatus = req.status === "pending" && new Date(req.expiresAt).getTime() < now ? "expired" : req.status;
   const statusBadgeClass = {
-    pending: "text-warning-strong bg-warning-bg border-warning/30",
+    pending: "text-warning-strong bg-warning-bg border-warning/25",
     consumed: "text-success-strong bg-success-bg border-success/25",
     expired: "text-content-tertiary bg-surface-3 border-line-subtle",
     superseded: "text-content-tertiary bg-surface-3 border-line-subtle",

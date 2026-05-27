@@ -17,7 +17,7 @@ type UserListItemProps = {
 const STATUS_BADGE_CLASS = {
   ACTIVE: "text-success-strong bg-success-bg border-success/25",
   INACTIVE: "text-error-strong bg-error-bg border-error/25",
-  PENDING: "text-warning-strong bg-warning-bg border-warning/30",
+  PENDING: "text-warning-strong bg-warning-bg border-warning/25",
   EXPIRED: "text-error-strong bg-error-bg border-error/25",
 } as const;
 

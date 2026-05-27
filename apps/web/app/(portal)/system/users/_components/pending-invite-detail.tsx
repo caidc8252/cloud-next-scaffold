@@ -79,7 +79,7 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
 
   const badgeClass = isExpired
     ? "text-error-strong bg-error-bg border-error/25"
-    : "text-warning-strong bg-warning-bg border-warning/30";
+    : "text-warning-strong bg-warning-bg border-warning/25";
 
   return (
     <div>
