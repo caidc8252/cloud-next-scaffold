@@ -12,7 +12,8 @@ vi.mock("next/headers", () => ({
 
 beforeEach(() => {
   vi.resetModules();
-  process.env.AUTH_SESSION_SECRET = "test-secret";
+  process.env.NEXT_PUBLIC_APP_NAME = "Cloud Scaffold";
+  process.env.AUTH_SESSION_SECRET = "test-session-secret";
   cookieStore.delete.mockReset();
   cookieStore.get.mockReset();
   cookieStore.set.mockReset();

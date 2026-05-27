@@ -12,13 +12,13 @@
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio"
   },
-  "prisma": {
-    "seed": "node --import tsx prisma/seed.ts"
-  },
   "dependencies": {
-    "@prisma/client": "catalog:"
+    "@prisma/adapter-pg": "catalog:",
+    "@prisma/client": "catalog:",
+    "pg": "catalog:"
   },
   "devDependencies": {
+    "@types/pg": "catalog:",
     "prisma": "catalog:",
     "tsx": "^4.20.6"
   }

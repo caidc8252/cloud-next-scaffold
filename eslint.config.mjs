@@ -16,6 +16,7 @@ export default defineConfig([
     ".next/**",
     "apps/*/.next/**",
     "generated/**",
+    "packages/db/generated/**",
     "out/**",
     "build/**",
     "coverage/**",
