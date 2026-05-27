@@ -165,12 +165,12 @@ checker.has(["user.read", "user.write"]); // OR
 checker.hasAll(["user.read", "user.write"]); // AND
 ```
 
-服务端如果需要在 page / Server Action / Route Handler 里做权限守卫，优先使用 `@cloud/permissions/server`：
+服务端如果需要在 page / layout / Route Handler 里做权限守卫，优先使用 `@cloud/permissions/server`（本项目不使用 Server Action，mutation 一律走 `app/api/*`）：
 
 ```ts
 import { requirePermissions, assertPermissions } from "@cloud/permissions/server";
 
-// page / layout / server action
+// page / layout
 const session = await requirePermissions({ all: ["users.VIEW"] });
 
 // route handler

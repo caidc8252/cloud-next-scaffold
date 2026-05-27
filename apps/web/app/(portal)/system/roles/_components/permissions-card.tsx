@@ -56,7 +56,7 @@ export function PermissionsCard({
             <span className="mx-1">·</span>
             {totalInScope} in scope
             {hiddenCount > 0 && (
-              <><span className="mx-1">·</span><span className="text-warning">{hiddenCount} hidden</span></>
+              <><span className="mx-1">·</span><span className="text-warning-strong">{hiddenCount} hidden</span></>
             )}
           </div>
         </div>

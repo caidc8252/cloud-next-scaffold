@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Mail, Shield, RefreshCw, X } from "lucide-react";
+import { Button } from "@cloud/ui";
 import type { User } from "@/app/(portal)/system/_shared/types";
 import { relTime, initials } from "@/app/(portal)/system/_shared/helpers";
 
@@ -13,17 +14,17 @@ type UserListItemProps = {
   onCancel?: () => void;
 };
 
-const STATUS_STYLE = {
-  ACTIVE: { color: "var(--color-success-700)", background: "var(--color-success-50)", borderColor: "oklch(58% 0.14 152 / 0.25)" },
-  INACTIVE: { color: "var(--color-error-700)", background: "var(--color-error-50)", borderColor: "oklch(70% 0.16 25 / 0.25)" },
-  PENDING: { color: "var(--color-warning-700)", background: "var(--color-warning-50)", borderColor: "oklch(75% 0.13 80 / 0.3)" },
-  EXPIRED: { color: "var(--color-error-700)", background: "var(--color-error-50)", borderColor: "oklch(70% 0.16 25 / 0.25)" },
+const STATUS_BADGE_CLASS = {
+  ACTIVE: "text-success-strong bg-success-bg border-success/25",
+  INACTIVE: "text-error-strong bg-error-bg border-error/25",
+  PENDING: "text-warning-strong bg-warning-bg border-warning/30",
+  EXPIRED: "text-error-strong bg-error-bg border-error/25",
 } as const;
 
 function avatarGradient(status: User["status"], expired: boolean): string {
-  if (status === "INACTIVE") return "linear-gradient(135deg, oklch(70% 0.13 25), oklch(58% 0.16 25))";
-  if (status === "PENDING" && expired) return "linear-gradient(135deg, oklch(70% 0.13 25), oklch(58% 0.16 25))";
-  if (status === "PENDING") return "linear-gradient(135deg, oklch(78% 0.1 80), oklch(64% 0.14 80))";
+  if (status === "INACTIVE") return "linear-gradient(135deg, var(--color-error-500), var(--color-error-700))";
+  if (status === "PENDING" && expired) return "linear-gradient(135deg, var(--color-error-500), var(--color-error-700))";
+  if (status === "PENDING") return "linear-gradient(135deg, var(--color-warning-500), var(--color-warning-700))";
   return "linear-gradient(135deg, var(--color-primary-500), var(--color-accent-600))";
 }
 
@@ -41,12 +42,11 @@ export function UserListItem({ user, active, onClick, onResend, onCancel }: User
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
-      className="flex items-center gap-3 w-full px-3.5 py-3 text-left transition-colors border-b border-line-subtle last:border-b-0 hover:bg-surface-hover cursor-pointer"
-      style={active ? { background: "var(--color-primary-50)" } : undefined}
+      className={`flex items-center gap-3 w-full px-3.5 py-3 text-left transition-colors border-b border-line-subtle last:border-b-0 hover:bg-surface-hover cursor-pointer ${active ? "bg-primary-50" : ""}`}
     >
       <div
-        className="shrink-0 grid place-items-center text-white font-semibold text-xs"
-        style={{ width: 36, height: 36, borderRadius: 10, background: avatarGradient(user.status, isExpired), letterSpacing: "-0.01em" }}
+        className="shrink-0 grid place-items-center text-content-inverse font-semibold text-xs tracking-tight"
+        style={{ width: 36, height: 36, borderRadius: 10, background: avatarGradient(user.status, isExpired) }}
       >
         {isPending ? <Mail size={14} /> : initials(displayName)}
       </div>
@@ -62,8 +62,8 @@ export function UserListItem({ user, active, onClick, onResend, onCancel }: User
         </div>
         <div className="flex items-center gap-1.5 mt-0.5 text-xs">
           <span
-            className="font-mono font-semibold uppercase"
-            style={{ fontSize: 9.5, letterSpacing: "0.06em", padding: "1px 5px", borderRadius: 3, border: "1px solid", ...STATUS_STYLE[badgeKey] }}
+            className={`font-mono font-semibold uppercase border text-xs tracking-wider ${STATUS_BADGE_CLASS[badgeKey]}`}
+            style={{ padding: "1px 5px", borderRadius: 3 }}
           >
             {badgeKey}
           </span>
@@ -78,14 +78,14 @@ export function UserListItem({ user, active, onClick, onResend, onCancel }: User
       {isPending && (
         <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
           {onResend && (
-            <button type="button" className="p-1.5 rounded-md hover:bg-surface-hover text-content-tertiary hover:text-content-primary transition-colors" title="Resend invitation" onClick={onResend}>
-              <RefreshCw size={13} />
-            </button>
+            <Button variant="ghost" size="icon-xs" title="Resend invitation" onClick={onResend}>
+              <RefreshCw />
+            </Button>
           )}
           {onCancel && (
-            <button type="button" className="p-1.5 rounded-md hover:bg-surface-hover text-content-tertiary hover:text-error transition-colors" title="Cancel invitation" onClick={onCancel}>
-              <X size={13} />
-            </button>
+            <Button variant="ghost-danger" size="icon-xs" title="Cancel invitation" onClick={onCancel}>
+              <X />
+            </Button>
           )}
         </div>
       )}

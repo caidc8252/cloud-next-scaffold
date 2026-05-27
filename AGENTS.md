@@ -116,7 +116,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - `assertPermissions()` 用于接口 / Route Handler 的服务端权限校验
   - 未登录时抛 401
   - 已登录但缺权限时抛 403
-- `requirePermissions()` 用于 page / layout / Server Action 的服务端权限校验
+- `requirePermissions()` 用于 page / layout 的服务端权限校验
   - 未登录时跳转登出链路
   - 已登录但缺权限时跳转 `/403`
 - `packages/permissions` 已承载：
@@ -138,6 +138,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ### 接口与请求
 
+- 本项目不使用 Server Action
+  - 所有表单提交、数据 mutation 一律走 Route Handler（`apps/web/app/api/*`）
+  - 鉴权、登录、选择组织等公开页面的提交同样走 API，不写 `"use server"` action
+  - 客户端用 `@cloud/request/client` 调接口，拿到返回后再自行用 `useRouter()` 跳转
+  - 历史遗留的 Server Action 见到即顺手改成 API，不要新增
 - 统一通过 `packages/request` 发起请求
 - 客户端使用 `@cloud/request/client`
 - 服务端响应优先使用 `@cloud/request/server` 提供的响应辅助函数
