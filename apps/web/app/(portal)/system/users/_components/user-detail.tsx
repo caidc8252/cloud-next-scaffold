@@ -18,8 +18,8 @@ type UserDetailProps = {
 };
 
 function avatarGradient(locked: boolean): string {
-  if (locked) return "linear-gradient(135deg, var(--color-error-500), var(--color-error-700))";
-  return "linear-gradient(135deg, var(--color-primary-500), var(--color-accent-600))";
+  if (locked) return "bg-linear-to-br from-error-500 to-error-700";
+  return "bg-linear-to-br from-primary-500 to-accent-600";
 }
 
 export function UserDetail({ user, users, roles, currentUserId, onSave, onResetPassword, onToggleLock }: UserDetailProps) {
@@ -60,24 +60,21 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
   return (
     <div>
       {/* Header */}
-      <div className="flex items-start gap-4 border-b border-line-subtle" style={{ padding: "18px 22px" }}>
-        <div className="shrink-0 grid place-items-center text-content-inverse font-semibold text-xl tracking-tight"
-          style={{ width: 56, height: 56, borderRadius: 12, background: avatarGradient(disabled) }}>
+      <div className="flex items-start gap-4 border-b border-line-subtle py-4 px-5">
+        <div className={`shrink-0 grid place-items-center text-content-inverse font-semibold text-xl tracking-tight size-14 rounded-xl ${avatarGradient(disabled)}`}>
           {displayInitials}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2.5 flex-wrap">
             <input value={draft.displayName} onChange={(e) => setDraft({ ...draft, displayName: e.target.value })}
               disabled={isProtected} readOnly={isProtected}
-              className="text-xl font-semibold tracking-tight text-content-primary bg-transparent outline-none disabled:cursor-default"
-              style={{ border: "1px solid transparent", padding: "4px 8px", marginLeft: -8, borderRadius: 6, maxWidth: 400 }} />
+              className="text-xl font-semibold tracking-tight text-content-primary bg-transparent outline-none disabled:cursor-default border border-transparent py-1 px-2 -ml-2 rounded-md max-w-sm" />
             <span
               className={`font-mono font-semibold uppercase shrink-0 border text-xs tracking-wider ${
                 disabled
                   ? "text-error-strong bg-error-bg border-error/25"
                   : "text-success-strong bg-success-bg border-success/25"
-              }`}
-              style={{ padding: "1px 5px", borderRadius: 3 }}>
+              } py-px px-1.5 rounded-sm`}>
               {user.status}
             </span>
             {draft.authorizingType === "ADMIN" && <Badge variant="outline" title="Implicit admin — bypasses role checks">ADMIN</Badge>}
@@ -99,7 +96,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
       </div>
 
       {/* Body */}
-      <div className="flex flex-col gap-4" style={{ padding: "18px 22px 24px" }}>
+      <div className="flex flex-col gap-4 pt-4 px-5 pb-6">
         {/* Disabled banner */}
         {disabled && (
           <Alert variant="error">
@@ -217,10 +214,8 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
                 <div className="px-4 py-6 text-center text-sm text-content-tertiary">No history yet.</div>
               )}
               {(user.passwordHistory ?? []).map((h, i) => (
-                <div key={h.hashId} className="grid items-center border-b border-line-subtle last:border-b-0"
-                  style={{ gridTemplateColumns: "24px 1fr auto", gap: 10, padding: "10px 14px" }}>
-                  <div className="mx-auto rounded-full"
-                    style={{ width: 8, height: 8, background: i === 0 ? "var(--color-success-700)" : "var(--color-content-tertiary)" }} />
+                <div key={h.hashId} className="grid items-center border-b border-line-subtle last:border-b-0 grid-cols-[24px_1fr_auto] gap-2.5 py-2.5 px-3.5">
+                  <div className={`mx-auto rounded-full size-2 ${i === 0 ? "bg-success-strong" : "bg-content-tertiary"}`} />
                   <div>
                     <div className="font-mono font-medium text-xs text-content-primary">{fmtDate(h.changedAt)}</div>
                     <div className="text-xs text-content-tertiary tabular-nums">{i === 0 ? "current" : relTime(h.changedAt)}</div>
@@ -304,11 +299,11 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
 function StatCell({ label, value, sub, tone }: {
   label: string; value: React.ReactNode; sub: string; tone?: "ok" | "warn" | "danger";
 }) {
-  const valColor = tone === "danger" ? "var(--color-error-700)" : tone === "warn" ? "var(--color-warning-700)" : tone === "ok" ? "var(--color-success-700)" : undefined;
+  const toneClass = tone === "danger" ? "text-error-strong" : tone === "warn" ? "text-warning-strong" : tone === "ok" ? "text-success-strong" : "";
   return (
     <div className="bg-surface-3 border border-line-subtle rounded-lg px-3.5 py-3">
       <div className="text-xs font-medium uppercase tracking-wide text-content-tertiary">{label}</div>
-      <div className="text-lg font-semibold mt-1 tabular-nums" style={valColor ? { color: valColor } : undefined}>{value}</div>
+      <div className={`text-lg font-semibold mt-1 tabular-nums ${toneClass}`}>{value}</div>
       <div className="text-xs text-content-tertiary mt-0.5">{sub}</div>
     </div>
   );
@@ -317,7 +312,7 @@ function StatCell({ label, value, sub, tone }: {
 function PolicyRow({ icon, name, desc, val }: { icon: React.ReactNode; name: string; desc: string; val: string }) {
   return (
     <div className="flex items-start gap-3 px-4 py-3 border-b border-line-subtle last:border-b-0">
-      <div className="grid place-items-center shrink-0 bg-surface-3 text-content-secondary" style={{ width: 28, height: 28, borderRadius: 8 }}>
+      <div className="grid place-items-center shrink-0 bg-surface-3 text-content-secondary size-7 rounded-lg">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
@@ -335,7 +330,7 @@ function ResetRecord({ req, email }: { req: PasswordResetRequest; email: string 
   const [now] = useState(Date.now);
   const effectiveStatus = req.status === "pending" && new Date(req.expiresAt).getTime() < now ? "expired" : req.status;
   const statusBadgeClass = {
-    pending: "text-warning-strong bg-warning-bg border-warning/30",
+    pending: "text-warning-strong bg-warning-bg border-warning/25",
     consumed: "text-success-strong bg-success-bg border-success/25",
     expired: "text-content-tertiary bg-surface-3 border-line-subtle",
     superseded: "text-content-tertiary bg-surface-3 border-line-subtle",
@@ -344,16 +339,14 @@ function ResetRecord({ req, email }: { req: PasswordResetRequest; email: string 
 
   return (
     <div className="flex gap-3.5 px-5 py-4">
-      <div className="grid place-items-center shrink-0 bg-info-bg text-info-strong border border-info/25"
-        style={{ width: 36, height: 36, borderRadius: 10 }}>
+      <div className="grid place-items-center shrink-0 bg-info-bg text-info-strong border border-info/25 size-9 rounded-lg">
         <Mail size={16} />
       </div>
       <div className="flex-1 min-w-0 flex flex-col gap-1.5">
         <div className="flex items-center gap-2.5">
           <span className="text-sm text-content-primary flex-1">Reset link sent to <strong>{email}</strong></span>
           <span
-            className={`font-mono font-semibold uppercase shrink-0 border text-xs tracking-wider ${statusBadgeClass}`}
-            style={{ padding: "3px 8px", borderRadius: 999 }}>
+            className={`font-mono font-semibold uppercase shrink-0 border text-xs tracking-wider ${statusBadgeClass} py-0.5 px-2 rounded-full`}>
             {statusLabel}
           </span>
         </div>

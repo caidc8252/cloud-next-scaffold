@@ -19,6 +19,7 @@ export { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitl
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip'
 export { Toaster, toast } from './sonner'
 export { Table, type TableProps, type TableColumn, type SortDir } from './table'
+export { VirtualTable, type VirtualTableProps } from './virtual-table'
 export { Pagination, type PaginationProps } from './pagination'
 export { ThemeToggle } from './theme-toggle'
 export {
