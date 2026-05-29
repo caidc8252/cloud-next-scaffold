@@ -37,6 +37,12 @@ const buttonVariants = cva(
         sm: "h-control-sm gap-1 rounded-[min(var(--radius-md),12px)] px-cx-sm text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5",
         md: "h-control-md gap-1.5 px-cx-md has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         lg: "h-control-lg gap-1.5 px-cx-lg has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+        // Content-driven height. Padding sets the minimum; multiline children,
+        // icons, badges all push the button taller. Pair with `whitespace-normal`
+        // when wrapping text, and override `items-*` for top-aligned content.
+        // Use when the Button is being treated as a clickable card (option,
+        // tile, list row); for plain CTAs prefer sm/md/lg.
+        auto: "gap-1.5 px-cx-md py-2 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         icon: "size-8",
         "icon-xs":
           "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
