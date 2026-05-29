@@ -129,12 +129,24 @@ function Stepper({
       className={className}
     >
       <InputGroupAddon align="inline-start">
+        {/* Boundary state (atMin) uses aria-disabled + local styling rather
+            than the native `disabled` attribute, so it does NOT trip
+            InputGroup's `:has(:disabled)` rule that greys the whole control —
+            only this button dims. Native `disabled` stays reserved for the
+            whole-Stepper `disabled` prop (where greying everything is correct).
+            Click is blocked by the onClick guard; commit() also clamps, so a
+            stray click is a no-op regardless. */}
         <InputGroupButton
           size="icon-xs"
-          onClick={() => commit(value - step)}
-          disabled={disabled || atMin}
+          onClick={() => {
+            if (disabled || atMin) return
+            commit(value - step)
+          }}
+          disabled={disabled}
+          aria-disabled={atMin || undefined}
           aria-label={decrementLabel}
           tabIndex={-1}
+          className="aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-transparent"
         >
           <MinusIcon />
         </InputGroupButton>
@@ -162,10 +174,15 @@ function Stepper({
       <InputGroupAddon align="inline-end">
         <InputGroupButton
           size="icon-xs"
-          onClick={() => commit(value + step)}
-          disabled={disabled || atMax}
+          onClick={() => {
+            if (disabled || atMax) return
+            commit(value + step)
+          }}
+          disabled={disabled}
+          aria-disabled={atMax || undefined}
           aria-label={incrementLabel}
           tabIndex={-1}
+          className="aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-transparent"
         >
           <PlusIcon />
         </InputGroupButton>
