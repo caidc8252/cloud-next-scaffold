@@ -23,11 +23,37 @@ vi.mock("@aws-sdk/client-s3", () => {
     }
   }
 
+  class HeadObjectCommand {
+    input: unknown;
+
+    constructor(input: unknown) {
+      this.input = input;
+    }
+  }
+
+  class GetObjectCommand {
+    input: unknown;
+
+    constructor(input: unknown) {
+      this.input = input;
+    }
+  }
+
   return {
     S3Client,
+    GetObjectCommand,
+    HeadObjectCommand,
     PutObjectCommand,
   };
 });
+
+vi.mock("@aws-sdk/s3-request-presigner", () => ({
+  getSignedUrl: vi.fn(async (_client: unknown, command: unknown, options: unknown) => {
+    const input = (command as { input: { Key: string } }).input;
+    const expiresIn = (options as { expiresIn: number }).expiresIn;
+    return `https://signed.example.test/${input.Key}?expires=${expiresIn}`;
+  }),
+}));
 
 vi.mock("@aws-sdk/client-sts", () => {
   class STSClient {
@@ -222,5 +248,106 @@ describe("uploadFileToS3FromServer", () => {
     };
     expect(putCommand.input.Bucket).toBe("merchant-debug-bucket");
     expect(putCommand.input.Key).toBe(storedObject.objectKey);
+  });
+});
+
+describe("getS3ObjectMetadata", () => {
+  it("reads object metadata from the configured bucket", async () => {
+    s3SendMock.mockResolvedValueOnce({
+      ContentLength: 42,
+      ContentType: "application/zip",
+      ETag: '"metadata-etag"',
+      LastModified: new Date("2026-05-21T12:00:00.000Z"),
+    });
+
+    const { getS3ObjectMetadata } = await import("../../src/server/s3.ts");
+    const metadata = await getS3ObjectMetadata(BASE_CONFIG, {
+      objectKey: "uploads/app.zip",
+    });
+
+    expect(metadata).toMatchObject({
+      bucket: "merchant-debug-bucket",
+      objectKey: "uploads/app.zip",
+      contentType: "application/zip",
+      sizeBytes: 42,
+      etag: '"metadata-etag"',
+      lastModified: "2026-05-21T12:00:00.000Z",
+    });
+
+    const headCommand = s3SendMock.mock.calls[0]?.[0] as {
+      input: Record<string, string>;
+    };
+    expect(headCommand.input.Bucket).toBe("merchant-debug-bucket");
+    expect(headCommand.input.Key).toBe("uploads/app.zip");
+  });
+});
+
+describe("createS3StoredObjectReference", () => {
+  it("builds an object reference without calling S3", async () => {
+    const { createS3StoredObjectReference } = await import("../../src/server/s3.ts");
+
+    const reference = createS3StoredObjectReference(BASE_CONFIG, {
+      objectKey: "uploads/app.zip",
+      contentType: "application/zip",
+      sizeBytes: 123,
+      etag: '"etag"',
+    });
+
+    expect(reference).toMatchObject({
+      bucket: "merchant-debug-bucket",
+      objectKey: "uploads/app.zip",
+      objectUrl: "https://merchant-debug-bucket.s3.ap-southeast-1.amazonaws.com/uploads/app.zip",
+      contentType: "application/zip",
+      sizeBytes: 123,
+      etag: '"etag"',
+    });
+    expect(s3SendMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("createS3DownloadUrl", () => {
+  it("creates a short-lived signed GET URL", async () => {
+    const { createS3DownloadUrl } = await import("../../src/server/s3.ts");
+
+    const url = await createS3DownloadUrl(BASE_CONFIG, {
+      objectKey: "uploads/app.zip",
+      filename: 'release-"final".zip',
+      expiresInSeconds: 30,
+    });
+
+    expect(url).toBe("https://signed.example.test/uploads/app.zip?expires=60");
+  });
+
+  it("uses scoped read credentials when a role ARN is configured", async () => {
+    stsSendMock.mockResolvedValueOnce({
+      Credentials: {
+        AccessKeyId: "read-temp-ak",
+        SecretAccessKey: "read-temp-sk",
+        SessionToken: "read-temp-token",
+        Expiration: new Date("2026-05-21T13:00:00.000Z"),
+      },
+    });
+
+    const { createS3DownloadUrl } = await import("../../src/server/s3.ts");
+    await createS3DownloadUrl(
+      {
+        ...BASE_CONFIG,
+        stsRoleArn: "arn:aws:iam::123456789012:role/merchant-storage",
+      },
+      {
+        objectKey: "uploads/app.zip",
+      },
+    );
+
+    const stsCommand = stsSendMock.mock.calls[0]?.[0] as { input: Record<string, string> };
+    expect(stsCommand.input.Policy).toContain("s3:GetObject");
+    expect(stsCommand.input.Policy).not.toContain("s3:PutObject");
+
+    const s3ClientInput = s3ClientInputs[0] as {
+      credentials?: {
+        accessKeyId?: string;
+      };
+    };
+    expect(s3ClientInput.credentials?.accessKeyId).toBe("read-temp-ak");
   });
 });

@@ -1,5 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import {
   AssumeRoleCommand,
   GetFederationTokenCommand,
@@ -11,6 +17,7 @@ import { NodeHttpHandler } from "@smithy/node-http-handler";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import type {
   S3ConfigSummary,
+  S3ObjectMetadata,
   S3StoredObject,
   S3StsCredentials,
   S3UploadSession,
@@ -41,9 +48,36 @@ export type UploadFileToS3FromServerInput = {
   abortSignal?: AbortSignal;
 };
 
+export type GetS3ObjectMetadataInput = {
+  objectKey: string;
+  abortSignal?: AbortSignal;
+};
+
+export type CreateS3DownloadUrlInput = {
+  objectKey: string;
+  filename?: string;
+  expiresInSeconds?: number;
+};
+
+export type CreateS3StoredObjectReferenceInput = {
+  objectKey: string;
+  contentType?: string;
+  sizeBytes?: number;
+  etag?: string;
+};
+
 const stsClientsByRegion = new Map<string, STSClient>();
 const s3ClientsByRegion = new Map<string, S3Client>();
 const requestHandlersByProxyUrl = new Map<string, NodeHttpHandler>();
+const S3_UPLOAD_ACTIONS = [
+  "s3:PutObject",
+  "s3:AbortMultipartUpload",
+  "s3:CreateMultipartUpload",
+  "s3:UploadPart",
+  "s3:CompleteMultipartUpload",
+  "s3:ListMultipartUploadParts",
+] as const;
+const S3_READ_ACTIONS = ["s3:GetObject"] as const;
 
 function getServerProxyUrl(): string | undefined {
   return (
@@ -127,6 +161,10 @@ function normalizeExistingObjectKey(objectKey: string): string {
   return cleaned;
 }
 
+function normalizeObjectKey(objectKey: string): string {
+  return normalizeExistingObjectKey(objectKey);
+}
+
 function createObjectUrl(uploadUrl: string, objectKey: string): string {
   const url = new URL(uploadUrl);
   const encodedKey = objectKey
@@ -165,20 +203,17 @@ function createScopedSessionName(prefix: string): string {
   return `${trimmedPrefix}-${suffix}`;
 }
 
-function createScopedPolicy(bucket: string, objectKey: string): string {
+function createScopedPolicy(
+  bucket: string,
+  objectKey: string,
+  actions: readonly string[],
+): string {
   return JSON.stringify({
     Version: "2012-10-17",
     Statement: [
       {
         Effect: "Allow",
-        Action: [
-          "s3:PutObject",
-          "s3:AbortMultipartUpload",
-          "s3:CreateMultipartUpload",
-          "s3:UploadPart",
-          "s3:CompleteMultipartUpload",
-          "s3:ListMultipartUploadParts",
-        ],
+        Action: actions,
         Resource: [`arn:aws:s3:::${bucket}/${objectKey}`],
       },
     ],
@@ -244,9 +279,10 @@ function normalizeExpiration(value: Date | string | undefined): string {
 async function mintTemporaryCredentials(
   config: NormalizedS3UploadConfig,
   objectKey: string,
+  actions: readonly string[],
 ): Promise<S3StsCredentials> {
   const client = createStsClient(config.regionId);
-  const policy = createScopedPolicy(config.bucket, objectKey);
+  const policy = createScopedPolicy(config.bucket, objectKey, actions);
   const sessionName = createScopedSessionName(config.stsSessionName);
 
   if (config.stsRoleArn) {
@@ -344,7 +380,7 @@ export async function createS3UploadSession(
   }
 
   const objectKey = resolveObjectKey(normalized.directoryPrefix, input);
-  const credentials = await mintTemporaryCredentials(normalized, objectKey);
+  const credentials = await mintTemporaryCredentials(normalized, objectKey, S3_UPLOAD_ACTIONS);
 
   return {
     ...getS3ConfigSummary(normalized),
@@ -377,7 +413,7 @@ export async function uploadFileToS3FromServer(
 
   const objectKey = resolveObjectKey(normalized.directoryPrefix, input);
   const scopedCredentials = normalized.stsRoleArn
-    ? await mintTemporaryCredentials(normalized, objectKey)
+    ? await mintTemporaryCredentials(normalized, objectKey, S3_UPLOAD_ACTIONS)
     : undefined;
   const client = scopedCredentials
     ? createScopedS3Client(normalized, scopedCredentials)
@@ -400,6 +436,83 @@ export async function uploadFileToS3FromServer(
     objectKey,
     objectUrl: createObjectUrl(normalized.uploadUrl, objectKey),
     contentType,
+    sizeBytes: byteLength,
     etag: response.ETag,
   };
+}
+
+export function createS3StoredObjectReference(
+  config: S3UploadConfig,
+  input: CreateS3StoredObjectReferenceInput,
+): S3StoredObject {
+  const normalized = normalizeS3UploadConfig(config);
+  const objectKey = normalizeObjectKey(input.objectKey);
+
+  return {
+    bucket: normalized.bucket,
+    regionId: normalized.regionId,
+    uploadUrl: normalized.uploadUrl,
+    objectKey,
+    objectUrl: createObjectUrl(normalized.uploadUrl, objectKey),
+    contentType: input.contentType?.trim() || "application/octet-stream",
+    sizeBytes: input.sizeBytes,
+    etag: input.etag,
+  };
+}
+
+export async function getS3ObjectMetadata(
+  config: S3UploadConfig,
+  input: GetS3ObjectMetadataInput,
+): Promise<S3ObjectMetadata> {
+  const normalized = normalizeS3UploadConfig(config);
+  const objectKey = normalizeObjectKey(input.objectKey);
+  const scopedCredentials = normalized.stsRoleArn
+    ? await mintTemporaryCredentials(normalized, objectKey, S3_READ_ACTIONS)
+    : undefined;
+  const client = scopedCredentials
+    ? createScopedS3Client(normalized, scopedCredentials)
+    : createS3Client(normalized);
+  const response = await client.send(
+    new HeadObjectCommand({
+      Bucket: normalized.bucket,
+      Key: objectKey,
+    }),
+    { abortSignal: input.abortSignal },
+  );
+
+  return {
+    bucket: normalized.bucket,
+    regionId: normalized.regionId,
+    uploadUrl: normalized.uploadUrl,
+    objectKey,
+    objectUrl: createObjectUrl(normalized.uploadUrl, objectKey),
+    contentType: response.ContentType ?? "application/octet-stream",
+    sizeBytes: response.ContentLength,
+    etag: response.ETag,
+    lastModified: response.LastModified?.toISOString(),
+  };
+}
+
+export async function createS3DownloadUrl(
+  config: S3UploadConfig,
+  input: CreateS3DownloadUrlInput,
+): Promise<string> {
+  const normalized = normalizeS3UploadConfig(config);
+  const objectKey = normalizeObjectKey(input.objectKey);
+  const scopedCredentials = normalized.stsRoleArn
+    ? await mintTemporaryCredentials(normalized, objectKey, S3_READ_ACTIONS)
+    : undefined;
+  const client = scopedCredentials
+    ? createScopedS3Client(normalized, scopedCredentials)
+    : createS3Client(normalized);
+  const expiresIn = Math.min(Math.max(input.expiresInSeconds ?? 300, 60), 3600);
+  const command = new GetObjectCommand({
+    Bucket: normalized.bucket,
+    Key: objectKey,
+    ResponseContentDisposition: input.filename
+      ? `attachment; filename="${input.filename.replace(/["\\]/g, "_")}"`
+      : undefined,
+  });
+
+  return getSignedUrl(client, command, { expiresIn });
 }

@@ -28,6 +28,10 @@ const PERMISSIONS: PermissionDef[] = [
   { code: "users.LOCK", menuKey: "users", remark: "Lock / unlock user account" },
   { code: "users.RESETPW", menuKey: "users", remark: "Force-reset user password" },
   { code: "users.CHANGE_ROLE", menuKey: "users", remark: "Change user's assigned role" },
+  // Storage
+  { code: "storage.VIEW", menuKey: "s3Upload", remark: "View uploaded S3 objects" },
+  { code: "storage.UPLOAD", menuKey: "s3Upload", remark: "Upload files to S3" },
+  { code: "storage.DOWNLOAD", menuKey: "s3Upload", remark: "Download uploaded S3 objects" },
 ];
 
 const DEFAULT_PASSWORD = "ChangeMe!123";
@@ -141,10 +145,25 @@ async function main() {
     create: { menuId: 4, menuTitle: "Users", path: "/system/users", icon: "users", sort: 102, parentMenuId: systemMenu.menuId, contractDefineCode: "ADMIN" },
   });
 
-  // 6e. Seed all permissions
+  // 6e. Storage parent menu (L1)
+  const storageMenu = await prisma.sysMenu.upsert({
+    where: { menuId: 6 },
+    update: { menuTitle: "Storage", path: null, parentMenuId: null, icon: "database", sort: 200, contractDefineCode: "ADMIN" },
+    create: { menuId: 6, menuTitle: "Storage", path: null, parentMenuId: null, icon: "database", sort: 200, contractDefineCode: "ADMIN" },
+  });
+
+  // 6f. Storage → S3 Upload menu (L2)
+  const s3UploadMenu = await prisma.sysMenu.upsert({
+    where: { menuId: 7 },
+    update: { menuTitle: "S3 Upload", path: "/storage/s3-upload", icon: "upload-cloud", sort: 201, parentMenuId: storageMenu.menuId, contractDefineCode: "ADMIN" },
+    create: { menuId: 7, menuTitle: "S3 Upload", path: "/storage/s3-upload", icon: "upload-cloud", sort: 201, parentMenuId: storageMenu.menuId, contractDefineCode: "ADMIN" },
+  });
+
+  // 6g. Seed all permissions
   const menuKeyMap: Record<string, number> = {
     dashboard: dashboardMenu.menuId,
     roles: rolesMenu.menuId,
+    s3Upload: s3UploadMenu.menuId,
     users: usersMenu.menuId,
   };
 

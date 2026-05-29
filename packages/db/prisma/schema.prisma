@@ -36,6 +36,8 @@ model SysEntity {
   userRoles        SysUserRole[]
   orgs             SysOrg[]
   roleBlacklists   SysRoleContractBlacklist[]
+  storageObjects     StorageObject[]
+  storageAttachments StorageAttachment[]
 
   @@index([entityName], map: "idx_sys_entity_name")
   @@index([country], map: "idx_sys_entity_country")
@@ -197,6 +199,7 @@ model SysUser {
   userOrgs              SysUserOrg[]
   invites               SysInvite[]
   passwordResetRequests SysPasswordResetRequest[]
+  uploadedStorageObjects StorageObject[]
 
   @@index([status])
   @@map("sys_user")
@@ -386,4 +389,65 @@ model SysPasswordResetRequest {
 
   @@index([userId])
   @@map("sys_password_reset_request")
+}
+
+// ─── storage_object ─────────────────────────────────────
+model StorageObject {
+  storageObjectId  String    @id @default(uuid()) @map("storage_object_id")
+  entityId         Int       @map("entity_id")
+  uploaderUserId   Int       @map("uploader_user_id")
+  bucket           String    @db.VarChar(255)
+  regionId         String    @map("region_id") @db.VarChar(64)
+  objectKey        String    @map("object_key") @db.VarChar(1024)
+  objectUrl        String    @map("object_url") @db.VarChar(1200)
+  originalFilename String    @map("original_filename") @db.VarChar(255)
+  contentType      String    @map("content_type") @db.VarChar(255)
+  sizeBytes        BigInt    @map("size_bytes")
+  contentHash      String?   @map("content_hash") @db.VarChar(64)
+  visibility       String    @default("PRIVATE") @db.VarChar(20)
+  etag             String?   @db.VarChar(255)
+  status           String    @default("ACTIVE") @db.VarChar(20)
+  creTime          DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId        Int       @default(0) @map("cre_user_id")
+  updTime          DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+  updUserId        Int       @default(0) @map("upd_user_id")
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamp(3)
+
+  entity      SysEntity           @relation(fields: [entityId], references: [entityId])
+  uploader    SysUser             @relation(fields: [uploaderUserId], references: [userId])
+  attachments StorageAttachment[]
+
+  @@unique([entityId, bucket, objectKey], map: "uk_storage_object_entity_bucket_key")
+  @@index([entityId, contentHash, sizeBytes, status], map: "idx_storage_object_entity_hash_size_status")
+  @@index([entityId, status, creTime(sort: Desc)], map: "idx_storage_object_entity_status_time")
+  @@index([uploaderUserId], map: "idx_storage_object_uploader")
+  @@map("storage_object")
+}
+
+// ─── storage_attachment ─────────────────────────────────
+model StorageAttachment {
+  storageAttachmentId String    @id @default(uuid()) @map("storage_attachment_id")
+  entityId            Int       @map("entity_id")
+  storageObjectId     String    @map("storage_object_id")
+  subjectType         String    @map("subject_type") @db.VarChar(64)
+  subjectId           String    @map("subject_id") @db.VarChar(128)
+  purpose             String    @db.VarChar(64)
+  displayName         String?   @map("display_name") @db.VarChar(255)
+  sortNo              Int       @default(0) @map("sort_no")
+  isPrimary           Boolean   @default(false) @map("is_primary")
+  status              String    @default("ACTIVE") @db.VarChar(20)
+  creTime             DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId           Int       @default(0) @map("cre_user_id")
+  updTime             DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+  updUserId           Int       @default(0) @map("upd_user_id")
+  deletedAt           DateTime? @map("deleted_at") @db.Timestamp(3)
+
+  entity        SysEntity     @relation(fields: [entityId], references: [entityId])
+  storageObject StorageObject @relation(fields: [storageObjectId], references: [storageObjectId], onDelete: Cascade)
+
+  @@unique([entityId, storageObjectId, subjectType, subjectId, purpose], map: "uk_storage_attachment_object_subject")
+  @@index([entityId, subjectType, subjectId, purpose, status, sortNo], map: "idx_storage_attachment_subject")
+  @@index([storageObjectId], map: "idx_storage_attachment_object")
+  @@index([entityId, status, creTime(sort: Desc)], map: "idx_storage_attachment_entity_status_time")
+  @@map("storage_attachment")
 }

@@ -67,10 +67,10 @@ export function s3ErrorResponse(error: unknown): Response {
     );
   }
 
-  if (code === "AccessDenied") {
+  if (code === "AccessDenied" || awsError?.$metadata?.httpStatusCode === 403) {
     return forbiddenResponse(
       "storage.s3_access_denied",
-      "AWS credentials do not have permission to write to the configured S3 object.",
+      "AWS credentials do not have permission to access the configured S3 object.",
     );
   }
 

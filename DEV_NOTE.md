@@ -42,7 +42,12 @@
 - Prisma 7 的 CLI 配置位于 `packages/db/prisma.config.ts`，Client 生成到 `packages/db/generated/prisma`，此目录不提交，构建前必须先执行 `pnpm db:generate`。
 - `packages/config` 会主动加载根 `.env`，否则 Next 应用构建时拿不到数据库配置。
 - `packages/permissions` 同时承载 `PermissionChecker`、服务端登录态实现，以及 `@cloud/permissions/client` 提供的前端权限 hook。业务代码统一从 `@cloud/permissions/server` 引用，不再保留 `apps/web/lib/auth.ts` 兼容转发。
-- `packages/storage` 统一承载 Amazon S3 上传会话、STS 临时凭证和服务端上传；业务代码连接 S3 默认走 `@cloud/storage/server`。
+- `packages/storage` 统一承载 Amazon S3 上传会话、STS 临时凭证、服务端上传、对象元数据确认和短期下载链接；业务代码连接 S3 默认走 `@cloud/storage/server`。
+- S3 上传记录落在 `storage_object`，下载入口必须先按当前 Entity 查询业务记录，再生成短期 S3 GET 链接；不要直接把前端保存的 `objectUrl` 当作下载授权。
+- 文件去重以同租户内 `contentHash(SHA-256) + sizeBytes + ACTIVE` 为准。正常 UI 上传前会先查重；小文件服务端上传会重新计算 hash，避免只信任前端。
+- S3 下载前先 `HeadObject` 校验对象和读权限，避免浏览器跳到 S3 XML 错误页；对应 AWS 身份必须允许目标对象的 `s3:GetObject`。
+- 公开图片通过 `storage_object.visibility = PUBLIC` 表达，且只允许 `image/*` 落到 `public/` 前缀。公开访问只暴露 `accessUrl`，S3 bucket policy 只应开放 `public/*`，不要开放整个 bucket。Bucket policy 的匿名 `s3:GetObject` 不等于应用有写权限，上传公开图片仍需要应用 AWS 身份或被 assume role 允许 `s3:PutObject` 到 `public/*`。
+- `storage_object` 只表达文件本体，业务归属统一落在 `storage_attachment`。通用绑定使用 `subjectType + subjectId + purpose`，业务模块负责校验 subject 是否真实存在以及是否允许绑定。
 - 系统管理页面组件（users / roles）属于 `apps/web` 业务代码，按 Next.js 惯例放在 `app/(portal)/system/<feature>/` 下：
   - `page.tsx` 服务端入口（鉴权 + 数据加载）
   - `_components/`：客户端组件（list / detail / modal 等）

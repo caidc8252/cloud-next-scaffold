@@ -9,7 +9,7 @@
 - `packages/request`：通用请求封装与错误码
 - `packages/config`：环境变量校验
 - `packages/cache`：Redis 客户端与 JSON KV 缓存封装
-- `packages/storage`：Amazon S3 上传会话与服务端上传封装
+- `packages/storage`：Amazon S3 上传会话、对象校验、服务端上传与下载链接封装
 - `packages/db`：Prisma + PostgreSQL 数据层
 - `packages/security`：密码哈希、RSA 加解密
 - `packages/permissions`：权限判断 + 服务端登录态与前端权限 hook
@@ -72,7 +72,7 @@ packages/
   permissions/            # PermissionChecker + 登录态、DAL、session cookie + client hooks
   request/                # 请求封装 + 响应辅助 + 错误码
   security/               # argon2 密码哈希, RSA 加解密
-  storage/                # Amazon S3 上传会话 + 服务端上传
+  storage/                # Amazon S3 上传会话 + 服务端上传 + 下载链接
   ui/                     # 基础 UI 组件
 scripts/
   prisma.mjs              # Prisma 统一调用脚本
@@ -209,10 +209,15 @@ export function UsersActions({ permissions }: { permissions: string[] }) {
 
 Amazon S3 相关能力统一走 `@cloud/storage/server` / `@cloud/storage/client`，不要在业务代码里直接初始化 AWS SDK 客户端。
 
-服务端可用 `createS3UploadSession()` 生成带临时 STS 凭证的上传会话，适合前端直传；也可用 `uploadFileToS3FromServer()` 由服务端直接上传文件。
+服务端可用 `createS3UploadSession()` 生成带临时 STS 凭证的上传会话，适合前端直传；也可用 `uploadFileToS3FromServer()` 由服务端直接上传文件。上传完成后的业务记录保存在 `storage_object` 表，下载时先校验当前租户下的数据库记录，再由服务端生成短期 S3 GET 链接。
 
 ```ts
-import { createS3UploadSession, uploadFileToS3FromServer } from "@cloud/storage/server";
+import {
+  createS3DownloadUrl,
+  createS3UploadSession,
+  getS3ObjectMetadata,
+  uploadFileToS3FromServer,
+} from "@cloud/storage/server";
 
 const s3Config = {
   bucket: process.env.AWS_S3_BUCKET!,
@@ -234,9 +239,31 @@ const storedObject = await uploadFileToS3FromServer(s3Config, {
   filename: "debug.bin",
   contentType: "application/octet-stream",
 });
+
+const metadata = await getS3ObjectMetadata(s3Config, {
+  objectKey: storedObject.objectKey,
+});
+
+const downloadUrl = await createS3DownloadUrl(s3Config, {
+  objectKey: metadata.objectKey,
+  filename: "debug.bin",
+});
 ```
 
 `s3Config` 必填 `bucket` 和 `regionId`。默认 `uploadUrl` 会生成 `https://{bucket}.s3.{regionId}.amazonaws.com`；如果接 CDN 或自定义域名，可传 `uploadUrl`。未配置 `stsRoleArn` 时使用 `GetFederationToken`，配置后使用 `AssumeRole`。
+
+用于上传/下载的 AWS 身份除了写入权限，也必须具备读取权限。上传普通文件和公开图片都需要目标 prefix 的 `s3:PutObject`；下载签名链接使用 `s3:GetObject`，下载前的对象校验使用 `HeadObject`，AWS 侧同样要求身份具备 `s3:GetObject`。如果配置了 `AWS_S3_UPLOAD_ROLE_ARN`，被 assume 的 role 自身策略也要允许目标 bucket/prefix 的 `s3:PutObject` / `s3:GetObject`，session policy 不能放大 role 原本没有的权限。
+
+公开图片使用 `visibility=PUBLIC`，默认仍是 `PRIVATE`。公开上传只允许 `image/*`，并且对象 key 必须落在 `public/` 前缀下；返回记录中的 `accessUrl` 只有公开文件才有值，可直接用于头像、Logo、公开图片等 `<img src>` 场景。S3 侧不要公开整个 bucket，只给 `public/*` 配只读 bucket policy。这个 bucket policy 只解决匿名读取，不给应用 AWS 身份增加上传权限；应用身份仍需要 IAM policy 允许 `s3:PutObject` 到 `public/*`。
+
+```json
+{
+  "Effect": "Allow",
+  "Principal": "*",
+  "Action": "s3:GetObject",
+  "Resource": "arn:aws:s3:::your-bucket/public/*"
+}
+```
 
 浏览器直传使用 `@cloud/storage/client`：
 
@@ -252,7 +279,18 @@ await uploadFileToS3FromBrowser({
 });
 ```
 
-当前默认策略：`<= 5 MB` 的浏览器文件走服务端上传，`> 5 MB` 走浏览器直传；直传中超过 100 MB 时自动使用 multipart upload。当前 Web 演示页面位于 `/storage/s3-upload`，小文件会调用 `/api/storage/s3-upload-server`，大文件会通过 `/api/storage/s3-upload-session` 获取临时上传会话。
+当前默认策略：`<= 5 MB` 的浏览器文件走服务端上传，`> 5 MB` 走浏览器直传；直传中超过 100 MB 时自动使用 multipart upload。当前 Web 演示页面位于 `/storage/s3-upload`，上传前会先计算 SHA-256 并调用 `/api/storage/uploads/duplicate` 检查同租户、同可见性下是否已有相同内容文件，命中时直接复用旧 `storage_object`。小文件会调用 `/api/storage/s3-upload-server` 并直接写入上传记录；大文件会通过 `/api/storage/s3-upload-session` 获取临时上传会话，浏览器上传完成后调用 `/api/storage/uploads/complete` 做 S3 `HeadObject` 校验并写入记录。历史记录列表来自 `/api/storage/uploads`，下载按钮调用 `/api/storage/uploads/[storageObjectId]/download` 获取 5 分钟下载链接。
+
+文件业务归属不要写进 `storage_object`。`storage_object` 只保存文件本体；应用包、头像、合同附件等业务关系写入 `storage_attachment`。通用接口 `/api/storage/attachments` 支持按 `subjectType + subjectId + purpose` 查询附件，也支持把已上传完成的 `storageObjectId` 绑定到业务对象。常用约定示例：应用安装包 `APP / <appId> / PACKAGE`，用户头像 `SYS_USER / <userId> / AVATAR`，合同附件 `CONTRACT / <contractId> / ATTACHMENT`。
+
+新增或重置本地数据库后，需要执行：
+
+```bash
+pnpm db:push
+pnpm db:seed
+```
+
+`db:push` 会创建 `storage_object` / `storage_attachment` 表，`db:seed` 会补齐 Storage 菜单和 `storage.VIEW` / `storage.UPLOAD` / `storage.DOWNLOAD` 权限。
 
 ## 用户管理
 
