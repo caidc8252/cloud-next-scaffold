@@ -26,6 +26,7 @@
   ],
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",
+    "@aws-sdk/s3-request-presigner": "catalog:",
     "@aws-sdk/client-sts": "catalog:",
     "@aws-sdk/lib-storage": "catalog:",
     "@smithy/node-http-handler": "catalog:",

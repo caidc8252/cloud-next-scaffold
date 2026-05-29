@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { UploadCloud, X } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Download, RefreshCw, UploadCloud, X } from "lucide-react";
 import { request, RequestError } from "@cloud/request/client";
 import type { ErrorBody, SuccessBody } from "@cloud/request/client";
-import type { S3StoredObject, S3UploadSession } from "@cloud/storage";
+import type { S3UploadSession } from "@cloud/storage";
 import { uploadFileToS3FromBrowser } from "@cloud/storage/client";
 import {
   Badge,
@@ -16,15 +16,31 @@ import {
   CardTitle,
   Input,
   Progress,
+  Table,
+  ToggleSwitch,
+  type TableColumn,
 } from "@cloud/ui/components/ui";
 import { Stack } from "@cloud/ui/components/layout";
 import { SERVER_S3_UPLOAD_THRESHOLD_BYTES } from "../lib/s3-upload-policy";
+import type {
+  DuplicateStorageObjectResponse,
+  S3DownloadUrlResponse,
+  StorageObjectRecord,
+  StorageVisibility,
+} from "./types";
+
+const DEFAULT_VISIBILITY = "PRIVATE" satisfies StorageVisibility;
+const PUBLIC_VISIBILITY = "PUBLIC" satisfies StorageVisibility;
+const PUBLIC_DIRECTORY = "public/images";
 
 type UploadState =
   | "idle"
+  | "hashing"
+  | "checking-duplicate"
   | "server-uploading"
   | "creating-session"
   | "uploading"
+  | "finalizing"
   | "done"
   | "error";
 
@@ -40,20 +56,41 @@ function formatBytes(value: number): string {
   return `${size.toFixed(size >= 100 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
 function getErrorMessage(error: unknown): string {
   if (error instanceof RequestError) return error.message;
   if (error instanceof Error) return error.message;
   return "Upload failed.";
 }
 
+async function calculateFileSha256(file: File, signal: AbortSignal): Promise<string> {
+  if (signal.aborted) throw new DOMException("Upload aborted.", "AbortError");
+  const buffer = await file.arrayBuffer();
+  if (signal.aborted) throw new DOMException("Upload aborted.", "AbortError");
+  const digest = await crypto.subtle.digest("SHA-256", buffer);
+  if (signal.aborted) throw new DOMException("Upload aborted.", "AbortError");
+
+  return Array.from(new Uint8Array(digest))
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 async function uploadFileThroughServer(
   file: File,
   directory: string,
+  visibility: StorageVisibility,
   signal: AbortSignal,
-): Promise<S3StoredObject> {
+): Promise<StorageObjectRecord> {
   const formData = new FormData();
   formData.set("file", file);
   formData.set("directory", directory);
+  formData.set("visibility", visibility);
 
   const response = await fetch("/api/storage/s3-upload-server", {
     method: "POST",
@@ -69,23 +106,148 @@ async function uploadFileThroughServer(
     throw new RequestError(body?.message ?? `HTTP ${response.status}`, response.status, body);
   }
 
-  const body = (await response.json()) as SuccessBody<S3StoredObject>;
+  const body = (await response.json()) as SuccessBody<StorageObjectRecord>;
   return body.data;
 }
 
-export function S3UploadDemo() {
+type S3UploadDemoProps = {
+  initialRecords: StorageObjectRecord[];
+};
+
+export function S3UploadDemo({ initialRecords }: S3UploadDemoProps) {
   const [file, setFile] = useState<File | null>(null);
   const [directory, setDirectory] = useState("debug");
+  const [isPublicUpload, setIsPublicUpload] = useState(false);
   const [state, setState] = useState<UploadState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [isMultipart, setIsMultipart] = useState(false);
-  const [storedObject, setStoredObject] = useState<S3StoredObject | null>(null);
+  const [records, setRecords] = useState<StorageObjectRecord[]>(initialRecords);
+  const [isLoadingRecords, setIsLoadingRecords] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const isBusy =
-    state === "server-uploading" || state === "creating-session" || state === "uploading";
+    state === "server-uploading" ||
+    state === "hashing" ||
+    state === "checking-duplicate" ||
+    state === "creating-session" ||
+    state === "uploading" ||
+    state === "finalizing";
   const shouldUploadThroughServer = file ? file.size <= SERVER_S3_UPLOAD_THRESHOLD_BYTES : false;
+  const uploadVisibility = isPublicUpload ? PUBLIC_VISIBILITY : DEFAULT_VISIBILITY;
+  const uploadDirectory = isPublicUpload ? PUBLIC_DIRECTORY : directory;
+
+  const columns = useMemo<TableColumn<StorageObjectRecord>[]>(
+    () => [
+      {
+        key: "filename",
+        title: "File",
+        render: (row) => (
+          <div className="min-w-52">
+            <div className="break-all font-medium text-content-primary">{row.originalFilename}</div>
+            <div className="mt-1 break-all font-mono text-xs text-content-tertiary">
+              {row.objectKey}
+            </div>
+            {row.accessUrl && (
+              <a
+                className="mt-1 block break-all text-xs text-primary hover:underline"
+                href={row.accessUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {row.accessUrl}
+              </a>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: "size",
+        title: "Size",
+        width: 120,
+        render: (row) => formatBytes(row.sizeBytes),
+      },
+      {
+        key: "type",
+        title: "Type",
+        width: 180,
+        render: (row) => (
+          <div className="space-y-1">
+            <span className="break-all text-content-secondary">{row.contentType}</span>
+            <Badge tone={row.visibility === "PUBLIC" ? "success" : "neutral"}>
+              {row.visibility === "PUBLIC" ? "Public" : "Private"}
+            </Badge>
+          </div>
+        ),
+      },
+      {
+        key: "uploaded",
+        title: "Uploaded",
+        width: 210,
+        render: (row) => (
+          <div>
+            <div>{formatDate(row.uploadedAt)}</div>
+            <div className="mt-1 text-xs text-content-tertiary">{row.uploadedBy}</div>
+          </div>
+        ),
+      },
+      {
+        key: "actions",
+        title: "",
+        width: 96,
+        align: "right",
+        render: (row) => (
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="ghost"
+            title="Download"
+            loading={downloadingId === row.id}
+            onClick={() => downloadRecord(row)}
+          >
+            <Download size={14} />
+          </Button>
+        ),
+      },
+    ],
+    [downloadingId],
+  );
+
+  async function loadRecords() {
+    setIsLoadingRecords(true);
+    try {
+      const response = await request.get<StorageObjectRecord[]>("/api/storage/uploads");
+      setRecords(response.data);
+    } catch (cause) {
+      setError(getErrorMessage(cause));
+    } finally {
+      setIsLoadingRecords(false);
+    }
+  }
+
+  async function completeBrowserUpload(
+    fileToComplete: File,
+    result: {
+      objectKey: string;
+      contentType: string;
+      etag?: string;
+    },
+    contentHash: string,
+    visibility: StorageVisibility,
+  ) {
+    const response = await request.post<StorageObjectRecord>("/api/storage/uploads/complete", {
+      objectKey: result.objectKey,
+      originalFilename: fileToComplete.name,
+      contentType: result.contentType,
+      sizeBytes: fileToComplete.size,
+      contentHash,
+      visibility,
+      etag: result.etag,
+    });
+
+    return response.data;
+  }
 
   async function handleUpload() {
     if (!file || isBusy) return;
@@ -95,45 +257,74 @@ export function S3UploadDemo() {
     setState("creating-session");
     setError(null);
     setProgress(0);
-    setStoredObject(null);
     setIsMultipart(false);
 
     try {
-      if (file.size <= SERVER_S3_UPLOAD_THRESHOLD_BYTES) {
-        setState("server-uploading");
-        const result = await uploadFileThroughServer(file, directory, abortController.signal);
+      let record: StorageObjectRecord;
+      setState("hashing");
+      const contentHash = await calculateFileSha256(file, abortController.signal);
+
+      setState("checking-duplicate");
+      const duplicateResponse = await request.get<DuplicateStorageObjectResponse>(
+        "/api/storage/uploads/duplicate",
+        {
+          query: {
+            contentHash,
+            sizeBytes: file.size,
+            visibility: uploadVisibility,
+          },
+          signal: abortController.signal,
+        },
+      );
+      if (duplicateResponse.data.record) {
+        record = duplicateResponse.data.record;
         setProgress(100);
-        setStoredObject(result);
+        setRecords((prev) => [record, ...prev.filter((item) => item.id !== record.id)]);
         setState("done");
         return;
       }
 
-      const response = await request.post<S3UploadSession>(
-        "/api/storage/s3-upload-session",
-        {
-          filename: file.name,
-          contentType: file.type || "application/octet-stream",
-          size: file.size,
-          directory,
-        },
-        { signal: abortController.signal },
-      );
+      if (file.size <= SERVER_S3_UPLOAD_THRESHOLD_BYTES) {
+        setState("server-uploading");
+        record = await uploadFileThroughServer(
+          file,
+          uploadDirectory,
+          uploadVisibility,
+          abortController.signal,
+        );
+      } else {
+        const response = await request.post<S3UploadSession>(
+          "/api/storage/s3-upload-session",
+          {
+            filename: file.name,
+            contentType: file.type || "application/octet-stream",
+            size: file.size,
+            directory: uploadDirectory,
+            contentHash,
+            visibility: uploadVisibility,
+          },
+          { signal: abortController.signal },
+        );
 
-      setIsMultipart(file.size > response.data.multipartThresholdBytes);
-      setState("uploading");
+        setIsMultipart(file.size > response.data.multipartThresholdBytes);
+        setState("uploading");
 
-      const result = await uploadFileToS3FromBrowser({
-        file,
-        session: response.data,
-        signal: abortController.signal,
-        onProgress: (nextProgress) => {
-          setProgress(nextProgress.percent);
-          setIsMultipart(nextProgress.isMultipart);
-        },
-      });
+        const result = await uploadFileToS3FromBrowser({
+          file,
+          session: response.data,
+          signal: abortController.signal,
+          onProgress: (nextProgress) => {
+            setProgress(nextProgress.percent);
+            setIsMultipart(nextProgress.isMultipart);
+          },
+        });
+
+        setState("finalizing");
+        record = await completeBrowserUpload(file, result, contentHash, uploadVisibility);
+      }
 
       setProgress(100);
-      setStoredObject(result);
+      setRecords((prev) => [record, ...prev.filter((item) => item.id !== record.id)]);
       setState("done");
     } catch (cause) {
       if (abortController.signal.aborted) {
@@ -148,6 +339,21 @@ export function S3UploadDemo() {
     }
   }
 
+  async function downloadRecord(record: StorageObjectRecord) {
+    setDownloadingId(record.id);
+    setError(null);
+    try {
+      const response = await request.get<S3DownloadUrlResponse>(
+        `/api/storage/uploads/${record.id}/download`,
+      );
+      window.location.assign(response.data.url);
+    } catch (cause) {
+      setError(getErrorMessage(cause));
+    } finally {
+      setDownloadingId(null);
+    }
+  }
+
   function handleCancel() {
     abortControllerRef.current?.abort();
   }
@@ -158,8 +364,7 @@ export function S3UploadDemo() {
         <CardHeader>
           <CardTitle>S3 Upload</CardTitle>
           <CardDescription>
-            Files up to 5 MB upload through the server. Larger files upload directly to S3; files
-            over 100 MB use multipart upload.
+            Files up to 5 MB upload through the server. Larger files upload directly to S3.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -167,23 +372,35 @@ export function S3UploadDemo() {
             <div className="grid gap-3 md:grid-cols-[1fr_240px]">
               <Input
                 type="file"
+                accept={isPublicUpload ? "image/*" : undefined}
                 disabled={isBusy}
                 onChange={(event) => {
                   setFile(event.target.files?.[0] ?? null);
-                  setStoredObject(null);
                   setError(null);
                   setProgress(0);
+                  setState("idle");
                 }}
               />
               <Input
-                value={directory}
-                disabled={isBusy}
-                placeholder="debug"
+                value={uploadDirectory}
+                disabled={isBusy || isPublicUpload}
+                placeholder={isPublicUpload ? PUBLIC_DIRECTORY : "debug"}
                 onChange={(event) => setDirectory(event.target.value)}
               />
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              <ToggleSwitch
+                label="Public image"
+                checked={isPublicUpload}
+                disabled={isBusy}
+                onCheckedChange={(checked) => {
+                  setIsPublicUpload(checked);
+                  setError(null);
+                  setProgress(0);
+                  setState("idle");
+                }}
+              />
               <Button
                 type="button"
                 loading={isBusy}
@@ -204,6 +421,7 @@ export function S3UploadDemo() {
                 </Button>
               )}
               {file && <Badge tone="info">{formatBytes(file.size)}</Badge>}
+              {isPublicUpload && <Badge tone="success">public/images</Badge>}
               {file && (
                 <Badge
                   tone={shouldUploadThroughServer ? "success" : isMultipart ? "warning" : "info"}
@@ -215,6 +433,9 @@ export function S3UploadDemo() {
                       : "Direct upload"}
                 </Badge>
               )}
+              {state === "finalizing" && <Badge tone="warning">Finalizing</Badge>}
+              {state === "hashing" && <Badge tone="warning">Hashing</Badge>}
+              {state === "checking-duplicate" && <Badge tone="warning">Checking duplicate</Badge>}
             </div>
 
             {(isBusy || state === "done") && (
@@ -226,30 +447,34 @@ export function S3UploadDemo() {
         </CardContent>
       </Card>
 
-      {storedObject && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Uploaded Object</CardTitle>
-            <CardDescription>{storedObject.bucket}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <dl className="grid gap-3 text-sm md:grid-cols-[140px_1fr]">
-              <dt className="text-content-secondary">Object key</dt>
-              <dd className="break-all font-mono">{storedObject.objectKey}</dd>
-              <dt className="text-content-secondary">Object URL</dt>
-              <dd className="break-all font-mono">{storedObject.objectUrl}</dd>
-              <dt className="text-content-secondary">Content type</dt>
-              <dd>{storedObject.contentType}</dd>
-              {storedObject.etag && (
-                <>
-                  <dt className="text-content-secondary">ETag</dt>
-                  <dd className="break-all font-mono">{storedObject.etag}</dd>
-                </>
-              )}
-            </dl>
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <CardTitle>Uploaded Objects</CardTitle>
+              <CardDescription>{records.length} active object(s)</CardDescription>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              loading={isLoadingRecords}
+              iconLeft={<RefreshCw size={14} />}
+              onClick={loadRecords}
+            >
+              Refresh
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table
+            columns={columns}
+            rows={records}
+            rowKey={(row) => row.id}
+            empty={isLoadingRecords ? "Loading uploads..." : "No uploaded objects."}
+          />
+        </CardContent>
+      </Card>
     </Stack>
   );
 }

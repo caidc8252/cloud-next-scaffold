@@ -32,5 +32,10 @@ export type S3StoredObject = {
   objectKey: string;
   objectUrl: string;
   contentType: string;
+  sizeBytes?: number;
   etag?: string;
+};
+
+export type S3ObjectMetadata = S3StoredObject & {
+  lastModified?: string;
 };
