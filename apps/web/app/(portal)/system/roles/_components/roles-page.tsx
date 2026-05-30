@@ -7,10 +7,8 @@ import {
   Alert,
   AlertDescription,
   Button,
+  Card,
   Input,
-  SplitPanel,
-  SplitPanelSidebar,
-  SplitPanelContent,
   toast,
 } from "@cloud/ui";
 import { request } from "@cloud/request/client";
@@ -122,27 +120,32 @@ export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesP
             platform-wide notifications, API keys, and global audit.
           </AlertDescription>
         </Alert>
-        <SplitPanel>
-          <SplitPanelSidebar header={
-            <div className="flex gap-2 p-2.5">
+        <div className="flex items-start gap-4">
+          <Card className="sticky top-4 w-[320px] shrink-0">
+            <div className="flex gap-2 p-2.5 border-b border-line-subtle">
               <Input prefix={<Search size={14} />} placeholder="Search roles..." value={query}
                 onChange={(e) => setQuery(e.target.value)} inputSize="sm" className="flex-1" />
               <Button variant="primary" size="sm" onClick={() => setShowNew(true)} iconLeft={<Plus size={14} />}>
                 New role
               </Button>
             </div>
-          }>
-            {filtered.map((r) => (
-              <RoleListItem key={r.id} role={r} active={r.id === selectedId} onClick={() => setSelectedId(r.id)} />
-            ))}
-          </SplitPanelSidebar>
-          <SplitPanelContent empty="Select a role to edit">
+            <div className="flex flex-col overflow-auto max-h-[calc(100vh-240px)]">
+              {filtered.map((r) => (
+                <RoleListItem key={r.id} role={r} active={r.id === selectedId} onClick={() => setSelectedId(r.id)} />
+              ))}
+            </div>
+          </Card>
+          <Card className="flex-1 min-w-0">
             {selected ? (
               <RoleEditor role={selected} users={users} permissionGroups={permissionGroups} onSave={update}
                 onDuplicate={() => setDuplicateSource(selected)} onDelete={() => deleteRole(selected.id)} />
-            ) : null}
-          </SplitPanelContent>
-        </SplitPanel>
+            ) : (
+              <div className="flex items-center justify-center h-64 text-content-tertiary text-sm">
+                Select a role to edit
+              </div>
+            )}
+          </Card>
+        </div>
       </div>
       <NewRoleModal open={showNew} onClose={() => setShowNew(false)} onCreate={createRole} allRoles={roles} />
       <DuplicateRoleModal source={duplicateSource} onClose={() => setDuplicateSource(null)}

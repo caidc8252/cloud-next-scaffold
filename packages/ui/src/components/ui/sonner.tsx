@@ -1,5 +1,5 @@
 import { useTheme } from "../../lib/theme"
-import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { Toaster as Sonner, toast as sonnerToast, type ToasterProps, type ExternalToast } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
 // Toast notification container. Place once in the root layout; call toast() anywhere to show a notification.
@@ -46,7 +46,36 @@ const Toaster = ({ ...props }: ToasterProps) => {
   )
 }
 
-export { Toaster }
-export { toast } from "sonner"
+// Sync the countdown bar to each toast's real duration: callers set `duration` once and
+// the CSS var follows, so a custom duration can never drift from the global default.
+// Non-finite durations (loading/Infinity) skip the var, leaving no finite bar.
+function withCountdown(data?: ExternalToast): ExternalToast {
+  const duration = data?.duration ?? TOAST_DURATION
+  if (!Number.isFinite(duration)) return data ?? {}
+  return {
+    ...data,
+    style: { "--toast-duration": `${duration}ms`, ...data?.style } as React.CSSProperties,
+  }
+}
+
+// Wrap sonner's toast so every variant routes its duration through withCountdown.
+// Unwrapped methods (loading/promise/dismiss/custom/message) pass through unchanged.
+const toast: typeof sonnerToast = Object.assign(
+  (message: Parameters<typeof sonnerToast>[0], data?: ExternalToast) =>
+    sonnerToast(message, withCountdown(data)),
+  sonnerToast,
+  {
+    success: (message: Parameters<typeof sonnerToast.success>[0], data?: ExternalToast) =>
+      sonnerToast.success(message, withCountdown(data)),
+    info: (message: Parameters<typeof sonnerToast.info>[0], data?: ExternalToast) =>
+      sonnerToast.info(message, withCountdown(data)),
+    warning: (message: Parameters<typeof sonnerToast.warning>[0], data?: ExternalToast) =>
+      sonnerToast.warning(message, withCountdown(data)),
+    error: (message: Parameters<typeof sonnerToast.error>[0], data?: ExternalToast) =>
+      sonnerToast.error(message, withCountdown(data)),
+  },
+)
+
+export { Toaster, toast }
 
 
