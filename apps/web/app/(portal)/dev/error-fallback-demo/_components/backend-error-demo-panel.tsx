@@ -1,0 +1,295 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  Bug,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  ListOrdered,
+} from "lucide-react";
+import { request, RequestError, type ErrorBody, type SuccessBody } from "@cloud/request/client";
+import {
+  Badge,
+  Button,
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Table,
+  type TableColumn,
+} from "@cloud/ui";
+
+const API_URL = "/api/dev/error-fallback-demo";
+const PAGE_LIMIT = 5;
+
+type DemoScenario = "success" | "business-error" | "fallback-error" | "pagination";
+
+type DemoSummary = {
+  entity: {
+    id: number;
+    name: string;
+    status: string;
+    contractDefineCode: string;
+  };
+  counts: {
+    visibleMenus: number;
+    permissions: number;
+    activeUsers: number;
+  };
+  checkedAt: string;
+};
+
+type DemoMenuRow = {
+  id: number;
+  title: string;
+  path: string | null;
+  icon: string | null;
+  sort: number;
+  parentMenuId: number | null;
+};
+
+type DemoPayload = DemoSummary | DemoMenuRow[];
+
+type DemoResult = {
+  scenario: DemoScenario;
+  status: number;
+  ok: boolean;
+  body: SuccessBody<DemoPayload> | ErrorBody;
+  receivedAt: string;
+};
+
+const scenarioLabels: Record<DemoScenario, string> = {
+  success: "Success",
+  "business-error": "Business Error",
+  "fallback-error": "Fallback Error",
+  pagination: "Pagination",
+};
+
+const columns: TableColumn<DemoMenuRow>[] = [
+  { key: "id", title: "ID", field: "id", width: 72 },
+  { key: "title", title: "Title", field: "title" },
+  {
+    key: "path",
+    title: "Path",
+    render: (row) => row.path ?? "-",
+  },
+  { key: "sort", title: "Sort", field: "sort", width: 88 },
+];
+
+function isSuccessBody(
+  body: SuccessBody<DemoPayload> | ErrorBody,
+): body is SuccessBody<DemoPayload> {
+  return body.code === "OK";
+}
+
+function createClientErrorBody(message: string): ErrorBody {
+  return {
+    code: "client.request_failed",
+    message,
+    traceId: "-",
+  };
+}
+
+export function BackendErrorDemoPanel() {
+  const [result, setResult] = useState<DemoResult | null>(null);
+  const [isLoading, setIsLoading] = useState<DemoScenario | null>(null);
+  const [page, setPage] = useState(1);
+
+  const rows = useMemo(() => {
+    if (!result || !isSuccessBody(result.body) || !Array.isArray(result.body.data)) {
+      return [];
+    }
+
+    return result.body.data;
+  }, [result]);
+
+  const pager =
+    result && isSuccessBody(result.body)
+      ? {
+          page: result.body.page,
+          limit: result.body.limit,
+          total: result.body.total,
+          totalPages: result.body.totalPages,
+          hasNextPage: result.body.hasNextPage,
+        }
+      : null;
+  const latestTraceId = result?.body.traceId ?? null;
+  const latestCode = result?.body.code ?? null;
+
+  async function runScenario(scenario: DemoScenario, nextPage = page) {
+    setIsLoading(scenario);
+    try {
+      const response = await request.get<DemoPayload>(API_URL, {
+        query: {
+          scenario,
+          page: scenario === "pagination" ? nextPage : undefined,
+          limit: scenario === "pagination" ? PAGE_LIMIT : undefined,
+        },
+      });
+
+      if (scenario === "pagination") {
+        setPage(nextPage);
+      }
+
+      setResult({
+        scenario,
+        status: 200,
+        ok: true,
+        body: response,
+        receivedAt: new Date().toLocaleTimeString(),
+      });
+    } catch (error) {
+      const status = error instanceof RequestError ? error.status : 0;
+      const body =
+        error instanceof RequestError && error.body
+          ? error.body
+          : createClientErrorBody(error instanceof Error ? error.message : "Request failed.");
+
+      setResult({
+        scenario,
+        status,
+        ok: false,
+        body,
+        receivedAt: new Date().toLocaleTimeString(),
+      });
+    } finally {
+      setIsLoading(null);
+    }
+  }
+
+  function goToPage(nextPage: number) {
+    runScenario("pagination", nextPage);
+  }
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[420px_minmax(0,1fr)]">
+      <Card>
+        <CardHeader>
+          <CardTitle>Scenarios</CardTitle>
+          <CardDescription>
+            Each button calls the same Route Handler with a different mode.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          <Button
+            type="button"
+            variant="primary"
+            iconLeft={<CheckCircle2 size={15} />}
+            loading={isLoading === "success"}
+            onClick={() => runScenario("success")}
+          >
+            Success DB Query
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            iconLeft={<AlertTriangle size={15} />}
+            loading={isLoading === "business-error"}
+            onClick={() => runScenario("business-error")}
+          >
+            Expected Error Body
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            iconLeft={<Bug size={15} />}
+            loading={isLoading === "fallback-error"}
+            onClick={() => runScenario("fallback-error")}
+          >
+            Throw Fallback Error
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            iconLeft={<ListOrdered size={15} />}
+            loading={isLoading === "pagination"}
+            onClick={() => goToPage(1)}
+          >
+            Paginated Menus
+          </Button>
+          <div className="rounded-lg border border-line-default bg-surface-3 p-3 text-sm">
+            {result ? (
+              <div className="grid gap-1">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-content-secondary">Last result</span>
+                  <Badge tone={result.ok ? "success" : result.status >= 500 ? "error" : "warning"}>
+                    HTTP {result.status}
+                  </Badge>
+                </div>
+                <div className="font-mono text-xs text-content-secondary">
+                  {latestCode} · {latestTraceId}
+                </div>
+              </div>
+            ) : (
+              <span className="text-content-tertiary">No request sent yet.</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Response</CardTitle>
+          <CardDescription>
+            {result
+              ? `${scenarioLabels[result.scenario]} at ${result.receivedAt}`
+              : "No request yet."}
+          </CardDescription>
+          <CardAction>
+            {result ? (
+              <Badge tone={result.ok ? "success" : result.status >= 500 ? "error" : "warning"}>
+                HTTP {result.status}
+              </Badge>
+            ) : (
+              <Badge tone="neutral">Idle</Badge>
+            )}
+          </CardAction>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          {rows.length > 0 ? (
+            <div className="grid gap-3">
+              <Table columns={columns} rows={rows} rowKey={(row) => row.id} />
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="text-sm text-content-secondary">
+                  Page {pager?.page ?? page} / {pager?.totalPages ?? 1}, total {pager?.total ?? 0}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    iconLeft={<ChevronLeft size={14} />}
+                    disabled={(pager?.page ?? page) <= 1 || isLoading === "pagination"}
+                    onClick={() => goToPage(Math.max(1, (pager?.page ?? page) - 1))}
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    iconRight={<ChevronRight size={14} />}
+                    disabled={!pager?.hasNextPage || isLoading === "pagination"}
+                    onClick={() => goToPage((pager?.page ?? page) + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          <pre className="max-h-[520px] overflow-auto rounded-lg border border-line-default bg-surface-3 p-4 text-xs leading-relaxed text-content-primary">
+            {result
+              ? JSON.stringify(result.body, null, 2)
+              : "Click a scenario to inspect the response body."}
+          </pre>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

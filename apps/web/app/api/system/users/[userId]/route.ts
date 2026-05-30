@@ -2,14 +2,18 @@ import { prisma } from "@cloud/db";
 import {
   successResponse,
   badRequestResponse,
-  unauthorizedResponse,
   forbiddenResponse,
   notFoundResponse,
-  internalErrorResponse,
 } from "@cloud/request/server";
-import { ERR_INVALID_ID, ERR_INVALID_JSON, ERR_USER_NOT_FOUND, ERR_USER_PROTECTED } from "@cloud/request/error-codes";
-import { AuthzError, assertPermissions, hasPermissions } from "@cloud/permissions/server";
+import {
+  ERR_INVALID_ID,
+  ERR_INVALID_JSON,
+  ERR_USER_NOT_FOUND,
+  ERR_USER_PROTECTED,
+} from "@cloud/request/error-codes";
+import { assertPermissions, hasPermissions } from "@cloud/permissions/server";
 import { toClientUser, USER_INCLUDE } from "@/app/(portal)/system/users/_server/user-mapper";
+import { withApiHandler } from "@/lib/api-handler";
 
 async function findUserInEntity(userId: number, entityId: number) {
   return prisma.sysEntityUser.findUnique({
@@ -21,11 +25,8 @@ function normalizeRoleIds(roleIds: number[]) {
   return [...new Set(roleIds)].sort((left, right) => left - right);
 }
 
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ userId: string }> },
-) {
-  try {
+export const PUT = withApiHandler(
+  async (req: Request, { params }: { params: Promise<{ userId: string }> }) => {
     const session = await assertPermissions({ all: ["users.UPD"] });
     const { userId: rawId } = await params;
     const userId = Number(rawId);
@@ -49,9 +50,10 @@ export async function PUT(
       return badRequestResponse(ERR_USER_PROTECTED, "This user can only have remark updated.");
     }
 
-    const requestedRoleIds = body.roleIds === undefined
-      ? null
-      : normalizeRoleIds(body.roleIds.map(Number).filter(Number.isFinite));
+    const requestedRoleIds =
+      body.roleIds === undefined
+        ? null
+        : normalizeRoleIds(body.roleIds.map(Number).filter(Number.isFinite));
 
     if (requestedRoleIds !== null) {
       const currentRoleLinks = await prisma.sysUserRole.findMany({
@@ -59,13 +61,11 @@ export async function PUT(
         select: { roleId: true },
       });
       const currentRoleIds = normalizeRoleIds(currentRoleLinks.map((roleLink) => roleLink.roleId));
-      const roleIdsChanged = requestedRoleIds.length !== currentRoleIds.length
-        || requestedRoleIds.some((roleId, index) => roleId !== currentRoleIds[index]);
+      const roleIdsChanged =
+        requestedRoleIds.length !== currentRoleIds.length ||
+        requestedRoleIds.some((roleId, index) => roleId !== currentRoleIds[index]);
 
-      if (
-        roleIdsChanged &&
-        !hasPermissions(session.permissions, { all: ["users.CHANGE_ROLE"] })
-      ) {
+      if (roleIdsChanged && !hasPermissions(session.permissions, { all: ["users.CHANGE_ROLE"] })) {
         return forbiddenResponse("forbidden", "Forbidden.");
       }
     }
@@ -103,13 +103,5 @@ export async function PUT(
 
     const nameMap = new Map([[session.id, session.username]]);
     return successResponse(toClientUser(updated, nameMap, nameMap));
-  } catch (error) {
-    if (error instanceof AuthzError) {
-      return error.status === 401
-        ? unauthorizedResponse(error.code, "Unauthorized.")
-        : forbiddenResponse(error.code, "Forbidden.");
-    }
-
-    return internalErrorResponse(error);
-  }
-}
+  },
+);

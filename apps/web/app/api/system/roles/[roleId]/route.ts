@@ -2,11 +2,8 @@ import { prisma } from "@cloud/db";
 import {
   successResponse,
   badRequestResponse,
-  unauthorizedResponse,
-  forbiddenResponse,
   notFoundResponse,
   noContentResponse,
-  internalErrorResponse,
 } from "@cloud/request/server";
 import {
   ERR_INVALID_ID,
@@ -15,21 +12,22 @@ import {
   ERR_ROLE_DELETE_BUILTIN,
   ERR_ROLE_DELETE_ASSIGNED,
 } from "@cloud/request/error-codes";
-import { AuthzError, assertPermissions } from "@cloud/permissions/server";
+import { assertPermissions } from "@cloud/permissions/server";
 import { toClientRole } from "@/app/(portal)/system/roles/_server/role-mapper";
+import { withApiHandler } from "@/lib/api-handler";
 
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ roleId: string }> },
-) {
-  try {
+export const PUT = withApiHandler(
+  async (req: Request, { params }: { params: Promise<{ roleId: string }> }) => {
     const session = await assertPermissions({ all: ["roles.UPD"] });
     const { roleId: rawId } = await params;
     const roleId = Number(rawId);
     if (!Number.isFinite(roleId)) return badRequestResponse(ERR_INVALID_ID, "Invalid role ID.");
 
     const existing = await prisma.sysRole.findUnique({ where: { roleId } });
-    if (!existing || (existing.entityId !== null && existing.entityId !== session.entity.entityId)) {
+    if (
+      !existing ||
+      (existing.entityId !== null && existing.entityId !== session.entity.entityId)
+    ) {
       return notFoundResponse(ERR_ROLE_NOT_FOUND, "Role not found.");
     }
 
@@ -74,29 +72,21 @@ export async function PUT(
     });
 
     return successResponse(toClientRole(updated, session.username));
-  } catch (error) {
-    if (error instanceof AuthzError) {
-      return error.status === 401
-        ? unauthorizedResponse(error.code, "Unauthorized.")
-        : forbiddenResponse(error.code, "Forbidden.");
-    }
+  },
+);
 
-    return internalErrorResponse(error);
-  }
-}
-
-export async function DELETE(
-  _request: Request,
-  { params }: { params: Promise<{ roleId: string }> },
-) {
-  try {
+export const DELETE = withApiHandler(
+  async (_request: Request, { params }: { params: Promise<{ roleId: string }> }) => {
     const session = await assertPermissions({ all: ["roles.DELETE"] });
     const { roleId: rawId } = await params;
     const roleId = Number(rawId);
     if (!Number.isFinite(roleId)) return badRequestResponse(ERR_INVALID_ID, "Invalid role ID.");
 
     const existing = await prisma.sysRole.findUnique({ where: { roleId } });
-    if (!existing || (existing.entityId !== null && existing.entityId !== session.entity.entityId)) {
+    if (
+      !existing ||
+      (existing.entityId !== null && existing.entityId !== session.entity.entityId)
+    ) {
       return notFoundResponse(ERR_ROLE_NOT_FOUND, "Role not found.");
     }
 
@@ -106,19 +96,14 @@ export async function DELETE(
 
     const assignedCount = await prisma.sysUserRole.count({ where: { roleId } });
     if (assignedCount > 0) {
-      return badRequestResponse(ERR_ROLE_DELETE_ASSIGNED, `Cannot delete role with ${assignedCount} assigned user(s). Reassign them first.`);
+      return badRequestResponse(
+        ERR_ROLE_DELETE_ASSIGNED,
+        `Cannot delete role with ${assignedCount} assigned user(s). Reassign them first.`,
+      );
     }
 
     await prisma.sysRole.delete({ where: { roleId } });
 
     return noContentResponse();
-  } catch (error) {
-    if (error instanceof AuthzError) {
-      return error.status === 401
-        ? unauthorizedResponse(error.code, "Unauthorized.")
-        : forbiddenResponse(error.code, "Forbidden.");
-    }
-
-    return internalErrorResponse(error);
-  }
-}
+  },
+);

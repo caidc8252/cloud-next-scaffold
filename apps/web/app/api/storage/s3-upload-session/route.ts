@@ -1,20 +1,13 @@
-import { AuthzError, assertPermissions } from "@cloud/permissions/server";
-import {
-  badRequestResponse,
-  forbiddenResponse,
-  successResponse,
-  unauthorizedResponse,
-} from "@cloud/request/server";
+import { assertPermissions } from "@cloud/permissions/server";
+import { badRequestResponse, successResponse } from "@cloud/request/server";
 import { createS3UploadSession } from "@cloud/storage/server";
 import { s3ErrorResponse } from "@/lib/s3-error-response";
 import { getS3UploadConfig } from "@/lib/s3-upload-config";
-import {
-  isContentHashInputPresent,
-  normalizeContentHash,
-} from "@/lib/storage-content-hash";
+import { isContentHashInputPresent, normalizeContentHash } from "@/lib/storage-content-hash";
 import { createPendingStorageObjectRecord } from "@/lib/storage-object-records";
 import { validateStorageVisibilityInput } from "@/lib/storage-visibility";
 import { STORAGE_PERMISSIONS } from "@/lib/storage-permissions";
+import { withApiHandler } from "@/lib/api-handler";
 
 type UploadSessionRequest = {
   filename?: string;
@@ -25,8 +18,8 @@ type UploadSessionRequest = {
   visibility?: string;
 };
 
-export async function POST(req: Request) {
-  try {
+export const POST = withApiHandler(
+  async (req: Request) => {
     const authSession = await assertPermissions({ all: [STORAGE_PERMISSIONS.UPLOAD] });
 
     let body: UploadSessionRequest;
@@ -77,12 +70,6 @@ export async function POST(req: Request) {
     });
 
     return successResponse(session);
-  } catch (error) {
-    if (error instanceof AuthzError) {
-      return error.status === 401
-        ? unauthorizedResponse(error.code, "Unauthorized.")
-        : forbiddenResponse(error.code, "Forbidden.");
-    }
-    return s3ErrorResponse(error);
-  }
-}
+  },
+  { onError: s3ErrorResponse },
+);

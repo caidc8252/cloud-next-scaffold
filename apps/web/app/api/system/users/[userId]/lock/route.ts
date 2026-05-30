@@ -1,21 +1,12 @@
 import { prisma } from "@cloud/db";
-import {
-  successResponse,
-  badRequestResponse,
-  unauthorizedResponse,
-  forbiddenResponse,
-  notFoundResponse,
-  internalErrorResponse,
-} from "@cloud/request/server";
+import { successResponse, badRequestResponse, notFoundResponse } from "@cloud/request/server";
 import { ERR_INVALID_ID, ERR_USER_NOT_FOUND, ERR_USER_PROTECTED } from "@cloud/request/error-codes";
-import { AuthzError, assertPermissions } from "@cloud/permissions/server";
+import { assertPermissions } from "@cloud/permissions/server";
 import { toClientUser, USER_INCLUDE } from "@/app/(portal)/system/users/_server/user-mapper";
+import { withApiHandler } from "@/lib/api-handler";
 
-export async function POST(
-  _req: Request,
-  { params }: { params: Promise<{ userId: string }> },
-) {
-  try {
+export const POST = withApiHandler(
+  async (_req: Request, { params }: { params: Promise<{ userId: string }> }) => {
     const session = await assertPermissions({ all: ["users.LOCK"] });
     const { userId: rawId } = await params;
     const userId = Number(rawId);
@@ -53,13 +44,5 @@ export async function POST(
 
     const nameMap = new Map([[session.id, session.username]]);
     return successResponse(toClientUser(updated, nameMap, nameMap));
-  } catch (error) {
-    if (error instanceof AuthzError) {
-      return error.status === 401
-        ? unauthorizedResponse(error.code, "Unauthorized.")
-        : forbiddenResponse(error.code, "Forbidden.");
-    }
-
-    return internalErrorResponse(error);
-  }
-}
+  },
+);

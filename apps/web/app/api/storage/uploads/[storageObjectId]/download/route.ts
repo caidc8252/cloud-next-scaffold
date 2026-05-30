@@ -1,25 +1,18 @@
-import { AuthzError, assertPermissions } from "@cloud/permissions/server";
-import {
-  forbiddenResponse,
-  notFoundResponse,
-  successResponse,
-  unauthorizedResponse,
-} from "@cloud/request/server";
+import { assertPermissions } from "@cloud/permissions/server";
+import { notFoundResponse, successResponse } from "@cloud/request/server";
 import { createS3DownloadUrl, getS3ObjectMetadata } from "@cloud/storage/server";
 import { s3ErrorResponse } from "@/lib/s3-error-response";
 import { getS3UploadConfig } from "@/lib/s3-upload-config";
 import { STORAGE_PERMISSIONS } from "@/lib/storage-permissions";
 import { findStorageObjectForDownload } from "@/lib/storage-object-records";
 import type { S3DownloadUrlResponse } from "@/storage/types";
+import { withApiHandler } from "@/lib/api-handler";
 
 const DOWNLOAD_URL_EXPIRES_IN_SECONDS = 300;
 const DOWNLOAD_PERMISSION_CHECK_TIMEOUT_MS = 10_000;
 
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ storageObjectId: string }> },
-) {
-  try {
+export const GET = withApiHandler(
+  async (_req: Request, { params }: { params: Promise<{ storageObjectId: string }> }) => {
     const session = await assertPermissions({ all: [STORAGE_PERMISSIONS.DOWNLOAD] });
     const { storageObjectId } = await params;
     const record = await findStorageObjectForDownload(session, storageObjectId);
@@ -44,12 +37,6 @@ export async function GET(
       url,
       expiresInSeconds: DOWNLOAD_URL_EXPIRES_IN_SECONDS,
     } satisfies S3DownloadUrlResponse);
-  } catch (error) {
-    if (error instanceof AuthzError) {
-      return error.status === 401
-        ? unauthorizedResponse(error.code, "Unauthorized.")
-        : forbiddenResponse(error.code, "Forbidden.");
-    }
-    return s3ErrorResponse(error);
-  }
-}
+  },
+  { onError: s3ErrorResponse },
+);

@@ -14,6 +14,7 @@
 - `packages/security`：密码哈希、RSA 加解密
 - `packages/permissions`：权限判断 + 服务端登录态与前端权限 hook
 - `apps/web/system`：系统管理页面组件（用户管理、角色管理）
+- API 统一错误响应、权限异常兜底、页面级错误边界
 - 登录页、登录态、Entity 选择页、锁定说明页
 - 完整的 Entity / 合同 / 用户 / 角色 / 权限 / 菜单 数据模型
 - 左侧菜单 + 顶部导航 layout
@@ -366,6 +367,112 @@ export async function GET() {
   return successResponse({ ok: true });
 }
 ```
+
+成功 JSON 响应统一形状：
+
+```json
+{
+  "code": "OK",
+  "message": "success",
+  "data": {},
+  "traceId": "BIZ-xxxxxx"
+}
+```
+
+分页响应会把分页字段放在和 `data` 同级，不再包一层 `pager`：
+
+```json
+{
+  "code": "OK",
+  "message": "success",
+  "data": [],
+  "page": 1,
+  "limit": 20,
+  "total": 100,
+  "totalPages": 5,
+  "nextCursor": "next-cursor",
+  "hasNextPage": true,
+  "traceId": "BIZ-xxxxxx"
+}
+```
+
+DELETE 这类无内容响应使用 `noContentResponse()`，HTTP status 为 204，response body 为空。
+
+### API 异常兜底
+
+Route Handler 的业务校验错误应该显式返回响应，例如 `badRequestResponse()`、`notFoundResponse()`；不要用 `throw new Error("A valid email is required.")` 表达可预期错误。错误码是接口协议，message 是给用户看的兜底文案。
+
+```ts
+import { badRequestResponse } from "@cloud/request/server";
+import { ERR_USER_EMAIL_INVALID } from "@cloud/request/error-codes";
+
+if (!email) {
+  return badRequestResponse(ERR_USER_EMAIL_INVALID, "A valid email is required.");
+}
+```
+
+未预期异常统一交给 `apps/web/lib/api-handler.ts`。默认用 `withApiHandler()` 包裹整个 handler，不要在每个文件里手写 `try / catch`：
+
+```ts
+import { withApiHandler } from "@/lib/api-handler";
+import { assertPermissions } from "@cloud/permissions/server";
+import { successResponse, badRequestResponse } from "@cloud/request/server";
+
+export const POST = withApiHandler(async (req: Request) => {
+  const session = await assertPermissions({ all: ["users.LOCK"] });
+  // 业务校验错误仍然显式返回
+  if (!ok) return badRequestResponse(ERR_INVALID_ID, "Invalid user ID.");
+  // 业务逻辑
+  return successResponse(data);
+});
+```
+
+带动态路由参数时，第二个参数照常传入：
+
+```ts
+export const POST = withApiHandler(
+  async (_req: Request, { params }: { params: Promise<{ userId: string }> }) => {
+    const { userId } = await params;
+    // ...
+  },
+);
+```
+
+`withApiHandler()` 内部 `await handler(...args)`，捕获到异常时调用 `handleApiError()` 兜底，效果等价于在每个 handler 外包一层 `try / catch`。`handleApiError()` 当前会统一处理：
+
+- `AuthzError`：未登录返回 401，缺权限返回 403
+- Prisma 常见错误：如 `P2002` 唯一约束冲突转为 `database.unique_conflict`
+- 未知异常：返回 `ERR_INTERNAL`，避免泄露内部细节
+- Next 控制流异常（redirect / notFound）会继续向上抛出，不会被吞掉
+
+S3 / 存储接口需要保留存储专项错误码，把 `onError` 作为 `withApiHandler()` 的第二个参数：
+
+```ts
+import { s3ErrorResponse } from "@/lib/s3-error-response";
+
+export const GET = withApiHandler(
+  async () => {
+    // ...
+    return successResponse(records);
+  },
+  { onError: s3ErrorResponse },
+);
+```
+
+注意：`withApiHandler` 只兜 handler 整体的异常，handler 内部用于解析 JSON / formData 的局部 `try / catch` 不受影响，照常保留。如果确实需要在某处手动处理，仍可直接调用 `handleApiError(error)` / `handleApiError(error, { onError: s3ErrorResponse })`。
+
+错误响应包含 `code`、`message`、`traceId`。当前 `traceId` 是响应生成时创建的错误编号，不是完整请求链路的 `requestId`。
+
+### 页面异常兜底
+
+App Router 页面级兜底文件：
+
+- `apps/web/app/(portal)/error.tsx`：后台页面渲染错误
+- `apps/web/app/(public)/error.tsx`：登录前页面渲染错误
+- `apps/web/app/global-error.tsx`：根布局级错误
+- `apps/web/app/not-found.tsx`：404 页面
+
+当前 Next.js 16 错误边界组件使用 `unstable_retry()` 触发重试；新增或调整错误边界前先看 `node_modules/next/dist/docs/` 中对应文档。
 
 ### 典型开发流程
 
