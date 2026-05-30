@@ -54,6 +54,12 @@
   - `_server/`：服务端工具（mapper、纯查询逻辑），文件需 `import "server-only"`
   - 跨 feature 共享的类型 / helper 放 `app/(portal)/system/_shared/`
 - 跨目录引用一律走 `@/...` 路径别名（tsconfig 已配置），不要再写 `../../../..`。
+- API Route Handler 的异常兜底统一走 `apps/web/lib/api-handler.ts`：
+  - 业务校验错误继续显式返回 `badRequestResponse` / `notFoundResponse` 等响应，不通过 throw 表达。
+  - 成功 JSON 响应统一为 `{ code: "OK", message: "success", data, page?, limit?, total?, totalPages?, nextCursor?, hasNextPage?, traceId }`；分页字段和 `data` 同级，不再包 `pager`；DELETE 等无内容接口使用 204 空 body。
+  - `AuthzError`、常见 Prisma 异常和未知异常由 `handleApiError()` 统一映射，S3 接口通过 `onError: s3ErrorResponse` 保留存储专项错误码。
+  - Next 控制流异常（redirect / notFound）必须继续抛出，不要吞掉。
+- App Router 页面级兜底使用 `app/(portal)/error.tsx`、`app/(public)/error.tsx`、`app/global-error.tsx`、`app/not-found.tsx`；当前 Next.js 16 文档要求错误边界组件使用 `unstable_retry`。
 
 ## Next.js 约束
 

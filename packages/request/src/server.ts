@@ -26,12 +26,26 @@ function generateTraceId(status: number): string {
 }
 
 export function successResponse<T>(data: T, pager?: Pager): Response {
-  const body: SuccessBody<T> = pager ? { data, pager } : { data };
+  const body: SuccessBody<T> = {
+    code: "OK",
+    message: "success",
+    data,
+    ...(pager ? pager : {}),
+    traceId: generateTraceId(200),
+  };
   return Response.json(body);
 }
 
 export function createdResponse<T>(data: T): Response {
-  return Response.json({ data } satisfies SuccessBody<T>, { status: 201 });
+  return Response.json(
+    {
+      code: "OK",
+      message: "success",
+      data,
+      traceId: generateTraceId(201),
+    } satisfies SuccessBody<T>,
+    { status: 201 },
+  );
 }
 
 export function noContentResponse(): Response {

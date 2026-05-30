@@ -1,22 +1,14 @@
-import { AuthzError, assertPermissions } from "@cloud/permissions/server";
-import {
-  badRequestResponse,
-  forbiddenResponse,
-  notFoundResponse,
-  successResponse,
-  unauthorizedResponse,
-} from "@cloud/request/server";
-import {
-  bindStorageAttachment,
-  listStorageAttachments,
-} from "@/lib/storage-attachments";
+import { assertPermissions } from "@cloud/permissions/server";
+import { badRequestResponse, notFoundResponse, successResponse } from "@cloud/request/server";
+import { bindStorageAttachment, listStorageAttachments } from "@/lib/storage-attachments";
 import { normalizeStorageAttachmentInput } from "@/lib/storage-attachment-input";
 import { s3ErrorResponse } from "@/lib/s3-error-response";
 import { STORAGE_PERMISSIONS } from "@/lib/storage-permissions";
 import type { BindStorageAttachmentRequest } from "@/storage/types";
+import { withApiHandler } from "@/lib/api-handler";
 
-export async function GET(req: Request) {
-  try {
+export const GET = withApiHandler(
+  async (req: Request) => {
     const session = await assertPermissions({ all: [STORAGE_PERMISSIONS.VIEW] });
     const searchParams = new URL(req.url).searchParams;
     const subjectType = searchParams.get("subjectType") ?? undefined;
@@ -37,18 +29,12 @@ export async function GET(req: Request) {
     });
 
     return successResponse(records);
-  } catch (error) {
-    if (error instanceof AuthzError) {
-      return error.status === 401
-        ? unauthorizedResponse(error.code, "Unauthorized.")
-        : forbiddenResponse(error.code, "Forbidden.");
-    }
-    return s3ErrorResponse(error);
-  }
-}
+  },
+  { onError: s3ErrorResponse },
+);
 
-export async function POST(req: Request) {
-  try {
+export const POST = withApiHandler(
+  async (req: Request) => {
     const session = await assertPermissions({ all: [STORAGE_PERMISSIONS.UPLOAD] });
 
     let body: BindStorageAttachmentRequest;
@@ -69,12 +55,6 @@ export async function POST(req: Request) {
     }
 
     return successResponse(result.value);
-  } catch (error) {
-    if (error instanceof AuthzError) {
-      return error.status === 401
-        ? unauthorizedResponse(error.code, "Unauthorized.")
-        : forbiddenResponse(error.code, "Forbidden.");
-    }
-    return s3ErrorResponse(error);
-  }
-}
+  },
+  { onError: s3ErrorResponse },
+);

@@ -1,17 +1,9 @@
-import { AuthzError, assertPermissions } from "@cloud/permissions/server";
-import {
-  badRequestResponse,
-  forbiddenResponse,
-  successResponse,
-  unauthorizedResponse,
-} from "@cloud/request/server";
+import { assertPermissions } from "@cloud/permissions/server";
+import { badRequestResponse, successResponse } from "@cloud/request/server";
 import { createS3StoredObjectReference, getS3ObjectMetadata } from "@cloud/storage/server";
 import { s3ErrorResponse } from "@/lib/s3-error-response";
 import { getS3UploadConfig } from "@/lib/s3-upload-config";
-import {
-  isContentHashInputPresent,
-  normalizeContentHash,
-} from "@/lib/storage-content-hash";
+import { isContentHashInputPresent, normalizeContentHash } from "@/lib/storage-content-hash";
 import { STORAGE_PERMISSIONS } from "@/lib/storage-permissions";
 import {
   findDuplicateStorageObjectRecord,
@@ -19,6 +11,7 @@ import {
 } from "@/lib/storage-object-records";
 import { validateStorageVisibilityInput } from "@/lib/storage-visibility";
 import type { CompleteS3UploadRequest } from "@/storage/types";
+import { withApiHandler } from "@/lib/api-handler";
 
 const COMPLETE_UPLOAD_TIMEOUT_MS = 10_000;
 
@@ -43,8 +36,8 @@ function isS3ReadForbidden(error: unknown): boolean {
   return code === "AccessDenied" || awsError.$metadata?.httpStatusCode === 403;
 }
 
-export async function POST(req: Request) {
-  try {
+export const POST = withApiHandler(
+  async (req: Request) => {
     const session = await assertPermissions({ all: [STORAGE_PERMISSIONS.UPLOAD] });
 
     let body: CompleteS3UploadRequest;
@@ -131,12 +124,6 @@ export async function POST(req: Request) {
     });
 
     return successResponse(record);
-  } catch (error) {
-    if (error instanceof AuthzError) {
-      return error.status === 401
-        ? unauthorizedResponse(error.code, "Unauthorized.")
-        : forbiddenResponse(error.code, "Forbidden.");
-    }
-    return s3ErrorResponse(error);
-  }
-}
+  },
+  { onError: s3ErrorResponse },
+);

@@ -1,11 +1,6 @@
 import { createHash } from "node:crypto";
-import { AuthzError, assertPermissions } from "@cloud/permissions/server";
-import {
-  badRequestResponse,
-  forbiddenResponse,
-  successResponse,
-  unauthorizedResponse,
-} from "@cloud/request/server";
+import { assertPermissions } from "@cloud/permissions/server";
+import { badRequestResponse, successResponse } from "@cloud/request/server";
 import { uploadFileToS3FromServer } from "@cloud/storage/server";
 import { s3ErrorResponse } from "@/lib/s3-error-response";
 import { getS3UploadConfig } from "@/lib/s3-upload-config";
@@ -16,6 +11,7 @@ import {
 import { validateStorageVisibilityInput } from "@/lib/storage-visibility";
 import { STORAGE_PERMISSIONS } from "@/lib/storage-permissions";
 import { SERVER_S3_UPLOAD_THRESHOLD_BYTES } from "@/lib/s3-upload-policy";
+import { withApiHandler } from "@/lib/api-handler";
 
 const SERVER_S3_UPLOAD_TIMEOUT_MS = 20_000;
 
@@ -28,8 +24,8 @@ function getStringFormValue(formData: FormData, name: string): string | undefine
   return typeof value === "string" ? value.trim() || undefined : undefined;
 }
 
-export async function POST(req: Request) {
-  try {
+export const POST = withApiHandler(
+  async (req: Request) => {
     const session = await assertPermissions({ all: [STORAGE_PERMISSIONS.UPLOAD] });
 
     let formData: FormData;
@@ -91,12 +87,6 @@ export async function POST(req: Request) {
     });
 
     return successResponse(record);
-  } catch (error) {
-    if (error instanceof AuthzError) {
-      return error.status === 401
-        ? unauthorizedResponse(error.code, "Unauthorized.")
-        : forbiddenResponse(error.code, "Forbidden.");
-    }
-    return s3ErrorResponse(error);
-  }
-}
+  },
+  { onError: s3ErrorResponse },
+);

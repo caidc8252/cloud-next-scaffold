@@ -1,21 +1,12 @@
 import { prisma } from "@cloud/db";
-import {
-  successResponse,
-  badRequestResponse,
-  unauthorizedResponse,
-  forbiddenResponse,
-  notFoundResponse,
-  internalErrorResponse,
-} from "@cloud/request/server";
+import { successResponse, badRequestResponse, notFoundResponse } from "@cloud/request/server";
 import { ERR_INVALID_ID, ERR_USER_NO_PENDING_INVITE } from "@cloud/request/error-codes";
-import { AuthzError, assertPermissions } from "@cloud/permissions/server";
+import { assertPermissions } from "@cloud/permissions/server";
 import { toClientUser, USER_INCLUDE } from "@/app/(portal)/system/users/_server/user-mapper";
+import { withApiHandler } from "@/lib/api-handler";
 
-export async function POST(
-  _req: Request,
-  { params }: { params: Promise<{ userId: string }> },
-) {
-  try {
+export const POST = withApiHandler(
+  async (_req: Request, { params }: { params: Promise<{ userId: string }> }) => {
     const session = await assertPermissions({ all: ["users.INVITE"] });
     const { userId: rawId } = await params;
     const userId = Number(rawId);
@@ -27,7 +18,8 @@ export async function POST(
       where: { userId, status: "PENDING" },
       orderBy: { creTime: "desc" },
     });
-    if (!invite) return notFoundResponse(ERR_USER_NO_PENDING_INVITE, "No pending invite found for this user.");
+    if (!invite)
+      return notFoundResponse(ERR_USER_NO_PENDING_INVITE, "No pending invite found for this user.");
 
     await prisma.sysInvite.update({
       where: { inviteId: invite.inviteId },
@@ -49,13 +41,5 @@ export async function POST(
 
     const nameMap = new Map([[session.id, session.username]]);
     return successResponse(toClientUser(updated, nameMap, nameMap));
-  } catch (error) {
-    if (error instanceof AuthzError) {
-      return error.status === 401
-        ? unauthorizedResponse(error.code, "Unauthorized.")
-        : forbiddenResponse(error.code, "Forbidden.");
-    }
-
-    return internalErrorResponse(error);
-  }
-}
+  },
+);

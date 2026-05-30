@@ -105,6 +105,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - App Router 页面组件默认使用服务端组件，除非有明确交互需求再加 `"use client"`
 - 只需要登录态的页面，调用 `requireSession()`
 - 页面本身有明确权限要求时，优先调用 `requirePermissions()`，不要只在前端做按钮显隐
+- 页面级异常兜底沿用现有文件：
+  - `apps/web/app/(portal)/error.tsx`
+  - `apps/web/app/(public)/error.tsx`
+  - `apps/web/app/global-error.tsx`
+  - `apps/web/app/not-found.tsx`
+- 调整错误边界前先阅读 `node_modules/next/dist/docs/` 中当前 Next.js 版本的错误处理约定；当前错误边界重试入口是 `unstable_retry()`
 
 ### 菜单约定
 
@@ -155,10 +161,27 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 统一通过 `packages/request` 发起请求
 - 客户端使用 `@cloud/request/client`
 - 服务端响应优先使用 `@cloud/request/server` 提供的响应辅助函数
+- 成功 JSON 响应必须走 `successResponse()` / `createdResponse()`，body 形状为 `{ code: "OK", message: "success", data, page?, limit?, total?, totalPages?, nextCursor?, hasNextPage?, traceId }`
+- DELETE 或其他无需 body 的接口使用 `noContentResponse()` 返回 204，response body 必须为空
 - 新增接口时，优先放在 `apps/web/app/api/*`
 - Route Handler 默认同时做两层判断：
   - 登录态 / 权限：优先用 `assertPermissions()`
   - 业务归属校验：例如 `entityId`、`roleId`、`userId` 是否属于当前租户
+- Route Handler 的异常兜底统一走 `apps/web/lib/api-handler.ts`
+  - 可预期的业务校验错误显式返回 `badRequestResponse()`、`notFoundResponse()`、`errorResponse()` 等响应
+  - 不要用 `throw new Error("A valid email is required.")` 表达参数校验、业务冲突、数据不存在这类 expected error
+  - 默认用 `withApiHandler()` 包裹整个 handler，不要在每个文件里手写 `try { ... } catch (error) { return handleApiError(error) }`
+    - 写法：`export const POST = withApiHandler(async (req) => { ... })`
+    - 带动态路由参数时第二个参数照常透传：`withApiHandler(async (req, { params }) => { ... })`
+    - S3 / 存储接口把 `onError` 作为 `withApiHandler()` 的第二个参数：`withApiHandler(async () => { ... }, { onError: s3ErrorResponse })`
+    - handler 内部解析 JSON / formData 的局部 `try / catch` 不受影响，照常保留
+  - `withApiHandler()` 内部捕获异常后调用 `handleApiError()`；确需手动兜底时仍可直接 `return handleApiError(error)` / `return handleApiError(error, { onError: s3ErrorResponse })`
+  - `handleApiError()` 已统一处理 `AuthzError`、常见 Prisma 错误和未知异常；不要在每个 API 文件里重复写 `AuthzError` 分支
+  - Next 控制流异常（redirect / notFound）必须继续抛出，不能被自定义 catch 吞掉
+- 错误码是接口协议，message 是展示文案
+  - 前端逻辑、测试、监控优先依赖稳定 `code`
+  - `message` 可以调整和国际化，不应作为业务判断依据
+  - 成功和失败 JSON 响应都带 `traceId`；204 无 body 响应不带 `traceId`
 - 不要把“前端看不到入口”当作接口安全前提
 
 ### 默认开发链路

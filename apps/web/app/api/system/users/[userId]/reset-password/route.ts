@@ -1,22 +1,18 @@
 import { randomBytes } from "node:crypto";
 import { prisma } from "@cloud/db";
+import { successResponse, badRequestResponse, notFoundResponse } from "@cloud/request/server";
 import {
-  successResponse,
-  badRequestResponse,
-  unauthorizedResponse,
-  forbiddenResponse,
-  notFoundResponse,
-  internalErrorResponse,
-} from "@cloud/request/server";
-import { ERR_INVALID_ID, ERR_USER_NOT_FOUND, ERR_USER_RESET_PW_PENDING, ERR_USER_PROTECTED } from "@cloud/request/error-codes";
-import { AuthzError, assertPermissions } from "@cloud/permissions/server";
+  ERR_INVALID_ID,
+  ERR_USER_NOT_FOUND,
+  ERR_USER_RESET_PW_PENDING,
+  ERR_USER_PROTECTED,
+} from "@cloud/request/error-codes";
+import { assertPermissions } from "@cloud/permissions/server";
 import { toClientUser, USER_INCLUDE } from "@/app/(portal)/system/users/_server/user-mapper";
+import { withApiHandler } from "@/lib/api-handler";
 
-export async function POST(
-  _req: Request,
-  { params }: { params: Promise<{ userId: string }> },
-) {
-  try {
+export const POST = withApiHandler(
+  async (_req: Request, { params }: { params: Promise<{ userId: string }> }) => {
     const session = await assertPermissions({ all: ["users.RESETPW"] });
     const { userId: rawId } = await params;
     const userId = Number(rawId);
@@ -26,7 +22,8 @@ export async function POST(
     const link = await prisma.sysEntityUser.findUnique({
       where: { entityId_userId: { entityId, userId } },
     });
-    if (!link || link.status !== "ACTIVE") return notFoundResponse(ERR_USER_NOT_FOUND, "User not found.");
+    if (!link || link.status !== "ACTIVE")
+      return notFoundResponse(ERR_USER_NOT_FOUND, "User not found.");
 
     if (userId === session.id || link.authorizingType === "ADMIN") {
       return badRequestResponse(ERR_USER_PROTECTED, "Cannot reset password for this user.");
@@ -34,7 +31,10 @@ export async function POST(
 
     const user = await prisma.sysUser.findUniqueOrThrow({ where: { userId } });
     if (user.status === "PENDING") {
-      return badRequestResponse(ERR_USER_RESET_PW_PENDING, "Cannot reset password for a pending user.");
+      return badRequestResponse(
+        ERR_USER_RESET_PW_PENDING,
+        "Cannot reset password for a pending user.",
+      );
     }
 
     const token = randomBytes(32).toString("base64url");
@@ -67,13 +67,5 @@ export async function POST(
 
     const nameMap = new Map([[session.id, session.username]]);
     return successResponse(toClientUser(updated, nameMap, nameMap));
-  } catch (error) {
-    if (error instanceof AuthzError) {
-      return error.status === 401
-        ? unauthorizedResponse(error.code, "Unauthorized.")
-        : forbiddenResponse(error.code, "Forbidden.");
-    }
-
-    return internalErrorResponse(error);
-  }
-}
+  },
+);
