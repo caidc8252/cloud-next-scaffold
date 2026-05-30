@@ -379,7 +379,9 @@ export async function GET() {
 }
 ```
 
-分页响应会把分页字段放在和 `data` 同级，不再包一层 `pager`：
+分页响应会把分页字段放在和 `data` 同级，不再包一层 `pager`。分页分两种，按需选用：
+
+**偏移分页（`Pager`）** —— 适合需要页码、总页数的场景：
 
 ```json
 {
@@ -390,11 +392,112 @@ export async function GET() {
   "limit": 20,
   "total": 100,
   "totalPages": 5,
-  "nextCursor": "next-cursor",
-  "hasNextPage": true,
   "traceId": "BIZ-xxxxxx"
 }
 ```
+
+**双向游标分页（`CursorPager`）** —— 适合大列表、深翻页，避免 `OFFSET` 扫描：
+
+```json
+{
+  "code": "OK",
+  "message": "success",
+  "data": [],
+  "limit": 20,
+  "total": 100,
+  "nextCursor": "eyJpZCI6MjB9",
+  "prevCursor": null,
+  "hasNextPage": true,
+  "hasPrevPage": false,
+  "traceId": "BIZ-xxxxxx"
+}
+```
+
+游标 token 由服务端 `encodeCursor()` 签发、只编码锚点 id、对客户端不透明；**翻页方向是独立的 `direction` 参数，由客户端显式传，不编进 token**。服务端统一用 `@cloud/request/server` 的 `readCursorQuery(token, direction)` + `buildCursorPage()`，不要手写切片和游标：
+
+```ts
+import { buildCursorPage, readCursorQuery, successResponse } from "@cloud/request/server";
+
+const url = new URL(req.url);
+const limit = 20;
+// 游标 token + direction 都来自 query
+const query = readCursorQuery(url.searchParams.get("cursor"), url.searchParams.get("direction"));
+
+const [total, rows] = await Promise.all([
+  prisma.menu.count({ where }),
+  prisma.menu.findMany({
+    where,
+    orderBy: [{ sort: query.sortOrder }, { id: query.sortOrder }],
+    take: limit + 1, // 多取一条用于探测该方向是否还有下一页
+    ...(query.cursor ? { cursor: { id: Number(query.cursor.id) }, skip: 1 } : {}),
+  }),
+]);
+
+// 切片、向前翻翻回升序、签发双向游标都收敛在 helper 里
+const { items, pager } = buildCursorPage({ rows, limit, query, total, idOf: (m) => m.id });
+return successResponse(items.map(toRow), pager);
+```
+
+客户端用 `apps/web/lib/use-cursor-pagination.ts` 的 `useCursorPagination()`，**原样回传服务端给的游标 + 方向，绝不从行 id 自己拼游标，也不缓存历史游标**：
+
+```tsx
+"use client";
+
+import { useState } from "react";
+import { request } from "@cloud/request/client";
+import { useCursorPagination, type CursorPageRequest } from "@/lib/use-cursor-pagination";
+
+export function MenuList() {
+  const [rows, setRows] = useState<MenuRow[]>([]);
+  const pager = useCursorPagination();
+
+  async function load(req: CursorPageRequest) {
+    const res = await request.get<MenuRow[]>("/api/menus", {
+      query: { limit: 20, cursor: req.cursor, direction: req.direction },
+    });
+    setRows(res.data);
+    // 吸收这一页返回的双向游标 + 翻页标志，下一次翻页只用它们
+    pager.sync(
+      {
+        nextCursor: res.nextCursor,
+        prevCursor: res.prevCursor,
+        hasNextPage: res.hasNextPage,
+        hasPrevPage: res.hasPrevPage,
+      },
+      req.page,
+    );
+  }
+
+  return (
+    <>
+      <button onClick={() => void load(pager.reset())}>查询</button>
+      {/* 渲染 rows ... */}
+      <button
+        disabled={!pager.canPrev}
+        onClick={() => {
+          const req = pager.toPrev();
+          if (req) void load(req);
+        }}
+      >
+        上一页
+      </button>
+      <button
+        disabled={!pager.canNext}
+        onClick={() => {
+          const req = pager.toNext();
+          if (req) void load(req);
+        }}
+      >
+        下一页
+      </button>
+    </>
+  );
+}
+```
+
+- `pager.reset()` 产出首页请求（`cursor: null, direction: "next"`），`cursor` 为 `null` 时 `@cloud/request/client` 会自动跳过该 query 参数
+- 按钮禁用直接看 `pager.canPrev` / `pager.canNext`（来自服务端 `hasPrevPage` / `hasNextPage`），前端不用自己算
+- `pager.page` 只是「第 N 页」展示标签，不参与数据库定位
 
 DELETE 这类无内容响应使用 `noContentResponse()`，HTTP status 为 204，response body 为空。
 

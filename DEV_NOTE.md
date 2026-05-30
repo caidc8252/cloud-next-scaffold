@@ -43,6 +43,7 @@
 - `packages/config` 会主动加载根 `.env`，否则 Next 应用构建时拿不到数据库配置。
 - `packages/permissions` 同时承载 `PermissionChecker`、服务端登录态实现，以及 `@cloud/permissions/client` 提供的前端权限 hook。业务代码统一从 `@cloud/permissions/server` 引用，不再保留 `apps/web/lib/auth.ts` 兼容转发。
 - `packages/storage` 统一承载 Amazon S3 上传会话、STS 临时凭证、服务端上传、对象元数据确认和短期下载链接；业务代码连接 S3 默认走 `@cloud/storage/server`。
+- 双向游标分页统一走 `@cloud/request/server` 的 `readCursorQuery(token, direction)` + `buildCursorPage()`，配合 `CursorPager`。游标 token 由服务端用 `encodeCursor()` 签发、只编码锚点 id、对客户端不透明；翻页方向是独立的 `direction` 参数，由客户端显式传，不编进 token。响应里带 `nextCursor` / `prevCursor` / `hasNextPage` / `hasPrevPage`；客户端用 `apps/web/lib/use-cursor-pagination.ts` 的 `useCursorPagination()` 原样回传游标 + 方向，绝不从行 id 自己拼游标。偏移分页仍用 `Pager`（page/total/totalPages）。
 - S3 上传记录落在 `storage_object`，下载入口必须先按当前 Entity 查询业务记录，再生成短期 S3 GET 链接；不要直接把前端保存的 `objectUrl` 当作下载授权。
 - 文件去重以同租户内 `contentHash(SHA-256) + sizeBytes + ACTIVE` 为准。正常 UI 上传前会先查重；小文件服务端上传会重新计算 hash，避免只信任前端。
 - S3 下载前先 `HeadObject` 校验对象和读权限，避免浏览器跳到 S3 XML 错误页；对应 AWS 身份必须允许目标对象的 `s3:GetObject`。
