@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Search, Plus } from "lucide-react";
 import { toastError } from "@cloud/request/error-toast";
-import { Button, Input, Modal, SplitPanel, SplitPanelSidebar, SplitPanelContent, toast } from "@cloud/ui";
+import { Button, Card, Input, Modal, toast } from "@cloud/ui";
 import { request } from "@cloud/request/client";
 import type { Role, User } from "@/app/(portal)/system/_shared/types";
 import { UserListItem } from "./user-list-item";
@@ -166,26 +166,27 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
           })}
         </div>
 
-        <SplitPanel sidebarWidth={360}>
-          <SplitPanelSidebar header={
-            <div className="p-2.5">
+        <div className="flex items-start gap-4">
+          <Card className="sticky top-4 w-[360px] shrink-0">
+            <div className="p-2.5 border-b border-line-subtle">
               <Input prefix={<Search size={13} />} placeholder="Search by name, login or email…" value={query}
                 onChange={(e) => setQuery(e.target.value)} inputSize="sm" />
             </div>
-          }>
-            {filtered.length === 0 && (
-              <div className="px-4 py-8 text-center text-sm text-content-tertiary">
-                {query ? `No users match "${query}"` : "No users in this filter."}
-              </div>
-            )}
-            {filtered.map((u) => (
-              <UserListItem key={u.id} user={u} active={u.id === selectedId}
-                onClick={() => setSelectedId(u.id)}
-                onResend={() => resendInvite(u)}
-                onCancel={() => requestCancel(u.id)} />
-            ))}
-          </SplitPanelSidebar>
-          <SplitPanelContent empty="Select a user.">
+            <div className="flex flex-col overflow-auto max-h-[calc(100vh-240px)]">
+              {filtered.length === 0 && (
+                <div className="px-4 py-8 text-center text-sm text-content-tertiary">
+                  {query ? `No users match "${query}"` : "No users in this filter."}
+                </div>
+              )}
+              {filtered.map((u) => (
+                <UserListItem key={u.id} user={u} active={u.id === selectedId}
+                  onClick={() => setSelectedId(u.id)}
+                  onResend={() => resendInvite(u)}
+                  onCancel={() => requestCancel(u.id)} />
+              ))}
+            </div>
+          </Card>
+          <Card className="flex-1 min-w-0">
             {selected ? (
               selected.status === "PENDING" ? (
                 <PendingInviteDetail user={selected} roles={roles}
@@ -194,9 +195,13 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
                 <UserDetail user={selected} users={users} roles={roles} currentUserId={currentUserId} onSave={update}
                   onResetPassword={() => resetPassword(selected)} onToggleLock={() => toggleLock(selected)} />
               )
-            ) : null}
-          </SplitPanelContent>
-        </SplitPanel>
+            ) : (
+              <div className="flex items-center justify-center h-64 text-content-tertiary text-sm">
+                Select a user.
+              </div>
+            )}
+          </Card>
+        </div>
       </div>
       <NewUserModal open={showNew} onClose={() => setShowNew(false)} onCreate={createUser} users={users} roles={roles} />
 
