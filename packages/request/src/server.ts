@@ -1,7 +1,7 @@
 import "server-only";
 
 import { randomBytes } from "node:crypto";
-import type { ErrorBody, Pager, SuccessBody } from "./index.ts";
+import type { CursorPager, ErrorBody, Pager, SuccessBody } from "./index.ts";
 import {
   ERR_BAD_REQUEST,
   ERR_UNAUTHORIZED,
@@ -10,7 +10,14 @@ import {
   ERR_INTERNAL,
 } from "./error-codes.ts";
 
-export type { ErrorBody, Pager, SuccessBody } from "./index.ts";
+export type { CursorPager, ErrorBody, Pager, SuccessBody } from "./index.ts";
+export {
+  encodeCursor,
+  decodeCursor,
+  readCursorQuery,
+  buildCursorPage,
+} from "./cursor.ts";
+export type { CursorDirection, CursorPayload, CursorQuery } from "./cursor.ts";
 export {
   ERR_BAD_REQUEST,
   ERR_UNAUTHORIZED,
@@ -25,7 +32,7 @@ function generateTraceId(status: number): string {
   return `${prefix}-${hex}`;
 }
 
-export function successResponse<T>(data: T, pager?: Pager): Response {
+export function successResponse<T>(data: T, pager?: Pager | CursorPager): Response {
   const body: SuccessBody<T> = {
     code: "OK",
     message: "success",

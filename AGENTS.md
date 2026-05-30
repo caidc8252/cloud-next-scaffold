@@ -161,8 +161,14 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 统一通过 `packages/request` 发起请求
 - 客户端使用 `@cloud/request/client`
 - 服务端响应优先使用 `@cloud/request/server` 提供的响应辅助函数
-- 成功 JSON 响应必须走 `successResponse()` / `createdResponse()`，body 形状为 `{ code: "OK", message: "success", data, page?, limit?, total?, totalPages?, nextCursor?, hasNextPage?, traceId }`
+- 成功 JSON 响应必须走 `successResponse()` / `createdResponse()`，body 形状为 `{ code: "OK", message: "success", data, page?, limit?, total?, totalPages?, nextCursor?, prevCursor?, hasNextPage?, hasPrevPage?, traceId }`，分页字段与 `data` 同级
 - DELETE 或其他无需 body 的接口使用 `noContentResponse()` 返回 204，response body 必须为空
+- 分页分两种，按需选用，不要混用：
+  - 偏移分页用 `Pager`（`page` / `limit` / `total` / `totalPages`），适合需要页码、总页数的场景
+  - 双向游标分页统一走 `@cloud/request/server` 的 `readCursorQuery(token, direction)` + `buildCursorPage()`，配合 `CursorPager`，响应带 `nextCursor` / `prevCursor` / `hasNextPage` / `hasPrevPage`
+  - 游标 token 由服务端 `encodeCursor()` 签发、只编码锚点 id、对客户端不透明；翻页方向是独立的 `direction` 参数，由客户端显式传，**不编进 token**
+  - 服务端按 `query.sortOrder` 设 `orderBy`、`take: limit + 1` 多取一条探测，再交给 `buildCursorPage()` 切片、翻回升序、签发双向游标；不要在 Route Handler 里手写这套逻辑
+  - 客户端用 `apps/web/lib/use-cursor-pagination.ts` 的 `useCursorPagination()` 原样回传服务端给的游标 + 方向，**绝不从行 id 自己拼游标**，也不缓存历史游标
 - 新增接口时，优先放在 `apps/web/app/api/*`
 - Route Handler 默认同时做两层判断：
   - 登录态 / 权限：优先用 `assertPermissions()`

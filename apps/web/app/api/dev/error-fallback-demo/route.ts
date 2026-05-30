@@ -1,11 +1,15 @@
 import { prisma } from "@cloud/db";
 import { assertPermissions } from "@cloud/permissions/server";
-import { badRequestResponse, successResponse } from "@cloud/request/server";
+import {
+  badRequestResponse,
+  buildCursorPage,
+  readCursorQuery,
+  successResponse,
+} from "@cloud/request/server";
 import { withApiHandler } from "@/lib/api-handler";
 
 export const dynamic = "force-dynamic";
 
-const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 5;
 const MAX_LIMIT = 20;
 
@@ -130,15 +134,18 @@ async function getSummary(entityId: number, contractDefineCode: string) {
 }
 
 async function getPaginatedMenus(url: URL, contractDefineCode: string) {
-  const page = parsePositiveInteger(url.searchParams.get("page"), DEFAULT_PAGE);
   const limit = parsePositiveInteger(url.searchParams.get("limit"), DEFAULT_LIMIT, MAX_LIMIT);
-  const skip = (page - 1) * limit;
+  // 游标 token（不透明，原样回传）+ 客户端显式传入的 direction → 查询计划。
+  const query = readCursorQuery(
+    url.searchParams.get("cursor"),
+    url.searchParams.get("direction"),
+  );
   const where = {
     contractDefineCode,
     isVisible: true,
   };
 
-  const [total, menus] = await Promise.all([
+  const [total, found] = await Promise.all([
     prisma.sysMenu.count({ where }),
     prisma.sysMenu.findMany({
       where,
@@ -150,17 +157,24 @@ async function getPaginatedMenus(url: URL, contractDefineCode: string) {
         sort: true,
         parentMenuId: true,
       },
-      orderBy: [{ sort: "asc" }, { menuId: "asc" }],
-      skip,
-      take: limit,
+      orderBy: [{ sort: query.sortOrder }, { menuId: query.sortOrder }],
+      // 多取一条用于探测该方向是否还有下一页，cursor 命中时跳过锚点行本身。
+      take: limit + 1,
+      ...(query.cursor ? { cursor: { menuId: Number(query.cursor.id) }, skip: 1 } : {}),
     }),
   ]);
 
-  const totalPages = Math.max(1, Math.ceil(total / limit));
-  const hasNextPage = page < totalPages;
+  // 切片、翻回升序、生成双向不透明游标都收敛在共享 helper 里。
+  const { items, pager } = buildCursorPage({
+    rows: found,
+    limit,
+    query,
+    total,
+    idOf: (menu) => menu.menuId,
+  });
 
   return successResponse<DemoMenuRow[]>(
-    menus.map((menu) => ({
+    items.map((menu) => ({
       id: menu.menuId,
       title: menu.menuTitle,
       path: menu.path,
@@ -168,13 +182,6 @@ async function getPaginatedMenus(url: URL, contractDefineCode: string) {
       sort: menu.sort,
       parentMenuId: menu.parentMenuId,
     })),
-    {
-      page,
-      limit,
-      total,
-      totalPages,
-      hasNextPage,
-      nextCursor: hasNextPage ? String(page + 1) : null,
-    },
+    pager,
   );
 }

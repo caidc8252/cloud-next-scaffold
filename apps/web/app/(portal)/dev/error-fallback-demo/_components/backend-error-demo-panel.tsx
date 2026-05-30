@@ -22,6 +22,7 @@ import {
   Table,
   type TableColumn,
 } from "@cloud/ui";
+import { useCursorPagination, type CursorPageRequest } from "@/lib/use-cursor-pagination";
 
 const API_URL = "/api/dev/error-fallback-demo";
 const PAGE_LIMIT = 5;
@@ -97,7 +98,8 @@ function createClientErrorBody(message: string): ErrorBody {
 export function BackendErrorDemoPanel() {
   const [result, setResult] = useState<DemoResult | null>(null);
   const [isLoading, setIsLoading] = useState<DemoScenario | null>(null);
-  const [page, setPage] = useState(1);
+  // 游标全部来自服务端，客户端只持有当前页的游标 + 一个展示用页码，不缓存历史、不读行 id。
+  const pagination = useCursorPagination();
 
   const rows = useMemo(() => {
     if (!result || !isSuccessBody(result.body) || !Array.isArray(result.body.data)) {
@@ -107,32 +109,36 @@ export function BackendErrorDemoPanel() {
     return result.body.data;
   }, [result]);
 
-  const pager =
-    result && isSuccessBody(result.body)
-      ? {
-          page: result.body.page,
-          limit: result.body.limit,
-          total: result.body.total,
-          totalPages: result.body.totalPages,
-          hasNextPage: result.body.hasNextPage,
-        }
-      : null;
+  const total =
+    result && isSuccessBody(result.body) ? (result.body.total ?? null) : null;
   const latestTraceId = result?.body.traceId ?? null;
   const latestCode = result?.body.code ?? null;
 
-  async function runScenario(scenario: DemoScenario, nextPage = page) {
+  async function runScenario(scenario: DemoScenario, req?: CursorPageRequest) {
     setIsLoading(scenario);
     try {
       const response = await request.get<DemoPayload>(API_URL, {
         query: {
           scenario,
-          page: scenario === "pagination" ? nextPage : undefined,
           limit: scenario === "pagination" ? PAGE_LIMIT : undefined,
+          // cursor 是服务端签发的不透明 token，原样回传；首页为 null 时 buildUrl 会自动跳过。
+          cursor: scenario === "pagination" ? req?.cursor : undefined,
+          // 翻页方向由客户端显式传，不再编进 token。
+          direction: scenario === "pagination" ? req?.direction : undefined,
         },
       });
 
-      if (scenario === "pagination") {
-        setPage(nextPage);
+      if (scenario === "pagination" && req) {
+        // 吸收服务端这一页返回的双向游标和翻页标志，下一次翻页只用它们。
+        pagination.sync(
+          {
+            nextCursor: response.nextCursor,
+            prevCursor: response.prevCursor,
+            hasNextPage: response.hasNextPage,
+            hasPrevPage: response.hasPrevPage,
+          },
+          req.page,
+        );
       }
 
       setResult({
@@ -161,8 +167,20 @@ export function BackendErrorDemoPanel() {
     }
   }
 
-  function goToPage(nextPage: number) {
-    runScenario("pagination", nextPage);
+  // 从头开始游标分页：清空游标，从第一条记录查起。
+  function startPagination() {
+    runScenario("pagination", pagination.reset());
+  }
+
+  // 向后 / 向前翻页：游标由 hook 从服务端上一次返回里取，客户端不参与构造。
+  function goToNextPage() {
+    const req = pagination.toNext();
+    if (req) runScenario("pagination", req);
+  }
+
+  function goToPrevPage() {
+    const req = pagination.toPrev();
+    if (req) runScenario("pagination", req);
   }
 
   return (
@@ -207,7 +225,7 @@ export function BackendErrorDemoPanel() {
             variant="secondary"
             iconLeft={<ListOrdered size={15} />}
             loading={isLoading === "pagination"}
-            onClick={() => goToPage(1)}
+            onClick={() => startPagination()}
           >
             Paginated Menus
           </Button>
@@ -255,7 +273,8 @@ export function BackendErrorDemoPanel() {
               <Table columns={columns} rows={rows} rowKey={(row) => row.id} />
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="text-sm text-content-secondary">
-                  Page {pager?.page ?? page} / {pager?.totalPages ?? 1}, total {pager?.total ?? 0}
+                  Page {pagination.page}
+                  {total !== null ? `, total ${total}` : ""}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -263,8 +282,8 @@ export function BackendErrorDemoPanel() {
                     variant="outline"
                     size="sm"
                     iconLeft={<ChevronLeft size={14} />}
-                    disabled={(pager?.page ?? page) <= 1 || isLoading === "pagination"}
-                    onClick={() => goToPage(Math.max(1, (pager?.page ?? page) - 1))}
+                    disabled={!pagination.canPrev || isLoading === "pagination"}
+                    onClick={() => goToPrevPage()}
                   >
                     Prev
                   </Button>
@@ -273,8 +292,8 @@ export function BackendErrorDemoPanel() {
                     variant="outline"
                     size="sm"
                     iconRight={<ChevronRight size={14} />}
-                    disabled={!pager?.hasNextPage || isLoading === "pagination"}
-                    onClick={() => goToPage((pager?.page ?? page) + 1)}
+                    disabled={!pagination.canNext || isLoading === "pagination"}
+                    onClick={() => goToNextPage()}
                   >
                     Next
                   </Button>
