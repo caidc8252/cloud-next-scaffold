@@ -7,9 +7,17 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "../../lib/utils"
 
 const toggleVariants = cva(
-  // Base — matches button.tsx interaction tokens. Inside <ToggleGroup> (data-slot="toggle-group"),
-  // edges flatten so items share a single outer border.
-  "inline-flex items-center justify-center gap-1.5 rounded-md border border-line-strong bg-surface-2 font-medium whitespace-nowrap transition-colors outline-none cursor-pointer select-none focus-visible:shadow-focus disabled:cursor-not-allowed disabled:opacity-50 data-pressed:bg-surface-active hover:bg-surface-hover [&_svg]:pointer-events-none [&_svg]:shrink-0 in-data-[slot=toggle-group]:rounded-none in-data-[slot=toggle-group]:border-0 in-data-[slot=toggle-group]:border-r in-data-[slot=toggle-group]:border-line-strong in-data-[slot=toggle-group]:last:border-r-0",
+  // Base — matches button.tsx interaction tokens. Group-aware styling keys off the
+  // parent <ToggleGroup>'s `data-variant` (see toggle-group.tsx), so an item restyles
+  // purely from its position in the tree, with no prop threading.
+  "inline-flex items-center justify-center gap-1.5 rounded-md border border-line-strong bg-surface-2 font-medium whitespace-nowrap transition-colors outline-none cursor-pointer select-none focus-visible:shadow-focus disabled:cursor-not-allowed disabled:opacity-50 data-pressed:bg-surface-active hover:bg-surface-hover [&_svg]:pointer-events-none [&_svg]:shrink-0 " +
+    // Inside an "outline" group: flatten edges so items share one outer border.
+    "in-data-[variant=outline]:rounded-none in-data-[variant=outline]:border-0 in-data-[variant=outline]:border-r in-data-[variant=outline]:border-line-strong in-data-[variant=outline]:last:border-r-0 " +
+    // Inside a "segmented" group (TOMS .tds-btn-group): borderless transparent item on a
+    // tinted track; the pressed item lifts into a pill (bg-surface-2 + shadow-1). These
+    // stacked in-data-[variant=segmented]:… variants override the base bg/border/hover/
+    // pressed above; the active look matches TOMS (bg-2 + shadow-1 + primary text).
+    "in-data-[variant=segmented]:rounded in-data-[variant=segmented]:border-0 in-data-[variant=segmented]:bg-transparent in-data-[variant=segmented]:text-content-secondary in-data-[variant=segmented]:hover:bg-transparent in-data-[variant=segmented]:hover:text-content-primary in-data-[variant=segmented]:data-pressed:bg-surface-2 in-data-[variant=segmented]:data-pressed:text-content-primary in-data-[variant=segmented]:data-pressed:shadow-1",
   {
     variants: {
       variant: {
