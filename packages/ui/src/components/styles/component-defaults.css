@@ -51,12 +51,15 @@
   width: 100%;
   background: var(--color-primary-400);
   transform-origin: left;
-  animation: toast-countdown var(--toast-duration, 4000ms) linear forwards;
+  /* --toast-duration is always set by the Toaster container (TS TOAST_DURATION) and
+     inherited by every toast; no fallback literal so the value has one source of truth. */
+  animation: toast-countdown var(--toast-duration) linear forwards;
   z-index: 1;
 }
 
-/* Pause countdown when hovering — syncs with sonner's built-in hover pause */
-.cn-toast.cn-toast-countdown:hover::after {
+/* Pause every countdown while the toaster is hovered — matches sonner pausing ALL toast
+   timers on region hover, so stacked toasts' bars don't drain while their timers are held. */
+.toaster:hover .cn-toast.cn-toast-countdown::after {
   animation-play-state: paused;
 }
 
