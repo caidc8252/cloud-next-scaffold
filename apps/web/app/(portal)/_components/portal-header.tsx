@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AppHeader } from "@cloud/ui/components/layout";
+import { AppHeader, SidebarTrigger } from "@cloud/ui/components/layout";
 import {
   CommandDialog,
   CommandEmpty,
@@ -133,6 +133,7 @@ export function PortalHeader({
   return (
     <>
       <AppHeader
+        leading={<SidebarTrigger />}
         breadcrumbs={breadcrumbs}
         onSearchClick={() => setOpen(true)}
         notification={<NotificationBell />}

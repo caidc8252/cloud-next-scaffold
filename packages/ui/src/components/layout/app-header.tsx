@@ -9,6 +9,8 @@ import {
 } from '../ui/breadcrumb'
 
 interface AppHeaderProps {
+  /** Leading slot rendered before the breadcrumbs (e.g. a SidebarTrigger). */
+  leading?: React.ReactNode
   /** Breadcrumb items as a render slot. Caller renders <BreadcrumbItem>s; this wrapper provides <Breadcrumb><BreadcrumbList>. */
   breadcrumbs?: React.ReactNode
   onSearchClick?: () => void
@@ -19,6 +21,7 @@ interface AppHeaderProps {
 }
 
 function AppHeader({
+  leading,
   breadcrumbs,
   onSearchClick,
   notification,
@@ -27,6 +30,7 @@ function AppHeader({
 }: AppHeaderProps) {
   return (
     <div className={cn('flex items-center gap-3 w-full', className)}>
+      {leading}
       {breadcrumbs && (
         <Breadcrumb>
           <BreadcrumbList>{breadcrumbs}</BreadcrumbList>
