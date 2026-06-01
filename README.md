@@ -46,6 +46,7 @@ pnpm dev
 - `packages/config`
 - `packages/cache`
 - `packages/db`
+- `packages/i18n`
 - `packages/permissions`
 - `packages/request`
 - `packages/security`
@@ -70,6 +71,7 @@ packages/
   cache/                  # Redis client + JSON KV cache
   config/                 # 环境变量校验
   db/                     # Prisma schema + 种子数据
+  i18n/                   # next-intl 薄封装：locale/时区 cookie + 英文基底合并 + 格式预设
   permissions/            # PermissionChecker + 登录态、DAL、session cookie + client hooks
   request/                # 请求封装 + 响应辅助 + 错误码
   security/               # argon2 密码哈希, RSA 加解密
@@ -292,6 +294,53 @@ pnpm db:seed
 ```
 
 `db:push` 会创建 `storage_object` / `storage_attachment` 表，`db:seed` 会补齐 Storage 菜单和 `storage.VIEW` / `storage.UPLOAD` / `storage.DOWNLOAD` 权限。
+
+## 国际化
+
+国际化统一走 `@cloud/i18n`（对 `next-intl` 的薄封装），不要在业务或 UI 里直接 import `next-intl`。
+
+设计要点：
+
+- locale 清单固定为 `["en", "zh-CN", "ja"]`，`defaultLocale = "en"`；增删语言改 `packages/i18n`，不在应用层硬编码数组。
+- 走 **cookie 不走 URL 路由**：自定义 `LOCALE_COOKIE="locale"` / `TZ_COOKIE="tz"`（刻意不用 next-intl 默认的 `NEXT_LOCALE`），没有 `app/[locale]/` 分段，切语言靠写 cookie + `router.refresh()`。
+- **英文为基底**：渲染时先加载 `en` 再 `deepMerge` 当前 locale，非英文 bundle 缺 key 自动回退英文，所以各 locale 只需写差异。
+- 缺失 key 在开发期由 `getMessageFallback` 直接抛错，生产环境降级为返回 key 字符串。
+
+三入口：
+
+| 入口 | 取什么 | 用在哪 |
+| --- | --- | --- |
+| `@cloud/i18n` | `locales` / `Locale` / `isLocale` / cookie 常量 / `formats` | 共享常量、类型收窄 |
+| `@cloud/i18n/server` | `createI18nRequestConfig` / `deepMerge` / `setLocaleAction` / `setTimeZoneAction` | RSC、route handler |
+| `@cloud/i18n/client` | `useTranslations` / `useFormatter` / `useLocale` / `TimeZoneInit` | 客户端组件 |
+| `@cloud/i18n/actions` | `setLocaleAction` / `setTimeZoneAction` | 客户端组件里调 server action（如语言切换 UI） |
+
+客户端取文案与格式化：
+
+```tsx
+"use client";
+import { useTranslations, useFormatter } from "@cloud/i18n/client";
+
+export function Example() {
+  const t = useTranslations("system.users");
+  const format = useFormatter();
+  return (
+    <div>
+      <h1>{t("title")}</h1>
+      <span>{format.dateTime(new Date(), "short")}</span>
+    </div>
+  );
+}
+```
+
+`apps/web` 已接通 i18n，对应四件套（接入新应用时照此补齐，缺一不可）：
+
+1. [next.config.ts](apps/web/next.config.ts) 用 `createNextIntlPlugin("./i18n/request.ts")` 包裹配置；
+2. [apps/web/i18n/request.ts](apps/web/i18n/request.ts) 调 `createI18nRequestConfig({ loadMessages })`，`loadMessages(locale)` 动态 import `i18n/messages/<locale>.json`；
+3. [apps/web/app/layout.tsx](apps/web/app/layout.tsx) 包一层 `NextIntlClientProvider`，且 `<html lang>` 用 cookie + `isLocale` 读实际 locale，不硬编码；
+4. Provider 树内挂 `TimeZoneInit`（首屏同步浏览器时区），切语言入口 `LocaleSwitcher` 放在 portal header。
+
+文案放在 [apps/web/i18n/messages/](apps/web/i18n/messages/)，`en.json` 为基底，`zh-CN.json` / `ja.json` 只写差异。当前只落了 `@cloud/ui` 日期组件需要的 `ui.datePicker.*`；新增业务文案按模块往对应 namespace 补即可。现有页面的英文硬编码尚未逐条迁移到 message（独立任务，不影响 i18n 链路本身）。
 
 ## 用户管理
 

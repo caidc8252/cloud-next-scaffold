@@ -12,6 +12,7 @@
   - `packages/cache`
   - `packages/config`
   - `packages/db`
+  - `packages/i18n`
   - `packages/permissions`
   - `packages/request`
   - `packages/security`
@@ -41,6 +42,7 @@
 - Prisma 统一通过根脚本 [scripts/prisma.mjs](/d:/codes/cloud-scaffold/scripts/prisma.mjs) 触发，避免 workspace 下 `.env` 路径不一致。
 - Prisma 7 的 CLI 配置位于 `packages/db/prisma.config.ts`，Client 生成到 `packages/db/generated/prisma`，此目录不提交，构建前必须先执行 `pnpm db:generate`。
 - `packages/config` 会主动加载根 `.env`，否则 Next 应用构建时拿不到数据库配置。
+- **GitHub Codespaces 下所有 server action 报 E80 "Invalid Server Actions request."**（切语言 / `TimeZoneInit` 等都中招，且进页面就触发）。根因不是 i18n、缓存或 `optimizePackageImports`：经 VS Code 本地端口转发访问时浏览器 origin 是 `localhost:3000`，但 GitHub 转发层注入 `x-forwarded-host: <name>.app.github.dev`，Next 的 server action CSRF 校验优先信任转发头、拿它和 origin 比对 → 不一致即拒绝。修复：`next.config.ts` 里按 `GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN` 是否存在，给 `experimental.serverActions.allowedOrigins` 放行 `["localhost:3000", "*.app.github.dev"]`，仅 Codespaces 生效，本地 / 生产不受影响。改 `next.config.ts` 后必须重启 dev server。排查靠临时 middleware 打印 `origin` / `host` / `x-forwarded-host`，别靠猜（E80 是 origin/host 不匹配，不是 action id 找不到）。
 - `packages/permissions` 同时承载 `PermissionChecker`、服务端登录态实现，以及 `@cloud/permissions/client` 提供的前端权限 hook。业务代码统一从 `@cloud/permissions/server` 引用，不再保留 `apps/web/lib/auth.ts` 兼容转发。
 - `packages/storage` 统一承载 Amazon S3 上传会话、STS 临时凭证、服务端上传、对象元数据确认和短期下载链接；业务代码连接 S3 默认走 `@cloud/storage/server`。
 - 双向游标分页统一走 `@cloud/request/server` 的 `readCursorQuery(token, direction)` + `buildCursorPage()`，配合 `CursorPager`。游标 token 由服务端用 `encodeCursor()` 签发、只编码锚点 id、对客户端不透明；翻页方向是独立的 `direction` 参数，由客户端显式传，不编进 token。响应里带 `nextCursor` / `prevCursor` / `hasNextPage` / `hasPrevPage`；客户端用 `apps/web/lib/use-cursor-pagination.ts` 的 `useCursorPagination()` 原样回传游标 + 方向，绝不从行 id 自己拼游标。偏移分页仍用 `Pager`（page/total/totalPages）。
@@ -60,7 +62,26 @@
   - 成功 JSON 响应统一为 `{ code: "OK", message: "success", data, page?, limit?, total?, totalPages?, nextCursor?, hasNextPage?, traceId }`；分页字段和 `data` 同级，不再包 `pager`；DELETE 等无内容接口使用 204 空 body。
   - `AuthzError`、常见 Prisma 异常和未知异常由 `handleApiError()` 统一映射，S3 接口通过 `onError: s3ErrorResponse` 保留存储专项错误码。
   - Next 控制流异常（redirect / notFound）必须继续抛出，不要吞掉。
+- 错误文案服务端本地化（**code 为准**）：`@cloud/request/error-messages` 按 locale 维护 `ERR_*` 错误码 → 三语文案（en/zh-CN/ja，类型从 error-codes 推导，缺翻译编译报错）。`errorResponse()` 命中注册表就按当前 locale 出文案，`message` 参数只兜底注册表外的 code（`storage.*` / `database.*` / permissions 的 `unauthenticated` `forbidden`）。
+  - 决策：helpers 保持同步（团队约定），但 Next 16 读 cookie 是异步的 → 用 `node:async_hooks` 的 `AsyncLocalStorage` 存请求级 locale。`withApiHandler()` 进 handler 前 `await` 解析 `LOCALE_COOKIE`、`runWithLocale()` 注入，handler 内同步构造的 `errorResponse()` 用 `getStore()` 同步取 locale。没设置（非请求上下文 / 没走 withApiHandler）回退英文。
+  - locale cookie 解析放在 app 层 `api-handler.ts`（依赖 `@cloud/i18n`），`@cloud/request` 不依赖 `@cloud/i18n`：request 只负责「给定 ALS 里的 locale 就本地化」，app 负责「cookie → locale」。
+  - `apps/web/i18n/request.ts` 另把同一份注册表注入 next-intl 的 `errors` 命名空间，供客户端 / RSC 直接 `useTranslations("errors")(code)` / `getTranslations`。
+  - 注册表外的 **app 级业务域 code**（如 auth）走 `registerErrorMessages(locale -> code -> 文案)` 注册进 server 端解析，`@cloud/request` 自身不收录这些域 code（保持通用）。Auth 文案在 `apps/web/lib/auth-error-messages.ts`，由 auth 路由顶部 side-effect import 触发注册。`storage.*` 仍保留英文兜底（开发向校验，价值低），未纳入本地化。
+  - 复用同一个 code 配不同用户可见文案的，拆成专属 code（如登录/选组织各用 `ERR_AUTH_CREDENTIALS_REQUIRED` / `ERR_AUTH_ENTITY_REQUIRED`，不再共用 `ERR_AUTH_MISSING_FIELDS`），避免本地化后收敛成同一句。
 - App Router 页面级兜底使用 `app/(portal)/error.tsx`、`app/(public)/error.tsx`、`app/global-error.tsx`、`app/not-found.tsx`；当前 Next.js 16 文档要求错误边界组件使用 `unstable_retry`。
+- `packages/i18n` 是对 `next-intl` 的薄封装，业务和 UI 一律从 `@cloud/i18n` 三入口取能力，禁止直接 import `next-intl`：
+  - locale 清单固定为 `["en", "zh-CN", "ja"]`、`defaultLocale = "en"`，增删语言只改 `packages/i18n`，不在应用层硬编码数组。
+  - 走 **cookie 不走 URL 路由**：自定义 `LOCALE_COOKIE="locale"` / `TZ_COOKIE="tz"`，刻意不用 next-intl 默认的 `NEXT_LOCALE`；没有 `app/[locale]/` 分段，切语言靠 `setLocaleAction` 写 cookie + `router.refresh()`。
+  - **英文为基底**：`createI18nRequestConfig` 先加载 `en` 再 `deepMerge` 当前 locale，非英文 bundle 缺 key 自动回退英文；各 locale 只写差异，不要全量复制。
+  - 缺失 key 在非 production 下由 `getMessageFallback` 直接 `throw`（开发期严格、线上降级返回 key），这是特性不是 bug，补 key 而不是关掉它。
+  - `setLocaleAction` / `setTimeZoneAction` 是 **包内部已批准的 `"use server"` 例外**——只允许出现在 `packages/i18n` 内，业务代码的 mutation 仍一律走 route handler。
+  - `apps/web` 已接通四件套：`next.config.ts` 用 `createNextIntlPlugin("./i18n/request.ts")` 包裹；`apps/web/i18n/request.ts` 调 `createI18nRequestConfig`，`loadMessages` 动态 import `i18n/messages/<locale>.json`；root layout 包 `NextIntlClientProvider`、`<html lang>` 用 cookie + `isLocale` 读实际 locale、树内挂 `TimeZoneInit`；portal header 放 `LocaleSwitcher`。
+  - `LocaleSwitcher` 在 `apps/web/app/(portal)/_components/locale-switcher.tsx`，用 `@cloud/ui` 的 `Popover`（地球图标按钮 + `MenuItem` 列表 + 当前项加粗/勾选）组合，调 `@cloud/i18n/actions` 的 `setLocaleAction` + `router.refresh()`。**不放回 `@cloud/i18n`**：`@cloud/ui` 已依赖 `@cloud/i18n`，再让 `@cloud/i18n` 引 `@cloud/ui` 会循环依赖。`@cloud/i18n` 只保留无 UI 的 `TimeZoneInit`，并新增 `@cloud/i18n/actions` 导出供客户端组件取 server action。
+  - **为什么不用 `DropdownMenu`**：header 是 `sticky top-0 z-sticky`(1020)，而 `@cloud/ui` 的 `DropdownMenuContent` 把 Positioner 钉死在 `isolate z-50`、且只把 className 透给 Popup 不透给 Positioner，业务侧无法抬层 → 弹层顶部被 header 盖住。`Popover` 走语义层 `z-popover`(1060) 高于 header（和相邻 `NotificationBell` 一致）。`DropdownMenu` 的 `z-50` 是 `@cloud/ui` 待修 bug（应改用语义 z 层），修复前 header 区域的下拉一律用 `Popover`。
+  - **坑 1（locale 推断）**：因为走 cookie 不走 URL 路由、没有 next-intl middleware，`NextIntlClientProvider` 无法自动推断 locale，dev 期报 `Couldn't infer the locale prop`。必须把 layout 里算好的 locale **显式传** `<NextIntlClientProvider locale={locale}>`；messages / timeZone / formats 仍由 request config 自动注入，不用手传。
+  - **坑 2（server action 被 optimize 破坏）**：`@cloud/i18n` 含 `"use server"`（`setLocaleAction` / `setTimeZoneAction`，全仓唯一的 server action）。**不要把它放进 `next.config.ts` 的 `experimental.optimizePackageImports`**——barrel 导入重写会让 server action 模块身份漂移、ID 对不上，运行时报 `Invalid Server Actions request`（`TimeZoneInit` 调 action 时触发）。它留在 `transpilePackages` 即可。改 `next.config.ts` 后必须**重启 dev server**，不是刷新。
+  - `NextIntlClientProvider` 由 `@cloud/i18n/client` re-export（包原本漏了，已补），应用层只 import `@cloud/i18n/client`，不直接 import next-intl；`next-intl/plugin` 仅在 `next.config.ts` 这一构建配置处直接 import。
+  - 文案在 `apps/web/i18n/messages/`，`en.json` 为基底，目前只落 `@cloud/ui` 必需的 `ui.datePicker.*`。`apps/web/i18n/messages/messages.test.ts` 守 en 含日期组件全部 key、zh/ja 无孤儿 key。现有页面英文硬编码尚未逐条迁移（独立任务）。
 
 ## Next.js 约束
 
