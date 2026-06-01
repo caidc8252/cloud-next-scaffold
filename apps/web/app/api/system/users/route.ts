@@ -54,22 +54,18 @@ export const POST = withApiHandler(async (req: Request) => {
   try {
     body = await req.json();
   } catch {
-    return badRequestResponse(ERR_INVALID_JSON, "Invalid JSON body.");
+    return badRequestResponse(ERR_INVALID_JSON);
   }
 
   const email = body.email?.trim();
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return badRequestResponse(ERR_USER_EMAIL_INVALID, "A valid email is required.");
+    return badRequestResponse(ERR_USER_EMAIL_INVALID);
   }
 
   const existing = await prisma.sysInvite.findFirst({
     where: { email, status: "PENDING" },
   });
-  if (existing)
-    return badRequestResponse(
-      ERR_USER_EMAIL_TAKEN,
-      "An active invitation already exists for this email.",
-    );
+  if (existing) return badRequestResponse(ERR_USER_EMAIL_TAKEN);
 
   const entityId = session.entity.entityId;
   const token = randomBytes(24).toString("base64url");

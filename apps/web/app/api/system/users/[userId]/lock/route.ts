@@ -1,6 +1,11 @@
 import { prisma } from "@cloud/db";
 import { successResponse, badRequestResponse, notFoundResponse } from "@cloud/request/server";
-import { ERR_INVALID_ID, ERR_USER_NOT_FOUND, ERR_USER_PROTECTED } from "@cloud/request/error-codes";
+import {
+  ERR_INVALID_ID,
+  ERR_USER_NOT_FOUND,
+  ERR_USER_PROTECTED,
+  ERR_USER_CANNOT_DISABLE_SELF,
+} from "@cloud/request/error-codes";
 import { assertPermissions } from "@cloud/permissions/server";
 import { toClientUser, USER_INCLUDE } from "@/app/(portal)/system/users/_server/user-mapper";
 import { withApiHandler } from "@/lib/api-handler";
@@ -10,10 +15,10 @@ export const POST = withApiHandler(
     const session = await assertPermissions({ all: ["users.LOCK"] });
     const { userId: rawId } = await params;
     const userId = Number(rawId);
-    if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID, "Invalid user ID.");
+    if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID);
 
     if (userId === session.id) {
-      return badRequestResponse(ERR_INVALID_ID, "Cannot disable your own account.");
+      return badRequestResponse(ERR_USER_CANNOT_DISABLE_SELF);
     }
 
     const entityId = session.entity.entityId;
@@ -23,7 +28,7 @@ export const POST = withApiHandler(
     if (!link) return notFoundResponse(ERR_USER_NOT_FOUND, "User not found in this entity.");
 
     if (link.authorizingType === "ADMIN") {
-      return badRequestResponse(ERR_USER_PROTECTED, "Cannot disable an ADMIN user.");
+      return badRequestResponse(ERR_USER_PROTECTED);
     }
 
     // Toggle entity-user status

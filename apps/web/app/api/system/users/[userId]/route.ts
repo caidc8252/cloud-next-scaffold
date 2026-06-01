@@ -30,7 +30,7 @@ export const PUT = withApiHandler(
     const session = await assertPermissions({ all: ["users.UPD"] });
     const { userId: rawId } = await params;
     const userId = Number(rawId);
-    if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID, "Invalid user ID.");
+    if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID);
 
     const entityId = session.entity.entityId;
     const link = await findUserInEntity(userId, entityId);
@@ -42,12 +42,12 @@ export const PUT = withApiHandler(
     try {
       body = await req.json();
     } catch {
-      return badRequestResponse(ERR_INVALID_JSON, "Invalid JSON body.");
+      return badRequestResponse(ERR_INVALID_JSON);
     }
 
     // Protected users can only have remark updated
     if (isProtected && (body.displayName !== undefined || body.roleIds !== undefined)) {
-      return badRequestResponse(ERR_USER_PROTECTED, "This user can only have remark updated.");
+      return badRequestResponse(ERR_USER_PROTECTED);
     }
 
     const requestedRoleIds =

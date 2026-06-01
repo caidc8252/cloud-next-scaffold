@@ -13,15 +13,12 @@ export const POST = withApiHandler(
     await assertPermissions({ all: ["users.INVITE"] });
     const { userId: rawId } = await params;
     const userId = Number(rawId);
-    if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID, "Invalid user ID.");
+    if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID);
 
     const user = await prisma.sysUser.findUnique({ where: { userId } });
     if (!user) return notFoundResponse(ERR_USER_NOT_FOUND, "User not found.");
     if (user.status !== "PENDING") {
-      return badRequestResponse(
-        ERR_USER_CANCEL_NOT_PENDING,
-        "Can only cancel invites for pending users.",
-      );
+      return badRequestResponse(ERR_USER_CANCEL_NOT_PENDING);
     }
 
     await prisma.sysUser.delete({ where: { userId } });

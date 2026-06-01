@@ -10,7 +10,7 @@ export const POST = withApiHandler(
     const session = await assertPermissions({ all: ["users.INVITE"] });
     const { userId: rawId } = await params;
     const userId = Number(rawId);
-    if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID, "Invalid user ID.");
+    if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID);
 
     const entityId = session.entity.entityId;
 
