@@ -69,10 +69,15 @@ function SidebarProvider({
     })
   }, [isMobile])
 
-  // Close the mobile drawer whenever the route changes.
-  React.useEffect(() => {
+  // Close the mobile drawer whenever the route changes. Setting state during
+  // render (guarded by the previous pathname) is React's recommended pattern
+  // for "reset state when a value changes" — it avoids the cascading-render
+  // lint rule and the extra commit an effect would incur.
+  const [prevPathname, setPrevPathname] = React.useState(pathname)
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname)
     setMobileOpen(false)
-  }, [pathname])
+  }
 
   // "[" toggles the sidebar — but never while typing in a field.
   React.useEffect(() => {
