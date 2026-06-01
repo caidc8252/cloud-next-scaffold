@@ -21,7 +21,7 @@ export const PUT = withApiHandler(
     const session = await assertPermissions({ all: ["roles.UPD"] });
     const { roleId: rawId } = await params;
     const roleId = Number(rawId);
-    if (!Number.isFinite(roleId)) return badRequestResponse(ERR_INVALID_ID, "Invalid role ID.");
+    if (!Number.isFinite(roleId)) return badRequestResponse(ERR_INVALID_ID);
 
     const existing = await prisma.sysRole.findUnique({ where: { roleId } });
     if (
@@ -35,7 +35,7 @@ export const PUT = withApiHandler(
     try {
       body = await req.json();
     } catch {
-      return badRequestResponse(ERR_INVALID_JSON, "Invalid JSON body.");
+      return badRequestResponse(ERR_INVALID_JSON);
     }
 
     const isBuiltin = existing.roleType === "BUILTIN";
@@ -80,7 +80,7 @@ export const DELETE = withApiHandler(
     const session = await assertPermissions({ all: ["roles.DELETE"] });
     const { roleId: rawId } = await params;
     const roleId = Number(rawId);
-    if (!Number.isFinite(roleId)) return badRequestResponse(ERR_INVALID_ID, "Invalid role ID.");
+    if (!Number.isFinite(roleId)) return badRequestResponse(ERR_INVALID_ID);
 
     const existing = await prisma.sysRole.findUnique({ where: { roleId } });
     if (
@@ -91,15 +91,12 @@ export const DELETE = withApiHandler(
     }
 
     if (existing.roleType === "BUILTIN") {
-      return badRequestResponse(ERR_ROLE_DELETE_BUILTIN, "Cannot delete a builtin role.");
+      return badRequestResponse(ERR_ROLE_DELETE_BUILTIN);
     }
 
     const assignedCount = await prisma.sysUserRole.count({ where: { roleId } });
     if (assignedCount > 0) {
-      return badRequestResponse(
-        ERR_ROLE_DELETE_ASSIGNED,
-        `Cannot delete role with ${assignedCount} assigned user(s). Reassign them first.`,
-      );
+      return badRequestResponse(ERR_ROLE_DELETE_ASSIGNED);
     }
 
     await prisma.sysRole.delete({ where: { roleId } });

@@ -1,11 +1,14 @@
 import "server-only";
 
+import { cookies } from "next/headers";
 import { AuthzError } from "@cloud/permissions/server";
+import { defaultLocale, isLocale, LOCALE_COOKIE } from "@cloud/i18n";
 import {
   errorResponse,
   forbiddenResponse,
   internalErrorResponse,
   notFoundResponse,
+  runWithLocale,
   unauthorizedResponse,
 } from "@cloud/request/server";
 
@@ -111,15 +114,31 @@ export function handleApiError(error: unknown, options?: ApiHandlerOptions): Res
   return internalErrorResponse(error);
 }
 
+// 进 handler 前解析 locale cookie，整个 handler（含其内部同步构造的 errorResponse）跑在
+// runWithLocale 上下文里，错误文案据此本地化。cookies() 在非请求上下文（如单测直接调用
+// 包装后的 handler）会抛，这里兜底回退默认 locale。
+async function resolveRequestLocale(): Promise<string> {
+  try {
+    const cookieStore = await cookies();
+    const value = cookieStore.get(LOCALE_COOKIE)?.value;
+    return isLocale(value) ? value : defaultLocale;
+  } catch {
+    return defaultLocale;
+  }
+}
+
 export function withApiHandler<TArgs extends unknown[]>(
   handler: RouteHandler<TArgs>,
   options?: ApiHandlerOptions,
 ): RouteHandler<TArgs> {
   return async (...args) => {
-    try {
-      return await handler(...args);
-    } catch (error) {
-      return handleApiError(error, options);
-    }
+    const locale = await resolveRequestLocale();
+    return runWithLocale(locale, async () => {
+      try {
+        return await handler(...args);
+      } catch (error) {
+        return handleApiError(error, options);
+      }
+    });
   };
 }

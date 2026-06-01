@@ -81,6 +81,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - `@cloud/security`：服务端密码哈希与校验等安全基础能力
   - `@cloud/storage`：Amazon S3 上传会话、浏览器直传、服务端上传和存储配置归一化
   - `@cloud/config`：环境变量读取、配置校验、密码策略等基础配置能力
+  - `@cloud/i18n`：`next-intl` 薄封装，固定 locale 清单、自定义 locale/时区 cookie、英文基底 + 深合并、格式预设、`TimeZoneInit`、locale/时区 server action（`@cloud/i18n/actions`）
 
 ### 存储与 S3
 
@@ -188,7 +189,27 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - 前端逻辑、测试、监控优先依赖稳定 `code`
   - `message` 可以调整和国际化，不应作为业务判断依据
   - 成功和失败 JSON 响应都带 `traceId`；204 无 body 响应不带 `traceId`
+  - 错误文案由服务端按当前 locale 本地化，**code 为准**：`@cloud/request/error-messages` 注册表里有该 `code` 就按 locale 出文案，`errorResponse()` 的 `message` 参数只是「注册表外 code」（如 `storage.*` / `database.*` / permissions 的 `unauthenticated` `forbidden`）的兜底
+    - 注册表内的 code 走 `@cloud/request` 的错误码（`ERR_*`），新增错误码时同步在 `error-messages/{en,zh-CN,ja}.ts` 补三语，少补会编译报错
+    - locale 由 `withApiHandler()` 在进 handler 前读 `LOCALE_COOKIE` 解析、用 `runWithLocale()` 注入请求级上下文；`errorResponse()` 等响应辅助保持同步，不在里面读 cookie
+    - 没走 `withApiHandler()`（或非请求上下文）时 locale 回退英文
 - 不要把“前端看不到入口”当作接口安全前提
+
+### 国际化 / i18n
+
+- 国际化统一走 `@cloud/i18n`（`next-intl` 薄封装），**禁止在业务或 UI 里直接 import `next-intl`**，lint 会拦
+  - RSC / route handler 用 `@cloud/i18n/server`（`createI18nRequestConfig` / `deepMerge` / `set*Action`）
+  - 客户端组件用 `@cloud/i18n/client`（`useTranslations` / `useFormatter` / `TimeZoneInit` 等）；语言切换的 server action 从 `@cloud/i18n/actions` 取
+  - 共享常量、类型用根入口 `@cloud/i18n`（`locales` / `Locale` / `isLocale` / cookie 常量 / `formats`）
+- locale 清单固定为 `["en", "zh-CN", "ja"]`，一律 `import { locales }`，不要在应用层重写数组；增删语言改 `packages/i18n`
+- cookie 名用常量 `LOCALE_COOKIE` / `TZ_COOKIE`，禁止硬编码 `"NEXT_LOCALE"`、`"locale"` 字面量
+- locale / 时区收窄用 `isLocale(x)`，禁止 `as Locale`；`set*Action` 对非法输入静默 no-op，需要给用户反馈就在输入边界自行校验
+- message 以 `en` 为基底，其余 locale 只写差异，缺 key 自动回退英文；不要把各 locale 写成全量副本
+- namespace 用点分层级、与模块对应（`auth.login.*`、`system.users.*`、`ui.datePicker.*`）；`ui.*` 命名空间归 `@cloud/ui` 占用，使用其日期组件的页面必须提供 `ui.datePicker.*`，否则开发期触发 missing message
+- 数字 / 日期格式化走 `formats` 预设（`useFormatter` + `numberFormats` / `dateTimeFormats`），不在业务里散落 `Intl.NumberFormat` 配置；新增样式改 `packages/i18n` 的 `formats.ts`
+- 切换语言 / 时区只通过 `set*Action`（`@cloud/i18n/actions`）+ `router.refresh()`，不自己写 cookie；语言切换 UI（`LocaleSwitcher`）在 `apps/web` 用 `@cloud/ui` 的 `Popover` 组合（不用 `DropdownMenu`：header 是 `sticky z-sticky`，而 `DropdownMenuContent` 钉死 `z-50` 且不暴露 Positioner className，会被 header 盖住；`Popover` 用 `z-popover` 高于 header），不放回 `@cloud/i18n`（否则与 `@cloud/ui → @cloud/i18n` 循环依赖）
+- 开发期 `missing message` 抛错是特性，补 key，不要去关 `getMessageFallback`
+- 接入新应用必须四件套齐全：`withNextIntl` 插件 → request config 调 `createI18nRequestConfig` → root layout 包 `NextIntlClientProvider` → 树内挂 `TimeZoneInit`；root layout 的 `<html lang>` 读实际 locale，不要硬编码
 
 ### 默认开发链路
 

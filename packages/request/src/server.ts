@@ -1,6 +1,7 @@
 import "server-only";
 
 import { randomBytes } from "node:crypto";
+import { AsyncLocalStorage } from "node:async_hooks";
 import type { CursorPager, ErrorBody, Pager, SuccessBody } from "./index.ts";
 import {
   ERR_BAD_REQUEST,
@@ -9,6 +10,7 @@ import {
   ERR_NOT_FOUND,
   ERR_INTERNAL,
 } from "./error-codes.ts";
+import { getErrorMessages } from "./error-messages/index.ts";
 
 export type { CursorPager, ErrorBody, Pager, SuccessBody } from "./index.ts";
 export {
@@ -25,6 +27,46 @@ export {
   ERR_NOT_FOUND,
   ERR_INTERNAL,
 } from "./error-codes.ts";
+
+// 请求级 locale。helpers 保持同步，所以不在这里读 cookie（Next 16 的 cookies() 是异步的），
+// 而是由调用方（如 withApiHandler）在进入 handler 前 await 解析好 locale，包一层 runWithLocale。
+// 没设置时 getStore() 返回 undefined，错误文案回退英文。
+const localeStore = new AsyncLocalStorage<string>();
+
+// 在指定 locale 的上下文里执行 fn；其内部同步构造的 errorResponse 会据此本地化文案。
+export function runWithLocale<T>(locale: string, fn: () => T): T {
+  return localeStore.run(locale, fn);
+}
+
+// app 级扩展注册表：注册表外的业务域 code（如应用自己的 auth 码）由应用在启动时注册三语
+// 文案，server 端本地化时一并查。@cloud/request 自身不收录这些业务域 code，保持通用。
+// 结构：locale -> (code -> 文案)。
+const extraErrorMessages: Record<string, Record<string, string>> = {};
+
+export function registerErrorMessages(messages: Record<string, Record<string, string>>): void {
+  for (const [locale, map] of Object.entries(messages)) {
+    extraErrorMessages[locale] = { ...(extraErrorMessages[locale] ?? {}), ...map };
+  }
+}
+
+// 单 locale 查文案：先内置注册表，再 app 扩展注册表。
+function lookupMessage(code: string, locale: string): string | undefined {
+  const builtin = (getErrorMessages(locale) as Record<string, string>)[code];
+  if (builtin) return builtin;
+  return extraErrorMessages[locale]?.[code];
+}
+
+// code 为准：内置或 app 注册的 code 就按当前 locale 出文案（缺当前 locale 退英文）；
+// 都没有（如 storage / database 等未注册的包外 code）才退回调用方显式传入的 message。
+function resolveErrorMessage(code: string, fallback?: string): string {
+  const locale = localeStore.getStore() ?? "en";
+  return lookupMessage(code, locale) ?? lookupMessage(code, "en") ?? fallback ?? "An error occurred.";
+}
+
+// 日志固定走英文 / code，避免服务端日志随用户 locale 漂移，影响排查。
+function resolveLogMessage(code: string, fallback?: string): string {
+  return lookupMessage(code, "en") ?? fallback ?? code;
+}
 
 function generateTraceId(status: number): string {
   const prefix = status >= 500 ? "SYS" : "BIZ";
@@ -59,25 +101,30 @@ export function noContentResponse(): Response {
   return new Response(null, { status: 204 });
 }
 
-export function errorResponse(code: string, message: string, status = 400): Response {
+// message 可选：注册表里有该 code 时按当前 locale 出文案，传入的 message 仅作为
+// 包外 code 的兜底。响应文案本地化，日志保持英文 / code 稳定。
+export function errorResponse(code: string, message?: string, status = 400): Response {
   const traceId = generateTraceId(status);
-  console.error(`[${traceId}] [${code}] ${message}`);
-  return Response.json({ message, code, traceId } satisfies ErrorBody, { status });
+  console.error(`[${traceId}] [${code}] ${resolveLogMessage(code, message)}`);
+  return Response.json(
+    { message: resolveErrorMessage(code, message), code, traceId } satisfies ErrorBody,
+    { status },
+  );
 }
 
-export function badRequestResponse(code = ERR_BAD_REQUEST, message = "Bad request."): Response {
+export function badRequestResponse(code = ERR_BAD_REQUEST, message?: string): Response {
   return errorResponse(code, message, 400);
 }
 
-export function unauthorizedResponse(code = ERR_UNAUTHORIZED, message = "Unauthorized."): Response {
+export function unauthorizedResponse(code = ERR_UNAUTHORIZED, message?: string): Response {
   return errorResponse(code, message, 401);
 }
 
-export function forbiddenResponse(code = ERR_FORBIDDEN, message = "Forbidden."): Response {
+export function forbiddenResponse(code = ERR_FORBIDDEN, message?: string): Response {
   return errorResponse(code, message, 403);
 }
 
-export function notFoundResponse(code = ERR_NOT_FOUND, message = "Not found."): Response {
+export function notFoundResponse(code = ERR_NOT_FOUND, message?: string): Response {
   return errorResponse(code, message, 404);
 }
 
@@ -85,7 +132,7 @@ export function internalErrorResponse(error: unknown): Response {
   const traceId = generateTraceId(500);
   console.error(`[${traceId}] [${ERR_INTERNAL}]`, error);
   return Response.json(
-    { message: "Internal server error.", code: ERR_INTERNAL, traceId } satisfies ErrorBody,
+    { message: resolveErrorMessage(ERR_INTERNAL), code: ERR_INTERNAL, traceId } satisfies ErrorBody,
     { status: 500 },
   );
 }

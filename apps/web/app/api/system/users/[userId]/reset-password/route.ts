@@ -16,7 +16,7 @@ export const POST = withApiHandler(
     const session = await assertPermissions({ all: ["users.RESETPW"] });
     const { userId: rawId } = await params;
     const userId = Number(rawId);
-    if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID, "Invalid user ID.");
+    if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID);
 
     const entityId = session.entity.entityId;
     const link = await prisma.sysEntityUser.findUnique({
@@ -26,15 +26,12 @@ export const POST = withApiHandler(
       return notFoundResponse(ERR_USER_NOT_FOUND, "User not found.");
 
     if (userId === session.id || link.authorizingType === "ADMIN") {
-      return badRequestResponse(ERR_USER_PROTECTED, "Cannot reset password for this user.");
+      return badRequestResponse(ERR_USER_PROTECTED);
     }
 
     const user = await prisma.sysUser.findUniqueOrThrow({ where: { userId } });
     if (user.status === "PENDING") {
-      return badRequestResponse(
-        ERR_USER_RESET_PW_PENDING,
-        "Cannot reset password for a pending user.",
-      );
+      return badRequestResponse(ERR_USER_RESET_PW_PENDING);
     }
 
     const token = randomBytes(32).toString("base64url");

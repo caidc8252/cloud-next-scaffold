@@ -147,6 +147,9 @@ importers:
       '@cloud/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@cloud/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@cloud/permissions':
         specifier: workspace:*
         version: link:../../packages/permissions
@@ -168,6 +171,9 @@ importers:
       next:
         specifier: 'catalog:'
         version: 16.2.6(@babel/core@7.29.0)(@playwright/test@1.60.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      next-intl:
+        specifier: 'catalog:'
+        version: 4.12.0(next@16.2.6(@babel/core@7.29.0)(@playwright/test@1.60.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       react:
         specifier: 'catalog:'
         version: 19.2.4

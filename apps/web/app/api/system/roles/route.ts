@@ -37,12 +37,12 @@ export const POST = withApiHandler(async (req: Request) => {
   try {
     body = await req.json();
   } catch {
-    return badRequestResponse(ERR_INVALID_JSON, "Invalid JSON body.");
+    return badRequestResponse(ERR_INVALID_JSON);
   }
 
   const name = body.name?.trim();
   if (!name || name.length < 2) {
-    return badRequestResponse(ERR_ROLE_NAME_SHORT, "Role name must be at least 2 characters.");
+    return badRequestResponse(ERR_ROLE_NAME_SHORT);
   }
 
   const role = await prisma.sysRole.create({

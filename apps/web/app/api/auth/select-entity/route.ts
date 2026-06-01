@@ -9,9 +9,10 @@ import {
 } from "@cloud/request/server";
 import {
   ERR_AUTH_INVALID_ENTITY,
-  ERR_AUTH_MISSING_FIELDS,
+  ERR_AUTH_ENTITY_REQUIRED,
   ERR_AUTH_NOT_AUTHENTICATED,
 } from "@/lib/auth-error-codes";
+import "@/lib/auth-error-messages";
 import { withApiHandler } from "@/lib/api-handler";
 
 const selectEntitySchema = z.object({
@@ -22,19 +23,19 @@ const selectEntitySchema = z.object({
 export const POST = withApiHandler(async (req: Request) => {
   const partial = await getPartialSession();
   if (!partial) {
-    return unauthorizedResponse(ERR_AUTH_NOT_AUTHENTICATED, "Not authenticated.");
+    return unauthorizedResponse(ERR_AUTH_NOT_AUTHENTICATED);
   }
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return badRequestResponse(ERR_AUTH_MISSING_FIELDS, "Select an organization.");
+    return badRequestResponse(ERR_AUTH_ENTITY_REQUIRED);
   }
 
   const parsed = selectEntitySchema.safeParse(body);
   if (!parsed.success) {
-    return badRequestResponse(ERR_AUTH_MISSING_FIELDS, "Select an organization.");
+    return badRequestResponse(ERR_AUTH_ENTITY_REQUIRED);
   }
 
   const { entityId } = parsed.data;
@@ -45,7 +46,7 @@ export const POST = withApiHandler(async (req: Request) => {
   });
 
   if (!entityUser || entityUser.status !== "ACTIVE" || entityUser.entity.status !== "ACTIVE") {
-    return errorResponse(ERR_AUTH_INVALID_ENTITY, "This organization is not available.", 400);
+    return errorResponse(ERR_AUTH_INVALID_ENTITY);
   }
 
   const contract = await prisma.sysEntityContract.findFirst({
@@ -53,7 +54,7 @@ export const POST = withApiHandler(async (req: Request) => {
   });
 
   if (!contract) {
-    return errorResponse(ERR_AUTH_INVALID_ENTITY, "This organization is not available.", 400);
+    return errorResponse(ERR_AUTH_INVALID_ENTITY);
   }
 
   await upgradeSession(entityId);

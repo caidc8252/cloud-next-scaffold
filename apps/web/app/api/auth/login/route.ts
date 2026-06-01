@@ -6,8 +6,9 @@ import { successResponse, badRequestResponse, errorResponse } from "@cloud/reque
 import {
   ERR_AUTH_ACCOUNT_LOCKED,
   ERR_AUTH_INVALID_CREDENTIALS,
-  ERR_AUTH_MISSING_FIELDS,
+  ERR_AUTH_CREDENTIALS_REQUIRED,
 } from "@/lib/auth-error-codes";
+import "@/lib/auth-error-messages";
 import { withApiHandler } from "@/lib/api-handler";
 
 const loginSchema = z.object({
@@ -21,12 +22,12 @@ export const POST = withApiHandler(async (req: Request) => {
   try {
     body = await req.json();
   } catch {
-    return badRequestResponse(ERR_AUTH_MISSING_FIELDS, "Enter both account and password.");
+    return badRequestResponse(ERR_AUTH_CREDENTIALS_REQUIRED);
   }
 
   const parsed = loginSchema.safeParse(body);
   if (!parsed.success) {
-    return badRequestResponse(ERR_AUTH_MISSING_FIELDS, "Enter both account and password.");
+    return badRequestResponse(ERR_AUTH_CREDENTIALS_REQUIRED);
   }
 
   const user = await prisma.sysUser.findUnique({
@@ -34,7 +35,7 @@ export const POST = withApiHandler(async (req: Request) => {
   });
 
   if (!user) {
-    return errorResponse(ERR_AUTH_INVALID_CREDENTIALS, "Incorrect account or password.", 401);
+    return errorResponse(ERR_AUTH_INVALID_CREDENTIALS, undefined, 401);
   }
 
   // 校验锁定状态
@@ -43,11 +44,7 @@ export const POST = withApiHandler(async (req: Request) => {
       user.passwordErrorLockExpiredTimestamp &&
       user.passwordErrorLockExpiredTimestamp > new Date()
     ) {
-      return errorResponse(
-        ERR_AUTH_ACCOUNT_LOCKED,
-        "Account is locked. Please try again later.",
-        403,
-      );
+      return errorResponse(ERR_AUTH_ACCOUNT_LOCKED, undefined, 403);
     }
     // 锁定已过期，重置
     await prisma.sysUser.update({
@@ -74,7 +71,7 @@ export const POST = withApiHandler(async (req: Request) => {
       where: { userId: user.userId },
       data: updateData,
     });
-    return errorResponse(ERR_AUTH_INVALID_CREDENTIALS, "Incorrect account or password.", 401);
+    return errorResponse(ERR_AUTH_INVALID_CREDENTIALS, undefined, 401);
   }
 
   // 登录成功：重置错误计数，更新最后登录时间

@@ -12,6 +12,7 @@
   "dependencies": {
     "@cloud/config": "workspace:*",
     "@cloud/db": "workspace:*",
+    "@cloud/i18n": "workspace:*",
     "@cloud/permissions": "workspace:*",
     "@cloud/request": "workspace:*",
     "@cloud/security": "workspace:*",
@@ -19,6 +20,7 @@
     "@cloud/ui": "workspace:*",
     "lucide-react": "catalog:",
     "next": "catalog:",
+    "next-intl": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "zod": "catalog:"

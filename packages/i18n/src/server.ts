@@ -14,6 +14,12 @@ import { deepMerge } from "./deep-merge.ts";
 export { deepMerge } from "./deep-merge.ts";
 export { setLocaleAction, setTimeZoneAction } from "./actions.ts";
 
+// async 服务端组件（RSC / route handler）取翻译 / 格式化 / locale 的入口。
+// 业务代码不直接 import next-intl，统一从 @cloud/i18n/server 取；client 组件用
+// @cloud/i18n/client 的同名 hook。useTranslations 是 hook，不能在 async 组件里调，
+// 服务端一律用 getTranslations。
+export { getTranslations, getFormatter, getLocale } from "next-intl/server";
+
 type Messages = Record<string, unknown>;
 
 type CreateConfigOptions = {

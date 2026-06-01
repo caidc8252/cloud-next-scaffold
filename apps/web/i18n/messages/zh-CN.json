@@ -1,0 +1,34 @@
+{
+  "ui": {
+    "datePicker": {
+      "clear": "清除",
+      "ok": "确定",
+      "placeholder": {
+        "date": "选择日期",
+        "dateTime": "选择日期和时间",
+        "range": "选择日期范围"
+      },
+      "presets": {
+        "today": "今天",
+        "last7": "近 7 天",
+        "last30": "近 30 天",
+        "thisMonth": "本月",
+        "lastMonth": "上月"
+      }
+    }
+  },
+  "dashboard": {
+    "title": "仪表盘",
+    "description": "此基线在保持刻意精简的同时，延续了经典后台的节奏与布局。",
+    "sessionActive": "会话有效",
+    "currentAccount": "当前账号",
+    "entity": "组织",
+    "roles": "角色",
+    "panel": {
+      "title": "仪表盘",
+      "description": "脚手架内置了一套精简但完整的默认工作区。",
+      "welcome": "主区域以一个简单的欢迎块开始，让默认菜单拥有一个有用的着陆页。",
+      "extend": "你可以在这套骨架之上继续扩展，添加客户、订单、设置或任何其他业务模块。"
+    }
+  }
+}
