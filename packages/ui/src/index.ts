@@ -8,3 +8,5 @@ export {
   type UseInfiniteScrollResult,
 } from "./lib/use-infinite-scroll"
 export { useIsMobile } from "./lib/use-is-mobile"
+export { SidebarProvider, useSidebar, type SidebarContextValue } from "./lib/sidebar"
+export { SIDEBAR_COOKIE } from "./lib/sidebar-cookie"
