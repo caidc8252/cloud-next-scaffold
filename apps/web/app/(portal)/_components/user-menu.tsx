@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@cloud/ui/components/ui";
+import { useSidebar } from "@cloud/ui";
 
 type UserMenuProps = {
   account: string;
@@ -31,6 +32,9 @@ function getInitials(name: string, account: string) {
 }
 
 export function UserMenu({ account, name, roleName }: UserMenuProps) {
+  const { collapsed, isMobile } = useSidebar();
+  const rail = collapsed && !isMobile;
+
   const [isDark, setIsDark] = useState(() => {
     if (typeof document === "undefined") {
       return false;
@@ -51,17 +55,28 @@ export function UserMenu({ account, name, roleName }: UserMenuProps) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-surface-hover">
+      <DropdownMenuTrigger
+        className={
+          rail
+            ? "flex w-full cursor-pointer justify-center rounded-lg p-1.5 transition-colors hover:bg-surface-hover"
+            : "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-surface-hover"
+        }
+        aria-label={rail ? `${name} menu` : undefined}
+      >
         <Avatar size="md">
           <AvatarFallback>{getInitials(name, account)}</AvatarFallback>
         </Avatar>
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-xs font-medium text-content-primary">{name}</div>
-          <div className="truncate text-xs text-content-tertiary">
-            {account} / {roleName}
-          </div>
-        </div>
-        <ChevronRight size={12} className="shrink-0 text-content-tertiary" />
+        {!rail && (
+          <>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-xs font-medium text-content-primary">{name}</div>
+              <div className="truncate text-xs text-content-tertiary">
+                {account} / {roleName}
+              </div>
+            </div>
+            <ChevronRight size={12} className="shrink-0 text-content-tertiary" />
+          </>
+        )}
       </DropdownMenuTrigger>
 
       <DropdownMenuContent side="top" align="start" className="w-56">
