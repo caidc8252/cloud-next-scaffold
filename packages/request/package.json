@@ -8,6 +8,7 @@
     "./server": "./src/server.ts",
     "./client": "./src/client.ts",
     "./error-codes": "./src/error-codes.ts",
+    "./error-messages": "./src/error-messages/index.ts",
     "./error-toast": "./src/error-toast.ts"
   },
   "dependencies": {
