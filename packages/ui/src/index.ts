@@ -7,3 +7,4 @@ export {
   type UseInfiniteScrollOptions,
   type UseInfiniteScrollResult,
 } from "./lib/use-infinite-scroll"
+export { useIsMobile } from "./lib/use-is-mobile"
