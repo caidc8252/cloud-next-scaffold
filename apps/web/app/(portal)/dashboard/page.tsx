@@ -1,24 +1,23 @@
 import { ContentHeader, Grid, GridItem, Stack } from "@cloud/ui/components/layout";
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@cloud/ui/components/ui";
 import { requirePermissions } from "@cloud/permissions/server";
+import { getTranslations } from "@cloud/i18n/server";
 
 export default async function DashboardPage() {
   const session = await requirePermissions({ all: ["dashboard:view"] });
+  const t = await getTranslations("dashboard");
 
   return (
     <Stack gap="var(--space-6)">
-      <ContentHeader
-        title="Dashboard"
-        description="This baseline keeps the classic admin rhythm and layout while staying intentionally minimal."
-      >
-        <Badge tone="success">Session Active</Badge>
+      <ContentHeader title={t("title")} description={t("description")}>
+        <Badge tone="success">{t("sessionActive")}</Badge>
       </ContentHeader>
 
       <Grid columns={3} gap="var(--space-4)">
         <GridItem>
           <Card>
             <CardHeader>
-              <CardDescription>Current Account</CardDescription>
+              <CardDescription>{t("currentAccount")}</CardDescription>
               <CardTitle>{session.username}</CardTitle>
             </CardHeader>
           </Card>
@@ -26,7 +25,7 @@ export default async function DashboardPage() {
         <GridItem>
           <Card>
             <CardHeader>
-              <CardDescription>Entity</CardDescription>
+              <CardDescription>{t("entity")}</CardDescription>
               <CardTitle>{session.entity.entityName}</CardTitle>
               <Badge tone="info">{session.entity.contractDefineCode}</Badge>
             </CardHeader>
@@ -35,7 +34,7 @@ export default async function DashboardPage() {
         <GridItem>
           <Card>
             <CardHeader>
-              <CardDescription>Roles</CardDescription>
+              <CardDescription>{t("roles")}</CardDescription>
               <CardTitle>{session.roles.map((r) => r.roleName).join(", ")}</CardTitle>
             </CardHeader>
           </Card>
@@ -44,17 +43,13 @@ export default async function DashboardPage() {
 
       <Card size="lg">
         <CardHeader>
-          <CardTitle>Dashboard</CardTitle>
-          <CardDescription>The scaffold ships with a compact but complete default workspace.</CardDescription>
+          <CardTitle>{t("panel.title")}</CardTitle>
+          <CardDescription>{t("panel.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Stack gap="var(--space-3)">
-            <p className="dashboard-copy">
-              The main area starts with a simple welcome block so the default menu has a useful landing page.
-            </p>
-            <p className="dashboard-copy">
-              You can keep building on top of this shell by adding customer, order, settings, or any other business modules.
-            </p>
+            <p className="dashboard-copy">{t("panel.welcome")}</p>
+            <p className="dashboard-copy">{t("panel.extend")}</p>
           </Stack>
         </CardContent>
       </Card>
