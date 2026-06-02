@@ -30,30 +30,28 @@ const PAGE_LIMIT = 5;
 type DemoScenario = "success" | "business-error" | "fallback-error" | "pagination";
 
 type DemoSummary = {
-  entity: {
+  partner: {
     id: number;
     name: string;
     status: string;
-    contractDefineCode: string;
+    contractTypes: string[];
   };
   counts: {
-    visibleMenus: number;
-    permissions: number;
+    roles: number;
+    rolePermissions: number;
     activeUsers: number;
   };
   checkedAt: string;
 };
 
-type DemoMenuRow = {
+type DemoRoleRow = {
   id: number;
-  title: string;
-  path: string | null;
-  icon: string | null;
-  sort: number;
-  parentMenuId: number | null;
+  name: string;
+  type: string;
+  contract: string | null;
 };
 
-type DemoPayload = DemoSummary | DemoMenuRow[];
+type DemoPayload = DemoSummary | DemoRoleRow[];
 
 type DemoResult = {
   scenario: DemoScenario;
@@ -70,15 +68,15 @@ const scenarioLabels: Record<DemoScenario, string> = {
   pagination: "Pagination",
 };
 
-const columns: TableColumn<DemoMenuRow>[] = [
+const columns: TableColumn<DemoRoleRow>[] = [
   { key: "id", title: "ID", field: "id", width: 72 },
-  { key: "title", title: "Title", field: "title" },
+  { key: "name", title: "Name", field: "name" },
+  { key: "type", title: "Type", field: "type", width: 110 },
   {
-    key: "path",
-    title: "Path",
-    render: (row) => row.path ?? "-",
+    key: "contract",
+    title: "Contract",
+    render: (row) => row.contract ?? "-",
   },
-  { key: "sort", title: "Sort", field: "sort", width: 88 },
 ];
 
 function isSuccessBody(
@@ -227,7 +225,7 @@ export function BackendErrorDemoPanel() {
             loading={isLoading === "pagination"}
             onClick={() => startPagination()}
           >
-            Paginated Menus
+            Paginated Roles
           </Button>
           <div className="rounded-lg border border-line-default bg-surface-3 p-3 text-sm">
             {result ? (

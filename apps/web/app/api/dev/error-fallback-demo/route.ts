@@ -16,27 +16,25 @@ const MAX_LIMIT = 20;
 type DemoScenario = "success" | "business-error" | "fallback-error" | "pagination";
 
 type DemoSummary = {
-  entity: {
+  partner: {
     id: number;
     name: string;
     status: string;
-    contractDefineCode: string;
+    contractTypes: string[];
   };
   counts: {
-    visibleMenus: number;
-    permissions: number;
+    roles: number;
+    rolePermissions: number;
     activeUsers: number;
   };
   checkedAt: string;
 };
 
-type DemoMenuRow = {
+type DemoRoleRow = {
   id: number;
-  title: string;
-  path: string | null;
-  icon: string | null;
-  sort: number;
-  parentMenuId: number | null;
+  name: string;
+  type: string;
+  contract: string | null;
 };
 
 function parsePositiveInteger(value: string | null, fallback: number, max?: number) {
@@ -75,94 +73,59 @@ export const GET = withApiHandler(async (req: Request) => {
     throw new Error("Intentional demo fallback error.");
   }
 
-  // 注：本 dev demo 仍读 sys_menu/sys_permission，DB 阶段删表时一并改造。
-  const contractDefineCode = session.entity.contractTypes[0] ?? "ADMIN";
   if (scenario === "pagination") {
-    return await getPaginatedMenus(url, contractDefineCode);
+    return await getPaginatedRoles(url, session.currentPartnerId);
   }
 
-  return await getSummary(session.entity.entityId, contractDefineCode);
+  return await getSummary(session.currentPartnerId, session.contractTypes);
 });
 
-async function getSummary(entityId: number, contractDefineCode: string) {
-  const [entity, visibleMenus, permissions, activeUsers] = await Promise.all([
-    prisma.sysEntity.findUnique({
-      where: { entityId },
-      select: {
-        entityId: true,
-        entityName: true,
-        status: true,
-      },
+async function getSummary(partnerId: number, contractTypes: string[]) {
+  const where = { OR: [{ partnerId }, { partnerId: null }] };
+  const [partner, roles, rolePermissions, activeUsers] = await Promise.all([
+    prisma.sysPartner.findUnique({
+      where: { partnerId },
+      select: { partnerId: true, partnerName: true, status: true },
     }),
-    prisma.sysMenu.count({
-      where: {
-        contractDefineCode,
-        isVisible: true,
-      },
-    }),
-    prisma.sysPermission.count({
-      where: {
-        menu: {
-          contractDefineCode,
-        },
-      },
-    }),
-    prisma.sysEntityUser.count({
-      where: {
-        entityId,
-        status: "ACTIVE",
-      },
-    }),
+    prisma.sysRole.count({ where }),
+    prisma.sysRolePermission.count(),
+    prisma.sysPartnerUser.count({ where: { partnerId, status: "ACTIVE" } }),
   ]);
 
-  if (!entity) {
-    return badRequestResponse("demo.entity_missing", "Current session entity does not exist.");
+  if (!partner) {
+    return badRequestResponse("demo.partner_missing", "Current session partner does not exist.");
   }
 
   return successResponse<DemoSummary>({
-    entity: {
-      id: entity.entityId,
-      name: entity.entityName,
-      status: entity.status,
-      contractDefineCode,
+    partner: {
+      id: partner.partnerId,
+      name: partner.partnerName,
+      status: partner.status,
+      contractTypes,
     },
-    counts: {
-      visibleMenus,
-      permissions,
-      activeUsers,
-    },
+    counts: { roles, rolePermissions, activeUsers },
     checkedAt: new Date().toISOString(),
   });
 }
 
-async function getPaginatedMenus(url: URL, contractDefineCode: string) {
+async function getPaginatedRoles(url: URL, partnerId: number) {
   const limit = parsePositiveInteger(url.searchParams.get("limit"), DEFAULT_LIMIT, MAX_LIMIT);
   // 游标 token（不透明，原样回传）+ 客户端显式传入的 direction → 查询计划。
   const query = readCursorQuery(
     url.searchParams.get("cursor"),
     url.searchParams.get("direction"),
   );
-  const where = {
-    contractDefineCode,
-    isVisible: true,
-  };
+  const where = { OR: [{ partnerId }, { partnerId: null }] };
 
   const [total, found] = await Promise.all([
-    prisma.sysMenu.count({ where }),
-    prisma.sysMenu.findMany({
+    prisma.sysRole.count({ where }),
+    prisma.sysRole.findMany({
       where,
-      select: {
-        menuId: true,
-        menuTitle: true,
-        path: true,
-        icon: true,
-        sort: true,
-        parentMenuId: true,
-      },
-      orderBy: [{ sort: query.sortOrder }, { menuId: query.sortOrder }],
+      select: { roleId: true, roleName: true, roleType: true, contractDefineCode: true },
+      orderBy: [{ roleId: query.sortOrder }],
       // 多取一条用于探测该方向是否还有下一页，cursor 命中时跳过锚点行本身。
       take: limit + 1,
-      ...(query.cursor ? { cursor: { menuId: Number(query.cursor.id) }, skip: 1 } : {}),
+      ...(query.cursor ? { cursor: { roleId: Number(query.cursor.id) }, skip: 1 } : {}),
     }),
   ]);
 
@@ -172,17 +135,15 @@ async function getPaginatedMenus(url: URL, contractDefineCode: string) {
     limit,
     query,
     total,
-    idOf: (menu) => menu.menuId,
+    idOf: (role) => role.roleId,
   });
 
-  return successResponse<DemoMenuRow[]>(
-    items.map((menu) => ({
-      id: menu.menuId,
-      title: menu.menuTitle,
-      path: menu.path,
-      icon: menu.icon,
-      sort: menu.sort,
-      parentMenuId: menu.parentMenuId,
+  return successResponse<DemoRoleRow[]>(
+    items.map((role) => ({
+      id: role.roleId,
+      name: role.roleName,
+      type: role.roleType,
+      contract: role.contractDefineCode,
     })),
     pager,
   );

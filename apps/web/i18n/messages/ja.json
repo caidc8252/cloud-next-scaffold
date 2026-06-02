@@ -22,7 +22,7 @@
     "description": "このベースラインは、意図的にミニマルでありながら、従来の管理画面のリズムとレイアウトを維持します。",
     "sessionActive": "セッション有効",
     "currentAccount": "現在のアカウント",
-    "entity": "組織",
+    "partner": "組織",
     "roles": "ロール",
     "panel": {
       "title": "ダッシュボード",

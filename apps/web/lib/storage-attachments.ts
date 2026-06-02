@@ -1,7 +1,7 @@
 import "server-only";
 
 import { prisma } from "@cloud/db";
-import type { AuthenticatedSession } from "@cloud/permissions/server";
+import type { ActiveSession } from "@cloud/permissions/server";
 import type {
   NormalizedStorageAttachmentInput,
   StorageAttachmentValidationFailure,
@@ -62,7 +62,7 @@ export function toStorageAttachmentRecord(
 }
 
 export async function listStorageAttachments(
-  session: AuthenticatedSession,
+  session: ActiveSession,
   input: ListStorageAttachmentsInput,
 ) {
   const subjectType = normalizeSubjectTokenForQuery(input.subjectType);
@@ -73,7 +73,7 @@ export async function listStorageAttachments(
 
   const rows = await prisma.storageAttachment.findMany({
     where: {
-      entityId: session.entity.entityId,
+      partnerId: session.currentPartnerId,
       subjectType,
       subjectId,
       purpose: purpose ?? undefined,
@@ -101,13 +101,13 @@ export async function listStorageAttachments(
 }
 
 export async function bindStorageAttachment(
-  session: AuthenticatedSession,
+  session: ActiveSession,
   input: NormalizedStorageAttachmentInput,
 ) {
   const storageObject = await prisma.storageObject.findFirst({
     where: {
       storageObjectId: input.storageObjectId,
-      entityId: session.entity.entityId,
+      partnerId: session.currentPartnerId,
       status: ACTIVE_STATUS,
     },
     select: {
@@ -127,7 +127,7 @@ export async function bindStorageAttachment(
     if (input.isPrimary) {
       await tx.storageAttachment.updateMany({
         where: {
-          entityId: session.entity.entityId,
+          partnerId: session.currentPartnerId,
           subjectType: input.subjectType,
           subjectId: input.subjectId,
           purpose: input.purpose,
@@ -138,15 +138,15 @@ export async function bindStorageAttachment(
         },
         data: {
           isPrimary: false,
-          updUserId: session.id,
+          updUserId: session.userId,
         },
       });
     }
 
     return tx.storageAttachment.upsert({
       where: {
-        entityId_storageObjectId_subjectType_subjectId_purpose: {
-          entityId: session.entity.entityId,
+        partnerId_storageObjectId_subjectType_subjectId_purpose: {
+          partnerId: session.currentPartnerId,
           storageObjectId: input.storageObjectId,
           subjectType: input.subjectType,
           subjectId: input.subjectId,
@@ -154,7 +154,7 @@ export async function bindStorageAttachment(
         },
       },
       create: {
-        entityId: session.entity.entityId,
+        partnerId: session.currentPartnerId,
         storageObjectId: input.storageObjectId,
         subjectType: input.subjectType,
         subjectId: input.subjectId,
@@ -163,8 +163,8 @@ export async function bindStorageAttachment(
         sortNo: input.sortNo,
         isPrimary: input.isPrimary,
         status: ACTIVE_STATUS,
-        creUserId: session.id,
-        updUserId: session.id,
+        creUserId: session.userId,
+        updUserId: session.userId,
       },
       update: {
         displayName: input.displayName,
@@ -172,7 +172,7 @@ export async function bindStorageAttachment(
         isPrimary: input.isPrimary,
         status: ACTIVE_STATUS,
         deletedAt: null,
-        updUserId: session.id,
+        updUserId: session.userId,
       },
       include: {
         storageObject: {

@@ -3,30 +3,14 @@ import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { SID_COOKIE, sessionStore, type Session, type SessionRole } from "./session-store.ts";
+import { SID_COOKIE, sessionStore, type ActiveSession, type Session } from "./session-store.ts";
 
-// getSession 返回的页面友好视图：从快照的 currentEntity 投影而来，
-// 保留 id / entity.entityId / roles / permissions 等旧字段名，最小化消费方改动。
-// contractDefineCode(单值) 已升级为 contractTypes(数组)；menus 不再在 session 里
-// （由 apps/web/lib/session-menus.ts 按 manifest 现算）。
-export type AuthenticatedSession = {
-  id: number;
-  userId: number;
-  username: string;
-  displayName: string | null;
-  email: string | null;
-  status: string;
-  entity: {
-    entityId: number;
-    entityName: string;
-    contractTypes: string[];
-  };
-  roles: SessionRole[];
-  permissions: string[];
-};
+// 会话是单一扁平形状：getSession 直接返回快照（无投影/无重命名），
+// 选定公司的会话用 ActiveSession 类型收窄（currentPartnerId 等保证非空）。
+// menus 不在 session 里，由 apps/web/lib/session-menus.ts 按 manifest 现算。
 
 export type PartialSession = {
-  id: number;
+  userId: number;
   username: string;
   displayName: string | null;
 };
@@ -46,40 +30,20 @@ const readSnapshot = cache(async (): Promise<Session | null> => {
   return session;
 });
 
-function toAuthenticated(session: Session): AuthenticatedSession | null {
-  const entity = session.currentEntity;
-  if (!entity || session.currentEntityId === null) return null;
-
-  return {
-    id: session.userId,
-    userId: session.userId,
-    username: session.username,
-    displayName: session.displayName,
-    email: session.email,
-    status: "ACTIVE",
-    entity: {
-      entityId: entity.entityId,
-      entityName: entity.entityName,
-      contractTypes: entity.contractTypes,
-    },
-    roles: entity.roles,
-    permissions: entity.permissions,
-  };
-}
-
-export const getSession = cache(async (): Promise<AuthenticatedSession | null> => {
+export const getSession = cache(async (): Promise<ActiveSession | null> => {
   const session = await readSnapshot();
-  if (!session) return null;
-  return toAuthenticated(session);
+  if (!session || session.currentPartnerId === null) return null;
+  // currentPartnerId 非空 ⇒ 当前公司字段已由快照构建器填充
+  return session as ActiveSession;
 });
 
 export const getPartialSession = cache(async (): Promise<PartialSession | null> => {
   const session = await readSnapshot();
   if (!session) return null;
-  return { id: session.userId, username: session.username, displayName: session.displayName };
+  return { userId: session.userId, username: session.username, displayName: session.displayName };
 });
 
-export async function requireSession(): Promise<AuthenticatedSession> {
+export async function requireSession(): Promise<ActiveSession> {
   const session = await getSession();
   if (session) return session;
 
@@ -89,9 +53,9 @@ export async function requireSession(): Promise<AuthenticatedSession> {
   }
 
   // 有身份但未选公司：有可用公司 → 选公司；否则锁定
-  const hasActiveEntity = snapshot.entities.some((entity) => entity.status === "ACTIVE");
-  if (hasActiveEntity) {
-    redirect("/select-entity");
+  const hasActivePartner = snapshot.partners.some((partner) => partner.status === "ACTIVE");
+  if (hasActivePartner) {
+    redirect("/select-partner");
   }
 
   redirect("/locked");

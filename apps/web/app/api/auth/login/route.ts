@@ -85,30 +85,30 @@ export const POST = withApiHandler(async (req: Request) => {
     },
   });
 
-  // 聚合可用的 entity-user 关系
-  const entityUsers = await prisma.sysEntityUser.findMany({
+  // 聚合可用的 partner-user 关系
+  const partnerUsers = await prisma.sysPartnerUser.findMany({
     where: { userId: user.userId },
-    include: { entity: true },
+    include: { partner: true },
   });
 
-  const activeEntityUsers = entityUsers.filter(
-    (eu) => eu.status === "ACTIVE" && eu.entity.status === "ACTIVE",
+  const activePartnerUsers = partnerUsers.filter(
+    (eu) => eu.status === "ACTIVE" && eu.partner.status === "ACTIVE",
   );
 
   // 单公司直接进入并算好权限快照；多公司先建 partial 快照再去选公司
-  const currentEntityId =
-    activeEntityUsers.length === 1 ? activeEntityUsers[0].entityId : null;
-  const snapshot = await buildSessionSnapshot(user.userId, currentEntityId);
+  const currentPartnerId =
+    activePartnerUsers.length === 1 ? activePartnerUsers[0].partnerId : null;
+  const snapshot = await buildSessionSnapshot(user.userId, currentPartnerId);
   if (!snapshot) {
     return errorResponse(ERR_AUTH_INVALID_CREDENTIALS, undefined, 401);
   }
   await createSession(snapshot);
 
-  if (activeEntityUsers.length === 1) {
+  if (activePartnerUsers.length === 1) {
     return successResponse({ redirectTo: "/" });
   }
-  if (activeEntityUsers.length > 1) {
-    return successResponse({ redirectTo: "/select-entity" });
+  if (activePartnerUsers.length > 1) {
+    return successResponse({ redirectTo: "/select-partner" });
   }
   return successResponse({ redirectTo: "/locked" });
 });

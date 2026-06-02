@@ -6,9 +6,9 @@ import { toClientRole } from "@/app/(portal)/system/roles/_server/role-mapper";
 import { RolesPage } from "@/app/(portal)/system/roles/_components/roles-page";
 import type { PermissionGroup } from "@/app/(portal)/system/_shared/types";
 
-async function loadRoles(entityId: number) {
+async function loadRoles(partnerId: number) {
   const roles = await prisma.sysRole.findMany({
-    where: { OR: [{ entityId }, { entityId: null }] },
+    where: { OR: [{ partnerId }, { partnerId: null }] },
     include: {
       permissions: { select: { permissionCode: true } },
       _count: { select: { userRoles: true } },
@@ -39,7 +39,7 @@ function loadPermissionGroups(contractTypes: string[]): PermissionGroup[] {
 
 export default async function SystemRolesPage() {
   const session = await requirePermissions({ all: ["roles.VIEW"] });
-  const initialRoles = await loadRoles(session.entity.entityId);
-  const permissionGroups = loadPermissionGroups(session.entity.contractTypes);
+  const initialRoles = await loadRoles(session.currentPartnerId);
+  const permissionGroups = loadPermissionGroups(session.contractTypes);
   return <RolesPage initialRoles={initialRoles} permissionGroups={permissionGroups} />;
 }

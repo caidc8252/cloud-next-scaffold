@@ -36,25 +36,26 @@ const fullSnapshot: Omit<Session, "loginAt" | "expireAt"> = {
   username: "alice",
   displayName: "Alice",
   email: "alice@example.com",
-  currentEntityId: 2,
-  currentEntity: {
-    entityId: 2,
-    entityName: "Acme",
-    contractTypes: ["ADMIN"],
-    authorizingType: "ADMIN",
-    roles: [{ roleId: 3, roleName: "Admin", roleType: "GLOBAL" }],
-    permissions: ["users.VIEW", "roles.VIEW"],
-  },
-  entities: [
-    { entityId: 2, entityName: "Acme", authorizingType: "ADMIN", status: "ACTIVE", authorizingFrom: null, authorizingTo: null },
+  currentPartnerId: 2,
+  partnerName: "Acme",
+  contractTypes: ["ADMIN"],
+  authorizingType: "ADMIN",
+  roles: [{ roleId: 3, roleName: "Admin", roleType: "GLOBAL" }],
+  permissions: ["users.VIEW", "roles.VIEW"],
+  partners: [
+    { partnerId: 2, partnerName: "Acme", authorizingType: "ADMIN", status: "ACTIVE", authorizingFrom: null, authorizingTo: null },
   ],
   mfaPassed: true,
 };
 
 const partialSnapshot: Omit<Session, "loginAt" | "expireAt"> = {
   ...fullSnapshot,
-  currentEntityId: null,
-  currentEntity: null,
+  currentPartnerId: null,
+  partnerName: null,
+  contractTypes: [],
+  authorizingType: null,
+  roles: [],
+  permissions: [],
 };
 
 beforeEach(() => {
@@ -84,28 +85,29 @@ describe("getPartialSession", () => {
   it("returns identity for any live session (incl. partial)", async () => {
     await seed(partialSnapshot);
     const { getPartialSession } = await import("../src/server/dal.ts");
-    expect(await getPartialSession()).toEqual({ id: 1, username: "alice", displayName: "Alice" });
+    expect(await getPartialSession()).toEqual({ userId: 1, username: "alice", displayName: "Alice" });
   });
 });
 
 describe("getSession", () => {
-  it("returns null for a partial session (no current entity)", async () => {
+  it("returns null for a partial session (no current partner)", async () => {
     await seed(partialSnapshot);
     const { getSession } = await import("../src/server/dal.ts");
     expect(await getSession()).toBeNull();
   });
 
-  it("projects a full snapshot into an AuthenticatedSession", async () => {
+  it("returns the flat active session for a full snapshot", async () => {
     await seed(fullSnapshot);
     const { getSession } = await import("../src/server/dal.ts");
-    expect(await getSession()).toEqual({
-      id: 1,
+    expect(await getSession()).toMatchObject({
       userId: 1,
       username: "alice",
       displayName: "Alice",
       email: "alice@example.com",
-      status: "ACTIVE",
-      entity: { entityId: 2, entityName: "Acme", contractTypes: ["ADMIN"] },
+      currentPartnerId: 2,
+      partnerName: "Acme",
+      contractTypes: ["ADMIN"],
+      authorizingType: "ADMIN",
       roles: [{ roleId: 3, roleName: "Admin", roleType: "GLOBAL" }],
       permissions: ["users.VIEW", "roles.VIEW"],
     });
@@ -125,17 +127,17 @@ describe("requireSession", () => {
     await expect(requireSession()).rejects.toThrow("__REDIRECT__:/api/auth/logout");
   });
 
-  it("redirects to select-entity when partial with an active entity", async () => {
+  it("redirects to select-partner when partial with an active partner", async () => {
     await seed(partialSnapshot);
     const { requireSession } = await import("../src/server/dal.ts");
-    await expect(requireSession()).rejects.toThrow("__REDIRECT__:/select-entity");
+    await expect(requireSession()).rejects.toThrow("__REDIRECT__:/select-partner");
   });
 
-  it("redirects to locked when partial with no active entity", async () => {
+  it("redirects to locked when partial with no active partner", async () => {
     await seed({
       ...partialSnapshot,
-      entities: [
-        { entityId: 2, entityName: "Acme", authorizingType: "NORMAL", status: "EXPIRED", authorizingFrom: null, authorizingTo: null },
+      partners: [
+        { partnerId: 2, partnerName: "Acme", authorizingType: "NORMAL", status: "EXPIRED", authorizingFrom: null, authorizingTo: null },
       ],
     });
     const { requireSession } = await import("../src/server/dal.ts");

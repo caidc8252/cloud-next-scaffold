@@ -19,7 +19,7 @@ type UserRow = {
   updTime: Date;
   passwordHistory: { userPasswordHistoryId: string; changedTimestamp: Date | null }[];
   userRoles: { roleId: number }[];
-  entityUsers: { authorizingType: string; status: string }[];
+  partnerUsers: { authorizingType: string; status: string }[];
   invites: {
     email: string;
     token: string;
@@ -47,8 +47,8 @@ export function toClientUser(
 ): User {
   const latestInvite = row.invites[0] ?? null;
   const isPending = row.status === "PENDING";
-  const entityUserStatus = row.entityUsers[0]?.status ?? row.status;
-  const mappedStatus: User["status"] = isPending ? "PENDING" : (entityUserStatus === "ACTIVE" ? "ACTIVE" : "INACTIVE");
+  const partnerUserStatus = row.partnerUsers[0]?.status ?? row.status;
+  const mappedStatus: User["status"] = isPending ? "PENDING" : (partnerUserStatus === "ACTIVE" ? "ACTIVE" : "INACTIVE");
 
   return {
     id: String(row.userId),
@@ -66,7 +66,7 @@ export function toClientUser(
     remark: row.remark ?? "",
     createdAt: row.creTime.toISOString(),
     updatedAt: row.updTime.toISOString(),
-    authorizingType: row.entityUsers[0]?.authorizingType ?? "NORMAL",
+    authorizingType: row.partnerUsers[0]?.authorizingType ?? "NORMAL",
     roleIds: row.userRoles.map((ur) => String(ur.roleId)),
     passwordHistory: row.passwordHistory.map((h) => ({
       hashId: h.userPasswordHistoryId,
@@ -107,7 +107,7 @@ export const USER_INCLUDE = {
     orderBy: { creTime: "desc" as const },
   },
   userRoles: { select: { roleId: true } },
-  entityUsers: { select: { authorizingType: true, status: true } },
+  partnerUsers: { select: { authorizingType: true, status: true } },
   invites: {
     where: { status: "PENDING" },
     orderBy: { creTime: "desc" as const },

@@ -16,21 +16,21 @@ import { withApiHandler } from "@/lib/api-handler";
 
 export const GET = withApiHandler(async () => {
   const session = await assertPermissions({ all: ["users.VIEW"] });
-  const entityId = session.entity.entityId;
+  const partnerId = session.currentPartnerId;
 
-  const entityUserLinks = await prisma.sysEntityUser.findMany({
-    where: { entityId, status: "ACTIVE" },
+  const partnerUserLinks = await prisma.sysPartnerUser.findMany({
+    where: { partnerId, status: "ACTIVE" },
     select: { userId: true },
   });
-  const userIds = entityUserLinks.map((eu) => eu.userId);
+  const userIds = partnerUserLinks.map((eu) => eu.userId);
   if (userIds.length === 0) return successResponse([]);
 
   const rows = await prisma.sysUser.findMany({
     where: { userId: { in: userIds } },
     include: {
       ...USER_INCLUDE,
-      entityUsers: { where: { entityId }, select: { authorizingType: true, status: true } },
-      userRoles: { where: { entityId }, select: { roleId: true } },
+      partnerUsers: { where: { partnerId }, select: { authorizingType: true, status: true } },
+      userRoles: { where: { partnerId }, select: { roleId: true } },
     },
     orderBy: { creTime: "asc" },
   });
@@ -67,7 +67,7 @@ export const POST = withApiHandler(async (req: Request) => {
   });
   if (existing) return badRequestResponse(ERR_USER_EMAIL_TAKEN);
 
-  const entityId = session.entity.entityId;
+  const partnerId = session.currentPartnerId;
   const token = randomBytes(24).toString("base64url");
   const expiresAt = new Date(Date.now() + 7 * 86_400_000);
 
@@ -78,20 +78,20 @@ export const POST = withApiHandler(async (req: Request) => {
         passwordHash: "",
         status: "PENDING",
         remark: body.remark?.trim() || null,
-        creUserId: session.id,
-        updUserId: session.id,
+        creUserId: session.userId,
+        updUserId: session.userId,
       },
     });
 
-    await tx.sysEntityUser.create({
+    await tx.sysPartnerUser.create({
       data: {
-        entityId,
+        partnerId,
         userId: newUser.userId,
         authorizingType: "NORMAL",
         status: "ACTIVE",
         authorizingTimestamp: new Date(),
-        authorizingUserId: session.id,
-        creUserId: session.id,
+        authorizingUserId: session.userId,
+        creUserId: session.userId,
       },
     });
 
@@ -101,7 +101,7 @@ export const POST = withApiHandler(async (req: Request) => {
         email,
         token,
         expiresAt,
-        creUserId: session.id,
+        creUserId: session.userId,
       },
     });
 
@@ -109,10 +109,10 @@ export const POST = withApiHandler(async (req: Request) => {
     if (roleIds.length > 0) {
       await tx.sysUserRole.createMany({
         data: roleIds.map((roleId) => ({
-          entityId,
+          partnerId,
           userId: newUser.userId,
           roleId,
-          creUserId: session.id,
+          creUserId: session.userId,
         })),
       });
     }
@@ -124,11 +124,11 @@ export const POST = withApiHandler(async (req: Request) => {
     where: { userId: user.userId },
     include: {
       ...USER_INCLUDE,
-      entityUsers: { where: { entityId }, select: { authorizingType: true, status: true } },
-      userRoles: { where: { entityId }, select: { roleId: true } },
+      partnerUsers: { where: { partnerId }, select: { authorizingType: true, status: true } },
+      userRoles: { where: { partnerId }, select: { roleId: true } },
     },
   });
 
-  const nameMap = new Map([[session.id, session.username]]);
+  const nameMap = new Map([[session.userId, session.username]]);
   return createdResponse(toClientUser(full, nameMap, nameMap));
 });

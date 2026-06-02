@@ -40,17 +40,14 @@ const snapshot: Omit<Session, "loginAt" | "expireAt"> = {
   username: "alice",
   displayName: "Alice",
   email: "alice@example.com",
-  currentEntityId: 9,
-  currentEntity: {
-    entityId: 9,
-    entityName: "Acme",
-    contractTypes: ["ADMIN"],
-    authorizingType: "ADMIN",
-    roles: [],
-    permissions: ["roles.VIEW"],
-  },
-  entities: [
-    { entityId: 9, entityName: "Acme", authorizingType: "ADMIN", status: "ACTIVE", authorizingFrom: null, authorizingTo: null },
+  currentPartnerId: 9,
+  partnerName: "Acme",
+  contractTypes: ["ADMIN"],
+  authorizingType: "ADMIN",
+  roles: [],
+  permissions: ["roles.VIEW"],
+  partners: [
+    { partnerId: 9, partnerName: "Acme", authorizingType: "ADMIN", status: "ACTIVE", authorizingFrom: null, authorizingTo: null },
   ],
   mfaPassed: true,
 };
@@ -74,7 +71,7 @@ describe("session actions", () => {
     expect(options).toMatchObject({ httpOnly: true, maxAge: 43_200, path: "/", sameSite: "lax" });
 
     const stored = await sessionStore.read(value as string);
-    expect(stored).toMatchObject({ userId: 7, currentEntityId: 9 });
+    expect(stored).toMatchObject({ userId: 7, currentPartnerId: 9 });
   });
 
   it("destroySession removes the Redis session and clears the cookie", async () => {
@@ -88,15 +85,23 @@ describe("session actions", () => {
   });
 
   it("updateSession overwrites the current sid and preserves loginAt", async () => {
-    await createSession({ ...snapshot, currentEntityId: null, currentEntity: null });
+    await createSession({
+      ...snapshot,
+      currentPartnerId: null,
+      partnerName: null,
+      contractTypes: [],
+      authorizingType: null,
+      roles: [],
+      permissions: [],
+    });
     const sid = cookieStore.set.mock.calls[0]![1] as string;
     const before = await sessionStore.read(sid);
 
     await updateSession(snapshot);
 
     const after = await sessionStore.read(sid);
-    expect(after?.currentEntityId).toBe(9);
-    expect(after?.currentEntity?.permissions).toEqual(["roles.VIEW"]);
+    expect(after?.currentPartnerId).toBe(9);
+    expect(after?.permissions).toEqual(["roles.VIEW"]);
     expect(after?.loginAt).toBe(before?.loginAt);
   });
 

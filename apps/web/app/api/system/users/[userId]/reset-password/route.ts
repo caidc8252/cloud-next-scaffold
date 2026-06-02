@@ -18,14 +18,14 @@ export const POST = withApiHandler(
     const userId = Number(rawId);
     if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID);
 
-    const entityId = session.entity.entityId;
-    const link = await prisma.sysEntityUser.findUnique({
-      where: { entityId_userId: { entityId, userId } },
+    const partnerId = session.currentPartnerId;
+    const link = await prisma.sysPartnerUser.findUnique({
+      where: { partnerId_userId: { partnerId, userId } },
     });
     if (!link || link.status !== "ACTIVE")
       return notFoundResponse(ERR_USER_NOT_FOUND, "User not found.");
 
-    if (userId === session.id || link.authorizingType === "ADMIN") {
+    if (userId === session.userId || link.authorizingType === "ADMIN") {
       return badRequestResponse(ERR_USER_PROTECTED);
     }
 
@@ -48,7 +48,7 @@ export const POST = withApiHandler(
           userId,
           token,
           expiresAt,
-          creUserId: session.id,
+          creUserId: session.userId,
         },
       });
     });
@@ -57,12 +57,12 @@ export const POST = withApiHandler(
       where: { userId },
       include: {
         ...USER_INCLUDE,
-        entityUsers: { where: { entityId }, select: { authorizingType: true, status: true } },
-        userRoles: { where: { entityId }, select: { roleId: true } },
+        partnerUsers: { where: { partnerId }, select: { authorizingType: true, status: true } },
+        userRoles: { where: { partnerId }, select: { roleId: true } },
       },
     });
 
-    const nameMap = new Map([[session.id, session.username]]);
+    const nameMap = new Map([[session.userId, session.username]]);
     return successResponse(toClientUser(updated, nameMap, nameMap));
   },
 );

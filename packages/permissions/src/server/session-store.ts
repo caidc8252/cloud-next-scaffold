@@ -7,9 +7,9 @@ import { kv } from "@cloud/cache";
 // cookie 只放不可猜的随机 sid（凭证 = 256-bit 随机 + 必须在 Redis 命中）；
 // 快照本体存 Redis，滑动 TTL，过期即失效。cookie 写入由 actions.ts 负责。
 //
-// 快照结构对齐设计稿（PARTNER 用代码库的 entity 命名）：一份快照持有用户
-// 全部可切换公司 entities[]，currentEntityId 指向当前公司，currentPermissions
-// 是当前公司已收敛的有效权限码（切公司时重算）。
+// 快照是单一扁平形状（storage == consumption）：身份 + 当前公司字段平铺在顶层
+// （partnerName / contractTypes / roles / permissions）+ 可切换列表 partners[]。
+// 未选公司（partial）时 currentPartnerId 为 null、当前公司字段为空。
 
 export const SID_COOKIE = "sid";
 /** Redis 会话存活时长（秒），命中后滑动续期。 */
@@ -24,23 +24,13 @@ export type SessionRole = {
 };
 
 /** 公司切换列表里的轻量条目（用户可访问的每个公司）。 */
-export type SessionEntityRef = {
-  entityId: number;
-  entityName: string;
+export type SessionPartnerRef = {
+  partnerId: number;
+  partnerName: string;
   authorizingType: "ADMIN" | "NORMAL";
   status: string;
   authorizingFrom: string | null;
   authorizingTo: string | null;
-};
-
-/** 当前所选公司的完整上下文：契约 / 角色 / 已收敛的有效权限码。 */
-export type CurrentEntity = {
-  entityId: number;
-  entityName: string;
-  contractTypes: string[];
-  authorizingType: "ADMIN" | "NORMAL";
-  roles: SessionRole[];
-  permissions: string[]; // 切公司时按契约 + 角色/ADMIN 重算
 };
 
 export type Session = {
@@ -49,15 +39,26 @@ export type Session = {
   username: string;
   displayName: string | null;
   email: string | null;
-  // 当前公司：指针 + 完整上下文（未选公司时均为 null = partial 态）
-  currentEntityId: number | null;
-  currentEntity: CurrentEntity | null;
+  // 当前公司上下文（平铺；未选公司时 currentPartnerId=null、其余为空）
+  currentPartnerId: number | null;
+  partnerName: string | null;
+  contractTypes: string[];
+  authorizingType: "ADMIN" | "NORMAL" | null;
+  roles: SessionRole[];
+  permissions: string[]; // 切公司时按契约 + 角色/ADMIN 重算
   // 可切换的公司列表
-  entities: SessionEntityRef[];
+  partners: SessionPartnerRef[];
   // 会话元信息
   loginAt: number;
   expireAt: number; // 近似值；Redis TTL 才是真正的过期权威
   mfaPassed: boolean;
+};
+
+/** 已选定公司的会话：仅类型收窄，字段同 Session，不重命名/不重构。 */
+export type ActiveSession = Session & {
+  currentPartnerId: number;
+  partnerName: string;
+  authorizingType: "ADMIN" | "NORMAL";
 };
 
 const sessionKey = (sid: string) => `session:${sid}`;

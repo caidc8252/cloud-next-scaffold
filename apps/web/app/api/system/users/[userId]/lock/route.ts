@@ -17,37 +17,37 @@ export const POST = withApiHandler(
     const userId = Number(rawId);
     if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID);
 
-    if (userId === session.id) {
+    if (userId === session.userId) {
       return badRequestResponse(ERR_USER_CANNOT_DISABLE_SELF);
     }
 
-    const entityId = session.entity.entityId;
-    const link = await prisma.sysEntityUser.findUnique({
-      where: { entityId_userId: { entityId, userId } },
+    const partnerId = session.currentPartnerId;
+    const link = await prisma.sysPartnerUser.findUnique({
+      where: { partnerId_userId: { partnerId, userId } },
     });
-    if (!link) return notFoundResponse(ERR_USER_NOT_FOUND, "User not found in this entity.");
+    if (!link) return notFoundResponse(ERR_USER_NOT_FOUND, "User not found in this partner.");
 
     if (link.authorizingType === "ADMIN") {
       return badRequestResponse(ERR_USER_PROTECTED);
     }
 
-    // Toggle entity-user status
+    // Toggle partner-user status
     const newStatus = link.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
-    await prisma.sysEntityUser.update({
-      where: { entityId_userId: { entityId, userId } },
-      data: { status: newStatus, updUserId: session.id },
+    await prisma.sysPartnerUser.update({
+      where: { partnerId_userId: { partnerId, userId } },
+      data: { status: newStatus, updUserId: session.userId },
     });
 
     const updated = await prisma.sysUser.findUniqueOrThrow({
       where: { userId },
       include: {
         ...USER_INCLUDE,
-        entityUsers: { where: { entityId }, select: { authorizingType: true, status: true } },
-        userRoles: { where: { entityId }, select: { roleId: true } },
+        partnerUsers: { where: { partnerId }, select: { authorizingType: true, status: true } },
+        userRoles: { where: { partnerId }, select: { roleId: true } },
       },
     });
 
-    const nameMap = new Map([[session.id, session.username]]);
+    const nameMap = new Map([[session.userId, session.username]]);
     return successResponse(toClientUser(updated, nameMap, nameMap));
   },
 );

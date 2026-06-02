@@ -4,20 +4,20 @@ import { toClientUser, USER_INCLUDE, collectAuxUserIds } from "@/app/(portal)/sy
 import { toClientRole } from "@/app/(portal)/system/roles/_server/role-mapper";
 import { UsersPage } from "@/app/(portal)/system/users/_components/users-page";
 
-async function loadUsers(entityId: number) {
-  const entityUserLinks = await prisma.sysEntityUser.findMany({
-    where: { entityId },
+async function loadUsers(partnerId: number) {
+  const partnerUserLinks = await prisma.sysPartnerUser.findMany({
+    where: { partnerId },
     select: { userId: true },
   });
-  const userIds = entityUserLinks.map((eu) => eu.userId);
+  const userIds = partnerUserLinks.map((eu) => eu.userId);
   if (userIds.length === 0) return [];
 
   const rows = await prisma.sysUser.findMany({
     where: { userId: { in: userIds } },
     include: {
       ...USER_INCLUDE,
-      entityUsers: { where: { entityId }, select: { authorizingType: true, status: true } },
-      userRoles: { where: { entityId }, select: { roleId: true } },
+      partnerUsers: { where: { partnerId }, select: { authorizingType: true, status: true } },
+      userRoles: { where: { partnerId }, select: { roleId: true } },
     },
     orderBy: { creTime: "asc" },
   });
@@ -31,9 +31,9 @@ async function loadUsers(entityId: number) {
   return rows.map((r) => toClientUser(r, nameMap, nameMap));
 }
 
-async function loadRoles(entityId: number) {
+async function loadRoles(partnerId: number) {
   const roles = await prisma.sysRole.findMany({
-    where: { OR: [{ entityId }, { entityId: null }] },
+    where: { OR: [{ partnerId }, { partnerId: null }] },
     include: {
       permissions: { select: { permissionCode: true } },
       _count: { select: { userRoles: true } },
@@ -52,10 +52,10 @@ async function loadRoles(entityId: number) {
 
 export default async function SystemUsersPage() {
   const session = await requirePermissions({ all: ["users.VIEW"] });
-  const entityId = session.entity.entityId;
+  const partnerId = session.currentPartnerId;
   const [initialUsers, initialRoles] = await Promise.all([
-    loadUsers(entityId),
-    loadRoles(entityId),
+    loadUsers(partnerId),
+    loadRoles(partnerId),
   ]);
-  return <UsersPage initialUsers={initialUsers} initialRoles={initialRoles} currentUserId={String(session.id)} />;
+  return <UsersPage initialUsers={initialUsers} initialRoles={initialRoles} currentUserId={String(session.userId)} />;
 }

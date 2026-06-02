@@ -7,10 +7,10 @@ datasource db {
   provider = "postgresql"
 }
 
-// ─── sys_entity ─────────────────────────────────────────
-model SysEntity {
-  entityId         Int      @id @default(autoincrement()) @map("entity_id")
-  entityName       String   @map("entity_name") @db.VarChar(200)
+// ─── sys_partner ─────────────────────────────────────────
+model SysPartner {
+  partnerId         Int      @id @default(autoincrement()) @map("partner_id")
+  partnerName       String   @map("partner_name") @db.VarChar(200)
   country          String   @db.VarChar(8)
   region           String?  @db.VarChar(100)
   address          String?  @db.VarChar(500)
@@ -27,11 +27,11 @@ model SysEntity {
   updTime          DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
   updUserId        Int      @default(0) @map("upd_user_id")
 
-  contracts        SysEntityContract[] @relation("authorized")
-  grantedContracts SysEntityContract[] @relation("authorizing")
-  ownerRelations   SysEntityEntity[]   @relation("owner")
-  targetRelations  SysEntityEntity[]   @relation("target")
-  entityUsers      SysEntityUser[]
+  contracts        SysPartnerContract[] @relation("authorized")
+  grantedContracts SysPartnerContract[] @relation("authorizing")
+  ownerRelations   SysPartnerPartner[]   @relation("owner")
+  targetRelations  SysPartnerPartner[]   @relation("target")
+  partnerUsers      SysPartnerUser[]
   roles            SysRole[]
   userRoles        SysUserRole[]
   orgs             SysOrg[]
@@ -39,10 +39,10 @@ model SysEntity {
   storageObjects     StorageObject[]
   storageAttachments StorageAttachment[]
 
-  @@index([entityName], map: "idx_sys_entity_name")
-  @@index([country], map: "idx_sys_entity_country")
-  @@index([status], map: "idx_sys_entity_status")
-  @@map("sys_entity")
+  @@index([partnerName], map: "idx_sys_partner_name")
+  @@index([country], map: "idx_sys_partner_country")
+  @@index([status], map: "idx_sys_partner_status")
+  @@map("sys_partner")
 }
 
 // ─── sys_contract_define ────────────────────────────────
@@ -55,37 +55,36 @@ model SysContractDefine {
   updTime            DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
   updUserId          Int      @default(0) @map("upd_user_id")
 
-  entityContracts SysEntityContract[]
+  partnerContracts SysPartnerContract[]
   roles           SysRole[]
-  menus           SysMenu[]
   roleBlacklists  SysRoleContractBlacklist[]
 
   @@map("sys_contract_define")
 }
 
-// ─── sys_entity_entity ──────────────────────────────────
-model SysEntityEntity {
-  entityEntityId Int      @id @default(autoincrement()) @map("entity_entity_id")
-  ownerEntityId  Int      @map("owner_entity_id")
-  targetEntityId Int      @map("target_entity_id")
+// ─── sys_partner_partner ──────────────────────────────────
+model SysPartnerPartner {
+  partnerPartnerId Int      @id @default(autoincrement()) @map("partner_partner_id")
+  ownerPartnerId  Int      @map("owner_partner_id")
+  targetPartnerId Int      @map("target_partner_id")
   status         String   @default("ACTIVE") @db.VarChar(20)
   creTime        DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
 
-  owner  SysEntity @relation("owner", fields: [ownerEntityId], references: [entityId])
-  target SysEntity @relation("target", fields: [targetEntityId], references: [entityId])
+  owner  SysPartner @relation("owner", fields: [ownerPartnerId], references: [partnerId])
+  target SysPartner @relation("target", fields: [targetPartnerId], references: [partnerId])
 
-  @@unique([ownerEntityId, targetEntityId], map: "uk_sys_entity_entity")
-  @@index([targetEntityId])
-  @@map("sys_entity_entity")
+  @@unique([ownerPartnerId, targetPartnerId], map: "uk_sys_partner_partner")
+  @@index([targetPartnerId])
+  @@map("sys_partner_partner")
 }
 
-// ─── sys_entity_contract ────────────────────────────────
-model SysEntityContract {
-  entityContractId             Int       @id @default(autoincrement()) @map("entity_contract_id")
-  authorizedEntityId           Int       @map("authorized_entity_id")
+// ─── sys_partner_contract ────────────────────────────────
+model SysPartnerContract {
+  partnerContractId             Int       @id @default(autoincrement()) @map("partner_contract_id")
+  authorizedPartnerId           Int       @map("authorized_partner_id")
   authorizedContractDefineCode String    @map("authorized_contract_define_code") @db.VarChar(20)
   authorizedTimestamp           DateTime? @map("authorized_timestamp") @db.Timestamp(3)
-  authorizingEntityId          Int?      @map("authorizing_entity_id")
+  authorizingPartnerId          Int?      @map("authorizing_partner_id")
   authorizingUserId            Int?      @map("authorizing_user_id")
   authorizingUserName          String?   @map("authorizing_user_name") @db.VarChar(100)
   authorizingIp                String?   @map("authorizing_ip")
@@ -99,15 +98,15 @@ model SysEntityContract {
   updTime                      DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
   updUserId                    Int       @default(0) @map("upd_user_id")
 
-  authorizedEntity  SysEntity         @relation("authorized", fields: [authorizedEntityId], references: [entityId])
-  authorizingEntity SysEntity?        @relation("authorizing", fields: [authorizingEntityId], references: [entityId])
+  authorizedPartner  SysPartner         @relation("authorized", fields: [authorizedPartnerId], references: [partnerId])
+  authorizingPartner SysPartner?        @relation("authorizing", fields: [authorizingPartnerId], references: [partnerId])
   contractDefine    SysContractDefine @relation(fields: [authorizedContractDefineCode], references: [contractDefineCode])
 
-  @@index([authorizedEntityId])
+  @@index([authorizedPartnerId])
   @@index([authorizedContractDefineCode])
-  @@index([authorizingEntityId])
-  @@index([authorizedEntityId, status])
-  @@map("sys_entity_contract")
+  @@index([authorizingPartnerId])
+  @@index([authorizedPartnerId, status])
+  @@map("sys_partner_contract")
 }
 
 // ─── sys_role ───────────────────────────────────────────
@@ -116,7 +115,7 @@ model SysRole {
   roleName           String   @map("role_name") @db.VarChar(100)
   roleType           String   @map("role_type") @db.VarChar(20)
   contractDefineCode String?  @map("contract_define_code") @db.VarChar(20)
-  entityId           Int?     @map("entity_id")
+  partnerId           Int?     @map("partner_id")
   remark             String?  @db.VarChar(500)
   creTime            DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
   creUserId          Int      @default(0) @map("cre_user_id")
@@ -124,12 +123,12 @@ model SysRole {
   updUserId          Int      @default(0) @map("upd_user_id")
 
   contractDefine SysContractDefine?        @relation(fields: [contractDefineCode], references: [contractDefineCode])
-  entity         SysEntity?                @relation(fields: [entityId], references: [entityId])
+  partner         SysPartner?                @relation(fields: [partnerId], references: [partnerId])
   permissions    SysRolePermission[]
   userRoles      SysUserRole[]
   roleBlacklists SysRoleContractBlacklist[]
 
-  @@index([entityId])
+  @@index([partnerId])
   @@index([contractDefineCode])
   @@index([roleName])
   @@map("sys_role")
@@ -145,9 +144,9 @@ model SysRolePermission {
   updTime          DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
   updUserId        Int      @default(0) @map("upd_user_id")
 
-  role       SysRole       @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
-  permission SysPermission @relation(fields: [permissionCode], references: [permissionCode], onDelete: Cascade)
+  role SysRole @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
 
+  // permissionCode 是受 manifest 校验的普通字符串（不再外键到 sys_permission）
   @@unique([roleId, permissionCode], map: "uk_sys_role_permission")
   @@index([permissionCode])
   @@map("sys_role_permission")
@@ -158,16 +157,16 @@ model SysRoleContractBlacklist {
   roleContractBlacklistId Int      @id @default(autoincrement()) @map("role_contract_blacklist_id")
   roleId                  Int      @map("role_id")
   contractDefineCode      String   @map("contract_define_code") @db.VarChar(20)
-  entityId                Int      @map("entity_id")
+  partnerId                Int      @map("partner_id")
   creTime                 DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
   creUserId               Int      @default(0) @map("cre_user_id")
 
   role           SysRole           @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
   contractDefine SysContractDefine @relation(fields: [contractDefineCode], references: [contractDefineCode])
-  entity         SysEntity         @relation(fields: [entityId], references: [entityId])
+  partner         SysPartner         @relation(fields: [partnerId], references: [partnerId])
 
-  @@unique([roleId, contractDefineCode, entityId], map: "uk_sys_role_contract_blacklist")
-  @@index([entityId])
+  @@unique([roleId, contractDefineCode, partnerId], map: "uk_sys_role_contract_blacklist")
+  @@index([partnerId])
   @@index([contractDefineCode])
   @@map("sys_role_contract_blacklist")
 }
@@ -192,10 +191,9 @@ model SysUser {
   updTime                          DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
   updUserId                        Int       @default(0) @map("upd_user_id")
 
-  entityUsers           SysEntityUser[]
+  partnerUsers           SysPartnerUser[]
   userRoles             SysUserRole[]
   passwordHistory       SysUserPasswordHistory[]
-  permissionScopes      SysUserPermissionScope[]
   userOrgs              SysUserOrg[]
   invites               SysInvite[]
   passwordResetRequests SysPasswordResetRequest[]
@@ -222,7 +220,7 @@ model SysUserPasswordHistory {
 // ─── sys_user_role ──────────────────────────────────────
 model SysUserRole {
   userRoleId Int      @id @default(autoincrement()) @map("user_role_id")
-  entityId   Int      @map("entity_id")
+  partnerId   Int      @map("partner_id")
   userId     Int      @map("user_id")
   roleId     Int      @map("role_id")
   creTime    DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
@@ -230,21 +228,21 @@ model SysUserRole {
   updTime    DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
   updUserId  Int      @default(0) @map("upd_user_id")
 
-  entity SysEntity @relation(fields: [entityId], references: [entityId])
+  partner SysPartner @relation(fields: [partnerId], references: [partnerId])
   user   SysUser   @relation(fields: [userId], references: [userId], onDelete: Cascade)
   role   SysRole   @relation(fields: [roleId], references: [roleId])
 
-  @@unique([entityId, userId, roleId], map: "uk_sys_user_role")
-  @@index([userId, entityId])
+  @@unique([partnerId, userId, roleId], map: "uk_sys_user_role")
+  @@index([userId, partnerId])
   @@index([roleId])
-  @@index([entityId])
+  @@index([partnerId])
   @@map("sys_user_role")
 }
 
-// ─── sys_entity_user ────────────────────────────────────
-model SysEntityUser {
-  entityUserId        Int       @id @default(autoincrement()) @map("entity_user_id")
-  entityId            Int       @map("entity_id")
+// ─── sys_partner_user ────────────────────────────────────
+model SysPartnerUser {
+  partnerUserId        Int       @id @default(autoincrement()) @map("partner_user_id")
+  partnerId            Int       @map("partner_id")
   userId              Int       @map("user_id")
   authorizingType     String    @default("NORMAL") @map("authorizing_type") @db.VarChar(20)
   authorizingTimestamp DateTime? @map("authorizing_timestamp") @db.Timestamp(3)
@@ -256,86 +254,34 @@ model SysEntityUser {
   updTime             DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
   updUserId           Int       @default(0) @map("upd_user_id")
 
-  entity SysEntity @relation(fields: [entityId], references: [entityId])
+  partner SysPartner @relation(fields: [partnerId], references: [partnerId])
   user   SysUser   @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
-  @@unique([entityId, userId], map: "uk_sys_entity_user")
+  @@unique([partnerId, userId], map: "uk_sys_partner_user")
   @@index([userId])
-  @@index([entityId, status])
-  @@map("sys_entity_user")
+  @@index([partnerId, status])
+  @@map("sys_partner_user")
 }
 
-// ─── sys_menu ───────────────────────────────────────────
-model SysMenu {
-  menuId             Int      @id @default(autoincrement()) @map("menu_id")
-  parentMenuId       Int?     @map("parent_menu_id")
-  contractDefineCode String?  @map("contract_define_code") @db.VarChar(20)
-  menuTitle          String   @map("menu_title") @db.VarChar(100)
-  path               String?  @db.VarChar(200)
-  icon               String?  @db.VarChar(100)
-  sort               Int      @default(0)
-  isVisible          Boolean  @default(true) @map("is_visible")
-  creTime            DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
-  updTime            DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
-
-  parent         SysMenu?           @relation("MenuTree", fields: [parentMenuId], references: [menuId])
-  children       SysMenu[]          @relation("MenuTree")
-  contractDefine SysContractDefine? @relation(fields: [contractDefineCode], references: [contractDefineCode])
-  permissions    SysPermission[]
-
-  @@index([parentMenuId])
-  @@index([contractDefineCode])
-  @@map("sys_menu")
-}
-
-// ─── sys_permission ─────────────────────────────────────
-model SysPermission {
-  permissionCode   String   @id @map("permission_code") @db.VarChar(100)
-  permissionMenuId Int?     @map("permission_menu_id")
-  label            String?  @db.VarChar(100)
-  remark           String?  @db.VarChar(500)
-  creTime          DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
-  updTime          DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
-
-  menu            SysMenu?            @relation(fields: [permissionMenuId], references: [menuId])
-  rolePermissions SysRolePermission[]
-  userScopes      SysUserPermissionScope[]
-
-  @@index([permissionMenuId])
-  @@map("sys_permission")
-}
-
-// ─── sys_user_permission_scope ──────────────────────────
-model SysUserPermissionScope {
-  userPermissionScopeId Int    @id @default(autoincrement()) @map("user_permission_scope_id")
-  userId                Int    @map("user_id")
-  permissionCode        String @map("permission_code") @db.VarChar(100)
-  scopeKey              String @map("scope_key") @db.VarChar(100)
-  scopeValue            Json   @map("scope_value")
-
-  user       SysUser       @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  permission SysPermission @relation(fields: [permissionCode], references: [permissionCode], onDelete: Cascade)
-
-  @@unique([userId, permissionCode, scopeKey], map: "uk_sys_user_permission_scope")
-  @@map("sys_user_permission_scope")
-}
+// 菜单与权限定义不再入库，改由各 apps/*/manifest + @cloud/platform-config 提供。
+// sys_menu / sys_permission / sys_user_permission_scope 已移除。
 
 // ─── sys_org ────────────────────────────────────────────
 model SysOrg {
   orgId       Int     @id @default(autoincrement()) @map("org_id")
-  entityId    Int     @map("entity_id")
+  partnerId    Int     @map("partner_id")
   orgName     String  @map("org_name") @db.VarChar(200)
   parentOrgId Int     @default(0) @map("parent_org_id")
   country     String? @db.VarChar(8)
   address     String? @db.VarChar(500)
   phone       String? @db.VarChar(32)
 
-  entity   SysEntity  @relation(fields: [entityId], references: [entityId])
+  partner   SysPartner  @relation(fields: [partnerId], references: [partnerId])
   userOrgs SysUserOrg[]
 
-  @@index([entityId])
+  @@index([partnerId])
   @@index([parentOrgId])
-  @@index([entityId, parentOrgId])
+  @@index([partnerId, parentOrgId])
   @@map("sys_org")
 }
 
@@ -394,7 +340,7 @@ model SysPasswordResetRequest {
 // ─── storage_object ─────────────────────────────────────
 model StorageObject {
   storageObjectId  String    @id @default(uuid()) @map("storage_object_id")
-  entityId         Int       @map("entity_id")
+  partnerId         Int       @map("partner_id")
   uploaderUserId   Int       @map("uploader_user_id")
   bucket           String    @db.VarChar(255)
   regionId         String    @map("region_id") @db.VarChar(64)
@@ -413,13 +359,13 @@ model StorageObject {
   updUserId        Int       @default(0) @map("upd_user_id")
   deletedAt        DateTime? @map("deleted_at") @db.Timestamp(3)
 
-  entity      SysEntity           @relation(fields: [entityId], references: [entityId])
+  partner      SysPartner           @relation(fields: [partnerId], references: [partnerId])
   uploader    SysUser             @relation(fields: [uploaderUserId], references: [userId])
   attachments StorageAttachment[]
 
-  @@unique([entityId, bucket, objectKey], map: "uk_storage_object_entity_bucket_key")
-  @@index([entityId, contentHash, sizeBytes, status], map: "idx_storage_object_entity_hash_size_status")
-  @@index([entityId, status, creTime(sort: Desc)], map: "idx_storage_object_entity_status_time")
+  @@unique([partnerId, bucket, objectKey], map: "uk_storage_object_partner_bucket_key")
+  @@index([partnerId, contentHash, sizeBytes, status], map: "idx_storage_object_partner_hash_size_status")
+  @@index([partnerId, status, creTime(sort: Desc)], map: "idx_storage_object_partner_status_time")
   @@index([uploaderUserId], map: "idx_storage_object_uploader")
   @@map("storage_object")
 }
@@ -427,7 +373,7 @@ model StorageObject {
 // ─── storage_attachment ─────────────────────────────────
 model StorageAttachment {
   storageAttachmentId String    @id @default(uuid()) @map("storage_attachment_id")
-  entityId            Int       @map("entity_id")
+  partnerId            Int       @map("partner_id")
   storageObjectId     String    @map("storage_object_id")
   subjectType         String    @map("subject_type") @db.VarChar(64)
   subjectId           String    @map("subject_id") @db.VarChar(128)
@@ -442,12 +388,12 @@ model StorageAttachment {
   updUserId           Int       @default(0) @map("upd_user_id")
   deletedAt           DateTime? @map("deleted_at") @db.Timestamp(3)
 
-  entity        SysEntity     @relation(fields: [entityId], references: [entityId])
+  partner        SysPartner     @relation(fields: [partnerId], references: [partnerId])
   storageObject StorageObject @relation(fields: [storageObjectId], references: [storageObjectId], onDelete: Cascade)
 
-  @@unique([entityId, storageObjectId, subjectType, subjectId, purpose], map: "uk_storage_attachment_object_subject")
-  @@index([entityId, subjectType, subjectId, purpose, status, sortNo], map: "idx_storage_attachment_subject")
+  @@unique([partnerId, storageObjectId, subjectType, subjectId, purpose], map: "uk_storage_attachment_object_subject")
+  @@index([partnerId, subjectType, subjectId, purpose, status, sortNo], map: "idx_storage_attachment_subject")
   @@index([storageObjectId], map: "idx_storage_attachment_object")
-  @@index([entityId, status, creTime(sort: Desc)], map: "idx_storage_attachment_entity_status_time")
+  @@index([partnerId, status, creTime(sort: Desc)], map: "idx_storage_attachment_partner_status_time")
   @@map("storage_attachment")
 }

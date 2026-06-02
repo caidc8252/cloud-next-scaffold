@@ -24,6 +24,7 @@ const serverActions = codespacesForwardingDomain
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@cloud/config", "@cloud/db", "@cloud/i18n", "@cloud/request", "@cloud/security", "@cloud/ui"],
+  allowedDevOrigins: ['127.0.0.1'],
   experimental: {
     // 不要把 @cloud/i18n 放进来：它含 "use server"（setLocaleAction / setTimeZoneAction），
     // optimizePackageImports 重写 barrel 导入会让 server action 模块身份漂移、ID 对不上，

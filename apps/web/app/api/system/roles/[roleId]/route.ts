@@ -26,7 +26,7 @@ export const PUT = withApiHandler(
     const existing = await prisma.sysRole.findUnique({ where: { roleId } });
     if (
       !existing ||
-      (existing.entityId !== null && existing.entityId !== session.entity.entityId)
+      (existing.partnerId !== null && existing.partnerId !== session.currentPartnerId)
     ) {
       return notFoundResponse(ERR_ROLE_NOT_FOUND, "Role not found.");
     }
@@ -40,7 +40,7 @@ export const PUT = withApiHandler(
 
     const isBuiltin = existing.roleType === "BUILTIN";
 
-    const dataUpdate: Record<string, unknown> = { updUserId: session.id };
+    const dataUpdate: Record<string, unknown> = { updUserId: session.userId };
     if (!isBuiltin) {
       if (body.name !== undefined) dataUpdate.roleName = body.name.trim();
       if (body.description !== undefined) dataUpdate.remark = body.description.trim() || null;
@@ -56,7 +56,7 @@ export const PUT = withApiHandler(
             data: body.permissions.map((code) => ({
               roleId,
               permissionCode: code,
-              creUserId: session.id,
+              creUserId: session.userId,
             })),
           });
         }
@@ -85,7 +85,7 @@ export const DELETE = withApiHandler(
     const existing = await prisma.sysRole.findUnique({ where: { roleId } });
     if (
       !existing ||
-      (existing.entityId !== null && existing.entityId !== session.entity.entityId)
+      (existing.partnerId !== null && existing.partnerId !== session.currentPartnerId)
     ) {
       return notFoundResponse(ERR_ROLE_NOT_FOUND, "Role not found.");
     }

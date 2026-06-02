@@ -8,7 +8,7 @@ import { withApiHandler } from "@/lib/api-handler";
 export const GET = withApiHandler(async () => {
   const session = await assertPermissions({ all: ["roles.VIEW"] });
   const roles = await prisma.sysRole.findMany({
-    where: { OR: [{ entityId: session.entity.entityId }, { entityId: null }] },
+    where: { OR: [{ partnerId: session.currentPartnerId }, { partnerId: null }] },
     include: {
       permissions: { select: { permissionCode: true } },
       _count: { select: { userRoles: true } },
@@ -50,16 +50,16 @@ export const POST = withApiHandler(async (req: Request) => {
       roleName: name,
       roleType: "GLOBAL",
       contractDefineCode: "ADMIN",
-      entityId: session.entity.entityId,
+      partnerId: session.currentPartnerId,
       remark: body.description?.trim() || null,
-      creUserId: session.id,
-      updUserId: session.id,
+      creUserId: session.userId,
+      updUserId: session.userId,
       permissions: body.permissions?.length
         ? {
             createMany: {
               data: body.permissions.map((code) => ({
                 permissionCode: code,
-                creUserId: session.id,
+                creUserId: session.userId,
               })),
             },
           }

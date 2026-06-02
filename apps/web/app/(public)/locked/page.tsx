@@ -10,17 +10,17 @@ export default async function LockedPage() {
   if (!partial) redirect("/login");
 
   const { prisma } = await import("@cloud/db");
-  const entityUsers = await prisma.sysEntityUser.findMany({
-    where: { userId: partial.id },
-    include: { entity: { select: { entityId: true, entityName: true, status: true } } },
+  const partnerUsers = await prisma.sysPartnerUser.findMany({
+    where: { userId: partial.userId },
+    include: { partner: { select: { partnerId: true, partnerName: true, status: true } } },
   });
 
-  const hasActive = entityUsers.some(
-    (eu) => eu.status === "ACTIVE" && eu.entity.status === "ACTIVE",
+  const hasActive = partnerUsers.some(
+    (eu) => eu.status === "ACTIVE" && eu.partner.status === "ACTIVE",
   );
-  if (hasActive) redirect("/select-entity");
+  if (hasActive) redirect("/select-partner");
 
-  const lockedEntityNames = entityUsers.map((eu) => eu.entity.entityName);
+  const lockedPartnerNames = partnerUsers.map((eu) => eu.partner.partnerName);
 
   return (
     <main className="login-screen">
@@ -35,9 +35,9 @@ export default async function LockedPage() {
           </div>
         </CardHeader>
         <CardContent className="login-card__body">
-          {lockedEntityNames.length > 0 && (
+          {lockedPartnerNames.length > 0 && (
             <ul className="mb-4 pl-4 text-sm text-content-secondary list-disc space-y-1">
-              {lockedEntityNames.map((name) => (
+              {lockedPartnerNames.map((name) => (
                 <li key={name}>{name}</li>
               ))}
             </ul>

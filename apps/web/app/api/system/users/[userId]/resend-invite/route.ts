@@ -12,7 +12,7 @@ export const POST = withApiHandler(
     const userId = Number(rawId);
     if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID);
 
-    const entityId = session.entity.entityId;
+    const partnerId = session.currentPartnerId;
 
     const invite = await prisma.sysInvite.findFirst({
       where: { userId, status: "PENDING" },
@@ -25,7 +25,7 @@ export const POST = withApiHandler(
       where: { inviteId: invite.inviteId },
       data: {
         expiresAt: new Date(Date.now() + 7 * 86_400_000),
-        creUserId: session.id,
+        creUserId: session.userId,
         resendCount: { increment: 1 },
       },
     });
@@ -34,12 +34,12 @@ export const POST = withApiHandler(
       where: { userId },
       include: {
         ...USER_INCLUDE,
-        entityUsers: { where: { entityId }, select: { authorizingType: true, status: true } },
-        userRoles: { where: { entityId }, select: { roleId: true } },
+        partnerUsers: { where: { partnerId }, select: { authorizingType: true, status: true } },
+        userRoles: { where: { partnerId }, select: { roleId: true } },
       },
     });
 
-    const nameMap = new Map([[session.id, session.username]]);
+    const nameMap = new Map([[session.userId, session.username]]);
     return successResponse(toClientUser(updated, nameMap, nameMap));
   },
 );

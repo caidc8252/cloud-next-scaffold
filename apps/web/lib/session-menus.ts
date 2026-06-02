@@ -34,6 +34,6 @@ function flatten(nodes: MenuTreeNode[], parentMenuId: string | null, out: Sideba
 export const getSessionMenus = cache(async (): Promise<SidebarMenu[]> => {
   const session = await getSession();
   if (!session) return [];
-  const tree = getVisibleMenuTree(PLATFORM_ID, session.entity.contractTypes, session.permissions);
+  const tree = getVisibleMenuTree(PLATFORM_ID, session.contractTypes, session.permissions);
   return flatten(tree, null, []);
 });

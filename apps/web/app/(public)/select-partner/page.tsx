@@ -2,29 +2,29 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
 import { getPartialSession, getSession } from "@cloud/permissions/server";
 import { prisma } from "@cloud/db";
-import { EntityList } from "./_components/entity-list";
+import { PartnerList } from "./_components/partner-list";
 
-export default async function SelectEntityPage() {
+export default async function SelectPartnerPage() {
   const session = await getSession();
   if (session) redirect("/");
 
   const partial = await getPartialSession();
   if (!partial) redirect("/login");
 
-  const entityUsers = await prisma.sysEntityUser.findMany({
-    where: { userId: partial.id },
-    include: { entity: { select: { entityId: true, entityName: true, status: true } } },
+  const partnerUsers = await prisma.sysPartnerUser.findMany({
+    where: { userId: partial.userId },
+    include: { partner: { select: { partnerId: true, partnerName: true, status: true } } },
   });
 
-  const allInactive = entityUsers.every(
-    (eu) => eu.status !== "ACTIVE" || eu.entity.status !== "ACTIVE",
+  const allInactive = partnerUsers.every(
+    (eu) => eu.status !== "ACTIVE" || eu.partner.status !== "ACTIVE",
   );
   if (allInactive) redirect("/locked");
 
-  const entities = entityUsers.map((eu) => ({
-    entityId: eu.entityId,
-    entityName: eu.entity.entityName,
-    active: eu.status === "ACTIVE" && eu.entity.status === "ACTIVE",
+  const partners = partnerUsers.map((eu) => ({
+    partnerId: eu.partnerId,
+    partnerName: eu.partner.partnerName,
+    active: eu.status === "ACTIVE" && eu.partner.status === "ACTIVE",
   }));
 
   return (
@@ -39,7 +39,7 @@ export default async function SelectEntityPage() {
           </div>
         </CardHeader>
         <CardContent className="login-card__body">
-          <EntityList entities={entities} />
+          <PartnerList partners={partners} />
         </CardContent>
       </Card>
     </main>

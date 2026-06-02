@@ -9,15 +9,15 @@ import {
   errorResponse,
 } from "@cloud/request/server";
 import {
-  ERR_AUTH_INVALID_ENTITY,
-  ERR_AUTH_ENTITY_REQUIRED,
+  ERR_AUTH_INVALID_PARTNER,
+  ERR_AUTH_PARTNER_REQUIRED,
   ERR_AUTH_NOT_AUTHENTICATED,
 } from "@/lib/auth-error-codes";
 import "@/lib/auth-error-messages";
 import { withApiHandler } from "@/lib/api-handler";
 
-const selectEntitySchema = z.object({
-  entityId: z.number().int().positive(),
+const selectPartnerSchema = z.object({
+  partnerId: z.number().int().positive(),
 });
 
 /** @e2e-cell feature=auth kind=auth-boundary */
@@ -31,28 +31,28 @@ export const POST = withApiHandler(async (req: Request) => {
   try {
     body = await req.json();
   } catch {
-    return badRequestResponse(ERR_AUTH_ENTITY_REQUIRED);
+    return badRequestResponse(ERR_AUTH_PARTNER_REQUIRED);
   }
 
-  const parsed = selectEntitySchema.safeParse(body);
+  const parsed = selectPartnerSchema.safeParse(body);
   if (!parsed.success) {
-    return badRequestResponse(ERR_AUTH_ENTITY_REQUIRED);
+    return badRequestResponse(ERR_AUTH_PARTNER_REQUIRED);
   }
 
-  const { entityId } = parsed.data;
+  const { partnerId } = parsed.data;
 
-  const entityUser = await prisma.sysEntityUser.findUnique({
-    where: { entityId_userId: { entityId, userId: partial.id } },
-    include: { entity: true },
+  const partnerUser = await prisma.sysPartnerUser.findUnique({
+    where: { partnerId_userId: { partnerId, userId: partial.userId } },
+    include: { partner: true },
   });
 
-  if (!entityUser || entityUser.status !== "ACTIVE" || entityUser.entity.status !== "ACTIVE") {
-    return errorResponse(ERR_AUTH_INVALID_ENTITY);
+  if (!partnerUser || partnerUser.status !== "ACTIVE" || partnerUser.partner.status !== "ACTIVE") {
+    return errorResponse(ERR_AUTH_INVALID_PARTNER);
   }
 
-  const snapshot = await buildSessionSnapshot(partial.id, entityId);
-  if (!snapshot || !snapshot.currentEntity) {
-    return errorResponse(ERR_AUTH_INVALID_ENTITY);
+  const snapshot = await buildSessionSnapshot(partial.userId, partnerId);
+  if (!snapshot || snapshot.currentPartnerId === null) {
+    return errorResponse(ERR_AUTH_INVALID_PARTNER);
   }
 
   await updateSession(snapshot);

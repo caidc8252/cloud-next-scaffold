@@ -5,7 +5,6 @@ export {
   getPartialSession,
   getSession,
   requireSession,
-  type AuthenticatedSession,
   type PartialSession,
 } from "./dal.ts";
 export { AuthzError } from "./errors.ts";
@@ -16,7 +15,7 @@ export {
   SID_COOKIE_MAX_AGE_SECONDS,
   sessionStore,
   type Session,
+  type ActiveSession,
   type SessionRole,
-  type SessionEntityRef,
-  type CurrentEntity,
+  type SessionPartnerRef,
 } from "./session-store.ts";
