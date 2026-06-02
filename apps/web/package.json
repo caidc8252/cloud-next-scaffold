@@ -14,6 +14,7 @@
     "@cloud/db": "workspace:*",
     "@cloud/i18n": "workspace:*",
     "@cloud/permissions": "workspace:*",
+    "@cloud/platform-config": "workspace:*",
     "@cloud/request": "workspace:*",
     "@cloud/security": "workspace:*",
     "@cloud/storage": "workspace:*",

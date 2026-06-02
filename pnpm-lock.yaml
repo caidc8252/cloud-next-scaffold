@@ -153,6 +153,9 @@ importers:
       '@cloud/permissions':
         specifier: workspace:*
         version: link:../../packages/permissions
+      '@cloud/platform-config':
+        specifier: workspace:*
+        version: link:../../packages/platform-config
       '@cloud/request':
         specifier: workspace:*
         version: link:../../packages/request

@@ -7,6 +7,11 @@
     "node": ">=20.19.0"
   },
   "scripts": {
+    "gen:manifest": "node scripts/generate-manifest-registry.mjs",
+    "predev": "pnpm gen:manifest",
+    "predev:web": "pnpm gen:manifest",
+    "prebuild": "pnpm gen:manifest",
+    "pretest": "pnpm gen:manifest",
     "dev": "pnpm --filter web dev",
     "dev:web": "pnpm --filter web dev",
     "build": "pnpm db:generate && pnpm -r --filter './apps/*' build",
