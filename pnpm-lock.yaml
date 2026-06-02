@@ -257,6 +257,9 @@ importers:
 
   packages/permissions:
     dependencies:
+      '@cloud/cache':
+        specifier: workspace:*
+        version: link:../cache
       '@cloud/config':
         specifier: workspace:*
         version: link:../config
