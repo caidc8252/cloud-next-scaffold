@@ -270,6 +270,12 @@ importers:
         specifier: 'catalog:'
         version: 0.0.1
 
+  packages/platform-config:
+    dependencies:
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+
   packages/request:
     dependencies:
       client-only:

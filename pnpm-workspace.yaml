@@ -5,6 +5,7 @@ packages:
   - "packages/db"
   - "packages/i18n"
   - "packages/permissions"
+  - "packages/platform-config"
   - "packages/request"
   - "packages/security"
   - "packages/storage"
