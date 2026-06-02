@@ -19,10 +19,23 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 // 仅在 Codespaces 下生效，普通本地 / 生产部署不受影响。
 const codespacesForwardingDomain = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN;
 const serverActions = codespacesForwardingDomain
-  ? { allowedOrigins: ["localhost:3000", `*.${codespacesForwardingDomain}`] }
+  ? { allowedOrigins: ["localhost","127.0.0.1", `*.${codespacesForwardingDomain}`] }
   : undefined;
 
+// Next 16 dev 默认拦截「非同源」对 /_next/* 等 dev 资源的请求（含 RSC 导航 payload）。
+// 经 Codespaces 转发域名 / 127.0.0.1 隧道访问时，浏览器源与 dev server 源不一致 →
+// 登录后 router.replace 的 RSC 导航被挡，表现为页面卡住 / 反复跳回登录。
+// 放行转发域名 + 本地隧道两种 host（仅影响 dev，本地直连 / 生产不受影响）。
+const allowedDevOrigins = [
+  "localhost",
+  "127.0.0.1",
+  ...(codespacesForwardingDomain ? [`*.${codespacesForwardingDomain}`] : []),
+];
+
 const nextConfig: NextConfig = {
+  // dev 下 Codespaces 端口转发会让 localhost / 127.0.0.1 混用，放行两者的 dev 资源，
+  // 避免 HMR 等被 cross-origin 拦截。仅影响开发态资源加载，不放宽生产安全。
+  allowedDevOrigins,
   transpilePackages: ["@cloud/config", "@cloud/db", "@cloud/i18n", "@cloud/request", "@cloud/security", "@cloud/ui"],
   experimental: {
     // 不要把 @cloud/i18n 放进来：它含 "use server"（setLocaleAction / setTimeZoneAction），
