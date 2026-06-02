@@ -49,14 +49,20 @@ const toneCssMap: Record<BadgeTone, string> = {
 
 interface BadgeProps extends useRender.ComponentProps<"span">, VariantProps<typeof badgeVariants> {
   tone?: BadgeTone
+  // Show a leading status dot. Color follows the text color (bg-current), so it
+  // matches the tone and stays darker than the badge background.
+  dot?: boolean
 }
 
 // Small inline label for status or category. tone: 'neutral'|'success'|'warning'|'error'|'info' maps to semantic colors.
 // Prefer tone over variant for status indicators (e.g. order state, health checks).
+// Set `dot` to prefix a small status dot in the current tone color.
 function Badge({
   className,
   variant,
   tone,
+  dot,
+  children,
   render,
   ...props
 }: BadgeProps) {
@@ -66,6 +72,12 @@ function Badge({
     props: mergeProps<"span">(
       {
         className: cn(badgeVariants({ variant: resolvedVariant }), tone && toneCssMap[tone], className),
+        children: (
+          <>
+            {dot && <span className="size-1.5 shrink-0 rounded-full bg-current" aria-hidden />}
+            {children}
+          </>
+        ),
       },
       props
     ),
