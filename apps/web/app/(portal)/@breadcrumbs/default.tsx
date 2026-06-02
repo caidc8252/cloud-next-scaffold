@@ -1,4 +1,5 @@
 import { requireSession } from "@cloud/permissions/server";
+import { getSessionMenus } from "@/lib/session-menus";
 import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
 
 /**
@@ -133,12 +134,12 @@ import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
  *   alongside the main content; no manual sync needed.
  */
 export default async function DefaultBreadcrumbs() {
-  const session = await requireSession();
-  const menus = session.menus.map((m) => ({
-    id: String(m.menuId),
+  await requireSession();
+  const menus = (await getSessionMenus()).map((m) => ({
+    id: m.menuId,
     label: m.menuTitle,
     path: m.path,
-    parentMenuId: m.parentMenuId ? String(m.parentMenuId) : null,
+    parentMenuId: m.parentMenuId,
   }));
   return <PortalBreadcrumbs menus={menus} />;
 }

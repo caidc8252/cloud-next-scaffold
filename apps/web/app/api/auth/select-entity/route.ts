@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@cloud/db";
-import { getPartialSession, upgradeSession } from "@cloud/permissions/server";
+import { getPartialSession, updateSession } from "@cloud/permissions/server";
+import { buildSessionSnapshot } from "@/lib/session-snapshot";
 import {
   successResponse,
   badRequestResponse,
@@ -49,14 +50,11 @@ export const POST = withApiHandler(async (req: Request) => {
     return errorResponse(ERR_AUTH_INVALID_ENTITY);
   }
 
-  const contract = await prisma.sysEntityContract.findFirst({
-    where: { authorizedEntityId: entityId, status: "ACTIVE" },
-  });
-
-  if (!contract) {
+  const snapshot = await buildSessionSnapshot(partial.id, entityId);
+  if (!snapshot || !snapshot.currentEntity) {
     return errorResponse(ERR_AUTH_INVALID_ENTITY);
   }
 
-  await upgradeSession(entityId);
+  await updateSession(snapshot);
   return successResponse({ redirectTo: "/" });
 });

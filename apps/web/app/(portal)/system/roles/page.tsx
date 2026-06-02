@@ -1,5 +1,7 @@
 import { prisma } from "@cloud/db";
 import { requirePermissions } from "@cloud/permissions/server";
+import { getPermissionCatalog } from "@cloud/platform-config";
+import { PLATFORM_ID } from "@/manifest";
 import { toClientRole } from "@/app/(portal)/system/roles/_server/role-mapper";
 import { RolesPage } from "@/app/(portal)/system/roles/_components/roles-page";
 import type { PermissionGroup } from "@/app/(portal)/system/_shared/types";
@@ -26,35 +28,18 @@ async function loadRoles(entityId: number) {
   return roles.map((r) => toClientRole(r, updaterMap.get(r.updUserId) ?? "system"));
 }
 
-async function loadPermissionGroups(contractDefineCode: string): Promise<PermissionGroup[]> {
-  const menus = await prisma.sysMenu.findMany({
-    where: { contractDefineCode, isVisible: true },
-    include: {
-      permissions: {
-        select: { permissionCode: true, label: true, remark: true },
-      },
-    },
-    orderBy: { sort: "asc" },
-  });
-
-  return menus
-    .filter((m) => m.permissions.length > 0)
-    .map((m) => ({
-      menuId: String(m.menuId),
-      menuTitle: m.menuTitle,
-      items: m.permissions.map((p) => ({
-        code: p.permissionCode,
-        label: p.label ?? p.permissionCode,
-        desc: p.remark ?? "",
-      })),
-    }));
+// 权限目录来自本平台 manifest（按当前公司持有的契约过滤），不再读 sys_menu/sys_permission。
+function loadPermissionGroups(contractTypes: string[]): PermissionGroup[] {
+  return getPermissionCatalog(PLATFORM_ID, contractTypes).map((group) => ({
+    menuId: group.menuCode,
+    menuTitle: group.menuTitle,
+    items: group.items,
+  }));
 }
 
 export default async function SystemRolesPage() {
   const session = await requirePermissions({ all: ["roles.VIEW"] });
-  const [initialRoles, permissionGroups] = await Promise.all([
-    loadRoles(session.entity.entityId),
-    loadPermissionGroups(session.entity.contractDefineCode),
-  ]);
+  const initialRoles = await loadRoles(session.entity.entityId);
+  const permissionGroups = loadPermissionGroups(session.entity.contractTypes);
   return <RolesPage initialRoles={initialRoles} permissionGroups={permissionGroups} />;
 }

@@ -75,11 +75,13 @@ export const GET = withApiHandler(async (req: Request) => {
     throw new Error("Intentional demo fallback error.");
   }
 
+  // 注：本 dev demo 仍读 sys_menu/sys_permission，DB 阶段删表时一并改造。
+  const contractDefineCode = session.entity.contractTypes[0] ?? "ADMIN";
   if (scenario === "pagination") {
-    return await getPaginatedMenus(url, session.entity.contractDefineCode);
+    return await getPaginatedMenus(url, contractDefineCode);
   }
 
-  return await getSummary(session.entity.entityId, session.entity.contractDefineCode);
+  return await getSummary(session.entity.entityId, contractDefineCode);
 });
 
 async function getSummary(entityId: number, contractDefineCode: string) {

@@ -2,9 +2,8 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 import type { PermissionCheck } from "../index.ts";
-import { getSession } from "./dal.ts";
+import { getSession, type AuthenticatedSession } from "./dal.ts";
 import { AuthzError } from "./errors.ts";
-import type { Session } from "./session.ts";
 
 function hasAllPermissions(
   permissions: readonly string[],
@@ -41,7 +40,7 @@ export function hasPermissions(
   return hasAllPermissions(permissions, all) && hasAnyPermission(permissions, any);
 }
 
-export async function assertPermissions(check: PermissionCheck): Promise<Session> {
+export async function assertPermissions(check: PermissionCheck): Promise<AuthenticatedSession> {
   const session = await getSession();
   if (!session) {
     throw new AuthzError(401, "unauthenticated");
@@ -58,7 +57,7 @@ export async function assertPermissions(check: PermissionCheck): Promise<Session
   return session;
 }
 
-export async function requirePermissions(check: PermissionCheck): Promise<Session> {
+export async function requirePermissions(check: PermissionCheck): Promise<AuthenticatedSession> {
   try {
     return await assertPermissions(check);
   } catch (error) {

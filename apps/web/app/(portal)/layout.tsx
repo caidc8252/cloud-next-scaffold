@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { Layout, Sidebar, type SidebarSection } from "@cloud/ui/components/layout";
 import { SidebarProvider, SIDEBAR_COOKIE } from "@cloud/ui";
 import { requireSession } from "@cloud/permissions/server";
+import { getSessionMenus } from "@/lib/session-menus";
 import { UserMenu } from "./_components/user-menu";
 import { getMenuIcon } from "./_components/menu-icon";
 import { PortalHeader } from "./_components/portal-header";
@@ -86,12 +87,12 @@ export default async function PortalLayout({
   const cookieStore = await cookies();
   const defaultCollapsed = cookieStore.get(SIDEBAR_COOKIE)?.value === "1";
 
-  const menus: Menu[] = session.menus.map((m) => ({
-    id: String(m.menuId),
+  const menus: Menu[] = (await getSessionMenus()).map((m) => ({
+    id: m.menuId,
     label: m.menuTitle,
     path: m.path,
     icon: m.icon ?? "layout-dashboard",
-    parentMenuId: m.parentMenuId ? String(m.parentMenuId) : null,
+    parentMenuId: m.parentMenuId,
   }));
 
   return (

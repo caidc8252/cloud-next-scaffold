@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "@cloud/db";
 import { verifyPassword } from "@cloud/security/server";
 import { createSession } from "@cloud/permissions/server";
+import { buildSessionSnapshot } from "@/lib/session-snapshot";
 import { successResponse, badRequestResponse, errorResponse } from "@cloud/request/server";
 import {
   ERR_AUTH_ACCOUNT_LOCKED,
@@ -94,17 +95,20 @@ export const POST = withApiHandler(async (req: Request) => {
     (eu) => eu.status === "ACTIVE" && eu.entity.status === "ACTIVE",
   );
 
+  // 单公司直接进入并算好权限快照；多公司先建 partial 快照再去选公司
+  const currentEntityId =
+    activeEntityUsers.length === 1 ? activeEntityUsers[0].entityId : null;
+  const snapshot = await buildSessionSnapshot(user.userId, currentEntityId);
+  if (!snapshot) {
+    return errorResponse(ERR_AUTH_INVALID_CREDENTIALS, undefined, 401);
+  }
+  await createSession(snapshot);
+
   if (activeEntityUsers.length === 1) {
-    await createSession(user.userId, activeEntityUsers[0].entityId);
     return successResponse({ redirectTo: "/" });
   }
-
   if (activeEntityUsers.length > 1) {
-    await createSession(user.userId, null);
     return successResponse({ redirectTo: "/select-entity" });
   }
-
-  // 无可用组织
-  await createSession(user.userId, null);
   return successResponse({ redirectTo: "/locked" });
 });
