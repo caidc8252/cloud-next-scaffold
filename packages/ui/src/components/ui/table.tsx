@@ -4,6 +4,14 @@ import { cn } from '../../lib/utils'
 
 export type SortDir = 'asc' | 'desc' | null
 
+export type TableDensity = 'compact' | 'comfortable' | 'spacious'
+
+export interface TableRowState {
+  selected?: boolean
+  disabled?: boolean
+  expanded?: boolean
+}
+
 export interface TableColumn<R> {
   key: string
   title: React.ReactNode
@@ -25,7 +33,29 @@ export interface TableProps<R> {
   onSortChange?: (sort: { key: string; dir: Exclude<SortDir, null> } | null) => void
   onRowClick?: (row: R, index: number) => void
   empty?: React.ReactNode
+  /** Row height preset (TOMS v2.0): compact for ops/data-dense, spacious for reports. Default comfortable. */
+  density?: TableDensity
+  /** Zebra striping on even rows */
+  striped?: boolean
+  /** Outer border + rounded corners + column separators */
+  bordered?: boolean
+  /** Keep the first column visible during horizontal scroll */
+  stickyFirstColumn?: boolean
+  /** Per-row visual state: selected (left accent bar), disabled, expanded */
+  rowState?: (row: R, index: number) => TableRowState | undefined
   className?: string
+}
+
+// TOMS v2.0 density presets — cell vertical padding 6/12/16, header follows.
+const CELL_DENSITY: Record<TableDensity, string> = {
+  compact: 'px-3 py-1.5',
+  comfortable: 'px-4 py-3',
+  spacious: 'px-4 py-4',
+}
+const HEAD_DENSITY: Record<TableDensity, string> = {
+  compact: 'px-3 py-2',
+  comfortable: 'px-4 py-3',
+  spacious: 'px-4 py-4',
 }
 
 // Generic typed data table driven by a columns config — no manual thead/tbody markup needed.
@@ -34,7 +64,22 @@ export interface TableProps<R> {
 // sort + onSortChange: controlled sort state {key, dir}; pass null to clear.
 // onRowClick: makes rows cursor-pointer and calls handler with (row, index).
 // empty: custom node shown when rows is empty (defaults to "No data").
-export function Table<R>({ columns, rows, rowKey, sort, onSortChange, onRowClick, empty = 'No data', className }: TableProps<R>) {
+// density/striped/bordered/stickyFirstColumn/rowState: TOMS v2.0 table variants.
+export function Table<R>({
+  columns,
+  rows,
+  rowKey,
+  sort,
+  onSortChange,
+  onRowClick,
+  empty = 'No data',
+  density = 'comfortable',
+  striped,
+  bordered,
+  stickyFirstColumn,
+  rowState,
+  className,
+}: TableProps<R>) {
   const handleSort = (col: TableColumn<R>) => {
     if (!col.sortable || !onSortChange) return
     if (!sort || sort.key !== col.key) onSortChange({ key: col.key, dir: 'asc' })
@@ -42,16 +87,35 @@ export function Table<R>({ columns, rows, rowKey, sort, onSortChange, onRowClick
     else onSortChange({ key: col.key, dir: 'asc' })
   }
 
+  // Sticky cells need an opaque background so scrolled content doesn't bleed through.
+  const stickyCell = (index: number, head: boolean) =>
+    stickyFirstColumn && index === 0
+      ? cn('sticky left-0 z-1 shadow-sticky-col', head ? 'bg-surface-3' : 'bg-surface-2')
+      : undefined
+
+  const separator = bordered ? 'border-r border-line-subtle last:border-r-0' : undefined
+
   return (
-    <div className={cn('w-full overflow-auto', className)}>
+    <div
+      className={cn(
+        'w-full overflow-auto',
+        bordered && 'border border-line-default rounded-lg',
+        className,
+      )}
+    >
       <table className="w-full text-md border-collapse">
         <thead className="bg-surface-3 sticky top-0 z-10">
           <tr>
-            {columns.map((col) => (
+            {columns.map((col, colIndex) => (
               <th
                 key={col.key}
                 style={{ width: col.width, textAlign: col.align ?? 'left' }}
-                className="px-4 py-3 text-md font-medium text-content-tertiary uppercase tracking-wide border-b border-line-default"
+                className={cn(
+                  HEAD_DENSITY[density],
+                  'text-md font-medium text-content-tertiary uppercase tracking-wide border-b border-line-default',
+                  separator,
+                  stickyCell(colIndex, true),
+                )}
               >
                 {col.sortable ? (
                   <button
@@ -79,27 +143,46 @@ export function Table<R>({ columns, rows, rowKey, sort, onSortChange, onRowClick
               </td>
             </tr>
           ) : (
-            rows.map((row, i) => (
-              <tr
-                key={rowKey(row, i)}
-                onClick={onRowClick ? () => onRowClick(row, i) : undefined}
-                className={cn(
-                  'border-b border-line-subtle hover:bg-surface-hover/40 dark:hover:bg-surface-3 transition-colors duration-fast',
-                  onRowClick && 'cursor-pointer',
-                )}
-              >
-                {columns.map((col) => (
-                  <td key={col.key} style={{ textAlign: col.align ?? 'left' }} className="px-4 py-3 text-content-primary">
-                    {col.render ? col.render(row) : col.field != null ? String(row[col.field] ?? '') : null}
-                  </td>
-                ))}
-              </tr>
-            ))
+            rows.map((row, i) => {
+              const state = rowState?.(row, i)
+              return (
+                <tr
+                  key={rowKey(row, i)}
+                  onClick={onRowClick && !state?.disabled ? () => onRowClick(row, i) : undefined}
+                  aria-selected={state?.selected || undefined}
+                  data-disabled={state?.disabled || undefined}
+                  data-expanded={state?.expanded || undefined}
+                  className={cn(
+                    'border-b border-line-subtle hover:bg-surface-hover/40 dark:hover:bg-surface-3 transition-colors duration-fast',
+                    striped && 'even:bg-surface-3 even:hover:bg-surface-hover/60',
+                    // TOMS v2.0 row states: selected = tinted bg + 2px primary left bar,
+                    // expanded = surface-3, disabled = dimmed + inert.
+                    'aria-selected:bg-state-selected aria-selected:hover:bg-state-selected aria-selected:shadow-row-selected',
+                    'data-expanded:bg-surface-3',
+                    'data-disabled:opacity-50 data-disabled:pointer-events-none',
+                    onRowClick && !state?.disabled && 'cursor-pointer',
+                  )}
+                >
+                  {columns.map((col, colIndex) => (
+                    <td
+                      key={col.key}
+                      style={{ textAlign: col.align ?? 'left' }}
+                      className={cn(
+                        CELL_DENSITY[density],
+                        'text-content-primary',
+                        separator,
+                        stickyCell(colIndex, false),
+                      )}
+                    >
+                      {col.render ? col.render(row) : col.field != null ? String(row[col.field] ?? '') : null}
+                    </td>
+                  ))}
+                </tr>
+              )
+            })
           )}
         </tbody>
       </table>
     </div>
   )
 }
-
-
