@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { validateAppManifest, type AppManifest } from "../src/index.ts";
 
 function manifest(menus: AppManifest["menus"]): AppManifest {
-  return { appId: "web", menus };
+  return { appId: "web", contractKeys: ["ADMIN", "ISO"], menus };
 }
 
 describe("validateAppManifest", () => {

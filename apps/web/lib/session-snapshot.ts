@@ -1,9 +1,9 @@
 import "server-only";
 
 import { prisma } from "@cloud/db";
-import { resolveEffectivePermissions } from "@cloud/platform-config";
 import type { Session, SessionPartnerRef, SessionRole } from "@cloud/permissions/server";
-import { PLATFORM_ID } from "@/manifest";
+import { getPlatformManifest, PLATFORM_ID } from "@/manifest";
+import { resolveEffectivePermissions } from "@/manifest/select";
 
 // 构建登录会话快照：读 DB（用户 / 公司关系 / 契约 / 角色），用 platform-config 按
 // 当前公司契约 + 角色/ADMIN 派生有效权限码。permissions 包不碰 manifest，派生在这里。
@@ -99,8 +99,10 @@ async function buildCurrentContext(
     grantedRoleCodes = [...new Set(rolePermissions.map((p) => p.permissionCode))];
   }
 
+  const manifest = getPlatformManifest(PLATFORM_ID);
+  if (!manifest) throw new Error(`[manifest] platform "${PLATFORM_ID}" not found`);
   const permissions = resolveEffectivePermissions({
-    platform: PLATFORM_ID,
+    manifest,
     contracts: contractTypes,
     authorizingType,
     grantedRoleCodes,

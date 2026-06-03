@@ -5,6 +5,8 @@ import { defineAppManifest } from "@cloud/platform-config";
 // contractTypes: ["*"] 表示所有契约可见；否则仅列出的契约可见。
 export const appManifest = defineAppManifest({
   appId: "web",
+  // 本平台声明的契约类型；gen:manifest 跨 app 取并集 → 全局契约枚举（替代旧 _contracts.ts）。
+  contractKeys: ["ADMIN", "ISO", "ISV", "MERCHANT"],
   menus: [
     // ── Home ──────────────────────────────────────────────
     { menuCode: "home", menuTitle: "Home", parentMenuCode: null, path: null, contractTypes: ["*"], order: 1 },
@@ -53,6 +55,19 @@ export const appManifest = defineAppManifest({
         { code: "users.LOCK", label: "Lock User", desc: "Lock / unlock user account" },
         { code: "users.RESETPW", label: "Reset Password", desc: "Force-reset user password" },
         { code: "users.CHANGE_ROLE", label: "Change Role", desc: "Change user's assigned role" },
+      ],
+    },
+    {
+      menuCode: "users1",
+      menuTitle: "Users1",
+      parentMenuCode: "system",
+      path: "/system/users",
+      icon: "users",
+      contractTypes: ["*"],
+      order: 102,
+      permissions: [
+        { code: "users.VIEW1", label: "View Users1", desc: "View user list and details1" },
+        { code: "users.ADD1", label: "Create User1", desc: "Create user (direct mode)1" },
       ],
     },
 

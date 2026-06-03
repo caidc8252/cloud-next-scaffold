@@ -1,17 +1,13 @@
-import { getRegisteredPlatforms, registerAppManifest } from "@cloud/platform-config";
-import { appManifest } from "./_menu.map";
-import { CONTRACT_TYPES, type ContractType } from "./_contracts";
+import { createPlatformConfig } from "@cloud/platform-config";
+import { APP_MANIFESTS, CONTRACT_KEYS } from "./_generated/apps";
 
-// 本平台 id（= appManifest.appId）。侧边栏 / 登录快照 / 角色目录查询都用它。
+// 本平台 id（= 自身 appManifest.appId）。侧边栏 / 登录快照 / 角色目录查询都用它。
 export const PLATFORM_ID = "web";
 
-// 注册发生在「导入本模块」时（幂等）。
-// 为什么不只靠 instrumentation：dev / Turbopack 下 instrumentation 与 route handler
-// 可能拿到不同的 @cloud/platform-config 模块实例，instrumentation 注册的注册表对路由不可见。
-// 消费方（登录快照、侧边栏、角色目录）都会 import @/manifest，因此在它们各自的实例里注册表必就绪。
-if (!getRegisteredPlatforms().includes(appManifest.appId)) {
-  registerAppManifest(appManifest, { contractTypes: CONTRACT_TYPES });
-}
+// 采集全部 app manifest（_generated/apps.ts 由 gen:manifest 序列化写入，自包含、无跨 app 源码导入）
+// + 聚合契约枚举，构造期一次性校验（非法拒启）。无运行时注册表、无导入副作用。
+const config = createPlatformConfig(APP_MANIFESTS, { contractTypes: CONTRACT_KEYS });
 
-export { appManifest, CONTRACT_TYPES };
-export type { ContractType };
+export const getPlatformManifest = config.getPlatformManifest;
+export const getAppIds = config.getAppIds;
+export const getContractKeys = config.getContractKeys;

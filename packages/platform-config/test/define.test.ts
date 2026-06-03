@@ -5,6 +5,7 @@ describe("defineAppManifest", () => {
   it("returns a frozen manifest for valid input", () => {
     const manifest = defineAppManifest({
       appId: "web",
+      contractKeys: ["ADMIN"],
       menus: [
         { menuCode: "dashboard", menuTitle: "Dashboard", parentMenuCode: null, path: "/dashboard", contractTypes: ["*"] },
       ],
@@ -14,13 +15,17 @@ describe("defineAppManifest", () => {
   });
 
   it("throws on empty appId", () => {
-    expect(() => defineAppManifest({ appId: "", menus: [] })).toThrow();
+    expect(() => defineAppManifest({ appId: "", contractKeys: ["ADMIN"], menus: [] })).toThrow();
+  });
+
+  it("throws on empty contractKeys", () => {
+    expect(() => defineAppManifest({ appId: "web", contractKeys: [], menus: [] })).toThrow();
   });
 
   it("throws when a menu is missing required fields", () => {
     expect(() =>
       // @ts-expect-error -- intentionally invalid: missing menuTitle
-      defineAppManifest({ appId: "web", menus: [{ menuCode: "x", parentMenuCode: null, contractTypes: ["*"] }] }),
+      defineAppManifest({ appId: "web", contractKeys: ["ADMIN"], menus: [{ menuCode: "x", parentMenuCode: null, contractTypes: ["*"] }] }),
     ).toThrow();
   });
 
@@ -28,6 +33,7 @@ describe("defineAppManifest", () => {
     expect(() =>
       defineAppManifest({
         appId: "web",
+        contractKeys: ["ADMIN"],
         menus: [{ menuCode: "x", menuTitle: "X", parentMenuCode: null, path: "/x", contractTypes: [] }],
       }),
     ).toThrow();

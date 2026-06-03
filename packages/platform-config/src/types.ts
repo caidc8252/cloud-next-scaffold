@@ -25,38 +25,13 @@ export type MenuEntry = {
   permissions?: MenuPermission[];
 };
 
-/** 一个平台（app）的 manifest。`appId` 即 platformId，跨平台唯一。 */
+/**
+ * 一个平台（app）的 manifest。`appId` 即 platformId，跨平台唯一。
+ * `contractKeys`：本平台声明的契约类型清单；多 app 聚合后的并集即全局契约枚举
+ * （由 gen:manifest 写进各 app 的 `_generated/apps.ts`，替代旧的手维护 `_contracts.ts`）。
+ */
 export type AppManifest = {
   appId: string;
+  contractKeys: string[];
   menus: MenuEntry[];
-};
-
-/** 契约过滤参数：单值 / 数组按其过滤；undefined 表示不过滤、返回全部。 */
-export type ContractFilter = string | string[] | undefined;
-
-/** 授权类型：ADMIN 拿契约下全量权限；NORMAL 按角色权限码收敛。 */
-export type AuthorizingType = "ADMIN" | "NORMAL";
-
-/** 角色编辑器用的权限目录项（label 已补全）。 */
-export type PermissionCatalogItem = {
-  code: string;
-  label: string;
-  desc: string;
-};
-
-/** 按菜单分组的权限目录。 */
-export type PermissionGroup = {
-  menuCode: string;
-  menuTitle: string;
-  items: PermissionCatalogItem[];
-};
-
-/** 可见菜单树节点（侧边栏渲染用）。 */
-export type MenuTreeNode = {
-  menuCode: string;
-  menuTitle: string;
-  path: string | null;
-  icon: string | null;
-  order: number;
-  children: MenuTreeNode[];
 };

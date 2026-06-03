@@ -14,6 +14,7 @@
   - `packages/db`
   - `packages/i18n`
   - `packages/permissions`
+  - `packages/platform-config`
   - `packages/request`
   - `packages/security`
   - `packages/storage`
@@ -82,6 +83,15 @@
   - **坑 2（server action 被 optimize 破坏）**：`@cloud/i18n` 含 `"use server"`（`setLocaleAction` / `setTimeZoneAction`，全仓唯一的 server action）。**不要把它放进 `next.config.ts` 的 `experimental.optimizePackageImports`**——barrel 导入重写会让 server action 模块身份漂移、ID 对不上，运行时报 `Invalid Server Actions request`（`TimeZoneInit` 调 action 时触发）。它留在 `transpilePackages` 即可。改 `next.config.ts` 后必须**重启 dev server**，不是刷新。
   - `NextIntlClientProvider` 由 `@cloud/i18n/client` re-export（包原本漏了，已补），应用层只 import `@cloud/i18n/client`，不直接 import next-intl；`next-intl/plugin` 仅在 `next.config.ts` 这一构建配置处直接 import。
   - 文案在 `apps/web/i18n/messages/`，`en.json` 为基底，目前只落 `@cloud/ui` 必需的 `ui.datePicker.*`。`apps/web/i18n/messages/messages.test.ts` 守 en 含日期组件全部 key、zh/ja 无孤儿 key。现有页面英文硬编码尚未逐条迁移（独立任务）。
+
+## 平台 manifest（菜单 / 权限 / 契约 单一真源）
+
+- COC：菜单 / 权限 / 契约类型在代码里声明，不入库（替代旧 `sys_menu` + `sys_permission`）。每个 app 在 `apps/<app>/manifest/_menu.map.ts` 用 `defineAppManifest` 声明 `appId` + `contractKeys` + `menus`（菜单带 `permissions` 与 `contractTypes`）。数据格式真源就是这个文件。
+- `@cloud/platform-config` 只做三件事：`defineAppManifest`（zod 校验 + 冻结）、`validateAppManifest`（完整性校验：menuCode/permissionCode 唯一、parent 存在不成环、目录必须有子级、契约合法、icon 合法）、`createPlatformConfig(manifests, { contractTypes })` → 暴露 `getPlatformManifest` / `getAppIds` / `getContractKeys` 三个 getter。**没有运行时注册表**（旧的 `registerAppManifest` Map + 双注册 hack 已删），构造期一次性校验全部 manifest + 跨 app appId 唯一，非法即拒启。
+- 「解释逻辑」（侧边栏菜单树 / 角色权限目录 / 会话有效权限）不在包里，落在应用 `apps/web/manifest/select.ts`（纯函数，入参 manifest），消费方：`session-menus.ts` / `session-snapshot.ts` / `system/roles/page.tsx`。多 app 时这层按 app 复制（取舍：包保持极简，解释逻辑是应用业务）。
+- 采集物 `apps/<app>/manifest/_generated/apps.ts` 由 `pnpm gen:manifest`（接 predev/prebuild/pretest）生成、**自包含序列化数据**：把所有 app 的 manifest 序列化成字面量 + 聚合 `CONTRACT_KEYS`（各 app `contractKeys` 并集，替代已删的 `_contracts.ts`），唯一 import 是可擦除的 `import type { AppManifest }`。**刻意不用 import barrel 跨 app 引用源码**——多 Next app 下 app 互相 import 源码会有打包问题；序列化后每个 app 各自自包含。该目录 gitignore（`apps/*/manifest/_generated/`），不提交。
+- 生成器 `scripts/generate-manifest-registry.mjs` 用 **Node 24 原生 TS 类型擦除**（`await import(pathToFileURL(_menu.map.ts))`）评估各 app 的 `appManifest`，不依赖 jiti/tsx（bare import 在 pnpm 根脚本里解析不到）。
+- 启动期早校验：`apps/web/instrumentation.ts` 仅 `import("@/manifest")` 触发 `createPlatformConfig` 校验。
 
 ## Next.js 约束
 

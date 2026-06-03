@@ -22,5 +22,6 @@ const menuEntrySchema = z.object({
 
 export const appManifestSchema = z.object({
   appId: z.string().min(1),
+  contractKeys: z.array(z.string().min(1)).min(1),
   menus: z.array(menuEntrySchema),
 });
