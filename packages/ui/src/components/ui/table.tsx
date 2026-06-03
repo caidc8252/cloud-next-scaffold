@@ -61,7 +61,9 @@ const HEAD_DENSITY: Record<TableDensity, string> = {
 // Generic typed data table driven by a columns config — no manual thead/tbody markup needed.
 // columns: {key, title, render?(row)=>ReactNode, field?, sortable?, width?, align?}[]
 // rowKey: (row, index) => string|number — required for React deduplication.
-// sort + onSortChange: controlled sort state {key, dir}; pass null to clear.
+// sort + onSortChange: controlled sort state {key, dir}. Clicking a sortable header cycles
+// unsorted → asc → desc → unsorted; the third click reports null — treat it as "restore
+// natural order" (don't ignore it, or the header gets stuck on desc).
 // onRowClick: makes rows cursor-pointer and calls handler with (row, index).
 // empty: custom node shown when rows is empty (defaults to "No data").
 // density/striped/bordered/stickyFirstColumn/rowState: TOMS v2.0 table variants.
@@ -82,9 +84,11 @@ export function Table<R>({
 }: TableProps<R>) {
   const handleSort = (col: TableColumn<R>) => {
     if (!col.sortable || !onSortChange) return
+    // Tri-state cycle: unsorted → asc → desc → unsorted (null clears the sort,
+    // letting the consumer fall back to its natural order).
     if (!sort || sort.key !== col.key) onSortChange({ key: col.key, dir: 'asc' })
     else if (sort.dir === 'asc') onSortChange({ key: col.key, dir: 'desc' })
-    else onSortChange({ key: col.key, dir: 'asc' })
+    else onSortChange(null)
   }
 
   // Sticky cells need an opaque background so scrolled content doesn't bleed through.
@@ -112,7 +116,8 @@ export function Table<R>({
                 style={{ width: col.width, textAlign: col.align ?? 'left' }}
                 className={cn(
                   HEAD_DENSITY[density],
-                  'text-md font-medium text-content-tertiary uppercase tracking-wide border-b border-line-default',
+                  // No text-transform: the header renders col.title exactly as passed.
+                  'text-xs font-medium text-content-tertiary tracking-wide border-b border-line-default',
                   separator,
                   stickyCell(colIndex, true),
                 )}
@@ -120,14 +125,14 @@ export function Table<R>({
                 {col.sortable ? (
                   <button
                     onClick={() => handleSort(col)}
-                    className="inline-flex items-center gap-1 cursor-pointer hover:text-content-primary focus-visible:outline-none"
+                    className="group/sort inline-flex items-center gap-1 cursor-pointer hover:text-content-primary focus-visible:outline-none"
                   >
                     {col.title}
                     {sort?.key === col.key
                       ? sort.dir === 'asc'
-                        ? <ChevronUp className="size-4" />
-                        : <ChevronDown className="size-4" />
-                      : <ChevronsUpDown className="size-4 opacity-30" />
+                        ? <ChevronUp className="size-3.5 text-primary" />
+                        : <ChevronDown className="size-3.5 text-primary" />
+                      : <ChevronsUpDown className="size-3.5 opacity-0 transition-opacity duration-fast group-hover/sort:opacity-60" />
                     }
                   </button>
                 ) : col.title}
@@ -153,8 +158,8 @@ export function Table<R>({
                   data-disabled={state?.disabled || undefined}
                   data-expanded={state?.expanded || undefined}
                   className={cn(
-                    'border-b border-line-subtle hover:bg-surface-hover/40 dark:hover:bg-surface-3 transition-colors duration-fast',
-                    striped && 'even:bg-surface-3 even:hover:bg-surface-hover/60',
+                    'border-b border-line-subtle hover:bg-surface-hover transition-colors duration-fast',
+                    striped && 'even:bg-surface-3 even:hover:bg-surface-hover',
                     // TOMS v2.0 row states: selected = tinted bg + 2px primary left bar,
                     // expanded = surface-3, disabled = dimmed + inert.
                     'aria-selected:bg-state-selected aria-selected:hover:bg-state-selected aria-selected:shadow-row-selected',

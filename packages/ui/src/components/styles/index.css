@@ -57,6 +57,16 @@
   --color-info-500:    oklch(60% 0.14 230);
   --color-info-700:    oklch(48% 0.13 230);
 
+  /* ─── Palette · Category hues (decorative labels — e.g. contract kinds,
+         pilot markers). From the TOMS Customers DS 2.0 sample: merchant teal
+         (hue 190) and pilot violet (hue 280) have no semantic equivalent. ─── */
+  --color-teal-50:    oklch(95% 0.04 190);
+  --color-teal-500:   oklch(60% 0.12 190);
+  --color-teal-700:   oklch(46% 0.12 190);
+  --color-violet-50:  oklch(95% 0.04 280);
+  --color-violet-500: oklch(58% 0.14 280);
+  --color-violet-700: oklch(40% 0.16 280);
+
   /* Semantic shortcuts: bg-success / bg-success-bg / text-success-strong */
   --color-success:        var(--color-success-500);
   --color-success-bg:     var(--color-success-50);
@@ -128,6 +138,8 @@
   --shadow-sticky-col:   1px 0 0 var(--color-line-subtle);
 
   /* ─── Type scale (overrides Tailwind defaults) ─── */
+  /* 2xs: overline/sub-caption size from the TOMS portal prototype (10.5–11px) */
+  --text-2xs: 11px;
   --text-xs:  12px;
   --text-sm:  13px;
   --text-md:  14px;
@@ -275,6 +287,13 @@
   --color-info-50:     oklch(24% 0.05 235);
   --color-info-500:    oklch(70% 0.12 235);
   --color-info-700:    oklch(80% 0.10 235);
+
+  --color-teal-50:    oklch(24% 0.05 190);
+  --color-teal-500:   oklch(70% 0.12 190);
+  --color-teal-700:   oklch(80% 0.10 190);
+  --color-violet-50:  oklch(24% 0.05 280);
+  --color-violet-500: oklch(70% 0.12 280);
+  --color-violet-700: oklch(80% 0.10 280);
 
   --color-surface-1:       oklch(15% 0.005 270);
   --color-surface-2:       oklch(18% 0.006 270);
