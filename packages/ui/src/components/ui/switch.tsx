@@ -17,7 +17,7 @@ function Switch({
       data-slot="switch"
       data-size={size}
       className={cn(
-        "peer group/switch relative inline-flex shrink-0 items-center rounded-full border border-transparent transition-all outline-none cursor-pointer after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:shadow-focus aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 data-[size=default]:h-5 data-[size=default]:w-9 data-[size=sm]:h-3.5 data-[size=sm]:w-6 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-unchecked:bg-line-strong data-checked:bg-primary data-checked:shadow-cta data-checked:hover:bg-primary-600 dark:data-unchecked:bg-input/80 dark:data-checked:bg-primary data-disabled:cursor-not-allowed data-disabled:opacity-50",
+        "peer group/switch relative inline-flex shrink-0 items-center rounded-full border border-transparent transition-all outline-none cursor-pointer after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:shadow-focus aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 data-[size=default]:h-5 data-[size=default]:w-9 data-[size=sm]:h-3.5 data-[size=sm]:w-6 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-unchecked:bg-line-strong data-unchecked:hover:bg-content-disabled data-checked:bg-primary data-checked:shadow-cta data-checked:hover:bg-primary-600 dark:data-unchecked:bg-input/80 dark:data-unchecked:hover:bg-content-disabled dark:data-checked:bg-primary data-disabled:cursor-not-allowed data-disabled:opacity-50",
         className
       )}
       {...props}
