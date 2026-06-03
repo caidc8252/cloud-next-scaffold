@@ -47,14 +47,25 @@ interface StepIndicatorProps extends React.ComponentProps<"ol"> {
   steps: StepIndicatorStep[]
   // Index of the active step (0-based). Earlier steps render completed, later ones upcoming.
   current: number
+  // Optional step navigation. When provided, steps up to `maxNavigableStep`
+  // render as buttons and invoke this with their index on click. Omit it (the
+  // default) and the indicator stays purely presentational.
+  onStepClick?: (index: number) => void
+  // Highest step index (0-based) the user may jump to via click — typically
+  // the furthest step they have already visited. Defaults to `current`, i.e.
+  // only completed/active steps are clickable. Ignored without `onStepClick`.
+  maxNavigableStep?: number
 }
 
-// Horizontal, display-only progress indicator for multi-step flows (wizards).
-// Pure presentation: navigation is driven by the surrounding form, not by this component.
-// For the numeric +/- spinbutton see `Stepper` — different component, similar name.
+// Horizontal progress indicator for multi-step flows (wizards).
+// Display-only by default: navigation is driven by the surrounding form. Pass
+// `onStepClick` (+ optionally `maxNavigableStep`) to let users jump back to
+// steps they have already visited. For the numeric +/- spinbutton see
+// `Stepper` — different component, similar name.
 //
 // Usage:
-//   const [current, setCurrent] = useState(0) // 0-based active step
+//   const [current, setCurrent] = useState(0)   // 0-based active step
+//   const [maxStep, setMaxStep] = useState(0)   // furthest step reached
 //   <StepIndicator
 //     current={current}
 //     steps={[
@@ -62,8 +73,11 @@ interface StepIndicatorProps extends React.ComponentProps<"ol"> {
 //       { caption: "Step 2", label: "Contracts" },
 //       { caption: "Done",   label: "Confirmation" },
 //     ]}
+//     onStepClick={setCurrent}        // optional: click-to-jump
+//     maxNavigableStep={maxStep}      // optional: how far clicks may reach
 //   />
-//   // Drive `current` from the wizard's Back / Continue buttons.
+//   // Drive `current` from the wizard's Back / Continue buttons; advance
+//   // maxStep alongside (e.g. setMaxStep(m => Math.max(m, next))).
 //
 // States derive from `current`: index < current -> completed (green + check),
 // index === current -> active (filled primary), index > current -> upcoming (muted).
@@ -76,7 +90,16 @@ interface StepIndicatorProps extends React.ComponentProps<"ol"> {
 //     steps={steps}
 //     current={current}
 //   />
-function StepIndicator({ steps, current, className, ...props }: StepIndicatorProps) {
+function StepIndicator({
+  steps,
+  current,
+  onStepClick,
+  maxNavigableStep,
+  className,
+  ...props
+}: StepIndicatorProps) {
+  // Without a click handler nothing is navigable (display-only default).
+  const maxNavigable = onStepClick ? (maxNavigableStep ?? current) : -1
   return (
     <ol
       data-slot="step-indicator"
@@ -87,6 +110,22 @@ function StepIndicator({ steps, current, className, ...props }: StepIndicatorPro
         const state: StepState =
           index < current ? "completed" : index === current ? "active" : "upcoming"
         const isLast = index === steps.length - 1
+        const clickable = index <= maxNavigable
+        const content = (
+          <>
+            <span className={stepDotVariants({ state })}>
+              {state === "completed" ? <CheckIcon size={14} /> : index + 1}
+            </span>
+            <span className="flex flex-col leading-tight">
+              {step.caption ? (
+                <small className="text-xs font-medium tracking-wide text-content-tertiary uppercase">
+                  {step.caption}
+                </small>
+              ) : null}
+              <strong className={stepLabelVariants({ state })}>{step.label}</strong>
+            </span>
+          </>
+        )
         return (
           <li
             key={step.label}
@@ -94,19 +133,17 @@ function StepIndicator({ steps, current, className, ...props }: StepIndicatorPro
             aria-current={state === "active" ? "step" : undefined}
             className={cn("flex items-center gap-2", isLast ? "flex-none" : "flex-1")}
           >
-            <div className="flex items-center gap-2.5">
-              <span className={stepDotVariants({ state })}>
-                {state === "completed" ? <CheckIcon size={14} /> : index + 1}
-              </span>
-              <span className="flex flex-col leading-tight">
-                {step.caption ? (
-                  <small className="text-xs font-medium tracking-wide text-content-tertiary uppercase">
-                    {step.caption}
-                  </small>
-                ) : null}
-                <strong className={stepLabelVariants({ state })}>{step.label}</strong>
-              </span>
-            </div>
+            {clickable ? (
+              <button
+                type="button"
+                onClick={() => onStepClick?.(index)}
+                className="flex cursor-pointer items-center gap-2.5 rounded-md outline-none focus-visible:shadow-focus"
+              >
+                {content}
+              </button>
+            ) : (
+              <div className="flex items-center gap-2.5">{content}</div>
+            )}
             {!isLast ? (
               <span
                 aria-hidden
