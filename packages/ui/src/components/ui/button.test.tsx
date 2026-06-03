@@ -16,3 +16,31 @@ describe("buttonVariants — danger hover/active (TOMS v2.0)", () => {
     })
   }
 })
+
+describe("buttonVariants — soft family (TOMS v2.0)", () => {
+  it("soft: tonal primary fill", () => {
+    const classes = buttonVariants({ variant: "soft" })
+    expect(classes).toContain("bg-primary-50")
+    expect(classes).toContain("text-primary-700")
+  })
+
+  it("subtle: transparent until hover", () => {
+    const classes = buttonVariants({ variant: "subtle" })
+    expect(classes).toContain("text-content-secondary")
+    expect(classes).toContain("hover:bg-surface-hover")
+    expect(classes).not.toContain("bg-primary")
+  })
+
+  for (const [variant, bg, fg] of [
+    ["soft-success", "bg-success-bg", "text-success-strong"],
+    ["soft-warning", "bg-warning-bg", "text-warning-strong"],
+    ["soft-danger", "bg-error-bg", "text-error-strong"],
+    ["soft-info", "bg-info-bg", "text-info-strong"],
+  ] as const) {
+    it(`${variant}: tone-bg fill with strong tone text`, () => {
+      const classes = buttonVariants({ variant })
+      expect(classes).toContain(bg)
+      expect(classes).toContain(fg)
+    })
+  }
+})

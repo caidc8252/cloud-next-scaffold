@@ -6,6 +6,19 @@ import { XIcon } from "lucide-react"
 
 import { cn } from "../../lib/utils"
 
+type ModalSize = "sm" | "md" | "lg" | "xl" | "fullscreen"
+
+// TOMS v2.0 modal widths: sm 360 / md 480 (default) / lg 640 / xl 880;
+// fullscreen leaves a 32px frame on every side. Mobile always caps at
+// calc(100% - 2rem) via the base class.
+const MODAL_SIZES: Record<ModalSize, string> = {
+  sm: "sm:max-w-[360px]",
+  md: "sm:max-w-[480px]",
+  lg: "sm:max-w-[640px]",
+  xl: "sm:max-w-[880px]",
+  fullscreen: "max-w-none w-[calc(100vw-64px)] h-[calc(100vh-64px)] max-h-[calc(100vh-64px)]",
+}
+
 interface ModalProps {
   open?: boolean
   onClose?: () => void
@@ -14,6 +27,8 @@ interface ModalProps {
   footer?: React.ReactNode
   closeOnOverlay?: boolean
   showCloseButton?: boolean
+  /** Width preset: 'sm'|'md'|'lg'|'xl'|'fullscreen'. Default 'md' (480px). */
+  size?: ModalSize
   children?: React.ReactNode
   className?: string
 }
@@ -26,6 +41,7 @@ function Modal({
   footer,
   closeOnOverlay = true,
   showCloseButton = true,
+  size = "md",
   children,
   className,
 }: ModalProps) {
@@ -47,7 +63,8 @@ function Modal({
         <DialogPrimitive.Popup
           data-slot="modal-content"
           className={cn(
-            "fixed top-1/2 left-1/2 z-modal flex w-full max-w-[calc(100%-2rem)] sm:max-w-md max-h-[calc(100vh-96px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-line-subtle bg-popover text-popover-foreground shadow-4 outline-none duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            "fixed top-1/2 left-1/2 z-modal flex w-full max-w-[calc(100%-2rem)] max-h-[calc(100vh-96px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-line-subtle bg-popover text-popover-foreground shadow-4 outline-none duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            MODAL_SIZES[size],
             className
           )}
         >
@@ -107,6 +124,6 @@ function Modal({
   )
 }
 
-export { Modal, type ModalProps }
+export { Modal, type ModalProps, type ModalSize }
 
 

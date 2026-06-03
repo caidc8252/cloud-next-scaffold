@@ -81,6 +81,9 @@
   --color-surface-hover:   oklch(95.8% 0.005 90);
   --color-surface-active:  oklch(93.5% 0.006 90);
   --color-surface-overlay: oklch(15% 0.01 270 / 0.45);
+  /* Selected row/item surface (TOMS v2.0 --color-state-selected).
+     color-mix of vars — adapts to dark mode automatically. */
+  --color-state-selected:  color-mix(in oklch, var(--color-primary-50) 70%, var(--color-surface-2) 30%);
 
   /* ─── Content · text-content-{primary|secondary|...|on-primary} ─── */
   --color-content-primary:    oklch(18% 0.01  270);
@@ -119,6 +122,10 @@
                 0 1px 2px oklch(0% 0 0 / 0.25),
                 0 0 0 0.5px oklch(0% 0 0 / 0.4);
   --shadow-focus: 0 0 0 3px oklch(40% 0.14 262 / 0.25);
+  /* Table accents (TOMS v2.0): selected-row left bar + sticky-column edge.
+     var()-based so they follow theme switches; lint bans arbitrary shadow-[…]. */
+  --shadow-row-selected: inset 2px 0 0 var(--color-primary-700);
+  --shadow-sticky-col:   1px 0 0 var(--color-line-subtle);
 
   /* ─── Type scale (overrides Tailwind defaults) ─── */
   --text-xs:  12px;
