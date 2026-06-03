@@ -25,6 +25,15 @@ export class RequestError extends Error {
   }
 }
 
+// 通用机制：包只在收到 401 时回调，由应用层决定如何处理（如会话失效跳登出）。
+// 包不认识任何应用路由或错误码——策略留在应用层。
+type UnauthorizedHandler = (error: RequestError) => void;
+let onUnauthorized: UnauthorizedHandler | undefined;
+
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | undefined): void {
+  onUnauthorized = handler;
+}
+
 function buildUrl(url: string, query: RequestOptions["query"]): string {
   if (!query) return url;
   const fallbackOrigin = "http://_internal_";
@@ -82,11 +91,14 @@ async function execute(method: string, url: string, body?: unknown, options?: Re
     try {
       errorBody = (await response.json()) as ErrorBody;
     } catch {}
-    throw new RequestError(
+    const error = new RequestError(
       errorBody?.message ?? `HTTP ${response.status}`,
       response.status,
       errorBody,
     );
+    // 仅在 401 时回调应用层处理器（如会话失效跳登出）；其余错误照常抛出。
+    if (response.status === 401) onUnauthorized?.(error);
+    throw error;
   }
 
   if (response.status === 204) return undefined;
