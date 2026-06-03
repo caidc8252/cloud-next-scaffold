@@ -197,6 +197,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ### 国际化 / i18n
 
+- **页面文案禁止硬编码**：所有面向用户的可见文案（页面、组件、表单、按钮、提示、空态、错误展示等）一律走 i18n，从 message 取，不在 JSX / 字符串里写死中英文字面量
+  - 客户端组件用 `useTranslations`，RSC 用 `getTranslations`，文案落到 `apps/web/i18n/messages/`，`en.json` 为基底
+  - 新增文案先补 key（en 必填，其余 locale 只写差异，缺 key 自动回退英文），再在页面引用，不要先硬编码再说
+  - 例外：日志、调试信息、不展示给用户的内部标识不强制
 - 国际化统一走 `@cloud/i18n`（`next-intl` 薄封装），**禁止在业务或 UI 里直接 import `next-intl`**，lint 会拦
   - RSC / route handler 用 `@cloud/i18n/server`（`createI18nRequestConfig` / `deepMerge` / `set*Action`）
   - 客户端组件用 `@cloud/i18n/client`（`useTranslations` / `useFormatter` / `TimeZoneInit` 等）；语言切换的 server action 从 `@cloud/i18n/actions` 取
