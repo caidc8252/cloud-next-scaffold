@@ -67,6 +67,9 @@
   --color-error:          var(--color-error-500);
   --color-error-bg:       var(--color-error-50);
   --color-error-strong:   var(--color-error-700);
+  /* Danger button pressed state (TOMS v2.0): error-700 nudged toward text.
+     color-mix of vars — adapts to dark mode automatically. */
+  --color-error-active:   color-mix(in oklch, var(--color-error-700) 82%, var(--color-content-primary) 18%);
   --color-info:           var(--color-info-500);
   --color-info-bg:        var(--color-info-50);
   --color-info-strong:    var(--color-info-700);
@@ -152,7 +155,7 @@
   --spacing-cx-lg: 18px;
 
   /* ─── Container max-widths → max-w-* ─── */
-  --container-content: 1200px;
+  --container-content: 1280px; /* TOMS: content max-width 1280 + 24px gutters */
 
   /* ─── Breakpoints ─── */
   --breakpoint-xs:  480px;

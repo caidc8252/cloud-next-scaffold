@@ -24,10 +24,12 @@ const buttonVariants = cva(
           "hover:bg-surface-hover active:bg-surface-active aria-expanded:bg-surface-hover",
         "ghost-danger":
           "text-error hover:bg-error-bg hover:text-error-strong active:bg-error/15 aria-expanded:bg-error-bg focus-visible:border-error-strong/40 focus-visible:ring-error/20",
+        // TOMS v2.0: solid hover/active steps (error-700, then mixed toward
+        // text) — the v1 brightness() filter approach is deprecated upstream.
         destructive:
-          "bg-error text-content-inverse shadow-cta hover:brightness-105 active:brightness-95 focus-visible:border-error-strong/40 focus-visible:ring-error/20 bg-clip-border",
+          "bg-error text-content-inverse shadow-cta hover:bg-error-strong active:bg-error-active focus-visible:border-error-strong/40 focus-visible:ring-error/20 bg-clip-border",
         danger:
-          "bg-error text-content-inverse shadow-cta hover:brightness-105 active:brightness-95 focus-visible:border-error-strong/40 focus-visible:ring-error/20 bg-clip-border",
+          "bg-error text-content-inverse shadow-cta hover:bg-error-strong active:bg-error-active focus-visible:border-error-strong/40 focus-visible:ring-error/20 bg-clip-border",
         link: "h-auto! p-0! border-transparent! text-primary-500 hover:underline",
       },
       size: {
