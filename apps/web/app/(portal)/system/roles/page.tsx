@@ -1,6 +1,6 @@
 import { prisma } from "@cloud/db";
 import { requirePermissions } from "@cloud/permissions/server";
-import { getPlatformManifest, PLATFORM_ID } from "@/manifest";
+import { getMenus } from "@/manifest";
 import { selectPermissionGroups } from "@/manifest/select";
 import { toClientRole } from "@/app/(portal)/system/roles/_server/role-mapper";
 import { RolesPage } from "@/app/(portal)/system/roles/_components/roles-page";
@@ -30,9 +30,8 @@ async function loadRoles(partnerId: number) {
 
 // 权限目录来自本平台 manifest（按当前公司持有的契约过滤），不再读 sys_menu/sys_permission。
 function loadPermissionGroups(contractTypes: string[]): PermissionGroup[] {
-  const manifest = getPlatformManifest(PLATFORM_ID);
-  if (!manifest) throw new Error(`[manifest] platform "${PLATFORM_ID}" not found`);
-  return selectPermissionGroups(manifest, contractTypes).map((group) => ({
+  const menus = getMenus(contractTypes);
+  return selectPermissionGroups(menus).map((group) => ({
     menuId: group.menuCode,
     menuTitle: group.menuTitle,
     items: group.items,

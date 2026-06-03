@@ -1,24 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { getAppIds, getContractKeys, getPlatformManifest, PLATFORM_ID } from "@/manifest";
+import { getContractKeys, getMenus, PLATFORM_CONTRACTS } from "@/manifest";
 
 describe("web platform manifest", () => {
-  it("collects the web platform", () => {
-    expect(getAppIds()).toContain(PLATFORM_ID);
+  it("getMenus() returns the aggregated flat menu pool", () => {
+    const codes = getMenus().map((m) => m.menuCode);
+    expect(codes).toContain("dashboard");
+    expect(codes).toContain("system");
   });
 
-  it("exposes the web manifest via getPlatformManifest(appId)", () => {
-    expect(getPlatformManifest(PLATFORM_ID)?.appId).toBe(PLATFORM_ID);
+  it("getMenus(contract) keeps wildcard menus and that contract's menus", () => {
+    const codes = getMenus("ADMIN").map((m) => m.menuCode);
+    expect(codes).toContain("roles"); // contractTypes: ["ADMIN"]
+    expect(codes).toContain("dashboard"); // contractTypes: ["*"]
   });
 
-  it("returns null for an unknown platform", () => {
-    expect(getPlatformManifest("ghost")).toBeNull();
+  it("hides ADMIN-only menus from a non-ADMIN contract", () => {
+    const codes = getMenus("ISO").map((m) => m.menuCode);
+    expect(codes).not.toContain("roles");
+    expect(codes).toContain("dashboard");
   });
 
-  it("aggregates the declared contract keys", () => {
-    expect(getContractKeys()).toEqual(expect.arrayContaining(["ADMIN", "ISO", "ISV", "MERCHANT"]));
-  });
-
-  it("getPlatformManifest() returns the full collection including web", () => {
-    expect(getPlatformManifest().map((m) => m.appId)).toContain(PLATFORM_ID);
+  it("exposes the platform's bound contracts", () => {
+    expect(PLATFORM_CONTRACTS).toEqual(["ADMIN", "ISO", "ISV", "MERCHANT"]);
+    expect(getContractKeys()).toEqual(["ADMIN", "ISO", "ISV", "MERCHANT"]);
   });
 });

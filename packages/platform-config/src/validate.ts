@@ -1,4 +1,4 @@
-import type { AppManifest, MenuEntry } from "./types.ts";
+import type { MenuEntry } from "./types.ts";
 
 const WILDCARD = "*";
 
@@ -9,18 +9,18 @@ export type ValidateOptions = {
   resolveIcon?: (name: string) => boolean;
 };
 
-function fail(appId: string, message: string): never {
-  throw new Error(`[platform-config] app "${appId}": ${message}`);
+function fail(message: string): never {
+  throw new Error(`[platform-config] ${message}`);
 }
 
-function detectCycle(menus: MenuEntry[], appId: string): void {
+function detectCycle(menus: MenuEntry[]): void {
   const parentOf = new Map(menus.map((m) => [m.menuCode, m.parentMenuCode]));
   for (const start of menus) {
     const seen = new Set<string>();
     let cur: string | null = start.menuCode;
     while (cur !== null) {
       if (seen.has(cur)) {
-        fail(appId, `menu "${start.menuCode}" is part of a parent cycle`);
+        fail(`menu "${start.menuCode}" is part of a parent cycle`);
       }
       seen.add(cur);
       cur = parentOf.get(cur) ?? null;
@@ -29,15 +29,14 @@ function detectCycle(menus: MenuEntry[], appId: string): void {
 }
 
 /**
- * 单个平台内部的完整性校验（不跨平台）。任一项不满足即抛错。
- * - menuCode / permissionCode 平台内唯一
- * - parentMenuCode 必须存在于同平台、parent 链不成环
+ * 聚合菜单池的完整性校验（全局，跨 app 已拍平成一份）。任一项不满足即抛错。
+ * - menuCode / permissionCode 全局唯一
+ * - parentMenuCode 必须存在、parent 链不成环
  * - 目录（path 为 null）必须有子级
  * - contractTypes 非空且都在合法清单内（若提供）
  * - icon 合法（若提供校验器）
  */
-export function validateAppManifest(manifest: AppManifest, opts: ValidateOptions = {}): void {
-  const { appId, menus } = manifest;
+export function validateMenus(menus: MenuEntry[], opts: ValidateOptions = {}): void {
   const allowedContracts = opts.contractTypes
     ? new Set<string>([...opts.contractTypes, WILDCARD])
     : null;
@@ -47,21 +46,21 @@ export function validateAppManifest(manifest: AppManifest, opts: ValidateOptions
   const childCount = new Map<string, number>();
 
   for (const m of menus) {
-    if (menuCodes.has(m.menuCode)) fail(appId, `duplicate menuCode "${m.menuCode}"`);
+    if (menuCodes.has(m.menuCode)) fail(`duplicate menuCode "${m.menuCode}"`);
     menuCodes.add(m.menuCode);
 
     for (const ct of m.contractTypes) {
       if (allowedContracts && !allowedContracts.has(ct)) {
-        fail(appId, `unknown contractType "${ct}" on menu "${m.menuCode}"`);
+        fail(`unknown contractType "${ct}" on menu "${m.menuCode}"`);
       }
     }
 
     if (m.icon && opts.resolveIcon && !opts.resolveIcon(m.icon)) {
-      fail(appId, `unknown icon "${m.icon}" on menu "${m.menuCode}"`);
+      fail(`unknown icon "${m.icon}" on menu "${m.menuCode}"`);
     }
 
     for (const p of m.permissions ?? []) {
-      if (permissionCodes.has(p.code)) fail(appId, `duplicate permissionCode "${p.code}"`);
+      if (permissionCodes.has(p.code)) fail(`duplicate permissionCode "${p.code}"`);
       permissionCodes.add(p.code);
     }
 
@@ -72,13 +71,13 @@ export function validateAppManifest(manifest: AppManifest, opts: ValidateOptions
 
   for (const m of menus) {
     if (m.parentMenuCode !== null && !menuCodes.has(m.parentMenuCode)) {
-      fail(appId, `menu "${m.menuCode}" references missing parent "${m.parentMenuCode}"`);
+      fail(`menu "${m.menuCode}" references missing parent "${m.parentMenuCode}"`);
     }
     const isGroup = m.path == null;
     if (isGroup && (childCount.get(m.menuCode) ?? 0) === 0) {
-      fail(appId, `group menu "${m.menuCode}" (no path) has no children`);
+      fail(`group menu "${m.menuCode}" (no path) has no children`);
     }
   }
 
-  detectCycle(menus, appId);
+  detectCycle(menus);
 }

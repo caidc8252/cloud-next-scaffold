@@ -1,5 +1,5 @@
 export { defineAppManifest } from "./define.ts";
-export { validateAppManifest, type ValidateOptions } from "./validate.ts";
+export { validateMenus, type ValidateOptions } from "./validate.ts";
 export {
   createPlatformConfig,
   type CreatePlatformConfigOptions,

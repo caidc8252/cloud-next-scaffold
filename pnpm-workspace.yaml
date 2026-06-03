@@ -1,5 +1,6 @@
 packages:
   - "apps/web"
+  - "apps/test1"
   - "packages/cache"
   - "packages/config"
   - "packages/db"

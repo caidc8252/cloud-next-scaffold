@@ -2,7 +2,7 @@ import "server-only";
 
 import { prisma } from "@cloud/db";
 import type { Session, SessionPartnerRef, SessionRole } from "@cloud/permissions/server";
-import { getPlatformManifest, PLATFORM_ID } from "@/manifest";
+import { getMenus } from "@/manifest";
 import { resolveEffectivePermissions } from "@/manifest/select";
 
 // 构建登录会话快照：读 DB（用户 / 公司关系 / 契约 / 角色），用 platform-config 按
@@ -99,11 +99,9 @@ async function buildCurrentContext(
     grantedRoleCodes = [...new Set(rolePermissions.map((p) => p.permissionCode))];
   }
 
-  const manifest = getPlatformManifest(PLATFORM_ID);
-  if (!manifest) throw new Error(`[manifest] platform "${PLATFORM_ID}" not found`);
+  const menus = getMenus(contractTypes);
   const permissions = resolveEffectivePermissions({
-    manifest,
-    contracts: contractTypes,
+    menus,
     authorizingType,
     grantedRoleCodes,
   });

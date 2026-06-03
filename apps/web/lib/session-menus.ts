@@ -2,7 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 import { getSession } from "@cloud/permissions/server";
-import { getPlatformManifest, PLATFORM_ID } from "@/manifest";
+import { getMenus } from "@/manifest";
 import { selectVisibleMenuTree, type MenuTreeNode } from "@/manifest/select";
 
 // 菜单不再存进会话快照，由本平台 manifest + 当前权限现算。
@@ -34,8 +34,7 @@ function flatten(nodes: MenuTreeNode[], parentMenuId: string | null, out: Sideba
 export const getSessionMenus = cache(async (): Promise<SidebarMenu[]> => {
   const session = await getSession();
   if (!session) return [];
-  const manifest = getPlatformManifest(PLATFORM_ID);
-  if (!manifest) throw new Error(`[manifest] platform "${PLATFORM_ID}" not found`);
-  const tree = selectVisibleMenuTree(manifest, session.contractTypes, session.permissions);
+  const menus = getMenus(session.contractTypes);
+  const tree = selectVisibleMenuTree(menus, session.permissions);
   return flatten(tree, null, []);
 });

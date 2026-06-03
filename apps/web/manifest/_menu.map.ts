@@ -4,7 +4,6 @@ import { defineAppManifest } from "@cloud/platform-config";
 // 三级约定：L1 目录(path:null) → L2/L3 叶子(有 path)。menuCode / permissionCode 平台内唯一。
 // contractTypes: ["*"] 表示所有契约可见；否则仅列出的契约可见。
 export const appManifest = defineAppManifest({
-  appId: "web",
   // 本平台声明的契约类型；gen:manifest 跨 app 取并集 → 全局契约枚举（替代旧 _contracts.ts）。
   contractKeys: ["ADMIN", "ISO", "ISV", "MERCHANT"],
   menus: [
