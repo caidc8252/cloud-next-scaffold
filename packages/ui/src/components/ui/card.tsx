@@ -32,6 +32,14 @@ const elevationClass: Record<CardElevation, string> = {
 const slotPaddingClass =
   "group-data-[size=sm]/card:p-3 group-data-[size=md]/card:p-5 group-data-[size=lg]/card:p-6"
 
+// flush: drops the size-based slot padding for full-bleed content (tables, row
+// lists) — rows then own their padding. Needed because the slot padding is a
+// group-data variant class: a consumer's un-prefixed `p-0` can't override it
+// (tailwind-merge won't dedupe across variants and the variant rule sorts later).
+interface CardSlotProps extends React.ComponentProps<"div"> {
+  flush?: boolean
+}
+
 // Bordered content container.
 // size: 'sm'|'md'|'lg' — controls radius (8/12/16) and slot padding (12/20/24) uniformly.
 // elevation: 0 flat / 1 rest (default) / 2 lifted — resting cards should stay at 1; 2 is for hover/popover.
@@ -61,13 +69,13 @@ function Card({
   )
 }
 
-function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+function CardHeader({ className, flush = false, ...props }: CardSlotProps) {
   return (
     <div
       data-slot="card-header"
       className={cn(
         "@container/card-header grid auto-rows-min items-start gap-1 border-b border-line-subtle",
-        slotPaddingClass,
+        !flush && slotPaddingClass,
         "has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto]",
         className
       )}
@@ -112,23 +120,23 @@ function CardAction({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+function CardContent({ className, flush = false, ...props }: CardSlotProps) {
   return (
     <div
       data-slot="card-content"
-      className={cn(slotPaddingClass, className)}
+      className={cn(!flush && slotPaddingClass, className)}
       {...props}
     />
   )
 }
 
-function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+function CardFooter({ className, flush = false, ...props }: CardSlotProps) {
   return (
     <div
       data-slot="card-footer"
       className={cn(
         "flex items-center border-t border-line-subtle",
-        slotPaddingClass,
+        !flush && slotPaddingClass,
         className
       )}
       {...props}
