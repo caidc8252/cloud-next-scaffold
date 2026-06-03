@@ -57,6 +57,7 @@
   - `_server/`：服务端工具（mapper、纯查询逻辑），文件需 `import "server-only"`
   - 跨 feature 共享的类型 / helper 放 `app/(portal)/system/_shared/`
 - 跨目录引用一律走 `@/...` 路径别名（tsconfig 已配置），不要再写 `../../../..`。
+- `@cloud/ui` Card 槽位（`CardHeader` / `CardContent` / `CardFooter`）的 padding 是 `group-data-[size=*]/card:p-*` 变体类：消费侧无前缀的 `p-0` / `px-0` **覆盖不掉**（tailwind-merge 不跨变体去重，且变体规则在产物中排在基础工具类之后、同特异性后者赢）。要贴边内容（表格、行列表）给对应槽位加 `flush`（如 `<CardContent flush>`，跳过槽位 padding，行自带内边距），不要用 `!important`。
 - API Route Handler 的异常兜底统一走 `apps/web/lib/api-handler.ts`：
   - 业务校验错误继续显式返回 `badRequestResponse` / `notFoundResponse` 等响应，不通过 throw 表达。
   - 成功 JSON 响应统一为 `{ code: "OK", message: "success", data, page?, limit?, total?, totalPages?, nextCursor?, hasNextPage?, traceId }`；分页字段和 `data` 同级，不再包 `pager`；DELETE 等无内容接口使用 204 空 body。
