@@ -82,6 +82,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - `@cloud/storage`：Amazon S3 上传会话、浏览器直传、服务端上传和存储配置归一化
   - `@cloud/config`：环境变量读取、配置校验、密码策略等基础配置能力
   - `@cloud/i18n`：`next-intl` 薄封装，固定 locale 清单、自定义 locale/时区 cookie、英文基底 + 深合并、格式预设、`TimeZoneInit`、locale/时区 server action（`@cloud/i18n/actions`）
+  - `@cloud/api-kit`：API 兜底骨架 `createApiHandler`（控制流重抛 + `runWithLocale` 包装 + 未知异常 500），及本栈默认件 `mapAuthzError` / `mapPrismaError` / `resolveLocaleFromCookie` / `composeMappers`；各 app 在自己的 `lib/api-handler.ts` 里注入 config 组装出 `withApiHandler` / `handleApiError`
 
 ### 存储与 S3
 
@@ -161,6 +162,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - 历史遗留的 Server Action 见到即顺手改成 API，不要新增
 - 统一通过 `packages/request` 发起请求
 - 客户端使用 `@cloud/request/client`
+- 客户端收到「会话失效类」401 会自动跳登出，机制在包、策略在 app，**不要在业务组件里手写 401 跳转**：
+  - 包：`@cloud/request/client` 的 `setUnauthorizedHandler(fn)` 在 `status===401` 时回调 `fn(RequestError)`，然后照常 throw（不吞错，组件原有 `catch` / `toastError` 不变）；包不认识任何 app 路由或错误码
+  - 策略：`apps/web/lib/session-expiry.ts` 的 `handleUnauthorized` 按**白名单 code** 决定是否登出——`{ "unauthenticated", ERR_UNAUTHORIZED, ERR_AUTH_NOT_AUTHENTICATED }` 命中才 `window.location.replace("/api/auth/logout")`（与服务端 `requirePermissions` 401 出口一致：清残留 cookie → 303 `/login`）；模块级 `redirecting` 锁防并发重复跳
+  - 登录页凭证错误 `ERR_AUTH_INVALID_CREDENTIALS` 也是 401，但**刻意不在白名单**，不会误跳；新增 401 码默认不触发登出，属于「会话失效」语义才往白名单补
+  - 注册：`apps/web/app/_components/unauthorized-redirect.tsx`（tiny client 组件）在根 layout 挂一次
 - 服务端响应优先使用 `@cloud/request/server` 提供的响应辅助函数
 - 成功 JSON 响应必须走 `successResponse()` / `createdResponse()`，body 形状为 `{ code: "OK", message: "success", data, page?, limit?, total?, totalPages?, nextCursor?, prevCursor?, hasNextPage?, hasPrevPage?, traceId }`，分页字段与 `data` 同级
 - DELETE 或其他无需 body 的接口使用 `noContentResponse()` 返回 204，response body 必须为空
@@ -189,7 +195,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - 前端逻辑、测试、监控优先依赖稳定 `code`
   - `message` 可以调整和国际化，不应作为业务判断依据
   - 成功和失败 JSON 响应都带 `traceId`；204 无 body 响应不带 `traceId`
-  - 错误文案由服务端按当前 locale 本地化，**code 为准**：`@cloud/request/error-messages` 注册表里有该 `code` 就按 locale 出文案，`errorResponse()` 的 `message` 参数只是「注册表外 code」（如 `storage.*` / `database.*` / permissions 的 `unauthenticated` `forbidden`）的兜底
+  - 错误文案由服务端按当前 locale 本地化，**code 为准**：`@cloud/request/error-messages` 注册表里有该 `code` 就按 locale 出文案，`errorResponse()` 的 `message` 参数只是「注册表外 code」（如 `storage.*` / `database.*` / permissions 的 `forbidden`）的兜底
+    - `handleApiError` 把 `AuthzError` 401 统一映射成注册表内的 `ERR_UNAUTHORIZED`（包内置三语、始终在场，全路由可本地化）；403 暂仍用 `forbidden` + 英文兜底
     - 注册表内的 code 走 `@cloud/request` 的错误码（`ERR_*`），新增错误码时同步在 `error-messages/{en,zh-CN,ja}.ts` 补三语，少补会编译报错
     - locale 由 `withApiHandler()` 在进 handler 前读 `LOCALE_COOKIE` 解析、用 `runWithLocale()` 注入请求级上下文；`errorResponse()` 等响应辅助保持同步，不在里面读 cookie
     - 没走 `withApiHandler()`（或非请求上下文）时 locale 回退英文

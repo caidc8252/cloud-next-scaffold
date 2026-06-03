@@ -9,6 +9,7 @@
 - 当前开发方式是直接在仓库本体上迭代，不再提供 `init:project` 生成新项目。
 - 当前默认工作区：
   - `apps/web`
+  - `packages/api-kit`
   - `packages/cache`
   - `packages/config`
   - `packages/db`
@@ -62,7 +63,7 @@
   - 成功 JSON 响应统一为 `{ code: "OK", message: "success", data, page?, limit?, total?, totalPages?, nextCursor?, hasNextPage?, traceId }`；分页字段和 `data` 同级，不再包 `pager`；DELETE 等无内容接口使用 204 空 body。
   - `AuthzError`、常见 Prisma 异常和未知异常由 `handleApiError()` 统一映射，S3 接口通过 `onError: s3ErrorResponse` 保留存储专项错误码。
   - Next 控制流异常（redirect / notFound）必须继续抛出，不要吞掉。
-- 错误文案服务端本地化（**code 为准**）：`@cloud/request/error-messages` 按 locale 维护 `ERR_*` 错误码 → 三语文案（en/zh-CN/ja，类型从 error-codes 推导，缺翻译编译报错）。`errorResponse()` 命中注册表就按当前 locale 出文案，`message` 参数只兜底注册表外的 code（`storage.*` / `database.*` / permissions 的 `unauthenticated` `forbidden`）。
+- 错误文案服务端本地化（**code 为准**）：`@cloud/request/error-messages` 按 locale 维护 `ERR_*` 错误码 → 三语文案（en/zh-CN/ja，类型从 error-codes 推导，缺翻译编译报错）。`errorResponse()` 命中注册表就按当前 locale 出文案，`message` 参数只兜底注册表外的 code（`storage.*` / `database.*` / permissions 的 `forbidden`）。`handleApiError` 把 `AuthzError` 401 统一映射成注册表内的 `ERR_UNAUTHORIZED`（包内置三语、始终在场，不依赖 app 级 `registerErrorMessages` 是否加载，全路由可本地化）；403 暂仍用 `forbidden` + 英文兜底。
   - 决策：helpers 保持同步（团队约定），但 Next 16 读 cookie 是异步的 → 用 `node:async_hooks` 的 `AsyncLocalStorage` 存请求级 locale。`withApiHandler()` 进 handler 前 `await` 解析 `LOCALE_COOKIE`、`runWithLocale()` 注入，handler 内同步构造的 `errorResponse()` 用 `getStore()` 同步取 locale。没设置（非请求上下文 / 没走 withApiHandler）回退英文。
   - locale cookie 解析放在 app 层 `api-handler.ts`（依赖 `@cloud/i18n`），`@cloud/request` 不依赖 `@cloud/i18n`：request 只负责「给定 ALS 里的 locale 就本地化」，app 负责「cookie → locale」。
   - `apps/web/i18n/request.ts` 另把同一份注册表注入 next-intl 的 `errors` 命名空间，供客户端 / RSC 直接 `useTranslations("errors")(code)` / `getTranslations`。
