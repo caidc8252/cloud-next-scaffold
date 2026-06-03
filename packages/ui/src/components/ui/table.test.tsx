@@ -80,6 +80,42 @@ describe("Table — TOMS v2.0 variants", () => {
     expect(clicked).toBe(1)
   })
 
+  it("sort header cycles unsorted -> asc -> desc -> unsorted", () => {
+    const calls: Array<{ key: string; dir: "asc" | "desc" } | null> = []
+    const sortable: TableColumn<Row>[] = [{ key: "name", title: "Name", field: "name", sortable: true }]
+    const { rerender } = render(
+      <Table columns={sortable} rows={ROWS} rowKey={(r) => r.id} onSortChange={(s) => calls.push(s)} />,
+    )
+    const header = () => screen.getByRole("button", { name: "Name" })
+
+    header().click()
+    expect(calls.at(-1)).toEqual({ key: "name", dir: "asc" })
+
+    rerender(
+      <Table
+        columns={sortable}
+        rows={ROWS}
+        rowKey={(r) => r.id}
+        sort={{ key: "name", dir: "asc" }}
+        onSortChange={(s) => calls.push(s)}
+      />,
+    )
+    header().click()
+    expect(calls.at(-1)).toEqual({ key: "name", dir: "desc" })
+
+    rerender(
+      <Table
+        columns={sortable}
+        rows={ROWS}
+        rowKey={(r) => r.id}
+        sort={{ key: "name", dir: "desc" }}
+        onSortChange={(s) => calls.push(s)}
+      />,
+    )
+    header().click()
+    expect(calls.at(-1)).toBeNull()
+  })
+
   it("stickyFirstColumn pins only the first column cells", () => {
     render(<Table columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} stickyFirstColumn />)
     const cells = rowOf("alpha")?.querySelectorAll("td")

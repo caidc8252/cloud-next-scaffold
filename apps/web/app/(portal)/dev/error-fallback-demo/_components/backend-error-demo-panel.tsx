@@ -72,13 +72,13 @@ const scenarioLabels: Record<DemoScenario, string> = {
 
 const columns: TableColumn<DemoMenuRow>[] = [
   { key: "id", title: "ID", field: "id", width: 72 },
-  { key: "title", title: "Title", field: "title" },
+  { key: "title", title: "TITLE", field: "title" },
   {
     key: "path",
-    title: "Path",
+    title: "PATH",
     render: (row) => row.path ?? "-",
   },
-  { key: "sort", title: "Sort", field: "sort", width: 88 },
+  { key: "sort", title: "SORT", field: "sort", width: 88 },
 ];
 
 function isSuccessBody(
