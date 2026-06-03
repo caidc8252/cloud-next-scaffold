@@ -1,144 +1,23 @@
 import "server-only";
 
-import { cookies } from "next/headers";
-import { AuthzError } from "@cloud/permissions/server";
-import { defaultLocale, isLocale, LOCALE_COOKIE } from "@cloud/i18n";
 import {
-  errorResponse,
-  forbiddenResponse,
-  internalErrorResponse,
-  notFoundResponse,
-  runWithLocale,
-  unauthorizedResponse,
-} from "@cloud/request/server";
+  composeMappers,
+  createApiHandler,
+  mapAuthzError,
+  mapPrismaError,
+  resolveLocaleFromCookie,
+} from "@cloud/api-kit";
 
-type RouteHandler<TArgs extends unknown[]> = (...args: TArgs) => Response | Promise<Response>;
+// 通用骨架与本栈默认件都在 @cloud/api-kit；这里只做本应用的「组装 + 注入」。
+// 映射顺序：AuthzError → 调用方 onError（如 s3ErrorResponse）→ Prisma 常见错误 → 骨架兜 500。
+// 将来若有 app 专属业务码映射，往这条链里追加 mapper 即可。
+export type { ApiHandlerOptions } from "@cloud/api-kit";
 
-type ApiHandlerOptions = {
-  onError?: (error: unknown) => Response | null;
-};
-
-type PrismaLikeError = {
-  name?: string;
-  code: string;
-  clientVersion?: string;
-  meta?: unknown;
-};
-
-const PRISMA_ERROR_RESPONSES: Record<string, { code: string; message: string; status: number }> = {
-  P2000: {
-    code: "database.value_too_long",
-    message: "Submitted value is too long.",
-    status: 400,
-  },
-  P2002: {
-    code: "database.unique_conflict",
-    message: "A record with the same unique value already exists.",
-    status: 409,
-  },
-  P2003: {
-    code: "database.foreign_key_conflict",
-    message: "Related data is missing or still in use.",
-    status: 409,
-  },
-  P2025: {
-    code: "database.record_not_found",
-    message: "Record not found.",
-    status: 404,
-  },
-};
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function isNextControlFlowError(error: unknown): boolean {
-  if (!isRecord(error)) return false;
-  const digest = error.digest;
-  return (
-    typeof digest === "string" &&
-    (digest.startsWith("NEXT_REDIRECT") || digest.startsWith("NEXT_NOT_FOUND"))
-  );
-}
-
-function toPrismaLikeError(error: unknown): PrismaLikeError | null {
-  if (!isRecord(error)) return null;
-
-  const name = typeof error.name === "string" ? error.name : undefined;
-  const code = typeof error.code === "string" ? error.code : undefined;
-  const clientVersion = typeof error.clientVersion === "string" ? error.clientVersion : undefined;
-
-  if (!code || (!name?.startsWith("PrismaClient") && !clientVersion)) {
-    return null;
-  }
-
-  return {
-    name,
-    code,
-    clientVersion,
-    meta: error.meta,
-  };
-}
-
-function prismaErrorResponse(error: unknown): Response | null {
-  const prismaError = toPrismaLikeError(error);
-  if (!prismaError) return null;
-
-  const mapped = PRISMA_ERROR_RESPONSES[prismaError.code];
-  if (!mapped) return null;
-
-  if (mapped.status === 404) {
-    return notFoundResponse(mapped.code, mapped.message);
-  }
-
-  return errorResponse(mapped.code, mapped.message, mapped.status);
-}
-
-export function handleApiError(error: unknown, options?: ApiHandlerOptions): Response {
-  if (isNextControlFlowError(error)) {
-    throw error;
-  }
-
-  if (error instanceof AuthzError) {
-    return error.status === 401
-      ? unauthorizedResponse(error.code, "Unauthorized.")
-      : forbiddenResponse(error.code, "Forbidden.");
-  }
-
-  const customResponse = options?.onError?.(error);
-  if (customResponse) return customResponse;
-
-  const databaseResponse = prismaErrorResponse(error);
-  if (databaseResponse) return databaseResponse;
-
-  return internalErrorResponse(error);
-}
-
-// 进 handler 前解析 locale cookie，整个 handler（含其内部同步构造的 errorResponse）跑在
-// runWithLocale 上下文里，错误文案据此本地化。cookies() 在非请求上下文（如单测直接调用
-// 包装后的 handler）会抛，这里兜底回退默认 locale。
-async function resolveRequestLocale(): Promise<string> {
-  try {
-    const cookieStore = await cookies();
-    const value = cookieStore.get(LOCALE_COOKIE)?.value;
-    return isLocale(value) ? value : defaultLocale;
-  } catch {
-    return defaultLocale;
-  }
-}
-
-export function withApiHandler<TArgs extends unknown[]>(
-  handler: RouteHandler<TArgs>,
-  options?: ApiHandlerOptions,
-): RouteHandler<TArgs> {
-  return async (...args) => {
-    const locale = await resolveRequestLocale();
-    return runWithLocale(locale, async () => {
-      try {
-        return await handler(...args);
-      } catch (error) {
-        return handleApiError(error, options);
-      }
-    });
-  };
-}
+export const { handleApiError, withApiHandler } = createApiHandler({
+  resolveLocale: resolveLocaleFromCookie,
+  mapError: composeMappers([
+    mapAuthzError,
+    (error, options) => options?.onError?.(error) ?? null,
+    mapPrismaError,
+  ]),
+});

@@ -10,6 +10,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@cloud/api-kit": "workspace:*",
     "@cloud/config": "workspace:*",
     "@cloud/db": "workspace:*",
     "@cloud/i18n": "workspace:*",

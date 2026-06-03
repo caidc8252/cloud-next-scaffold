@@ -1,5 +1,6 @@
 packages:
   - "apps/web"
+  - "packages/api-kit"
   - "packages/cache"
   - "packages/config"
   - "packages/db"

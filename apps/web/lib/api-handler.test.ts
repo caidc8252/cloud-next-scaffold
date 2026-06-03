@@ -6,6 +6,7 @@ import {
   successResponse,
   type Pager,
 } from "@cloud/request/server";
+import { ERR_UNAUTHORIZED } from "@cloud/request/error-codes";
 import { handleApiError, withApiHandler } from "./api-handler";
 
 async function readBody(response: Response) {
@@ -29,8 +30,9 @@ describe("api-handler", () => {
     const body = await readBody(response);
 
     expect(response.status).toBe(401);
-    expect(body.code).toBe("unauthenticated");
-    expect(body.message).toBe("Unauthorized.");
+    // 401 统一映射到注册表内的 ERR_UNAUTHORIZED，文案随 locale 本地化（无 ambient locale 时为英文基底）。
+    expect(body.code).toBe(ERR_UNAUTHORIZED);
+    expect(body.message).toBe("Authentication is required or your session has expired.");
     expect(body.traceId).toMatch(/^BIZ-/);
   });
 

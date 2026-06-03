@@ -7,6 +7,7 @@
 - `apps/web`：单个后台应用
 - `packages/ui`：基础 UI 组件与样式
 - `packages/request`：通用请求封装与错误码
+- `packages/api-kit`：API 兜底骨架与本栈默认错误映射（跨 app 复用）
 - `packages/config`：环境变量校验
 - `packages/cache`：Redis 客户端与 JSON KV 缓存封装
 - `packages/storage`：Amazon S3 上传会话、对象校验、服务端上传与下载链接封装
@@ -43,6 +44,7 @@ pnpm dev
 ## 当前工作区
 
 - `apps/web`
+- `packages/api-kit`
 - `packages/config`
 - `packages/cache`
 - `packages/db`
@@ -68,6 +70,7 @@ apps/
       role-mapper.ts      # 角色数据映射
     system/               # 系统管理业务 UI（users, roles）
 packages/
+  api-kit/                # API 兜底骨架 createApiHandler + 本栈默认错误映射
   cache/                  # Redis client + JSON KV cache
   config/                 # 环境变量校验
   db/                     # Prisma schema + 种子数据
@@ -207,6 +210,12 @@ export function UsersActions({ permissions }: { permissions: string[] }) {
   );
 }
 ```
+
+### 客户端会话失效自动登出
+
+服务端守卫（`requireSession` / `requirePermissions`）在 401 时会 `redirect("/api/auth/logout")`；客户端的 API 调用也有对称行为。`@cloud/request/client` 在收到 401 时会回调应用注册的处理器，由 [apps/web/lib/session-expiry.ts](apps/web/lib/session-expiry.ts) 判断——只有「会话失效类」错误码（`"unauthenticated"` / `ERR_UNAUTHORIZED` / `ERR_AUTH_NOT_AUTHENTICATED`）才整页跳 `/api/auth/logout`（清残留 cookie → `/login`）。登录页的凭证错误 `ERR_AUTH_INVALID_CREDENTIALS` 也是 401，但不在白名单，不会把登录失败误判为会话过期。
+
+机制在包（`setUnauthorizedHandler`，不认识任何 app 路由），策略在 app，通过根 layout 里的 `UnauthorizedRedirect` 组件注册一次。业务组件正常 `catch` + `toastError` 即可，不需要、也不应该自己写 401 跳转。
 
 ## S3 存储
 
@@ -563,7 +572,7 @@ if (!email) {
 }
 ```
 
-未预期异常统一交给 `apps/web/lib/api-handler.ts`。默认用 `withApiHandler()` 包裹整个 handler，不要在每个文件里手写 `try / catch`：
+未预期异常统一交给 `apps/web/lib/api-handler.ts`（通用骨架与本栈默认错误映射在 `@cloud/api-kit`，这里只注入 config 组装出 `withApiHandler` / `handleApiError`）。默认用 `withApiHandler()` 包裹整个 handler，不要在每个文件里手写 `try / catch`：
 
 ```ts
 import { withApiHandler } from "@/lib/api-handler";
