@@ -4,6 +4,7 @@ import { getEnv } from "@cloud/config";
 import { LOCALE_COOKIE, defaultLocale, isLocale } from "@cloud/i18n";
 import { NextIntlClientProvider, TimeZoneInit } from "@cloud/i18n/client";
 import { ClientToaster } from "./_components/client-toaster";
+import { UnauthorizedRedirect } from "./_components/unauthorized-redirect";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -26,6 +27,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             需显式传；messages / timeZone / formats 仍由 server 端 request config 注入 */}
         <NextIntlClientProvider locale={locale}>
           <TimeZoneInit />
+          <UnauthorizedRedirect />
           {children}
           <ClientToaster />
         </NextIntlClientProvider>
