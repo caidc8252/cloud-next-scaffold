@@ -124,3 +124,18 @@ pnpm --filter web build
 - **错误码**：新增 `ERR_AUTH_ACCOUNT_DISABLED` / `ERR_AUTH_ENCRYPTION_INVALID` / `ERR_AUTH_REQUEST_EXPIRED`，落 auth 域三语文案（`apps/web/lib/auth-error-messages.ts`）。
 - **下一期 TODO**：MFA verify 端点 + 临时 token 消费/升级为正式 session + 前端把 `mfaToken` 传给 `/mfa` 并做校验。
 - **部署提示**：生产需更换 RSA 密钥对（同时改前端公钥常量 `apps/web/lib/login-public-key.ts` + 私钥 env `AUTH_LOGIN_RSA_PRIVATE_KEY` 并重发）；`pnpm db:push` 需补 `mfa_enabled` 列（schema 已含）。
+
+## 系统库对齐（Partner/Contract/Role/User/MFA/Invite，schema-align）
+
+> 本次按外部系统 DB 脚本重写了 `sys_*` 模型（greenfield，`db:push` + `db:seed` 重建，无迁移 SQL）。storage_object / storage_attachment 不在脚本范围，保持原样。
+
+- **字段改名（影响登录/会话/用户页）**：`SysUser.displayName → nickName`、`mfaEnabled → mfaEnable`；`username`/`email`/`nickName` 均 NOT NULL；删 `passwordUpdatedAt`（保留 `passwordChangedTimestamp`）。会话契约层 `@cloud/permissions` 的 `Session.displayName` 字段名**不改**（属包，不动），在 `session-snapshot.ts` 里 `user.nickName → displayName` 映射。上面登录加固小节里旧的 `mfaEnabled` / `mfa_enabled` 字样以此处为准（现为 `mfaEnable` / `mfa_enable`）。
+- **JSONB 取代 join 表**：角色绑定走 `sys_partner_user.roles`（`List<{roleId}>`），权限码走 `sys_role.permission_codes`（`List<string>`）；`sys_user_role` / `sys_role_permission` 已删。会话聚合、角色/用户接口都改读 JSONB；删除角色的「是否仍被绑定」用 `sysPartnerUser.count({ where: { roles: { array_contains: [{ roleId }] } } })`。是 AGENTS.md「数组不行」的已批准例外（见该节）。
+- **契约类型内联**：删 `sys_contract_define` 表，契约类型变内联字符串（`authorized_contract_type` / `sys_role.contract_type` 等），合法值由应用层 zod 校验。脚本枚举含 `ISO_PILOT`/`ISV_PILOT`，但 manifest `contractKeys` 仍是 `ADMIN/ISO/ISV/MERCHANT`——pilot 契约 DB 允许但暂无菜单映射（需要时再补 manifest）。
+- **DB 硬约束策略 = Prisma-native + 应用层兜底**：脚本里的 CHECK、partial unique index（ADMIN 单例 / 活跃契约唯一）、触发器、GIN 索引 Prisma 表达不了，**不切 `prisma migrate`**，保持 `db:push`；枚举/状态合法性靠 zod，跨表不变量（如 ADMIN 单例）靠 service 层事务，`upd_time` 靠 `@updatedAt`。如果将来要 DB 级硬保证，再评估切 migrate + 手写 SQL companion。
+- **citext**：`username`/`email`/`invite_email` 用 `@db.Citext`（大小写不敏感），generator 开 `previewFeatures=["postgresqlExtensions"]`、datasource `extensions=[citext]`。登录按用户名查现在天然大小写不敏感。
+- **邀请模型重写**：`SysInvite`（旧：邀请时建 `username=null` 占位用户）→ `SysOperatorInvite`（挂 `partnerId + inviterUserId + inviteEmail`，**不预建用户**，消费时才建真实用户——消费/激活端点尚未实现，与旧实现一致是 TODO）。列表里待消费邀请合成为 `status=PENDING` 的伪条目，id 形如 `invite-<operatorInviteId>`；resend/cancel 路由按该 id 解析操作 `sys_operator_invite`。**对脚本的小幅偏离**：给 `sys_operator_invite` 加了 `roles JSONB`，承载邀请时选的角色（脚本无此列，但要保留「邀请即配角色」功能，消费时落到 `sys_partner_user.roles`）。
+- **重置密码 → Redis**：删 `sys_password_reset_request` 表，token 改存 Redis（`apps/web/lib/password-reset-token.ts`，key `pwreset:*`，TTL 72h，沿用 login-token 范式）。因此用户详情不再有可列出的「历史重置请求」（mapper 返回 `[]`）。消费/设新密码端点同样是 TODO。
+- **锁定语义**：用户锁定走 `sys_partner_user.status` 的 `ACTIVE ↔ LOCKED`（旧实现用 `INACTIVE`，已统一为 `LOCKED`）；客户端 `User.status` 仍映射成 `ACTIVE/INACTIVE/PENDING`。
+- **新表（schema-only，本期不接业务）**：`sys_mfa_info`（TOTP 密钥）、`sys_partner_contract_event`（契约事件流水）；`sys_partner_contract.entitlements/logos` JSONB、`sys_user.password_history` JSONB 也只建列不写。
+- **删表**：`sys_contract_define`、`sys_partner_partner`、`sys_org`、`sys_user_org`、`sys_user_role`、`sys_role_permission`、`sys_user_password_history`、`sys_password_reset_request`、`sys_invite`（均经确认无代码消费或已迁走）。

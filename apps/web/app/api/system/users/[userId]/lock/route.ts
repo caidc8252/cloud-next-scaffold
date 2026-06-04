@@ -7,7 +7,7 @@ import {
   ERR_USER_CANNOT_DISABLE_SELF,
 } from "@cloud/request/error-codes";
 import { assertPermissions } from "@cloud/permissions/server";
-import { toClientUser, USER_INCLUDE } from "@/app/(portal)/system/users/_server/user-mapper";
+import { toClientUser, userPartnerInclude } from "@/app/(portal)/system/users/_server/user-mapper";
 import { withApiHandler } from "@/lib/api-handler";
 
 export const POST = withApiHandler(
@@ -31,8 +31,8 @@ export const POST = withApiHandler(
       return badRequestResponse(ERR_USER_PROTECTED);
     }
 
-    // Toggle partner-user status
-    const newStatus = link.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    // Toggle partner-user status（账号锁定走 partner-user 维度：ACTIVE ↔ LOCKED）
+    const newStatus = link.status === "ACTIVE" ? "LOCKED" : "ACTIVE";
     await prisma.sysPartnerUser.update({
       where: { partnerId_userId: { partnerId, userId } },
       data: { status: newStatus, updUserId: session.userId },
@@ -40,14 +40,9 @@ export const POST = withApiHandler(
 
     const updated = await prisma.sysUser.findUniqueOrThrow({
       where: { userId },
-      include: {
-        ...USER_INCLUDE,
-        partnerUsers: { where: { partnerId }, select: { authorizingType: true, status: true } },
-        userRoles: { where: { partnerId }, select: { roleId: true } },
-      },
+      include: userPartnerInclude(partnerId),
     });
 
-    const nameMap = new Map([[session.userId, session.username]]);
-    return successResponse(toClientUser(updated, nameMap, nameMap));
+    return successResponse(toClientUser(updated));
   },
 );

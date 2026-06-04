@@ -111,7 +111,7 @@ export const POST = withApiHandler(async (req: Request) => {
   });
 
   // 8. MFA 分岔：开通则发临时 token、不建正式 session
-  if (user.mfaEnabled) {
+  if (user.mfaEnable) {
     const mfaToken = await createMfaLoginToken(user.userId);
     return successResponse({ mfaRequired: true, mfaToken });
   }

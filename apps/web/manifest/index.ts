@@ -3,7 +3,7 @@ import { MENUS, CONTRACT_KEYS } from "./_generated/apps";
 
 // 当前平台绑定的契约（= 各 app 声明 contractKeys 的并集，也是构造校验允许集）。
 // 侧边栏 / 登录快照 / 角色目录按「当前会话契约」调 getMenus(contracts) 取菜单。
-export const PLATFORM_CONTRACTS = ['ADMIN'];
+export const PLATFORM_CONTRACTS = CONTRACT_KEYS;
 
 // 采集全部 app 菜单并拍平成一份全局池（_generated/apps.ts 由 gen:manifest 序列化写入，
 // 自包含、无跨 app 源码导入）+ 聚合契约枚举，构造期一次性校验（非法拒启）。无运行时注册表。

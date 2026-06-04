@@ -12,7 +12,11 @@ import {
   ERR_USER_PROTECTED,
 } from "@cloud/request/error-codes";
 import { assertPermissions, hasPermissions } from "@cloud/permissions/server";
-import { toClientUser, USER_INCLUDE } from "@/app/(portal)/system/users/_server/user-mapper";
+import {
+  toClientUser,
+  extractRoleIds,
+  userPartnerInclude,
+} from "@/app/(portal)/system/users/_server/user-mapper";
 import { withApiHandler } from "@/lib/api-handler";
 
 async function findUserInPartner(userId: number, partnerId: number) {
@@ -56,11 +60,7 @@ export const PUT = withApiHandler(
         : normalizeRoleIds(body.roleIds.map(Number).filter(Number.isFinite));
 
     if (requestedRoleIds !== null) {
-      const currentRoleLinks = await prisma.sysUserRole.findMany({
-        where: { userId, partnerId },
-        select: { roleId: true },
-      });
-      const currentRoleIds = normalizeRoleIds(currentRoleLinks.map((roleLink) => roleLink.roleId));
+      const currentRoleIds = normalizeRoleIds(extractRoleIds(link.roles).map(Number));
       const roleIdsChanged =
         requestedRoleIds.length !== currentRoleIds.length ||
         requestedRoleIds.some((roleId, index) => roleId !== currentRoleIds[index]);
@@ -71,37 +71,29 @@ export const PUT = withApiHandler(
     }
 
     await prisma.$transaction(async (tx) => {
-      const data: Record<string, unknown> = { updUserId: session.userId };
-      if (body.displayName !== undefined) data.displayName = body.displayName.trim() || null;
-      if (body.remark !== undefined) data.remark = body.remark.trim() || null;
-      await tx.sysUser.update({ where: { userId }, data });
+      if (body.displayName !== undefined || body.remark !== undefined) {
+        const userData: Record<string, unknown> = { updUserId: session.userId };
+        if (body.displayName !== undefined) userData.nickName = body.displayName.trim();
+        if (body.remark !== undefined) userData.remark = body.remark.trim() || null;
+        await tx.sysUser.update({ where: { userId }, data: userData });
+      }
 
-      if (body.roleIds !== undefined) {
-        const nextRoleIds = requestedRoleIds ?? [];
-        await tx.sysUserRole.deleteMany({ where: { userId, partnerId } });
-        if (nextRoleIds.length > 0) {
-          await tx.sysUserRole.createMany({
-            data: nextRoleIds.map((roleId) => ({
-              partnerId,
-              userId,
-              roleId,
-              creUserId: session.userId,
-            })),
-          });
-        }
+      if (requestedRoleIds !== null) {
+        await tx.sysPartnerUser.update({
+          where: { partnerId_userId: { partnerId, userId } },
+          data: {
+            roles: requestedRoleIds.map((roleId) => ({ roleId })),
+            updUserId: session.userId,
+          },
+        });
       }
     });
 
     const updated = await prisma.sysUser.findUniqueOrThrow({
       where: { userId },
-      include: {
-        ...USER_INCLUDE,
-        partnerUsers: { where: { partnerId }, select: { authorizingType: true, status: true } },
-        userRoles: { where: { partnerId }, select: { roleId: true } },
-      },
+      include: userPartnerInclude(partnerId),
     });
 
-    const nameMap = new Map([[session.userId, session.username]]);
-    return successResponse(toClientUser(updated, nameMap, nameMap));
+    return successResponse(toClientUser(updated));
   },
 );

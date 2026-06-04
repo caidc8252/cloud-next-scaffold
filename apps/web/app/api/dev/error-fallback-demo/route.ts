@@ -82,15 +82,20 @@ export const GET = withApiHandler(async (req: Request) => {
 
 async function getSummary(partnerId: number, contractTypes: string[]) {
   const where = { OR: [{ partnerId }, { partnerId: null }] };
-  const [partner, roles, rolePermissions, activeUsers] = await Promise.all([
+  const [partner, roles, roleRows, activeUsers] = await Promise.all([
     prisma.sysPartner.findUnique({
       where: { partnerId },
       select: { partnerId: true, partnerName: true, status: true },
     }),
     prisma.sysRole.count({ where }),
-    prisma.sysRolePermission.count(),
+    // 权限码改存 sys_role.permission_codes JSONB，累加各角色长度得到 role-permission 对数。
+    prisma.sysRole.findMany({ where, select: { permissionCodes: true } }),
     prisma.sysPartnerUser.count({ where: { partnerId, status: "ACTIVE" } }),
   ]);
+  const rolePermissions = roleRows.reduce(
+    (sum, r) => sum + (Array.isArray(r.permissionCodes) ? r.permissionCodes.length : 0),
+    0,
+  );
 
   if (!partner) {
     return badRequestResponse("demo.partner_missing", "Current session partner does not exist.");
@@ -121,7 +126,7 @@ async function getPaginatedRoles(url: URL, partnerId: number) {
     prisma.sysRole.count({ where }),
     prisma.sysRole.findMany({
       where,
-      select: { roleId: true, roleName: true, roleType: true, contractDefineCode: true },
+      select: { roleId: true, roleName: true, roleType: true, contractType: true },
       orderBy: [{ roleId: query.sortOrder }],
       // 多取一条用于探测该方向是否还有下一页，cursor 命中时跳过锚点行本身。
       take: limit + 1,
@@ -143,7 +148,7 @@ async function getPaginatedRoles(url: URL, partnerId: number) {
       id: role.roleId,
       name: role.roleName,
       type: role.roleType,
-      contract: role.contractDefineCode,
+      contract: role.contractType,
     })),
     pager,
   );

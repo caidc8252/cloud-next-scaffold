@@ -3,18 +3,33 @@ import { successResponse, badRequestResponse, createdResponse } from "@cloud/req
 import { ERR_INVALID_JSON, ERR_ROLE_NAME_SHORT } from "@cloud/request/error-codes";
 import { assertPermissions } from "@cloud/permissions/server";
 import { toClientRole } from "@/app/(portal)/system/roles/_server/role-mapper";
+import { extractRoleIds } from "@/app/(portal)/system/users/_server/user-mapper";
 import { withApiHandler } from "@/lib/api-handler";
+
+// 统计当前 partner 下每个角色被多少用户绑定（角色绑定走 sys_partner_user.roles JSONB）。
+async function countRoleOperators(partnerId: number): Promise<Map<number, number>> {
+  const links = await prisma.sysPartnerUser.findMany({
+    where: { partnerId, status: { in: ["ACTIVE", "LOCKED"] } },
+    select: { roles: true },
+  });
+  const counts = new Map<number, number>();
+  for (const link of links) {
+    for (const roleId of extractRoleIds(link.roles)) {
+      const id = Number(roleId);
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
 
 export const GET = withApiHandler(async () => {
   const session = await assertPermissions({ all: ["roles.VIEW"] });
   const roles = await prisma.sysRole.findMany({
     where: { OR: [{ partnerId: session.currentPartnerId }, { partnerId: null }] },
-    include: {
-      permissions: { select: { permissionCode: true } },
-      _count: { select: { userRoles: true } },
-    },
     orderBy: { creTime: "asc" },
   });
+
+  const counts = await countRoleOperators(session.currentPartnerId);
 
   const updaterIds = [...new Set(roles.map((r) => r.updUserId))];
   const updaters =
@@ -26,7 +41,9 @@ export const GET = withApiHandler(async () => {
       : [];
   const updaterMap = new Map(updaters.map((u) => [u.userId, u.username]));
 
-  const data = roles.map((r) => toClientRole(r, updaterMap.get(r.updUserId) ?? "system"));
+  const data = roles.map((r) =>
+    toClientRole(r, updaterMap.get(r.updUserId) ?? "system", counts.get(r.roleId) ?? 0),
+  );
 
   return successResponse(data);
 });
@@ -49,27 +66,14 @@ export const POST = withApiHandler(async (req: Request) => {
     data: {
       roleName: name,
       roleType: "GLOBAL",
-      contractDefineCode: "ADMIN",
+      contractType: "ADMIN",
       partnerId: session.currentPartnerId,
       remark: body.description?.trim() || null,
+      permissionCodes: body.permissions ?? [],
       creUserId: session.userId,
       updUserId: session.userId,
-      permissions: body.permissions?.length
-        ? {
-            createMany: {
-              data: body.permissions.map((code) => ({
-                permissionCode: code,
-                creUserId: session.userId,
-              })),
-            },
-          }
-        : undefined,
-    },
-    include: {
-      permissions: { select: { permissionCode: true } },
-      _count: { select: { userRoles: true } },
     },
   });
 
-  return createdResponse(toClientRole(role, session.username));
+  return createdResponse(toClientRole(role, session.username, 0));
 });

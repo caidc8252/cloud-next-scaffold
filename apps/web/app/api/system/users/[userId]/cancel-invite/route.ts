@@ -1,27 +1,32 @@
 import { prisma } from "@cloud/db";
-import { badRequestResponse, notFoundResponse, noContentResponse } from "@cloud/request/server";
-import {
-  ERR_INVALID_ID,
-  ERR_USER_NOT_FOUND,
-  ERR_USER_CANCEL_NOT_PENDING,
-} from "@cloud/request/error-codes";
+import { badRequestResponse, noContentResponse } from "@cloud/request/server";
+import { ERR_INVALID_ID, ERR_USER_CANCEL_NOT_PENDING } from "@cloud/request/error-codes";
 import { assertPermissions } from "@cloud/permissions/server";
 import { withApiHandler } from "@/lib/api-handler";
 
+// 列表里待消费邀请的 id 形如 `invite-<operatorInviteId>`。
+function parseInviteId(rawId: string): number {
+  return Number(rawId.replace(/^invite-/, ""));
+}
+
 export const POST = withApiHandler(
   async (_req: Request, { params }: { params: Promise<{ userId: string }> }) => {
-    await assertPermissions({ all: ["users.INVITE"] });
+    const session = await assertPermissions({ all: ["users.INVITE"] });
     const { userId: rawId } = await params;
-    const userId = Number(rawId);
-    if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID);
+    const inviteId = parseInviteId(rawId);
+    if (!Number.isFinite(inviteId)) return badRequestResponse(ERR_INVALID_ID);
 
-    const user = await prisma.sysUser.findUnique({ where: { userId } });
-    if (!user) return notFoundResponse(ERR_USER_NOT_FOUND, "User not found.");
-    if (user.status !== "PENDING") {
+    const partnerId = session.currentPartnerId;
+    const invite = await prisma.sysOperatorInvite.findFirst({
+      where: { operatorInviteId: inviteId, partnerId },
+    });
+    if (!invite || invite.status !== "PENDING") {
       return badRequestResponse(ERR_USER_CANCEL_NOT_PENDING);
     }
 
-    await prisma.sysUser.delete({ where: { userId } });
+    await prisma.sysOperatorInvite.delete({
+      where: { operatorInviteId: invite.operatorInviteId },
+    });
 
     return noContentResponse();
   },

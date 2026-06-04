@@ -1,262 +1,218 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider        = "prisma-client"
+  output          = "../generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [citext]
 }
+
+// 说明（对齐系统 DB 脚本 Partner/Contract/Role/User/MFA/Invite）：
+// - 角色/权限关联用 JSONB 数组（sys_partner_user.roles / sys_role.permission_codes），
+//   是 DB 约定「关联走关联表」的已批准例外，理由是反查频率低、读多写少，详见 CLAUDE.md。
+// - 契约类型为内联字符串枚举（应用层 zod 校验），不再有 sys_contract_define 表。
+// - CHECK / partial unique index / 触发器等 Prisma 表达不了的硬约束，统一由应用层（zod +
+//   service 事务）保证；upd_time 走 @updatedAt。详见 DEV_NOTE。
 
 // ─── sys_partner ─────────────────────────────────────────
 model SysPartner {
-  partnerId         Int      @id @default(autoincrement()) @map("partner_id")
-  partnerName       String   @map("partner_name") @db.VarChar(200)
+  partnerId        Int      @id @default(autoincrement()) @map("partner_id")
+  partnerName      String   @unique @map("partner_name") @db.VarChar(200)
   country          String   @db.VarChar(8)
-  region           String?  @db.VarChar(100)
   address          String?  @db.VarChar(500)
+  contactName      String?  @map("contact_name") @db.VarChar(100)
+  email            String?  @db.Citext
   phoneCountryCode String?  @map("phone_country_code") @db.VarChar(8)
   phone            String?  @db.VarChar(32)
-  email            String?
-  contactName      String?  @map("contact_name") @db.VarChar(100)
-  status           String   @default("ACTIVE") @db.VarChar(20)
-  remark           String?  @db.VarChar(500)
-  timezone         String?  @db.VarChar(64)
+  timezone         String   @db.VarChar(64)
   license          String?  @db.VarChar(200)
+  status           String   @default("ONBOARDING") @db.VarChar(20)
+  remark           String?  @db.VarChar(500)
   creTime          DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
   creUserId        Int      @default(0) @map("cre_user_id")
   updTime          DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
   updUserId        Int      @default(0) @map("upd_user_id")
 
-  contracts        SysPartnerContract[] @relation("authorized")
-  grantedContracts SysPartnerContract[] @relation("authorizing")
-  ownerRelations   SysPartnerPartner[]   @relation("owner")
-  targetRelations  SysPartnerPartner[]   @relation("target")
-  partnerUsers      SysPartnerUser[]
-  roles            SysRole[]
-  userRoles        SysUserRole[]
-  orgs             SysOrg[]
-  roleBlacklists   SysRoleContractBlacklist[]
-  storageObjects     StorageObject[]
-  storageAttachments StorageAttachment[]
+  contracts            SysPartnerContract[] @relation("authorized")
+  grantedContracts     SysPartnerContract[] @relation("authorizing")
+  terminatedContracts  SysPartnerContract[] @relation("terminatedBy")
+  partnerUsers         SysPartnerUser[]
+  roles                SysRole[]
+  roleBlocklists       SysPartnerRoleBlocklist[]
+  operatorInvites      SysOperatorInvite[]
+  storageObjects       StorageObject[]
+  storageAttachments   StorageAttachment[]
 
-  @@index([partnerName], map: "idx_sys_partner_name")
   @@index([country], map: "idx_sys_partner_country")
   @@index([status], map: "idx_sys_partner_status")
   @@map("sys_partner")
 }
 
-// ─── sys_contract_define ────────────────────────────────
-model SysContractDefine {
-  contractDefineCode String   @id @map("contract_define_code") @db.VarChar(20)
-  contractName       String   @map("contract_name") @db.VarChar(100)
-  remark             String?  @db.VarChar(500)
-  creTime            DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
-  creUserId          Int      @default(0) @map("cre_user_id")
-  updTime            DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
-  updUserId          Int      @default(0) @map("upd_user_id")
-
-  partnerContracts SysPartnerContract[]
-  roles           SysRole[]
-  roleBlacklists  SysRoleContractBlacklist[]
-
-  @@map("sys_contract_define")
-}
-
-// ─── sys_partner_partner ──────────────────────────────────
-model SysPartnerPartner {
-  partnerPartnerId Int      @id @default(autoincrement()) @map("partner_partner_id")
-  ownerPartnerId  Int      @map("owner_partner_id")
-  targetPartnerId Int      @map("target_partner_id")
-  status         String   @default("ACTIVE") @db.VarChar(20)
-  creTime        DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
-
-  owner  SysPartner @relation("owner", fields: [ownerPartnerId], references: [partnerId])
-  target SysPartner @relation("target", fields: [targetPartnerId], references: [partnerId])
-
-  @@unique([ownerPartnerId, targetPartnerId], map: "uk_sys_partner_partner")
-  @@index([targetPartnerId])
-  @@map("sys_partner_partner")
-}
-
 // ─── sys_partner_contract ────────────────────────────────
 model SysPartnerContract {
-  partnerContractId             Int       @id @default(autoincrement()) @map("partner_contract_id")
-  authorizedPartnerId           Int       @map("authorized_partner_id")
-  authorizedContractDefineCode String    @map("authorized_contract_define_code") @db.VarChar(20)
-  authorizedTimestamp           DateTime? @map("authorized_timestamp") @db.Timestamp(3)
-  authorizingPartnerId          Int?      @map("authorizing_partner_id")
-  authorizingUserId            Int?      @map("authorizing_user_id")
-  authorizingUserName          String?   @map("authorizing_user_name") @db.VarChar(100)
-  authorizingIp                String?   @map("authorizing_ip")
-  status                       String    @default("PENDING") @db.VarChar(20)
-  effectiveFrom                DateTime? @map("effective_from") @db.Timestamp(3)
-  effectiveTo                  DateTime? @map("effective_to") @db.Timestamp(3)
-  renewalMethod                String?   @map("renewal_method") @db.VarChar(30)
-  terminatedAt                 DateTime? @map("terminated_at") @db.Timestamp(3)
-  creTime                      DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
-  creUserId                    Int       @default(0) @map("cre_user_id")
-  updTime                      DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
-  updUserId                    Int       @default(0) @map("upd_user_id")
+  partnerContractId              Int       @id @default(autoincrement()) @map("partner_contract_id")
+  authorizedPartnerId            Int       @map("authorized_partner_id")
+  authorizedContractType         String    @map("authorized_contract_type") @db.VarChar(20)
+  authorizedTimestamp            DateTime? @map("authorized_timestamp") @db.Timestamp(3)
+  authorizingPartnerId           Int?      @map("authorizing_partner_id")
+  authorizingPartnerContractType String?   @map("authorizing_partner_contract_type") @db.VarChar(20)
+  effectiveFromDate              DateTime? @map("effective_from_date") @db.Date
+  effectiveToDate                DateTime? @map("effective_to_date") @db.Date
+  terminatedByPartnerId          Int?      @map("terminated_by_partner_id")
+  terminatedAt                   DateTime? @map("terminated_at") @db.Timestamp(3)
+  status                         String    @default("ACTIVE") @db.VarChar(20)
+  entitlements                   Json?
+  logos                          Json?
+  creTime                        DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId                      Int       @default(0) @map("cre_user_id")
+  updTime                        DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+  updUserId                      Int       @default(0) @map("upd_user_id")
 
-  authorizedPartner  SysPartner         @relation("authorized", fields: [authorizedPartnerId], references: [partnerId])
-  authorizingPartner SysPartner?        @relation("authorizing", fields: [authorizingPartnerId], references: [partnerId])
-  contractDefine    SysContractDefine @relation(fields: [authorizedContractDefineCode], references: [contractDefineCode])
+  authorizedPartner  SysPartner  @relation("authorized", fields: [authorizedPartnerId], references: [partnerId])
+  authorizingPartner SysPartner? @relation("authorizing", fields: [authorizingPartnerId], references: [partnerId])
+  terminatedByPartner SysPartner? @relation("terminatedBy", fields: [terminatedByPartnerId], references: [partnerId])
+  events             SysPartnerContractEvent[]
 
   @@index([authorizedPartnerId])
-  @@index([authorizedContractDefineCode])
+  @@index([authorizedContractType])
   @@index([authorizingPartnerId])
   @@index([authorizedPartnerId, status])
   @@map("sys_partner_contract")
 }
 
+// ─── sys_partner_contract_event（契约事件流水，UUID 主键）──
+model SysPartnerContractEvent {
+  partnerContractEventId String   @id @default(uuid()) @map("partner_contract_event_id")
+  partnerContractId      Int      @map("partner_contract_id")
+  eventType              String   @map("event_type") @db.VarChar(40)
+  eventInfo              Json?    @map("event_info")
+  eventTimestamp         DateTime @default(now()) @map("event_timestamp") @db.Timestamp(3)
+  operatorUserId         Int?     @map("operator_user_id")
+  operatorUserName       String?  @map("operator_user_name") @db.VarChar(100)
+  creTime                DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
+
+  partnerContract SysPartnerContract @relation(fields: [partnerContractId], references: [partnerContractId], onDelete: Cascade)
+
+  @@index([partnerContractId, eventTimestamp(sort: Desc)])
+  @@index([eventType])
+  @@map("sys_partner_contract_event")
+}
+
 // ─── sys_role ───────────────────────────────────────────
 model SysRole {
-  roleId             Int      @id @default(autoincrement()) @map("role_id")
-  roleName           String   @map("role_name") @db.VarChar(100)
-  roleType           String   @map("role_type") @db.VarChar(20)
-  contractDefineCode String?  @map("contract_define_code") @db.VarChar(20)
-  partnerId           Int?     @map("partner_id")
-  remark             String?  @db.VarChar(500)
-  creTime            DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
-  creUserId          Int      @default(0) @map("cre_user_id")
-  updTime            DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
-  updUserId          Int      @default(0) @map("upd_user_id")
+  roleId          Int      @id @default(autoincrement()) @map("role_id")
+  roleName        String   @map("role_name") @db.VarChar(100)
+  roleType        String   @map("role_type") @db.VarChar(20)
+  contractType    String   @map("contract_type") @db.VarChar(20)
+  partnerId       Int?     @map("partner_id")
+  permissionCodes Json     @default("[]") @map("permission_codes")
+  remark          String?  @db.VarChar(500)
+  creTime         DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId       Int      @default(0) @map("cre_user_id")
+  updTime         DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+  updUserId       Int      @default(0) @map("upd_user_id")
 
-  contractDefine SysContractDefine?        @relation(fields: [contractDefineCode], references: [contractDefineCode])
-  partner         SysPartner?                @relation(fields: [partnerId], references: [partnerId])
-  permissions    SysRolePermission[]
-  userRoles      SysUserRole[]
-  roleBlacklists SysRoleContractBlacklist[]
+  partner        SysPartner?               @relation(fields: [partnerId], references: [partnerId])
+  roleBlocklists SysPartnerRoleBlocklist[]
 
   @@index([partnerId])
-  @@index([contractDefineCode])
+  @@index([contractType])
   @@index([roleName])
   @@map("sys_role")
 }
 
-// ─── sys_role_permission ────────────────────────────────
-model SysRolePermission {
-  rolePermissionId Int      @id @default(autoincrement()) @map("role_permission_id")
-  roleId           Int      @map("role_id")
-  permissionCode   String   @map("permission_code") @db.VarChar(100)
-  creTime          DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
-  creUserId        Int      @default(0) @map("cre_user_id")
-  updTime          DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
-  updUserId        Int      @default(0) @map("upd_user_id")
+// ─── sys_partner_role_blocklist（角色黑名单）─────────────
+model SysPartnerRoleBlocklist {
+  partnerRoleBlocklistId Int      @id @default(autoincrement()) @map("partner_role_blocklist_id")
+  partnerId              Int      @map("partner_id")
+  contractType           String   @map("contract_type") @db.VarChar(20)
+  roleId                 Int      @map("role_id")
+  creTime                DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId              Int      @default(0) @map("cre_user_id")
 
-  role SysRole @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
+  partner SysPartner @relation(fields: [partnerId], references: [partnerId])
+  role    SysRole    @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
 
-  // permissionCode 是受 manifest 校验的普通字符串（不再外键到 sys_permission）
-  @@unique([roleId, permissionCode], map: "uk_sys_role_permission")
-  @@index([permissionCode])
-  @@map("sys_role_permission")
-}
-
-// ─── sys_role_contract_blacklist ────────────────────────
-model SysRoleContractBlacklist {
-  roleContractBlacklistId Int      @id @default(autoincrement()) @map("role_contract_blacklist_id")
-  roleId                  Int      @map("role_id")
-  contractDefineCode      String   @map("contract_define_code") @db.VarChar(20)
-  partnerId                Int      @map("partner_id")
-  creTime                 DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
-  creUserId               Int      @default(0) @map("cre_user_id")
-
-  role           SysRole           @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
-  contractDefine SysContractDefine @relation(fields: [contractDefineCode], references: [contractDefineCode])
-  partner         SysPartner         @relation(fields: [partnerId], references: [partnerId])
-
-  @@unique([roleId, contractDefineCode, partnerId], map: "uk_sys_role_contract_blacklist")
-  @@index([partnerId])
-  @@index([contractDefineCode])
-  @@map("sys_role_contract_blacklist")
+  @@unique([partnerId, contractType, roleId], map: "uk_sys_partner_role_blocklist")
+  @@index([roleId])
+  @@index([contractType])
+  @@map("sys_partner_role_blocklist")
 }
 
 // ─── sys_user ───────────────────────────────────────────
 model SysUser {
-  userId                           Int       @id @default(autoincrement()) @map("user_id")
-  username                         String?   @unique
-  passwordHash                     String    @map("password_hash") @db.VarChar(255)
-  passwordChangedTimestamp         DateTime? @map("password_changed_timestamp") @db.Timestamp(3)
-  passwordErrorTimes               Int       @default(0) @map("password_error_times")
+  userId                            Int       @id @default(autoincrement()) @map("user_id")
+  username                          String    @unique @db.Citext
+  passwordHash                      String    @map("password_hash") @db.VarChar(255)
+  passwordChangedTimestamp          DateTime? @map("password_changed_timestamp") @db.Timestamp(3)
+  passwordErrorTimes                Int       @default(0) @map("password_error_times")
   passwordErrorLockExpiredTimestamp DateTime? @map("password_error_lock_expired_timestamp") @db.Timestamp(3)
-  displayName                      String?   @map("display_name") @db.VarChar(100)
-  email                            String?
-  country                          String?   @db.VarChar(8)
-  status                           String    @default("ACTIVE") @db.VarChar(20)
-  mfaEnabled                       Boolean   @default(false) @map("mfa_enabled")
-  lastLoginAt                      DateTime? @map("last_login_at") @db.Timestamp(3)
-  passwordUpdatedAt                DateTime? @map("password_updated_at") @db.Timestamp(3)
-  remark                           String?   @db.VarChar(500)
-  creTime                          DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
-  creUserId                        Int       @default(0) @map("cre_user_id")
-  updTime                          DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
-  updUserId                        Int       @default(0) @map("upd_user_id")
+  nickName                          String    @map("nick_name") @db.VarChar(100)
+  email                             String    @db.Citext
+  country                           String?   @db.VarChar(8)
+  mfaEnable                         Boolean   @default(false) @map("mfa_enable")
+  status                            String    @default("ACTIVE") @db.VarChar(20)
+  lastLoginAt                       DateTime? @map("last_login_at") @db.Timestamp(3)
+  passwordHistory                   Json      @default("[]") @map("password_history")
+  remark                            String?   @db.VarChar(500)
+  creTime                           DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId                         Int       @default(0) @map("cre_user_id")
+  updTime                           DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+  updUserId                         Int       @default(0) @map("upd_user_id")
 
   partnerUsers           SysPartnerUser[]
-  userRoles             SysUserRole[]
-  passwordHistory       SysUserPasswordHistory[]
-  userOrgs              SysUserOrg[]
-  invites               SysInvite[]
-  passwordResetRequests SysPasswordResetRequest[]
+  mfaInfos               SysMfaInfo[]
+  sentInvites            SysOperatorInvite[]
   uploadedStorageObjects StorageObject[]
 
+  @@index([email])
   @@index([status])
   @@map("sys_user")
 }
 
-// ─── sys_user_password_history ──────────────────────────
-model SysUserPasswordHistory {
-  userPasswordHistoryId String    @id @default(uuid()) @map("user_password_history_id")
-  userId                Int       @map("user_id")
-  passwordHash          String    @map("password_hash") @db.VarChar(255)
-  creTime               DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
-  changedTimestamp       DateTime? @map("changed_timestamp") @db.Timestamp(3)
+// ─── sys_mfa_info（MFA 配置，schema-only，本期不接业务）──
+model SysMfaInfo {
+  mfaInfoId         Int       @id @default(autoincrement()) @map("mfa_info_id")
+  userId            Int       @map("user_id")
+  mfaType           String    @default("TOTP") @map("mfa_type") @db.VarChar(20)
+  secretEncrypted   String    @map("secret_encrypted") @db.VarChar(500)
+  failTimes         Int       @default(0) @map("fail_times")
+  lastFailTimestamp DateTime? @map("last_fail_timestamp") @db.Timestamp(3)
+  status            String    @default("PENDING") @db.VarChar(20)
+  creTime           DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId         Int       @default(0) @map("cre_user_id")
+  updTime           DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+  updUserId         Int       @default(0) @map("upd_user_id")
 
   user SysUser @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
-  @@index([userId, creTime(sort: Desc)])
-  @@map("sys_user_password_history")
+  @@unique([userId, mfaType], map: "uk_sys_mfa_user_type")
+  @@index([userId])
+  @@map("sys_mfa_info")
 }
 
-// ─── sys_user_role ──────────────────────────────────────
-model SysUserRole {
-  userRoleId Int      @id @default(autoincrement()) @map("user_role_id")
-  partnerId   Int      @map("partner_id")
-  userId     Int      @map("user_id")
-  roleId     Int      @map("role_id")
-  creTime    DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
-  creUserId  Int      @default(0) @map("cre_user_id")
-  updTime    DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
-  updUserId  Int      @default(0) @map("upd_user_id")
-
-  partner SysPartner @relation(fields: [partnerId], references: [partnerId])
-  user   SysUser   @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  role   SysRole   @relation(fields: [roleId], references: [roleId])
-
-  @@unique([partnerId, userId, roleId], map: "uk_sys_user_role")
-  @@index([userId, partnerId])
-  @@index([roleId])
-  @@index([partnerId])
-  @@map("sys_user_role")
-}
-
-// ─── sys_partner_user ────────────────────────────────────
+// ─── sys_partner_user（用户与主体的归属/授权关系）────────
 model SysPartnerUser {
   partnerUserId        Int       @id @default(autoincrement()) @map("partner_user_id")
   partnerId            Int       @map("partner_id")
-  userId              Int       @map("user_id")
-  authorizingType     String    @default("NORMAL") @map("authorizing_type") @db.VarChar(20)
+  userId               Int       @map("user_id")
+  roles                Json      @default("[]")
+  authorizingType      String    @default("NORMAL") @map("authorizing_type") @db.VarChar(20)
   authorizingTimestamp DateTime? @map("authorizing_timestamp") @db.Timestamp(3)
-  authorizingUserId   Int?      @map("authorizing_user_id")
-  authorizingUserName String?   @map("authorizing_user_name") @db.VarChar(100)
-  status              String    @default("ACTIVE") @db.VarChar(20)
-  creTime             DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
-  creUserId           Int       @default(0) @map("cre_user_id")
-  updTime             DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
-  updUserId           Int       @default(0) @map("upd_user_id")
+  authorizingUserId    Int?      @map("authorizing_user_id")
+  authorizingUserName  String?   @map("authorizing_user_name") @db.VarChar(100)
+  status               String    @default("ACTIVE") @db.VarChar(20)
+  authorizingFrom      DateTime? @map("authorizing_from") @db.Timestamp(3)
+  authorizingTo        DateTime? @map("authorizing_to") @db.Timestamp(3)
+  creTime              DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId            Int       @default(0) @map("cre_user_id")
+  updTime              DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+  updUserId            Int       @default(0) @map("upd_user_id")
 
   partner SysPartner @relation(fields: [partnerId], references: [partnerId])
-  user   SysUser   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  user    SysUser    @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@unique([partnerId, userId], map: "uk_sys_partner_user")
   @@index([userId])
@@ -264,79 +220,32 @@ model SysPartnerUser {
   @@map("sys_partner_user")
 }
 
-// 菜单与权限定义不再入库，改由各 apps/*/manifest + @cloud/platform-config 提供。
-// sys_menu / sys_permission / sys_user_permission_scope 已移除。
+// ─── sys_operator_invite（操作员邀请入驻）────────────────
+model SysOperatorInvite {
+  operatorInviteId Int       @id @default(autoincrement()) @map("operator_invite_id")
+  partnerId        Int       @map("partner_id")
+  inviterUserId    Int       @map("inviter_user_id")
+  inviteEmail      String    @map("invite_email") @db.Citext
+  roles            Json      @default("[]")
+  token            String    @unique @db.VarChar(128)
+  expiresAt        DateTime  @map("expires_at") @db.Timestamp(3)
+  consumedAt       DateTime? @map("consumed_at") @db.Timestamp(3)
+  resendCount      Int       @default(0) @map("resend_count")
+  status           String    @default("PENDING") @db.VarChar(20)
+  creTime          DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
+  creUserId        Int       @default(0) @map("cre_user_id")
+  updTime          DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+  updUserId        Int       @default(0) @map("upd_user_id")
 
-// ─── sys_org ────────────────────────────────────────────
-model SysOrg {
-  orgId       Int     @id @default(autoincrement()) @map("org_id")
-  partnerId    Int     @map("partner_id")
-  orgName     String  @map("org_name") @db.VarChar(200)
-  parentOrgId Int     @default(0) @map("parent_org_id")
-  country     String? @db.VarChar(8)
-  address     String? @db.VarChar(500)
-  phone       String? @db.VarChar(32)
-
-  partner   SysPartner  @relation(fields: [partnerId], references: [partnerId])
-  userOrgs SysUserOrg[]
+  partner SysPartner @relation(fields: [partnerId], references: [partnerId], onDelete: Cascade)
+  inviter SysUser    @relation(fields: [inviterUserId], references: [userId])
 
   @@index([partnerId])
-  @@index([parentOrgId])
-  @@index([partnerId, parentOrgId])
-  @@map("sys_org")
+  @@index([inviteEmail])
+  @@map("sys_operator_invite")
 }
 
-// ─── sys_user_org ───────────────────────────────────────
-model SysUserOrg {
-  userOrgId Int @id @default(autoincrement()) @map("user_org_id")
-  userId    Int @map("user_id")
-  orgId     Int @map("org_id")
-
-  user SysUser @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  org  SysOrg  @relation(fields: [orgId], references: [orgId], onDelete: Cascade)
-
-  @@unique([userId, orgId], map: "uk_sys_user_org")
-  @@index([orgId])
-  @@map("sys_user_org")
-}
-
-// ─── sys_invite ────────────────────────────────────────
-model SysInvite {
-  inviteId   Int       @id @default(autoincrement()) @map("invite_id")
-  userId     Int       @map("user_id")
-  email      String    @db.VarChar(200)
-  token      String    @unique @db.VarChar(100)
-  expiresAt  DateTime  @map("expires_at") @db.Timestamp(3)
-  consumedAt DateTime? @map("consumed_at") @db.Timestamp(3)
-  status     String    @default("PENDING") @db.VarChar(20)
-  creTime    DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
-  creUserId   Int       @default(0) @map("cre_user_id")
-  resendCount Int       @default(0) @map("resend_count")
-  updTime     DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
-
-  user SysUser @relation(fields: [userId], references: [userId], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("sys_invite")
-}
-
-// ─── sys_password_reset_request ────────────────────────
-model SysPasswordResetRequest {
-  requestId  Int       @id @default(autoincrement()) @map("request_id")
-  userId     Int       @map("user_id")
-  token      String    @unique @db.VarChar(100)
-  expiresAt  DateTime  @map("expires_at") @db.Timestamp(3)
-  consumedAt DateTime? @map("consumed_at") @db.Timestamp(3)
-  status     String    @default("PENDING") @db.VarChar(20)
-  creTime    DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
-  creUserId  Int       @default(0) @map("cre_user_id")
-  updTime    DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
-
-  user SysUser @relation(fields: [userId], references: [userId], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("sys_password_reset_request")
-}
+// 菜单与权限定义不入库，由各 apps/*/manifest + @cloud/platform-config 提供。
 
 // ─── storage_object ─────────────────────────────────────
 model StorageObject {

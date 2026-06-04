@@ -25,7 +25,7 @@ type StorageObjectRow = {
   creTime: Date;
   uploader?: {
     username: string | null;
-    displayName: string | null;
+    nickName: string | null;
   };
 };
 
@@ -36,7 +36,7 @@ function toNumberSize(value: bigint | number): number {
 }
 
 function toUploaderName(row: StorageObjectRow): string {
-  return row.uploader?.displayName || row.uploader?.username || "Unknown";
+  return row.uploader?.nickName || row.uploader?.username || "Unknown";
 }
 
 export function toStorageObjectRecord(row: StorageObjectRow): StorageObjectRecord {
@@ -74,7 +74,7 @@ export async function listStorageObjectRecords(session: ActiveSession) {
       uploader: {
         select: {
           username: true,
-          displayName: true,
+          nickName: true,
         },
       },
     },
@@ -129,7 +129,7 @@ async function upsertStorageObjectRecord(
           uploader: {
             select: {
               username: true,
-              displayName: true,
+              nickName: true,
             },
           },
         },
@@ -146,7 +146,7 @@ async function upsertStorageObjectRecord(
           uploader: {
             select: {
               username: true,
-              displayName: true,
+              nickName: true,
             },
           },
         },
@@ -226,7 +226,7 @@ export async function findDuplicateStorageObjectRecord(
       uploader: {
         select: {
           username: true,
-          displayName: true,
+          nickName: true,
         },
       },
     },

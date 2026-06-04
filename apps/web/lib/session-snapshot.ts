@@ -7,6 +7,8 @@ import { resolveEffectivePermissions } from "@/manifest/select";
 
 // 构建登录会话快照：读 DB（用户 / 公司关系 / 契约 / 角色），用 platform-config 按
 // 当前公司契约 + 角色/ADMIN 派生有效权限码。permissions 包不碰 manifest，派生在这里。
+// 角色绑定走 sys_partner_user.roles JSONB（List<{roleId}>），权限码走 sys_role.permission_codes
+// JSONB（List<string>），不再有 sys_user_role / sys_role_permission join 表。
 export type SessionSnapshotInput = Omit<Session, "loginAt" | "expireAt">;
 
 // 当前公司上下文（内部用；最终平铺进 Session 顶层）。
@@ -23,11 +25,27 @@ type PartnerUserWithPartner = {
   status: string;
   authorizingType: string;
   authorizingTimestamp: Date | null;
+  roles: unknown;
   partner: { partnerId: number; partnerName: string; status: string };
 };
 
 function normalizeAuthorizingType(value: string): "ADMIN" | "NORMAL" {
   return value === "ADMIN" ? "ADMIN" : "NORMAL";
+}
+
+// roles JSONB 形如 [{ roleId: number }]；容错解析出 roleId 列表。
+function extractRoleIds(roles: unknown): number[] {
+  if (!Array.isArray(roles)) return [];
+  const ids = roles
+    .map((r) => (r && typeof r === "object" ? (r as { roleId?: unknown }).roleId : undefined))
+    .filter((id): id is number => typeof id === "number");
+  return [...new Set(ids)];
+}
+
+// permission_codes JSONB 形如 ["users.VIEW", ...]；容错解析出字符串列表。
+function extractPermissionCodes(codes: unknown): string[] {
+  if (!Array.isArray(codes)) return [];
+  return codes.filter((c): c is string => typeof c === "string");
 }
 
 function toPartnerRef(partnerUser: PartnerUserWithPartner): SessionPartnerRef {
@@ -42,61 +60,58 @@ function toPartnerRef(partnerUser: PartnerUserWithPartner): SessionPartnerRef {
 }
 
 async function buildCurrentContext(
-  userId: number,
   partnerUser: PartnerUserWithPartner,
 ): Promise<CurrentContext | null> {
   const partnerId = partnerUser.partnerId;
 
   const contracts = await prisma.sysPartnerContract.findMany({
     where: { authorizedPartnerId: partnerId, status: "ACTIVE" },
-    select: { authorizedContractDefineCode: true },
+    select: { authorizedContractType: true },
   });
   if (contracts.length === 0) return null;
-  const contractTypes = [...new Set(contracts.map((c) => c.authorizedContractDefineCode))];
+  const contractTypes = [...new Set(contracts.map((c) => c.authorizedContractType))];
 
   const authorizingType = normalizeAuthorizingType(partnerUser.authorizingType);
 
-  const userRoles = await prisma.sysUserRole.findMany({
-    where: { userId, partnerId },
-    include: { role: true },
-  });
+  const roleIds = extractRoleIds(partnerUser.roles);
+  const userRoles = roleIds.length
+    ? await prisma.sysRole.findMany({
+        where: { roleId: { in: roleIds } },
+      })
+    : [];
 
   let roles: SessionRole[];
   let grantedRoleCodes: string[] = [];
 
   if (authorizingType === "ADMIN") {
     // ADMIN 无视角色取契约全量权限；角色仅用于展示
-    roles = userRoles.map((ur) => ({
-      roleId: ur.role.roleId,
-      roleName: ur.role.roleName,
-      roleType: ur.role.roleType,
+    roles = userRoles.map((role) => ({
+      roleId: role.roleId,
+      roleName: role.roleName,
+      roleType: role.roleType,
     }));
   } else {
-    const blacklist = await prisma.sysRoleContractBlacklist.findMany({
-      where: { partnerId, contractDefineCode: { in: contractTypes } },
+    const blacklist = await prisma.sysPartnerRoleBlocklist.findMany({
+      where: { partnerId, contractType: { in: contractTypes } },
       select: { roleId: true },
     });
     const blocked = new Set(blacklist.map((b) => b.roleId));
 
-    const applicable = userRoles.filter((ur) => {
-      const roleContract = ur.role.contractDefineCode;
-      const contractOk = roleContract === null || contractTypes.includes(roleContract);
-      return contractOk && !blocked.has(ur.roleId);
-    });
+    const applicable = userRoles.filter(
+      (role) => contractTypes.includes(role.contractType) && !blocked.has(role.roleId),
+    );
 
-    roles = applicable.map((ur) => ({
-      roleId: ur.role.roleId,
-      roleName: ur.role.roleName,
-      roleType: ur.role.roleType,
+    roles = applicable.map((role) => ({
+      roleId: role.roleId,
+      roleName: role.roleName,
+      roleType: role.roleType,
     }));
 
-    const rolePermissions = applicable.length
-      ? await prisma.sysRolePermission.findMany({
-          where: { roleId: { in: applicable.map((ur) => ur.roleId) } },
-          select: { permissionCode: true },
-        })
-      : [];
-    grantedRoleCodes = [...new Set(rolePermissions.map((p) => p.permissionCode))];
+    const codes = new Set<string>();
+    for (const role of applicable) {
+      for (const code of extractPermissionCodes(role.permissionCodes)) codes.add(code);
+    }
+    grantedRoleCodes = [...codes];
   }
 
   const menus = getMenus(contractTypes);
@@ -125,7 +140,7 @@ export async function buildSessionSnapshot(
   currentPartnerId: number | null,
 ): Promise<SessionSnapshotInput | null> {
   const user = await prisma.sysUser.findUnique({ where: { userId } });
-  if (!user || user.status !== "ACTIVE" || !user.username) return null;
+  if (!user || user.status !== "ACTIVE") return null;
 
   const partnerUsers = (await prisma.sysPartnerUser.findMany({
     where: { userId },
@@ -140,13 +155,13 @@ export async function buildSessionSnapshot(
   let current: CurrentContext | null = null;
   if (currentPartnerId !== null) {
     const target = activePartnerUsers.find((eu) => eu.partnerId === currentPartnerId);
-    if (target) current = await buildCurrentContext(userId, target);
+    if (target) current = await buildCurrentContext(target);
   }
 
   return {
     userId: user.userId,
     username: user.username,
-    displayName: user.displayName,
+    displayName: user.nickName,
     email: user.email,
     currentPartnerId: current ? currentPartnerId : null,
     partnerName: current?.partnerName ?? null,

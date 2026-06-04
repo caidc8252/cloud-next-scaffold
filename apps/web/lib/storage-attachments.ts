@@ -88,7 +88,7 @@ export async function listStorageAttachments(
           uploader: {
             select: {
               username: true,
-              displayName: true,
+              nickName: true,
             },
           },
         },
@@ -180,7 +180,7 @@ export async function bindStorageAttachment(
             uploader: {
               select: {
                 username: true,
-                displayName: true,
+                nickName: true,
               },
             },
           },

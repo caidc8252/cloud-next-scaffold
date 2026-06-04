@@ -263,3 +263,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 如果数据库的 key 名没有重复和歧义，尽量保持所有的表一致。
 数据的关联关系大部分都是通过关联关系表进行查询。 除非是为了性能优化，且 关联关系值为单值。 数组是不行的 
+
+### 已批准例外：角色/权限关联用 JSONB 数组
+
+- 对齐系统 DB 脚本（Partner/Contract/Role/User/MFA/Invite）后，**两处**关联刻意用 JSONB 数组替代关联表，是上面「数组不行」规则的**已批准例外**：
+  - `sys_partner_user.roles`：用户在某 partner 下绑定的角色，`List<{roleId}>`，取代旧 `sys_user_role` join 表
+  - `sys_role.permission_codes`：角色含的权限码，`List<string>`，取代旧 `sys_role_permission` join 表
+- 理由：读多写少、反查频率低（「哪些用户绑角色 X / 哪些角色含权限 Y」），会话聚合一次性读出后在内存里派生；脚本也为这两列配了 GIN 反查索引意图（Prisma 暂不发 GIN，反查走 `array_contains`）。
+- **不要扩大这个例外**：新增关联关系仍默认走关联表；只有同样满足「读多写少 + 单一聚合入口 + 反查低频」时，回到本节讨论后再加。
