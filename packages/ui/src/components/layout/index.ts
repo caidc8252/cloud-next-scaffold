@@ -1,5 +1,7 @@
 export * from './sidebar'
 export * from './content-header'
+export * from './page-header'
+export * from './page-header-band'
 export * from './app-header'
 export * from './breadcrumbs'
 export * from './layout'
