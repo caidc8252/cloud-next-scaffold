@@ -32,6 +32,12 @@ const elevationClass: Record<CardElevation, string> = {
 const slotPaddingClass =
   "group-data-[size=sm]/card:p-3 group-data-[size=md]/card:p-5 group-data-[size=lg]/card:p-6"
 
+// CardHeader runs a denser vertical rhythm than the content slot: at md its
+// top/bottom padding is 16px (py-4) while horizontal stays 20px (px-5). sm/lg
+// keep the uniform slot padding.
+const headerPaddingClass =
+  "group-data-[size=sm]/card:p-3 group-data-[size=md]/card:px-5 group-data-[size=md]/card:py-4 group-data-[size=lg]/card:p-6"
+
 // flush: drops the size-based slot padding for full-bleed content (tables, row
 // lists) — rows then own their padding. Needed because the slot padding is a
 // group-data variant class: a consumer's un-prefixed `p-0` can't override it
@@ -75,7 +81,7 @@ function CardHeader({ className, flush = false, ...props }: CardSlotProps) {
       data-slot="card-header"
       className={cn(
         "@container/card-header grid auto-rows-min items-start gap-1 border-b border-line-subtle",
-        !flush && slotPaddingClass,
+        !flush && headerPaddingClass,
         "has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto]",
         className
       )}
