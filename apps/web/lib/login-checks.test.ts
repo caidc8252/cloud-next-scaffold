@@ -25,6 +25,9 @@ describe("isLockActive", () => {
   it("past lock is not active (expired)", () => {
     expect(isLockActive(new Date("2026-06-03T23:50:00Z"), now)).toBe(false);
   });
+  it("lock expiring exactly at now is not active", () => {
+    expect(isLockActive(new Date("2026-06-04T00:00:00Z"), now)).toBe(false);
+  });
 });
 
 describe("isTimestampFresh", () => {
@@ -36,6 +39,14 @@ describe("isTimestampFresh", () => {
   });
   it("beyond window fails", () => {
     expect(isTimestampFresh(now - 61_000, now, windowMs)).toBe(false);
+  });
+  it("exact window boundary is inclusive", () => {
+    expect(isTimestampFresh(now - windowMs, now, windowMs)).toBe(true);
+    expect(isTimestampFresh(now + windowMs, now, windowMs)).toBe(true);
+  });
+  it("one ms beyond the window fails", () => {
+    expect(isTimestampFresh(now - windowMs - 1, now, windowMs)).toBe(false);
+    expect(isTimestampFresh(now + windowMs + 1, now, windowMs)).toBe(false);
   });
 });
 
