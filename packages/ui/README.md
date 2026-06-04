@@ -2,6 +2,11 @@
 
 本文件仅对**修改 `packages/ui/` 本身**的 AI 生效。
 
+> 消费侧（在 `apps/*` 里开发**列表 / 新增 / 详情**页面）的样式规范在
+> [`docs/portal-page-style-spec.zh-CN.md`](docs/portal-page-style-spec.zh-CN.md)
+> （English: [`docs/portal-page-style-spec.en.md`](docs/portal-page-style-spec.en.md)）——遇到这三类页面先读它。
+> 对应的可编译样板在 [`docs/examples/`](docs/examples/)（纯样式骨架；不在 `exports` 里、不进打包，仅由根 `tsc` / `eslint` 校验防腐）。
+
 总原则：组件库是产品的样式与交互契约，任何扩张都要先证明无法靠现有能力满足。**默认拒绝扩张，能复用就复用，能调参就不加变体，能扩 variant 就不加组件，能扩组件就不加 token。**
 
 ---
