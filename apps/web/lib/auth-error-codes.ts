@@ -10,3 +10,6 @@ export const ERR_AUTH_INVALID_PARTNER = "103006";
 // 文案被本地化收敛成同一句（这两处都是用户可见页面，文案需各自具体）。
 export const ERR_AUTH_CREDENTIALS_REQUIRED = "103007";
 export const ERR_AUTH_PARTNER_REQUIRED = "103008";
+export const ERR_AUTH_ACCOUNT_DISABLED = "103009";
+export const ERR_AUTH_ENCRYPTION_INVALID = "103010";
+export const ERR_AUTH_REQUEST_EXPIRED = "103011";

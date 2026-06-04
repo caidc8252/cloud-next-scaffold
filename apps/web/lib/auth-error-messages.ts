@@ -10,6 +10,9 @@ import {
   ERR_AUTH_INVALID_PARTNER,
   ERR_AUTH_CREDENTIALS_REQUIRED,
   ERR_AUTH_PARTNER_REQUIRED,
+  ERR_AUTH_ACCOUNT_DISABLED,
+  ERR_AUTH_ENCRYPTION_INVALID,
+  ERR_AUTH_REQUEST_EXPIRED,
 } from "./auth-error-codes.ts";
 
 // Auth 域是 app 级的（不属于 @cloud/request 通用包），所以它的错误码三语文案放在这里，
@@ -25,6 +28,9 @@ const authErrorMessages: Record<string, Record<string, string>> = {
     [ERR_AUTH_INVALID_PARTNER]: "This organization is not available.",
     [ERR_AUTH_CREDENTIALS_REQUIRED]: "Enter both account and password.",
     [ERR_AUTH_PARTNER_REQUIRED]: "Select an organization.",
+    [ERR_AUTH_ACCOUNT_DISABLED]: "This account is not available.",
+    [ERR_AUTH_ENCRYPTION_INVALID]: "Login request could not be processed. Please try again.",
+    [ERR_AUTH_REQUEST_EXPIRED]: "Login request expired. Please try again.",
   },
   "zh-CN": {
     [ERR_AUTH_MISSING_FIELDS]: "请填写必填项。",
@@ -35,6 +41,9 @@ const authErrorMessages: Record<string, Record<string, string>> = {
     [ERR_AUTH_INVALID_PARTNER]: "该组织不可用。",
     [ERR_AUTH_CREDENTIALS_REQUIRED]: "请输入账号和密码。",
     [ERR_AUTH_PARTNER_REQUIRED]: "请选择一个组织。",
+    [ERR_AUTH_ACCOUNT_DISABLED]: "账号不可用，请联系管理员。",
+    [ERR_AUTH_ENCRYPTION_INVALID]: "登录请求无法处理，请重试。",
+    [ERR_AUTH_REQUEST_EXPIRED]: "登录请求已过期，请重试。",
   },
   ja: {
     [ERR_AUTH_MISSING_FIELDS]: "必須項目を入力してください。",
@@ -45,6 +54,9 @@ const authErrorMessages: Record<string, Record<string, string>> = {
     [ERR_AUTH_INVALID_PARTNER]: "この組織は利用できません。",
     [ERR_AUTH_CREDENTIALS_REQUIRED]: "アカウントとパスワードを入力してください。",
     [ERR_AUTH_PARTNER_REQUIRED]: "組織を選択してください。",
+    [ERR_AUTH_ACCOUNT_DISABLED]: "このアカウントは利用できません。",
+    [ERR_AUTH_ENCRYPTION_INVALID]: "ログインリクエストを処理できませんでした。再度お試しください。",
+    [ERR_AUTH_REQUEST_EXPIRED]: "ログインリクエストの有効期限が切れました。再度お試しください。",
   },
 };
 
