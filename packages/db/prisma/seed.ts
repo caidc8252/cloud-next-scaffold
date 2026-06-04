@@ -95,6 +95,7 @@ async function main() {
       email: "admin@cloud.local",
       passwordHash: DEFAULT_PASSWORD_HASH,
       status: "ACTIVE",
+      mfaEnabled: false,
     },
   });
 

@@ -183,6 +183,7 @@ model SysUser {
   email                            String?
   country                          String?   @db.VarChar(8)
   status                           String    @default("ACTIVE") @db.VarChar(20)
+  mfaEnabled                       Boolean   @default(false) @map("mfa_enabled")
   lastLoginAt                      DateTime? @map("last_login_at") @db.Timestamp(3)
   passwordUpdatedAt                DateTime? @map("password_updated_at") @db.Timestamp(3)
   remark                           String?   @db.VarChar(500)
