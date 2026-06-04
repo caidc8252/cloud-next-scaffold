@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+// 默认值需与 password-policy.ts 的 PASSWORD_POLICY 展示值保持一致
 const authConfigSchema = z.object({
   AUTH_PASSWORD_MAX_ERROR_TIMES: z.coerce.number().int().positive().default(6),
   AUTH_PASSWORD_LOCK_MINUTES: z.coerce.number().int().positive().default(30),
