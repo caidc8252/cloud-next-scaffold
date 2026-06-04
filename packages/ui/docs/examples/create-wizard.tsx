@@ -3,14 +3,15 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // STYLE TEMPLATE · Create page / wizard (spec §1.2 §2.2 §3 §7)
 //
-// Compilable style skeleton for the portal CREATE (wizard) page shape.
+// Compilable style skeleton for the portal CREATE (wizard) page shape — the
+// labels/fields below are neutral placeholders; reuse this shape in any module.
 // Reference implementation:
 // apps/web/app/(portal)/manage/customers/new/_components/customer-wizard.tsx
 //
 // Style-only: static step, no-op handlers, <a> stands in for next/link. In a
 // real page: useState for step/form, shared field components + one validation
-// source (see customers' _components/company-fields.tsx), POST via
-// @cloud/request/client, and the app-level ManagePageHeader.
+// source (see §7 — a feature-level <entity>-fields.tsx), POST via
+// @cloud/request/client, and @cloud/ui's PageHeader (@cloud/ui/components/layout).
 // NOT exported from @cloud/ui — never enters the bundle.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -28,8 +29,8 @@ import {
 } from "@cloud/ui";
 
 const STEPS = [
-  { caption: "Step 1", label: "Company" },
-  { caption: "Step 2", label: "Contracts" },
+  { caption: "Step 1", label: "Primary info" },
+  { caption: "Step 2", label: "Related items" },
   { caption: "Done", label: "Confirmation" },
 ];
 
@@ -48,15 +49,15 @@ const Dash = () => <span className="text-content-tertiary">—</span>;
 export function CreateWizardTemplate() {
   return (
     <>
-      {/* §2.2 — header band; escape action is ghost Cancel. Use <ManagePageHeader/> in apps/web. */}
+      {/* §2.2 — header band; escape action is ghost Cancel. Use <PageHeader/> (@cloud/ui/components/layout) in apps/web. */}
       <div className="border-b border-line-subtle bg-surface-2">
         <div className="flex flex-wrap items-end gap-x-4 gap-y-3 px-6 py-4">
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-semibold tracking-tight text-content-primary">
-              New customer
+              New record
             </h1>
             <p className="mt-1.5 max-w-3xl text-sm text-content-tertiary">
-              Register a company and configure its contracts.
+              Fill in the primary details, then configure any related items.
             </p>
           </div>
           <Button variant="ghost" iconLeft={<X className="size-4" />} onClick={() => {}}>
@@ -80,19 +81,19 @@ export function CreateWizardTemplate() {
             {/* Step card: flush head px-5 py-4 + text-md title; content keeps slot padding */}
             <Card>
               <CardHeader flush className="px-5 py-4">
-                <CardTitle className="text-md">Company information</CardTitle>
+                <CardTitle className="text-md">Primary information</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4.5">
-                  <Field label="Company name" required>
-                    <Input placeholder="e.g. Northwind Commerce" />
+                  <Field label="Name" required>
+                    <Input placeholder="Display name" />
                   </Field>
                   <div className="grid grid-cols-2 gap-4.5">
-                    <Field label="License">
-                      <Input placeholder="e.g. NW-2024-08831-CA" />
+                    <Field label="Reference code">
+                      <Input placeholder="Optional identifier" />
                     </Field>
-                    <Field label="Contact name">
-                      <Input placeholder="e.g. Sarah Chen" />
+                    <Field label="Owner">
+                      <Input placeholder="Responsible person" />
                     </Field>
                   </div>
                 </div>
@@ -104,7 +105,7 @@ export function CreateWizardTemplate() {
               className="mt-3 rounded-md border border-error/30 bg-error-bg px-3 py-2 text-sm text-error-strong"
               role="alert"
             >
-              Failed to create customer.
+              Failed to create record.
             </div>
 
             {/* §7 — footer nav: Back ghost (disabled on step 1) | Continue primary; last step → Create */}
@@ -125,7 +126,7 @@ export function CreateWizardTemplate() {
                 Continue
               </Button>
               {/* Final step variant:
-                  <Button variant="primary" iconLeft={<Check className="size-4" />} loading>Create customer</Button> */}
+                  <Button variant="primary" iconLeft={<Check className="size-4" />} loading>Create record</Button> */}
             </div>
           </div>
 
@@ -135,12 +136,12 @@ export function CreateWizardTemplate() {
               Summary
             </h4>
             <dl className="flex flex-col gap-2 text-xs">
-              <SummaryRow term="Name">Northwind Commerce</SummaryRow>
-              <SummaryRow term="Country">United States</SummaryRow>
-              <SummaryRow term="Address">
+              <SummaryRow term="Name">Display name</SummaryRow>
+              <SummaryRow term="Reference">REF-0001</SummaryRow>
+              <SummaryRow term="Owner">
                 <Dash />
               </SummaryRow>
-              <SummaryRow term="Contracts">
+              <SummaryRow term="Items">
                 <span className="text-content-tertiary">None selected</span>
               </SummaryRow>
             </dl>
@@ -160,17 +161,17 @@ export function WizardDoneTemplate() {
           <Check size={36} />
         </div>
         <h2 className="mb-2 text-2xl font-semibold tracking-tight text-content-primary">
-          Customer created
+          Record created
         </h2>
         <p className="mx-auto mb-6 max-w-md text-sm leading-relaxed text-content-secondary">
-          Next step: invite an Admin so the customer can sign in and start operating.
+          Next step: a short call to action that moves the user into the new record.
         </p>
         <Button
           variant="primary"
           iconRight={<ChevronRight className="size-4" />}
           onClick={() => {}}
         >
-          Invite Admin
+          View record
         </Button>
       </CardContent>
     </Card>
