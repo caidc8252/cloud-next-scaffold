@@ -2,7 +2,7 @@
 
 > The unified style spec for the three basic portal page shapes (list → create → detail), distilled from the exemplar module `apps/web/app/(portal)/manage/customers`. Read this before building any of these three page types in any module; older pages that diverge should converge toward it over time. 中文版：[portal-page-style-spec.zh-CN.md](./portal-page-style-spec.zh-CN.md).
 >
-> **Compilable templates** (style-only skeletons, excluded from the bundle, ready to read or copy): [examples/list-page.tsx](./examples/list-page.tsx) · [examples/create-wizard.tsx](./examples/create-wizard.tsx) · [examples/detail-page.tsx](./examples/detail-page.tsx).
+> **Compilable templates** (style-only skeletons, excluded from the bundle, ready to read or copy): [examples/list-page.tsx](./examples/list-page.tsx) · [examples/create-form.tsx](./examples/create-form.tsx) · [examples/create-wizard.tsx](./examples/create-wizard.tsx) · [examples/detail-page.tsx](./examples/detail-page.tsx).
 >
 > Baseline rules: `@cloud/ui` primitives + semantic tokens only (`surface/content/line/success/warning/error/info` plus the `teal/violet` category hues). No hex colors, no arbitrary font sizes; every clickable element gets `cursor-pointer`.
 
@@ -16,7 +16,7 @@ The shell `Layout` scroll area is **unpadded** — each page owns its padding. T
 
 ```tsx
 <>
-  <ManagePageHeader title description actions={<Button variant="primary" iconLeft={<Plus/>}>New …</Button>} />
+  <PageHeader title description actions={<Button variant="primary" iconLeft={<Plus/>}>New …</Button>} />
   <div className="flex flex-col gap-6 px-6 pt-6 pb-8">
     {/* ① KPI quick-filter tiles */}
     {/* ② condition band: toolbar + applied filters (one group, gap-2.5 inside; the whole band is sticky — see §5) */}
@@ -25,11 +25,33 @@ The shell `Layout` scroll area is **unpadded** — each page owns its padding. T
 </>
 ```
 
-### 1.2 Create page (wizard)
+### 1.2 Create page
+
+Two shapes — use the **single-step form** for plain "new" / "edit" pages (most of them); reserve the **multi-step wizard** for flows that are genuinely sequential or branch.
+
+**Single-step form (default)** — Cancel **and** Submit both live in a **sticky header**; the body is one centered column of section cards. No footer, no summary rail, no done step.
 
 ```tsx
 <>
-  <ManagePageHeader title description actions={<Button variant="ghost" iconLeft={<X/>}>Cancel</Button>} />
+  <PageHeader
+    sticky
+    title description
+    actions={<>
+      <Button variant="ghost" iconLeft={<X/>}>Cancel</Button>
+      <Button variant="primary" iconLeft={<Plus/>} loading={pending}>Create …</Button>
+    </>}
+  />
+  <div className="px-6 pt-6 pb-8">
+    <div className="mx-auto flex max-w-3xl flex-col gap-6">{/* Card elevation={1} section cards */}</div>
+  </div>
+</>
+```
+
+**Multi-step wizard** — only when the input is sequential / branching.
+
+```tsx
+<>
+  <PageHeader title description actions={<Button variant="ghost" iconLeft={<X/>}>Cancel</Button>} />
   <div className="flex flex-col gap-6 px-6 pt-6 pb-8">
     <StepIndicator className="rounded-xl border border-line-default bg-surface-2 px-5.5 py-4 shadow-1" … />
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
@@ -63,12 +85,17 @@ The server `page.tsx` stays a thin entry: guard (`requirePermissions`) → fetch
 
 `PageHeaderBand`: `bg-surface-2` + `border-b border-line-subtle`, inner `px-6 py-4`; sits flush under the topbar, spanning edge to edge. The `tabs` slot renders on the band's bottom edge (`flex px-6`) — pass a line-variant `TabsList` (the default) with `shadow-none` so the tab underline merges with the band border.
 
-### 2.2 List / wizard header (`ManagePageHeader`)
+> **Source & selection rule.** Both `PageHeader` (list / create header, §2.2) and `PageHeaderBand` (detail header, §2.3) live in `@cloud/ui/components/layout`. Use these full-bleed bands for portal management pages (list / create / detail), which dock flush under the topbar at `text-2xl`. For a plain in-content page title (e.g. dashboard, settings) use `ContentHeader` from the same package instead — it's an in-flow `text-3xl` title, not a band.
+
+### 2.2 List / create header (`PageHeader`)
 
 - Row container: `flex flex-wrap items-end gap-x-4 gap-y-3`
 - Title: `h1` `text-2xl font-semibold tracking-tight text-content-primary`; inline status chip sits at `gap-2.5`
 - Description: `mt-1.5 max-w-3xl text-sm text-content-tertiary`
-- Actions: right-aligned `flex shrink-0 items-center gap-2`; primary action is `variant="primary"` (list "New …"), escape action is `variant="ghost"` (wizard "Cancel")
+- Actions: right-aligned `flex shrink-0 items-center gap-2`. By page type:
+  - **List** — one `variant="primary"` action ("New …")
+  - **Wizard** — one `variant="ghost"` escape action ("Cancel")
+  - **Single-step form** — `ghost` Cancel **and** `primary` Submit together, with the band set `sticky` so Submit stays reachable while the form scrolls (§7.1)
 
 ### 2.3 Detail header (inside the band, no card)
 
@@ -80,9 +107,9 @@ The server `page.tsx` stays a thin entry: guard (`requirePermissions`) → fetch
 <Button
   variant="ghost"
   size="icon-sm"
-  aria-label="Back to customers"
+  aria-label="Back to list"
   nativeButton={false}
-  render={<Link href="/manage/customers" />}
+  render={<Link href="/manage/<list>" />}
 >
   <ChevronLeft className="size-4" />
 </Button>
@@ -95,7 +122,7 @@ The server `page.tsx` stays a thin entry: guard (`requirePermissions`) → fetch
 | Element | Spec |
 |---|---|
 | Back | see the mandatory recipe above |
-| Identity | logo / avatar at `lg` size |
+| Identity | logo / avatar / initial tile at `lg` size (omit if the record has none) |
 | Title row | `h1 text-2xl font-semibold tracking-tight` + status Badge, `gap-2.5` |
 | Meta row | `mt-2 flex flex-wrap gap-x-3.5 gap-y-1.5 text-xs text-content-secondary`; items use icon `size-3.5` + `gap-1` |
 | Action | `Button variant="secondary"` + `shrink-0`; a single button gets no wrapper div |
@@ -110,8 +137,8 @@ Tab count chip: `ml-1 h-4 min-w-4 rounded-full bg-surface-3 px-1 text-xs font-me
 |---|---|---|
 | Page body padding | `px-6 pt-6 pb-8` | prototype 24px edges; same on the list/wizard body div and every detail `TabsContent` |
 | Page-level block gap | `gap-6` (24px) | KPI tiles ↔ search area ↔ list card; wizard blocks; detail two-column gap |
-| Card stack in a section | `gap-5` (20px) | e.g. Operators card ↔ Roles card on the detail page |
-| Tightly-coupled cards | `gap-3.5` (14px) | e.g. contracts card ↔ its collapsed history card |
+| Card stack in a section | `gap-5` (20px) | sibling section cards stacked on a detail tab |
+| Tightly-coupled cards | `gap-3.5` (14px) | a card and its directly-related sub-card (e.g. a list + its collapsed history) |
 | Toolbar ↔ filter feedback | `gap-2.5` (10px) | the two are grouped in one `flex flex-col gap-2.5`, then separated from neighbors by gap-6 |
 | Dense in-card bands | `px-4 py-3` | count band, pagination band, section-card head band |
 | Card slot padding | from Card `size` (md = `p-5`) | custom sizing uses `flush` + own padding (e.g. wizard card head `px-5 py-4`); **never** fight it with `p-0` |
@@ -121,6 +148,8 @@ General principle: **every wrapper div must have a job** (spacing group / scroll
 ---
 
 ## 4. KPI Quick-Filter Tiles
+
+The tile itself is `KpiTile` from `@cloud/ui` (it owns the styling + a11y below). The **grid, the tile data, and the toolbar/filter linkage stay in the page** — `activeKey` is derived from the applied filter, `onClick` mutates it. Pass `onClick` for an interactive quick-filter; omit it for a pure stat.
 
 A fixed three-column grid; each tile is itself a **clickable status filter** (click to apply, click again to clear):
 
@@ -211,7 +240,20 @@ Remaining column conventions:
 
 ---
 
-## 7. Create Wizard
+## 7. Create Page
+
+Two shapes: a **single-step form** (§7.1 — the default for plain "new" / "edit" pages) and a **multi-step wizard** (§7.2 — only when the flow is genuinely sequential or branches).
+
+### 7.1 Single-step form
+
+- **Header (sticky)**: `<PageHeader sticky … />` carries the title + description **and both actions** — `ghost` Cancel (`iconLeft={<X/>}`) plus `primary` Submit (`iconLeft` = `Plus` on create / `Check` on edit, `loading` while pending). The band is sticky so Submit stays reachable as the form scrolls; it docks under the app header exactly like the list condition band (§5 — the shell `<main>` is the scrollport, so `top-0` lands under the header), and its opaque `bg-surface-2` masks content passing beneath. **There is no bottom action bar** — the header is the only action surface.
+- **Body**: one centered column — `<div className="mx-auto flex max-w-3xl flex-col gap-6">` inside the `px-6 pt-6 pb-8` page padding — of `Card elevation={1}` section cards grouped by concern (Identity / Visibility / …). No `StepIndicator`, no summary rail, no done step.
+- **Submit**: guard invalid / in-flight submits in the handler and surface field errors on the first attempt; on success navigate straight to the new record's detail page (`router.push`) — don't show a separate confirmation screen.
+- Reference implementation: `apps/web/app/(portal)/app/app-publish/new/_components/app-form.tsx` — one component serves both create and edit via a `mode` prop.
+
+### 7.2 Multi-step wizard
+
+Use only when the input is sequential / branching.
 
 - **Step indicator**: `StepIndicator` with card chrome `rounded-xl border border-line-default bg-surface-2 px-5.5 py-4 shadow-1`
 - **Two columns**: `flex flex-col gap-6 lg:flex-row lg:items-start`; main column `min-w-0 flex-1`; the summary rail component carries its own `w-full lg:w-75 lg:shrink-0` (300px) + `sticky top-5`; full-width steps simply don't render the rail
@@ -221,7 +263,7 @@ Remaining column conventions:
 - **Footer nav**: `mt-6 flex items-center justify-between`; Back `ghost` (disabled on step 1), Continue `primary` with right chevron, final step swaps to Create `primary` with Check + `loading`
 - **Done step**: centered card, `CardContent flex flex-col items-center px-8 py-10`; 72px success disc (`size-18 rounded-full border-success/25 bg-success-bg text-success-strong`) → status Badge → `text-2xl` heading → `max-w-md text-sm` body → primary CTA
 
-Validation logic and field groups **live in feature-level shared files** (e.g. `_components/company-fields.tsx` with `isCompanyDataValid`) — the wizard and the detail edit modal consume the same source; never duplicate the rules.
+Validation logic and field groups **live in feature-level shared files** (e.g. `_components/<entity>-fields.tsx` exporting an `isFieldsetValid` helper) — the create page (form or wizard) and the detail edit modal consume the same source; never duplicate the rules.
 
 ---
 
@@ -235,7 +277,7 @@ Validation logic and field groups **live in feature-level shared files** (e.g. `
 - **Stat card**: `Card className="gap-1 px-4 py-3.5"`; label `text-xs font-medium text-content-secondary`, value `text-2xl font-semibold leading-tight`, delta line `mt-0.5 text-xs text-content-tertiary`
 - **PII masking**: masked by default with per-field `Reveal` (`text-xs font-medium text-info-strong hover:underline`); revealing fires an audit-logged toast
 
-### 8.2 Section cards (contracts / operators / roles)
+### 8.2 Section cards (one card per related collection)
 
 - Head: `CardHeader` + `CardTitle className="text-md"` (+ `CardDescription className="text-xs leading-relaxed text-content-tertiary"`); header buttons go in the **`CardAction`** slot (vertically centered against the text block — team spec); no hand-rolled flex containers
 - Row-list content: `CardContent flush` with rows as direct children: `flex items-center gap-3~3.5 px-4~4.5 py-3~3.5 border-b border-line-subtle last:border-b-0`; leading `size-10 rounded-lg` category tile, title `text-sm font-semibold` + chips at `gap-2`, subline `text-xs`
@@ -270,6 +312,7 @@ page padding        px-6 pt-6 pb-8        block gap gap-6
 in-card bands       px-4 py-3             card stacks gap-5 (tight 3.5)
 condition controls  always size sm        search input max-w-64 flex-1
 sticky condition band  sticky top-0 z-10 -mx-6 -my-3 bg-surface-1 px-6 py-3
+single-step form    sticky header (cancel+submit)   body mx-auto max-w-3xl col, no footer
 wizard rail         w-75 sticky top-5     detail rail w-80
 confirm modal 440px form modal 620px      empty state py-12 centered text-sm tertiary
 ```

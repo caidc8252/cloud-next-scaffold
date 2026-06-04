@@ -9,7 +9,7 @@
 // Style-only: data is hardcoded, handlers are no-ops, <a> stands in for
 // next/link. In a real page: requirePermissions() in page.tsx, useState for
 // draft/applied filters, @cloud/request/client for data, router.push to open
-// rows, and the app-level ManagePageHeader (manage/_components/page-header)
+// rows, and @cloud/ui's PageHeader (@cloud/ui/components/layout)
 // instead of the inlined band below.
 // NOT exported from @cloud/ui — never enters the bundle.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -20,6 +20,7 @@ import {
   Button,
   Card,
   Input,
+  KpiTile,
   Pagination,
   Select,
   SelectContent,
@@ -146,7 +147,7 @@ const STAT_TILES = [
 export function ListPageTemplate() {
   return (
     <>
-      {/* §2.2 — full-bleed white header band. In apps/web use <ManagePageHeader/>. */}
+      {/* §2.2 — full-bleed white header band. In apps/web use <PageHeader/> from @cloud/ui/components/layout. */}
       <div className="border-b border-line-subtle bg-surface-2">
         <div className="flex flex-wrap items-end gap-x-4 gap-y-3 px-6 py-4">
           <div className="min-w-0 flex-1">
@@ -165,33 +166,19 @@ export function ListPageTemplate() {
 
       {/* §3 — page body: px-6 pt-6 pb-8, blocks at gap-6 */}
       <div className="flex flex-col gap-6 px-6 pt-6 pb-8">
-        {/* §4 — KPI quick-filter tiles (click = one-tap status filter) */}
+        {/* §4 — KPI quick-filter tiles. The grid + data + which key is active
+            (derived from the applied filter) live here; KpiTile is the styled,
+            keyboard-accessible leaf. Omit onClick for a pure stat tile. */}
         <div className="grid grid-cols-3 gap-3">
           {STAT_TILES.map((t) => (
-            <button
+            <KpiTile
               key={t.key}
-              type="button"
+              active={t.active}
               onClick={() => {}}
-              className={`cursor-pointer rounded-lg border px-4 py-3 text-left transition-colors ${
-                t.active
-                  ? "border-primary-500 bg-primary-50 ring-2 ring-primary-500/10"
-                  : "border-line-subtle bg-surface-2 shadow-1 hover:bg-surface-hover"
-              }`}
-            >
-              <div
-                className={`text-2xs font-medium tracking-wider uppercase ${t.active ? "text-primary-700" : "text-content-tertiary"}`}
-              >
-                {t.label}
-              </div>
-              <div className="mt-1 flex items-baseline gap-1.5">
-                <span
-                  className={`font-mono text-2xl tracking-tight tabular-nums ${t.active ? "font-semibold text-primary-700" : "font-medium text-content-primary"}`}
-                >
-                  {t.value}
-                </span>
-                <span className="text-2xs text-content-tertiary">{t.sub}</span>
-              </div>
-            </button>
+              label={t.label}
+              value={t.value}
+              sub={t.sub}
+            />
           ))}
         </div>
 

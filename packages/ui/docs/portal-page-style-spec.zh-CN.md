@@ -2,7 +2,7 @@
 
 > 后台业务页面三种基本页型（列表 → 新增 → 详情）的统一样式规范，提炼自样板模块 `apps/web/app/(portal)/manage/customers`。开发任何模块的这三类页面前先读本文；与本文不一致的旧页面以本文为准逐步收敛。English version: [portal-page-style-spec.en.md](./portal-page-style-spec.en.md)。
 >
-> **可编译样板**（纯样式骨架，不进打包，可直接对照/拷贝）：[examples/list-page.tsx](./examples/list-page.tsx) · [examples/create-wizard.tsx](./examples/create-wizard.tsx) · [examples/detail-page.tsx](./examples/detail-page.tsx)。
+> **可编译样板**（纯样式骨架，不进打包，可直接对照/拷贝）：[examples/list-page.tsx](./examples/list-page.tsx) · [examples/create-form.tsx](./examples/create-form.tsx) · [examples/create-wizard.tsx](./examples/create-wizard.tsx) · [examples/detail-page.tsx](./examples/detail-page.tsx)。
 >
 > 通用前提：只用 `@cloud/ui` 原语 + 语义 token（`surface/content/line/success/warning/error/info` + 类目色 `teal/violet`），不写十六进制、不写任意值字号；可点击元素必须 `cursor-pointer`。
 
@@ -16,7 +16,7 @@ Shell `Layout` 的滚动区**无内边距**，页面自己负责留白。三种�
 
 ```tsx
 <>
-  <ManagePageHeader title description actions={<Button variant="primary" iconLeft={<Plus/>}>New …</Button>} />
+  <PageHeader title description actions={<Button variant="primary" iconLeft={<Plus/>}>New …</Button>} />
   <div className="flex flex-col gap-6 px-6 pt-6 pb-8">
     {/* ① KPI 快捷筛选块 */}
     {/* ② 条件区：搜索栏 + 已应用筛选（一组，内部 gap-2.5；整组吸顶，见 §5） */}
@@ -25,11 +25,33 @@ Shell `Layout` 的滚动区**无内边距**，页面自己负责留白。三种�
 </>
 ```
 
-### 1.2 新增页（向导）
+### 1.2 新增页
+
+两种形态——普通「新增 / 编辑」页（占多数）用**单步表单**；只有当输入确实是分步顺序或有分支时，才用**多步向导**。
+
+**单步表单（默认）**——Cancel 与 Submit **都放吸顶头部**；主体是单列居中的区块卡片。无底栏、无摘要 rail、无完成步。
 
 ```tsx
 <>
-  <ManagePageHeader title description actions={<Button variant="ghost" iconLeft={<X/>}>Cancel</Button>} />
+  <PageHeader
+    sticky
+    title description
+    actions={<>
+      <Button variant="ghost" iconLeft={<X/>}>Cancel</Button>
+      <Button variant="primary" iconLeft={<Plus/>} loading={pending}>Create …</Button>
+    </>}
+  />
+  <div className="px-6 pt-6 pb-8">
+    <div className="mx-auto flex max-w-3xl flex-col gap-6">{/* Card elevation={1} 区块卡片 */}</div>
+  </div>
+</>
+```
+
+**多步向导**——仅当输入是顺序 / 分支流程时使用。
+
+```tsx
+<>
+  <PageHeader title description actions={<Button variant="ghost" iconLeft={<X/>}>Cancel</Button>} />
   <div className="flex flex-col gap-6 px-6 pt-6 pb-8">
     <StepIndicator className="rounded-xl border border-line-default bg-surface-2 px-5.5 py-4 shadow-1" … />
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
@@ -63,12 +85,17 @@ Shell `Layout` 的滚动区**无内边距**，页面自己负责留白。三种�
 
 `PageHeaderBand`：`bg-surface-2` + `border-b border-line-subtle`，内层 `px-6 py-4`；紧贴 topbar，左右顶满。`tabs` 槽位渲染在 band 底边上（`flex px-6`），传 line 变体 `TabsList`（默认即 line）加 `shadow-none`，使 tab 下划线与 band 底边重合。
 
-### 2.2 列表 / 向导页头（`ManagePageHeader`）
+> **来源与选择规则。** `PageHeader`（list / create 页头，§2.2）和 `PageHeaderBand`（detail 页头，§2.3）都在 `@cloud/ui/components/layout`。后台管理页（list / create / detail）用这套全幅 band——贴 topbar、`text-2xl`。内容区普通标题页（如 dashboard、settings）改用同一包里的 `ContentHeader`——它是内容流内的 `text-3xl` 标题，不是 band。
+
+### 2.2 列表 / 新增页头（`PageHeader`）
 
 - 行容器：`flex flex-wrap items-end gap-x-4 gap-y-3`
 - 标题：`h1` `text-2xl font-semibold tracking-tight text-content-primary`；行内状态 chip 与标题 `gap-2.5`
 - 描述：`mt-1.5 max-w-3xl text-sm text-content-tertiary`
-- 动作区：右侧 `flex shrink-0 items-center gap-2`；主操作 `variant="primary"`（列表页“新增”），逃逸操作 `variant="ghost"`（向导“Cancel”）
+- 动作区：右侧 `flex shrink-0 items-center gap-2`，按页型：
+  - **列表**——一个 `variant="primary"` 主操作（“新增…”）
+  - **向导**——一个 `variant="ghost"` 逃逸操作（“Cancel”）
+  - **单步表单**——`ghost` Cancel **与** `primary` Submit 并排，并把 band 设为 `sticky`，使 Submit 在表单滚动时始终可达（§7.1）
 
 ### 2.3 详情页头（band 内，无卡片）
 
@@ -80,9 +107,9 @@ Shell `Layout` 的滚动区**无内边距**，页面自己负责留白。三种�
 <Button
   variant="ghost"
   size="icon-sm"
-  aria-label="Back to customers"
+  aria-label="Back to list"
   nativeButton={false}
-  render={<Link href="/manage/customers" />}
+  render={<Link href="/manage/<list>" />}
 >
   <ChevronLeft className="size-4" />
 </Button>
@@ -95,7 +122,7 @@ Shell `Layout` 的滚动区**无内边距**，页面自己负责留白。三种�
 | 元素 | 规范 |
 |---|---|
 | 返回 | 见上方硬性配方 |
-| 主体标识 | Logo / 头像 `lg` 尺寸 |
+| 主体标识 | Logo / 头像 / 首字母块 `lg` 尺寸（无标识则省略） |
 | 标题行 | `h1 text-2xl font-semibold tracking-tight` + 状态 Badge，`gap-2.5` |
 | 元信息行 | `mt-2 flex flex-wrap gap-x-3.5 gap-y-1.5 text-xs text-content-secondary`，条目内 icon `size-3.5` + `gap-1` |
 | 动作 | `Button variant="secondary"` + `shrink-0`，单个按钮不包 div |
@@ -110,8 +137,8 @@ Tab 上的计数 chip：`ml-1 h-4 min-w-4 rounded-full bg-surface-3 px-1 text-xs
 |---|---|---|
 | 页面主体边距 | `px-6 pt-6 pb-8` | 原型 24px 边距；列表/向导的 body div 与详情每个 `TabsContent` 一致 |
 | 页面级块间距 | `gap-6`（24px） | KPI 块 ↔ 搜索区 ↔ 列表卡片；向导块之间；详情双栏之间 |
-| 同区域卡片堆叠 | `gap-5`（20px） | 如详情页 Operators 卡 ↔ Roles 卡 |
-| 紧密关联卡片 | `gap-3.5`（14px） | 如合同主卡 ↔ 历史折叠卡 |
+| 同区域卡片堆叠 | `gap-5`（20px） | 详情页同一 tab 内并列的区块卡片 |
+| 紧密关联卡片 | `gap-3.5`（14px） | 主卡 ↔ 其直接相关的子卡（如某列表 ↔ 其折叠历史卡） |
 | 工具栏 ↔ 筛选反馈 | `gap-2.5`（10px） | 两者包成一组 `flex flex-col gap-2.5`，再以 gap-6 与相邻块分隔 |
 | 卡片内 dense 横带 | `px-4 py-3` | 计数带、分页带、区块卡头带 |
 | 卡片槽位 padding | Card `size` 决定（md = `p-5`） | 需要自定尺寸时用 `flush` + 自带 padding（如向导卡头 `px-5 py-4`），**不要**用 `p-0` 去覆盖 |
@@ -121,6 +148,8 @@ Tab 上的计数 chip：`ml-1 h-4 min-w-4 rounded-full bg-surface-3 px-1 text-xs
 ---
 
 ## 4. KPI 快捷筛选块
+
+单块用 `@cloud/ui` 的 `KpiTile`（它承载下面的样式 + 无障碍）。**栅格、tile 数据、与 toolbar/筛选的联动都留在页面里**——`activeKey` 由已应用筛选派生，`onClick` 去改它。传 `onClick` 即交互式快捷筛选，不传则纯展示。
 
 三块定宽栅格，块本身是**可点击的状态筛选器**（点击切换，再点取消）：
 
@@ -211,7 +240,20 @@ sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3
 
 ---
 
-## 7. 新增向导
+## 7. 新增页
+
+两种形态：**单步表单**（§7.1——普通「新增 / 编辑」页的默认形态）和**多步向导**（§7.2——仅当流程确实是顺序或分支时）。
+
+### 7.1 单步表单
+
+- **吸顶头部**：`<PageHeader sticky … />` 承载标题 + 描述 **以及两个操作**——`ghost` Cancel（`iconLeft={<X/>}`）+ `primary` Submit（`iconLeft` create 用 `Plus` / edit 用 `Check`，pending 时 `loading`）。band 吸顶，使 Submit 在表单滚动时始终可达；与列表条件区（§5——shell `<main>` 是滚动容器，故 `top-0` 即贴在 app-header 下）一样停靠，不透明的 `bg-surface-2` 遮住从下方穿过的内容。**没有底部操作栏**——头部是唯一的操作面。
+- **主体**：单列居中——`px-6 pt-6 pb-8` 页边距内套 `<div className="mx-auto flex max-w-3xl flex-col gap-6">`——按职责分组的 `Card elevation={1}` 区块卡片（Identity / Visibility / …）。无 `StepIndicator`、无摘要 rail、无完成步。
+- **提交**：在 handler 里拦住非法 / 进行中的提交，首次提交时再暴露字段错误；成功后直接 `router.push` 到新记录的详情页——不另做确认页。
+- 参考实现：`apps/web/app/(portal)/app/app-publish/new/_components/app-form.tsx`——同一个组件用 `mode` 同时服务新增与编辑。
+
+### 7.2 多步向导
+
+仅当输入是顺序 / 分支流程时使用。
 
 - **步骤指示**：`StepIndicator` 套卡片外观 `rounded-xl border border-line-default bg-surface-2 px-5.5 py-4 shadow-1`
 - **双栏**：`flex flex-col gap-6 lg:flex-row lg:items-start`；主列 `min-w-0 flex-1`；摘要 rail 组件自带 `w-full lg:w-75 lg:shrink-0`（300px）+ `sticky top-5`，需要全宽的步骤直接不渲染 rail
@@ -221,7 +263,7 @@ sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3
 - **底部导航**：`mt-6 flex items-center justify-between`；Back `ghost`（第一步禁用），Continue `primary` 带右箭头，最后一步换 Create `primary` 带 Check + `loading`
 - **完成步**：居中卡片 `CardContent flex flex-col items-center px-8 py-10`；72px 成功圆标（`size-18 rounded-full border-success/25 bg-success-bg text-success-strong`）→ 状态 Badge → `text-2xl` 标题 → `max-w-md text-sm` 说明 → 主操作按钮
 
-校验逻辑与字段组件**沉到 feature 级共享文件**（如 `_components/company-fields.tsx` 的 `isCompanyDataValid`），向导与详情编辑弹窗复用同一份，不写两遍。
+校验逻辑与字段组件**沉到 feature 级共享文件**（如 `_components/<entity>-fields.tsx` 导出的 `isFieldsetValid`），新增页（表单或向导）与详情编辑弹窗复用同一份，不写两遍。
 
 ---
 
@@ -235,7 +277,7 @@ sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3
 - **统计卡**：`Card className="gap-1 px-4 py-3.5"`；标签 `text-xs font-medium text-content-secondary`，数值 `text-2xl font-semibold leading-tight`，增量行 `mt-0.5 text-xs text-content-tertiary`
 - **PII 掩码**：默认打码，逐字段 `Reveal`（`text-xs font-medium text-info-strong hover:underline`），揭示时 toast 提示已记审计
 
-### 8.2 区块卡片（合同 / 操作员 / 角色）
+### 8.2 区块卡片（每个关联集合一张卡）
 
 - 卡头：`CardHeader` + `CardTitle className="text-md"`（+ `CardDescription className="text-xs leading-relaxed text-content-tertiary"`）；头部按钮放 **`CardAction`** 槽位（与文字块垂直居中——团队规范），不手写 flex 容器
 - 行列表内容：`CardContent flush`，行直接做子元素：`flex items-center gap-3~3.5 px-4~4.5 py-3~3.5 border-b border-line-subtle last:border-b-0`；行首 `size-10 rounded-lg` 类目图标块，标题 `text-sm font-semibold` + chips `gap-2`，副行 `text-xs`
@@ -270,6 +312,7 @@ sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3
 卡内横带          px-4 py-3             卡片堆叠 gap-5（紧密 3.5）
 控件（条件区）    一律 size sm           搜索框 max-w-64 flex-1
 条件区吸顶        sticky top-0 z-10 -mx-6 -my-3 bg-surface-1 px-6 py-3
+单步表单          吸顶头部（cancel+submit）  主体 mx-auto max-w-3xl 单列，无底栏
 向导 rail        w-75 sticky top-5      详情 rail w-80
 确认弹窗 440px    表单弹窗 620px         空态 py-12 居中 text-sm tertiary
 ```

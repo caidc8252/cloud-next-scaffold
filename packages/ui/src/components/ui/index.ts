@@ -21,6 +21,8 @@ export { Toaster, toast } from './sonner'
 export { Table, type TableProps, type TableColumn, type SortDir } from './table'
 export { VirtualTable, type VirtualTableProps } from './virtual-table'
 export { Pagination, type PaginationProps } from './pagination'
+export { KpiTile, type KpiTileProps } from './kpi-tile'
+export { InitialsTile, type InitialsTileProps } from './initials-tile'
 export { ThemeToggle } from './theme-toggle'
 export {
   ToggleCheckbox, ToggleRadioGroup, ToggleRadio, ToggleSwitch,

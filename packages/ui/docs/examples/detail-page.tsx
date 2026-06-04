@@ -4,7 +4,8 @@
 // STYLE TEMPLATE · Detail page (spec §1.3 §2.3 §3 §8)
 //
 // Compilable style skeleton for the portal DETAIL page shape: one page + Tabs
-// (no per-tab sub-routes). Reference implementation:
+// (no per-tab sub-routes). Labels/data below are neutral placeholders; reuse
+// this shape in any module. Reference implementation:
 // apps/web/app/(portal)/manage/customers/[id]/_components/customer-detail-view.tsx
 //
 // Style-only: static data, no-op handlers, <a> stands in for next/link. In a
@@ -70,24 +71,24 @@ export function DetailPageTemplate() {
       <div className="border-b border-line-subtle bg-surface-2">
         <div className="px-6 py-4">
           {/* §2.3 — detail head row. Back button is MANDATORY; in apps/web it must be
-              render={<Link href="/manage/customers" />} — never router.back(). */}
+              render={<Link href="/manage/<list>" />} — never router.back(). */}
           <div className="flex flex-wrap items-center gap-4">
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="Back to customers"
+              aria-label="Back to list"
               nativeButton={false}
               render={<a href="#back" />}
             >
               <ChevronLeft className="size-4" />
             </Button>
             <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-surface-3 text-base font-semibold text-content-secondary">
-              N
+              R
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2.5">
                 <h1 className="text-2xl font-semibold tracking-tight text-content-primary">
-                  Northwind Trading Co.
+                  Record title
                 </h1>
                 <Badge tone="success" dot>
                   Active
@@ -95,10 +96,10 @@ export function DetailPageTemplate() {
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-xs text-content-secondary">
                 <span className="inline-flex items-center gap-1">
-                  <Clock className="size-3.5" /> Registered Mar 12, 2024
+                  <Clock className="size-3.5" /> Created Mar 12, 2024
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <Shield className="size-3.5" /> License: NW-ISV-0042
+                  <Shield className="size-3.5" /> Reference: REF-0042
                 </span>
               </div>
             </div>
@@ -108,19 +109,19 @@ export function DetailPageTemplate() {
               iconLeft={<Pencil className="size-4" />}
               onClick={() => {}}
             >
-              Edit info
+              Edit
             </Button>
           </div>
         </div>
         <div className="flex px-6">
           <TabsList className="shadow-none">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="contracts">
-              Contracts
+            <TabsTrigger value="items">
+              Related items
               <TabCount>2</TabCount>
             </TabsTrigger>
-            <TabsTrigger value="operators">
-              Operators &amp; roles
+            <TabsTrigger value="collections">
+              Collections
               <TabCount>3</TabCount>
             </TabsTrigger>
           </TabsList>
@@ -132,18 +133,18 @@ export function DetailPageTemplate() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
           <Card className="min-w-0 flex-1">
             <CardHeader>
-              <CardTitle>Company</CardTitle>
+              <CardTitle>Summary</CardTitle>
             </CardHeader>
             <CardContent>
               <dl className="flex flex-col gap-3.5 text-sm">
-                <KeyValue label="Name">Northwind Trading Co.</KeyValue>
-                <KeyValue label="License">NW-ISV-0042</KeyValue>
-                <KeyValue label="Address">
+                <KeyValue label="Name">Record title</KeyValue>
+                <KeyValue label="Reference">REF-0042</KeyValue>
+                <KeyValue label="Description">
                   <span className="whitespace-pre-line">
-                    742 Evergreen Terrace, Springfield, OR, USA
+                    A longer multi-line field, rendered with whitespace preserved.
                   </span>
                 </KeyValue>
-                <KeyValue label="Email">
+                <KeyValue label="Owner">
                   <span className="text-content-tertiary">Not provided</span>
                 </KeyValue>
               </dl>
@@ -152,8 +153,8 @@ export function DetailPageTemplate() {
 
           {/* Right rail: 320px on lg, stat cards stacked at gap-6 */}
           <div className="flex w-full flex-col gap-6 lg:w-80 lg:shrink-0">
-            <StatCard label="Contracts" value={2} sub="2 Active" />
-            <StatCard label="Operators" value={3} sub="3 active" />
+            <StatCard label="Related items" value={2} sub="2 active" />
+            <StatCard label="Members" value={3} sub="3 active" />
             <StatCard label="Last activity" value="2 days ago" />
           </div>
         </div>
@@ -161,12 +162,12 @@ export function DetailPageTemplate() {
 
       {/* §8.2 — section card: CardAction slot for header buttons (vertically centered),
           CardContent flush with rows as direct children */}
-      <TabsContent value="operators" className={TAB_BODY_CLASS}>
+      <TabsContent value="collections" className={TAB_BODY_CLASS}>
         <Card>
           <CardHeader>
-            <CardTitle className="text-md">Custom roles</CardTitle>
+            <CardTitle className="text-md">Section title</CardTitle>
             <CardDescription className="text-xs leading-relaxed text-content-tertiary">
-              Customer-specific roles, only visible to this customer&apos;s operators.
+              A short line describing what this collection of rows represents.
             </CardDescription>
             <CardAction>
               <Button
@@ -175,12 +176,12 @@ export function DetailPageTemplate() {
                 iconLeft={<Plus className="size-4" />}
                 onClick={() => {}}
               >
-                Add custom role
+                Add item
               </Button>
             </CardAction>
           </CardHeader>
           <CardContent flush>
-            {["Reconciliation Viewer", "Settlement Auditor"].map((name) => (
+            {["Item one", "Item two"].map((name) => (
               <div
                 key={name}
                 className="flex items-center gap-3.5 border-b border-line-subtle px-4.5 py-3.5 last:border-b-0"
@@ -191,10 +192,10 @@ export function DetailPageTemplate() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-content-primary">{name}</span>
-                    <Badge tone="info">Custom</Badge>
+                    <Badge tone="info">Tag</Badge>
                   </div>
                   <div className="text-xs text-content-tertiary">
-                    Read-only access to settlement reports.
+                    A secondary line of supporting detail for this row.
                   </div>
                 </div>
                 <Button
@@ -211,7 +212,7 @@ export function DetailPageTemplate() {
         </Card>
       </TabsContent>
 
-      <TabsContent value="contracts" className={TAB_BODY_CLASS}>
+      <TabsContent value="items" className={TAB_BODY_CLASS}>
         <div className="px-4 py-12 text-center text-sm text-content-tertiary">
           Section empty state — px-4~6 py-8~12, centered, text-sm tertiary.
         </div>
