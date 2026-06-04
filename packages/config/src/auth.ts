@@ -15,7 +15,7 @@ export type AuthConfig = {
 };
 
 /** 纯函数：从环境变量解析 auth 运行期配置。密钥/阈值由 env 提供，便于单测注入。 */
-export function parseAuthConfig(env: NodeJS.ProcessEnv): AuthConfig {
+export function parseAuthConfig(env: Record<string, string | undefined>): AuthConfig {
   const parsed = authConfigSchema.parse(env);
   return {
     maxPasswordErrorTimes: parsed.AUTH_PASSWORD_MAX_ERROR_TIMES,
