@@ -31,8 +31,12 @@ type ToggleGroupBaseProps = {
    * - "segmented": TOMS-style segmented control (`.tds-btn-group`) — a tinted
    *   track of borderless items where the selected one lifts into a pill
    *   (bg-surface-2 + shadow-1). Use with type="single" for an OS / mode picker.
+   * - "cloud": free-wrapping standalone pill chips (NOT a connected track). Each
+   *   <Toggle> is its own rounded-full bordered chip; the selected one(s) tint
+   *   primary. Items wrap; children may be icon+text. Works with type="single"
+   *   or "multiple" — use for tag / category pickers.
    */
-  variant?: "outline" | "segmented"
+  variant?: "outline" | "segmented" | "cloud"
 }
 
 type ToggleGroupProps =
@@ -48,6 +52,8 @@ const containerClass = {
   // Tinted track with internal padding + gap; items float as pills on top.
   segmented:
     "inline-flex items-center gap-px rounded-md border border-line-subtle bg-surface-3 p-0.5",
+  // No track at all: items wrap freely as separate chips.
+  cloud: "flex flex-wrap items-center gap-1.5",
 } as const
 
 // Segmented group of <Toggle> items. Set type="single" for radio-like (max one
