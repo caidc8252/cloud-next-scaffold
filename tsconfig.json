@@ -28,6 +28,7 @@
       "@cloud/request": ["./packages/request/src/index.ts"],
       "@cloud/request/server": ["./packages/request/src/server.ts"],
       "@cloud/request/client": ["./packages/request/src/client.ts"],
+      "@cloud/security/client": ["./packages/security/src/client/index.ts"],
       "@cloud/security/server": ["./packages/security/src/server/index.ts"],
       "@cloud/storage": ["./packages/storage/src/index.ts"],
       "@cloud/storage/client": ["./packages/storage/src/client/index.ts"],
