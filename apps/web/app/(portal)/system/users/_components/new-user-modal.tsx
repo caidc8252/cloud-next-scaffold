@@ -83,8 +83,6 @@ export function NewUserModal({ open, onClose, onCreate, users, roles }: NewUserM
             })}
           </div>
         </Field>
-
-
       </div>
     </Modal>
   );

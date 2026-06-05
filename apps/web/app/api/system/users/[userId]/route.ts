@@ -70,17 +70,15 @@ export const PUT = withApiHandler(
       }
     }
 
-    await prisma.$transaction(async (tx) => {
-      const partnerUserData: Record<string, unknown> = { updUserId: session.userId };
-      if (body.remark !== undefined) partnerUserData.remark = body.remark.trim() || null;
-      if (requestedRoleIds !== null) {
-        partnerUserData.roles = requestedRoleIds.map((roleId) => ({ roleId }));
-      }
+    const partnerUserData: Record<string, unknown> = { updUserId: session.userId };
+    if (body.remark !== undefined) partnerUserData.remark = body.remark.trim() || null;
+    if (requestedRoleIds !== null) {
+      partnerUserData.roles = requestedRoleIds.map((roleId) => ({ roleId }));
+    }
 
-      await tx.sysPartnerUser.update({
-        where: { partnerId_userId: { partnerId, userId } },
-        data: partnerUserData,
-      });
+    await prisma.sysPartnerUser.update({
+      where: { partnerId_userId: { partnerId, userId } },
+      data: partnerUserData,
     });
 
     const updated = await prisma.sysUser.findUniqueOrThrow({
