@@ -18,7 +18,6 @@ type UserRow = {
   passwordChangedTimestamp: Date | null;
   passwordErrorTimes: number;
   passwordErrorLockExpiredTimestamp: Date | null;
-  passwordHistory: unknown;
   remark: string | null;
   creTime: Date;
   updTime: Date;
@@ -45,10 +44,6 @@ export function extractRoleIds(roles: unknown): string[] {
   return [...new Set(ids)].map(String);
 }
 
-function passwordHistoryLength(history: unknown): number {
-  return Array.isArray(history) ? history.length : 0;
-}
-
 export function toClientUser(row: UserRow): User {
   const link = row.partnerUsers[0];
   const partnerStatus = link?.status ?? row.status;
@@ -64,16 +59,12 @@ export function toClientUser(row: UserRow): User {
     lastLoginAt: row.lastLoginAt?.toISOString() ?? null,
     passwordChangedTimestamp: row.passwordChangedTimestamp?.getTime() ?? 0,
     passwordErrorTimes: row.passwordErrorTimes,
-    passwordChangeTimes: passwordHistoryLength(row.passwordHistory),
     passwordErrorLockExpiredTimestamp: row.passwordErrorLockExpiredTimestamp?.getTime() ?? null,
-    passwordUpdatedAt: null,
     remark: row.remark ?? "",
     createdAt: row.creTime.toISOString(),
     updatedAt: row.updTime.toISOString(),
     authorizingType: link?.authorizingType ?? "NORMAL",
     roleIds: extractRoleIds(link?.roles),
-    passwordHistory: [],
-    passwordResetRequests: [],
   };
 }
 
@@ -89,22 +80,18 @@ export function toClientInvite(row: InviteRow, inviterName: string): User {
     lastLoginAt: null,
     passwordChangedTimestamp: 0,
     passwordErrorTimes: 0,
-    passwordChangeTimes: 0,
     passwordErrorLockExpiredTimestamp: null,
-    passwordUpdatedAt: null,
     remark: "",
     createdAt: row.creTime.toISOString(),
     updatedAt: row.creTime.toISOString(),
     authorizingType: "NORMAL",
     roleIds: extractRoleIds(row.roles),
-    passwordHistory: [],
     invitedAt: row.creTime.toISOString(),
     invitedBy: inviterName,
     inviteExpiresAt: row.expiresAt.toISOString(),
     inviteToken: row.token,
     inviteEmail: row.inviteEmail,
     resendCount: row.resendCount,
-    passwordResetRequests: [],
   };
 }
 

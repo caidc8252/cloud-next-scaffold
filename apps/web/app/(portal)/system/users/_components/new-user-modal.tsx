@@ -18,7 +18,7 @@ export function NewUserModal({ open, onClose, onCreate, users, roles }: NewUserM
   const [roleIds, setRoleIds] = useState<Set<string>>(new Set());
   const [remark, setRemark] = useState("");
 
-  const adminRoles = roles.filter((r) => r.contractDefineCode === "ADMIN" && r.roleType === "global");
+  const adminRoles = roles.filter((r) => r.contractType === "ADMIN");
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const emailOk = emailRegex.test(email.trim());
