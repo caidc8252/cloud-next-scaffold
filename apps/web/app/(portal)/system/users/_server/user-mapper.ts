@@ -34,6 +34,13 @@ type InviteRow = {
   roles: unknown;
 };
 
+/** 原始 roleId 入参（string/number 混入）→ 去重升序的正整数列表（roleId 从 1 起，过滤 0/NaN）。 */
+export function parseRoleIds(input: unknown): number[] {
+  if (!Array.isArray(input)) return [];
+  const ids = input.map(Number).filter((id) => Number.isInteger(id) && id > 0);
+  return [...new Set(ids)].sort((left, right) => left - right);
+}
+
 /** roles JSONB（List<{roleId}>）→ 字符串 roleId 列表。 */
 export function extractRoleIds(roles: unknown): string[] {
   if (!Array.isArray(roles)) return [];

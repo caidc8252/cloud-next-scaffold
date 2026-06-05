@@ -65,6 +65,18 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
     }
   }
 
+  async function updateInviteRoles(next: User): Promise<boolean> {
+    try {
+      const res = await request.put<User>(`${API}/${next.id}/invite-roles`, { roleIds: next.roleIds });
+      setUsers((prev) => prev.map((u) => (u.id === next.id ? res.data : u)));
+      toast.success("Invitation updated");
+      return true;
+    } catch (err) {
+      toastError(err);
+      return false;
+    }
+  }
+
   async function createUser(draft: { email: string; roleIds: string[] }) {
     try {
       const res = await request.post<User>(API, draft);
@@ -191,7 +203,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
             {selected ? (
               selected.status === "PENDING" ? (
                 <PendingInviteDetail user={selected} roles={roles}
-                  onResend={() => resendInvite(selected)} onCancel={() => requestCancel(selected.id)} onSave={update} />
+                  onResend={() => resendInvite(selected)} onCancel={() => requestCancel(selected.id)} onSave={updateInviteRoles} />
               ) : (
                 <UserDetail user={selected} users={users} roles={roles} currentUserId={currentUserId} onSave={update}
                   onResetPassword={() => resetPassword(selected)} onToggleLock={() => toggleLock(selected)} />

@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { toClientUser } from "./user-mapper";
+import { toClientUser, parseRoleIds } from "./user-mapper";
+
+describe("parseRoleIds", () => {
+  it("parses string ids to deduped, ascending numbers", () => {
+    expect(parseRoleIds(["3", "1", "3", "2"])).toEqual([1, 2, 3]);
+  });
+
+  it("drops non-finite values and returns [] for non-arrays", () => {
+    expect(parseRoleIds(["1", "abc", null, 2])).toEqual([1, 2]);
+    expect(parseRoleIds(undefined)).toEqual([]);
+  });
+});
 
 function baseRow(overrides: Record<string, unknown> = {}) {
   return {
