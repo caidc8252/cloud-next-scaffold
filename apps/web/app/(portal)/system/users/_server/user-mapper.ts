@@ -5,7 +5,7 @@ import type { User } from "@/app/(portal)/system/_shared/types";
 // 角色绑定走 sys_partner_user.roles JSONB（List<{roleId}>）；邀请走 sys_operator_invite（无占位
 // 用户）。密码历史走 sys_user.password_history JSONB；重置请求改 Redis，不再有可列出的历史。
 
-type PartnerUserLink = { authorizingType: string; status: string; roles: unknown };
+type PartnerUserLink = { authorizingType: string; status: string; roles: unknown; remark: string | null };
 
 type UserRow = {
   userId: number;
@@ -18,7 +18,6 @@ type UserRow = {
   passwordChangedTimestamp: Date | null;
   passwordErrorTimes: number;
   passwordErrorLockExpiredTimestamp: Date | null;
-  remark: string | null;
   creTime: Date;
   updTime: Date;
   partnerUsers: PartnerUserLink[];
@@ -60,7 +59,7 @@ export function toClientUser(row: UserRow): User {
     passwordChangedTimestamp: row.passwordChangedTimestamp?.getTime() ?? 0,
     passwordErrorTimes: row.passwordErrorTimes,
     passwordErrorLockExpiredTimestamp: row.passwordErrorLockExpiredTimestamp?.getTime() ?? null,
-    remark: row.remark ?? "",
+    remark: link?.remark ?? "",
     createdAt: row.creTime.toISOString(),
     updatedAt: row.updTime.toISOString(),
     authorizingType: link?.authorizingType ?? "NORMAL",
@@ -100,7 +99,7 @@ export function userPartnerInclude(partnerId: number) {
   return {
     partnerUsers: {
       where: { partnerId },
-      select: { authorizingType: true, status: true, roles: true },
+      select: { authorizingType: true, status: true, roles: true, remark: true },
     },
   } as const;
 }
