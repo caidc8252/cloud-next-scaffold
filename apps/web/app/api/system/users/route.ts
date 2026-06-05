@@ -56,7 +56,7 @@ export const GET = withApiHandler(async () => {
 
 export const POST = withApiHandler(async (req: Request) => {
   const session = await assertPermissions({ all: ["users.INVITE"] });
-  let body: { email?: string; roleIds?: string[]; remark?: string };
+  let body: { email?: string; roleIds?: string[] };
   try {
     body = await req.json();
   } catch {

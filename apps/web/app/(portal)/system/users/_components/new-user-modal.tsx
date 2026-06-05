@@ -2,13 +2,13 @@
 
 import { useState, useMemo } from "react";
 import { Mail, Info } from "lucide-react";
-import { Alert, AlertDescription, Button, Checkbox, Field, Input, Modal, Textarea } from "@cloud/ui";
+import { Alert, AlertDescription, Button, Checkbox, Field, Input, Modal } from "@cloud/ui";
 import type { Role, User } from "@/app/(portal)/system/_shared/types";
 
 type NewUserModalProps = {
   open: boolean;
   onClose: () => void;
-  onCreate: (draft: { email: string; roleIds: string[]; remark: string }) => void;
+  onCreate: (draft: { email: string; roleIds: string[] }) => void;
   users: User[];
   roles: Role[];
 };
@@ -16,7 +16,6 @@ type NewUserModalProps = {
 export function NewUserModal({ open, onClose, onCreate, users, roles }: NewUserModalProps) {
   const [email, setEmail] = useState("");
   const [roleIds, setRoleIds] = useState<Set<string>>(new Set());
-  const [remark, setRemark] = useState("");
 
   const adminRoles = roles.filter((r) => r.contractType === "ADMIN");
 
@@ -28,10 +27,10 @@ export function NewUserModal({ open, onClose, onCreate, users, roles }: NewUserM
   );
   const valid = emailOk && !emailTaken && roleIds.size > 0;
 
-  function reset() { setEmail(""); setRoleIds(new Set()); setRemark(""); }
+  function reset() { setEmail(""); setRoleIds(new Set()); }
 
   function handleCreate() {
-    onCreate({ email: email.trim(), roleIds: [...roleIds], remark: remark.trim() });
+    onCreate({ email: email.trim(), roleIds: [...roleIds] });
     reset();
   }
 
@@ -85,10 +84,7 @@ export function NewUserModal({ open, onClose, onCreate, users, roles }: NewUserM
           </div>
         </Field>
 
-        <Field label="Remark (internal)" hint="Optional. Visible only to platform admins.">
-          <Textarea rows={2} value={remark} onChange={(e) => setRemark(e.target.value)}
-            placeholder="e.g. EMEA ops, joining 1 June." />
-        </Field>
+
       </div>
     </Modal>
   );
