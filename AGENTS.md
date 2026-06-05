@@ -261,4 +261,3 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## 数据库
 
 如果数据库的 key 名没有重复和歧义，尽量保持所有的表一致。
-数据的关联关系大部分都是通过关联关系表进行查询。 除非是为了性能优化，且 关联关系值为单值。 数组是不行的 
