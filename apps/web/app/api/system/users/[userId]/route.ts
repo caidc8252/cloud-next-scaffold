@@ -42,7 +42,7 @@ export const PUT = withApiHandler(
 
     const isProtected = userId === session.userId || link.authorizingType === "ADMIN";
 
-    let body: { displayName?: string; remark?: string; roleIds?: string[] };
+    let body: { remark?: string; roleIds?: string[] };
     try {
       body = await req.json();
     } catch {
@@ -50,7 +50,7 @@ export const PUT = withApiHandler(
     }
 
     // Protected users can only have remark updated
-    if (isProtected && (body.displayName !== undefined || body.roleIds !== undefined)) {
+    if (isProtected && body.roleIds !== undefined) {
       return badRequestResponse(ERR_USER_PROTECTED);
     }
 
@@ -71,22 +71,16 @@ export const PUT = withApiHandler(
     }
 
     await prisma.$transaction(async (tx) => {
-      if (body.displayName !== undefined || body.remark !== undefined) {
-        const userData: Record<string, unknown> = { updUserId: session.userId };
-        if (body.displayName !== undefined) userData.nickName = body.displayName.trim();
-        if (body.remark !== undefined) userData.remark = body.remark.trim() || null;
-        await tx.sysUser.update({ where: { userId }, data: userData });
+      const partnerUserData: Record<string, unknown> = { updUserId: session.userId };
+      if (body.remark !== undefined) partnerUserData.remark = body.remark.trim() || null;
+      if (requestedRoleIds !== null) {
+        partnerUserData.roles = requestedRoleIds.map((roleId) => ({ roleId }));
       }
 
-      if (requestedRoleIds !== null) {
-        await tx.sysPartnerUser.update({
-          where: { partnerId_userId: { partnerId, userId } },
-          data: {
-            roles: requestedRoleIds.map((roleId) => ({ roleId })),
-            updUserId: session.userId,
-          },
-        });
-      }
+      await tx.sysPartnerUser.update({
+        where: { partnerId_userId: { partnerId, userId } },
+        data: partnerUserData,
+      });
     });
 
     const updated = await prisma.sysUser.findUniqueOrThrow({
