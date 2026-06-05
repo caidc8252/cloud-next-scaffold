@@ -56,19 +56,6 @@ export const appManifest = defineAppManifest({
         { code: "users.CHANGE_ROLE", label: "Change Role", desc: "Change user's assigned role" },
       ],
     },
-    {
-      menuCode: "users1",
-      menuTitle: "Users1",
-      parentMenuCode: "system",
-      path: "/system/users",
-      icon: "users",
-      contractTypes: ["*"],
-      order: 102,
-      permissions: [
-        { code: "users.VIEW1", label: "View Users1", desc: "View user list and details1" },
-        { code: "users.ADD1", label: "Create User1", desc: "Create user (direct mode)1" },
-      ],
-    },
 
     // ── Storage ───────────────────────────────────────────
     { menuCode: "storage", menuTitle: "Storage", parentMenuCode: null, path: null, icon: "database", contractTypes: ["*"], order: 200 },
