@@ -12,7 +12,7 @@ type UserDetailProps = {
   users: UserType[];
   roles: Role[];
   currentUserId: string;
-  onSave: (u: UserType) => void;
+  onSave: (u: UserType) => Promise<boolean>;
   onResetPassword: () => void;
   onToggleLock: () => void;
 };
@@ -27,6 +27,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmLock, setConfirmLock] = useState(false);
   const [policyOpen, setPolicyOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const [prevId, setPrevId] = useState(user.id);
   if (user.id !== prevId) {
@@ -51,7 +52,14 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
     setDraft({ ...draft, roleIds: ids });
   }
 
-  function save() { onSave(draft); }
+  async function save() {
+    setSaving(true);
+    try {
+      await onSave(draft);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div>
@@ -62,9 +70,9 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <input value={draft.displayName} onChange={(e) => setDraft({ ...draft, displayName: e.target.value })}
-              disabled={isProtected} readOnly={isProtected}
-              className="text-xl font-semibold tracking-tight text-content-primary bg-transparent outline-none disabled:cursor-default border border-transparent py-1 px-2 -ml-2 rounded-md max-w-sm" />
+            <span className="text-xl font-semibold tracking-tight text-content-primary truncate max-w-sm">
+              {user.displayName}
+            </span>
             <span
               className={`font-mono font-semibold uppercase shrink-0 border text-xs tracking-wider ${
                 disabled
@@ -86,8 +94,10 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
           <Button variant="ghost" size="sm" iconLeft={<KeyRound size={14} />} onClick={() => setConfirmReset(true)} disabled={isProtected}>Reset password</Button>
           <Button variant={disabled ? "primary" : "ghost"} size="sm" iconLeft={<Shield size={14} />}
             onClick={() => setConfirmLock(true)} disabled={isProtected}>{disabled ? "Enable" : "Disable"}</Button>
-          <Button variant="primary" size="sm" disabled={!dirty} onClick={save}
-            iconLeft={dirty ? undefined : <Check size={14} />}>{dirty ? "Save changes" : "Saved"}</Button>
+          <Button variant="primary" size="sm" loading={saving} disabled={!dirty || saving} onClick={save}
+            iconLeft={dirty || saving ? undefined : <Check size={14} />}>
+            {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
+          </Button>
         </div>
       </div>
 
