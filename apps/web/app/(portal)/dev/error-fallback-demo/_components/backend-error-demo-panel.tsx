@@ -77,7 +77,6 @@ const columns: TableColumn<DemoRoleRow>[] = [
     title: "Contract",
     render: (row) => row.contract ?? "-",
   },
-  { key: "sort", title: "SORT", field: "sort", width: 88 },
 ];
 
 function isSuccessBody(

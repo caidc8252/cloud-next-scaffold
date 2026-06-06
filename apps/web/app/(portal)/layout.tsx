@@ -109,7 +109,7 @@ export default async function PortalLayout({
               <UserMenu
                 account={session.username}
                 name={session.displayName ?? session.username}
-                roleName={session.roles.map((r) => r.roleName).join(", ")}
+                email={session.email ?? ""}
               />
             }
           />

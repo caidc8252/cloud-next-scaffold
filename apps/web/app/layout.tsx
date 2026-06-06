@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { getEnv } from "@cloud/config";
+// Server Component may import getMessages from next-intl/server until
+// @cloud/i18n/server re-exports it (allowed by the no-restricted-imports rule).
+import { getMessages } from "next-intl/server";
 import { LOCALE_COOKIE, defaultLocale, isLocale } from "@cloud/i18n";
 import { NextIntlClientProvider, TimeZoneInit } from "@cloud/i18n/client";
 import { ClientToaster } from "./_components/client-toaster";
@@ -19,13 +22,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // 改用 @cloud/i18n 的 cookie 常量 + isLocale 自行收窄，与 request config 同源。
   const cookieLocale = (await cookies()).get(LOCALE_COOKIE)?.value;
   const locale = isLocale(cookieLocale) ? cookieLocale : defaultLocale;
+  // Client Components (e.g. the user menu, account pages) need the message
+  // catalog explicitly — unlike locale/timeZone/formats, messages are not
+  // auto-inherited by NextIntlClientProvider, so pass them from the request config.
+  const messages = await getMessages();
 
   return (
     <html lang={locale}>
       <body data-app-name={env.NEXT_PUBLIC_APP_NAME}>
         {/* 走 cookie 不走 URL 路由、且无 next-intl middleware，provider 无法自动推断 locale，
-            需显式传；messages / timeZone / formats 仍由 server 端 request config 注入 */}
-        <NextIntlClientProvider locale={locale}>
+            需显式传；timeZone / formats 由 server 端 request config 注入，messages 显式下传 */}
+        <NextIntlClientProvider locale={locale} messages={messages}>
           <TimeZoneInit />
           <UnauthorizedRedirect />
           {children}

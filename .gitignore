@@ -67,5 +67,10 @@ skills-lock.json
 example/*
 WIP.md
 docs/*
+coverage/
+.e2e/
+e2e/.auth/
+playwright-report/
+.env.test
 
 docker-data/*
