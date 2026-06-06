@@ -171,7 +171,10 @@ model SysUser {
   @@map("sys_user")
 }
 
-// ─── sys_mfa_info（MFA 配置，schema-only，本期不接业务）──
+// ─── sys_mfa_info（MFA 配置：TOTP 因子）──
+// 刻意不加 (userId, mfaType) 唯一约束：Reconfigure 需要"建新记录(PENDING)→激活后删旧"
+// 的过渡期里同 (userId, TOTP) 暂存 1 ACTIVE + 1 PENDING。"稳态 ≤1 ACTIVE、≤1 PENDING"
+// 这条不变量改由 service 层 + 事务保证（沿用本仓"Prisma 表达不了的约束走应用层"约定）。
 model SysMfaInfo {
   mfaInfoId         Int       @id @default(autoincrement()) @map("mfa_info_id")
   userId            Int       @map("user_id")
@@ -187,8 +190,8 @@ model SysMfaInfo {
 
   user SysUser @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
-  @@unique([userId, mfaType], map: "uk_sys_mfa_user_type")
   @@index([userId])
+  @@index([userId, status])
   @@map("sys_mfa_info")
 }
 

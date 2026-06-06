@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Input, Label } from "@cloud/ui";
+import { Modal } from "@cloud/ui/components/ui";
 import { request, RequestError } from "@cloud/request/client";
 import { encryptLoginPassword } from "@/lib/login-crypto";
 
@@ -12,6 +13,12 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  // MFA second stage (modal) — opened when the password stage returns mfaRequired.
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaError, setMfaError] = useState<string | null>(null);
+  const [mfaPending, setMfaPending] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,8 +34,11 @@ export function LoginForm() {
         mfaToken?: string;
       }>("/api/auth/login", { account, encryptedPassword });
 
-      if (res.data.mfaRequired) {
-        router.replace("/mfa");
+      if (res.data.mfaRequired && res.data.mfaToken) {
+        setMfaToken(res.data.mfaToken);
+        setMfaCode("");
+        setMfaError(null);
+        setPending(false);
         return;
       }
 
@@ -41,6 +51,27 @@ export function LoginForm() {
           : "Sign in failed. Please try again.";
       setError(message);
       setPending(false);
+    }
+  }
+
+  async function verifyMfa() {
+    if (!mfaToken || mfaPending) return;
+    setMfaError(null);
+    setMfaPending(true);
+    try {
+      const res = await request.post<{ redirectTo?: string }>("/api/auth/mfa-verify", {
+        mfaToken,
+        code: mfaCode.trim(),
+      });
+      router.replace(res.data.redirectTo ?? "/");
+      router.refresh();
+    } catch (err) {
+      const message =
+        err instanceof RequestError
+          ? (err.body?.message ?? "Verification failed. Please try again.")
+          : "Verification failed. Please try again.";
+      setMfaError(message);
+      setMfaPending(false);
     }
   }
 
@@ -75,6 +106,46 @@ export function LoginForm() {
           {pending ? "Signing in…" : "Sign in"}
         </Button>
       </form>
+
+      <Modal
+        open={!!mfaToken}
+        onClose={() => !mfaPending && setMfaToken(null)}
+        size="sm"
+        title="Two-factor verification"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setMfaToken(null)} disabled={mfaPending}>
+              Cancel
+            </Button>
+            <Button onClick={verifyMfa} disabled={mfaCode.length !== 6 || mfaPending}>
+              {mfaPending ? "Verifying…" : "Verify"}
+            </Button>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-3">
+          <p className="text-sm leading-relaxed text-content-secondary">
+            Enter the 6-digit code from your authenticator app to finish signing in.
+          </p>
+          <Input
+            inputSize="lg"
+            inputMode="numeric"
+            maxLength={6}
+            value={mfaCode}
+            autoFocus
+            placeholder="000000"
+            className="text-center font-mono text-lg tracking-widest"
+            onChange={(e) => {
+              setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+              setMfaError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && mfaCode.length === 6) void verifyMfa();
+            }}
+          />
+          {mfaError ? <p className="text-xs text-error-strong">{mfaError}</p> : null}
+        </div>
+      </Modal>
     </>
   );
 }
