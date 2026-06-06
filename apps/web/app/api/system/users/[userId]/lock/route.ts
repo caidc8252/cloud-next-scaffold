@@ -1,5 +1,6 @@
 import { prisma } from "@cloud/db";
-import { successResponse, badRequestResponse, notFoundResponse } from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
 import {
   ERR_INVALID_ID,
   ERR_USER_NOT_FOUND,
@@ -15,20 +16,20 @@ export const POST = withApiHandler(
     const session = await assertPermissions({ all: ["users.LOCK"] });
     const { userId: rawId } = await params;
     const userId = Number(rawId);
-    if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID);
+    if (!Number.isFinite(userId)) throw new BusinessError(ERR_INVALID_ID);
 
     if (userId === session.userId) {
-      return badRequestResponse(ERR_USER_CANNOT_DISABLE_SELF);
+      throw new BusinessError(ERR_USER_CANNOT_DISABLE_SELF);
     }
 
     const partnerId = session.currentPartnerId;
     const link = await prisma.sysPartnerUser.findUnique({
       where: { partnerId_userId: { partnerId, userId } },
     });
-    if (!link) return notFoundResponse(ERR_USER_NOT_FOUND, "User not found in this partner.");
+    if (!link) throw new BusinessError(ERR_USER_NOT_FOUND, 404);
 
     if (link.authorizingType === "ADMIN") {
-      return badRequestResponse(ERR_USER_PROTECTED);
+      throw new BusinessError(ERR_USER_PROTECTED);
     }
 
     // Toggle partner-user status（账号锁定走 partner-user 维度：ACTIVE ↔ LOCKED）

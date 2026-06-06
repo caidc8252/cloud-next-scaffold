@@ -2,12 +2,8 @@ import { z } from "zod";
 import { prisma } from "@cloud/db";
 import { getPartialSession, updateSession } from "@cloud/permissions/server";
 import { buildSessionSnapshot } from "@/lib/session-snapshot";
-import {
-  successResponse,
-  badRequestResponse,
-  unauthorizedResponse,
-  errorResponse,
-} from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
 import {
   ERR_AUTH_INVALID_PARTNER,
   ERR_AUTH_PARTNER_REQUIRED,
@@ -24,19 +20,19 @@ const selectPartnerSchema = z.object({
 export const POST = withApiHandler(async (req: Request) => {
   const partial = await getPartialSession();
   if (!partial) {
-    return unauthorizedResponse(ERR_AUTH_NOT_AUTHENTICATED);
+    throw new BusinessError(ERR_AUTH_NOT_AUTHENTICATED, 401);
   }
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return badRequestResponse(ERR_AUTH_PARTNER_REQUIRED);
+    throw new BusinessError(ERR_AUTH_PARTNER_REQUIRED);
   }
 
   const parsed = selectPartnerSchema.safeParse(body);
   if (!parsed.success) {
-    return badRequestResponse(ERR_AUTH_PARTNER_REQUIRED);
+    throw new BusinessError(ERR_AUTH_PARTNER_REQUIRED);
   }
 
   const { partnerId } = parsed.data;
@@ -47,12 +43,12 @@ export const POST = withApiHandler(async (req: Request) => {
   });
 
   if (!partnerUser || partnerUser.status !== "ACTIVE" || partnerUser.partner.status !== "ACTIVE") {
-    return errorResponse(ERR_AUTH_INVALID_PARTNER);
+    throw new BusinessError(ERR_AUTH_INVALID_PARTNER);
   }
 
   const snapshot = await buildSessionSnapshot(partial.userId, partnerId);
   if (!snapshot || snapshot.currentPartnerId === null) {
-    return errorResponse(ERR_AUTH_INVALID_PARTNER);
+    throw new BusinessError(ERR_AUTH_INVALID_PARTNER);
   }
 
   await updateSession(snapshot);

@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { prisma } from "@cloud/db";
-import { successResponse, badRequestResponse, createdResponse } from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse, createdResponse } from "@cloud/request/server";
 import {
   ERR_INVALID_JSON,
   ERR_USER_EMAIL_INVALID,
@@ -60,12 +61,12 @@ export const POST = withApiHandler(async (req: Request) => {
   try {
     body = await req.json();
   } catch {
-    return badRequestResponse(ERR_INVALID_JSON);
+    throw new BusinessError(ERR_INVALID_JSON);
   }
 
   const email = body.email?.trim();
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return badRequestResponse(ERR_USER_EMAIL_INVALID);
+    throw new BusinessError(ERR_USER_EMAIL_INVALID);
   }
 
   const partnerId = session.currentPartnerId;
@@ -73,7 +74,7 @@ export const POST = withApiHandler(async (req: Request) => {
   const existing = await prisma.sysOperatorInvite.findFirst({
     where: { partnerId, inviteEmail: email, status: "PENDING" },
   });
-  if (existing) return badRequestResponse(ERR_USER_EMAIL_TAKEN);
+  if (existing) throw new BusinessError(ERR_USER_EMAIL_TAKEN);
 
   const token = randomBytes(24).toString("base64url");
   const expiresAt = new Date(Date.now() + 7 * 86_400_000);

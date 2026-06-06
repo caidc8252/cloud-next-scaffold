@@ -3,7 +3,8 @@ import { prisma } from "@cloud/db";
 import { verifyPassword, hashPassword, decryptRsaOaep } from "@cloud/security/server";
 import { getAuthConfig } from "@cloud/config";
 import { assertPermissions } from "@cloud/permissions/server";
-import { successResponse, badRequestResponse } from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
 import { ERR_INVALID_JSON } from "@cloud/request/error-codes";
 import {
   ERR_ACCOUNT_PASSWORD_CURRENT_WRONG,
@@ -42,47 +43,49 @@ export const POST = withApiHandler(async (req: Request) => {
   try {
     raw = await req.json();
   } catch {
-    return badRequestResponse(ERR_INVALID_JSON);
+    throw new BusinessError(ERR_INVALID_JSON);
   }
   const parsed = bodySchema.safeParse(raw);
-  if (!parsed.success) return badRequestResponse(ERR_INVALID_JSON);
+  if (!parsed.success) throw new BusinessError(ERR_INVALID_JSON);
 
   const auth = getAuthConfig();
   const now = Date.now();
-  let currentPassword: string;
-  let newPassword: string;
+  // 解密 + 结构校验只在 try 里;时间窗校验放到 try 外——否则 REQUEST_EXPIRED 的 throw
+  // 会被本 try 的 catch 吞掉、误判成 ENCRYPTION_INVALID(原来是 return 才不受影响)。
+  let cur: z.infer<typeof payloadSchema>;
+  let next: z.infer<typeof payloadSchema>;
   try {
-    const cur = payloadSchema.parse(JSON.parse(decryptRsaOaep(parsed.data.encryptedCurrentPassword, auth.rsaPrivateKeyPem)));
-    const next = payloadSchema.parse(JSON.parse(decryptRsaOaep(parsed.data.encryptedNewPassword, auth.rsaPrivateKeyPem)));
-    if (
-      !isTimestampFresh(cur.timestamp, now, auth.timestampWindowMs) ||
-      !isTimestampFresh(next.timestamp, now, auth.timestampWindowMs)
-    ) {
-      return badRequestResponse(ERR_AUTH_REQUEST_EXPIRED);
-    }
-    currentPassword = cur.password;
-    newPassword = next.password;
+    cur = payloadSchema.parse(JSON.parse(decryptRsaOaep(parsed.data.encryptedCurrentPassword, auth.rsaPrivateKeyPem)));
+    next = payloadSchema.parse(JSON.parse(decryptRsaOaep(parsed.data.encryptedNewPassword, auth.rsaPrivateKeyPem)));
   } catch {
-    return badRequestResponse(ERR_AUTH_ENCRYPTION_INVALID);
+    throw new BusinessError(ERR_AUTH_ENCRYPTION_INVALID);
   }
+  if (
+    !isTimestampFresh(cur.timestamp, now, auth.timestampWindowMs) ||
+    !isTimestampFresh(next.timestamp, now, auth.timestampWindowMs)
+  ) {
+    throw new BusinessError(ERR_AUTH_REQUEST_EXPIRED);
+  }
+  const currentPassword = cur.password;
+  const newPassword = next.password;
 
   const user = await prisma.sysUser.findUniqueOrThrow({ where: { userId: session.userId } });
 
   if (!(await verifyPassword(user.passwordHash, currentPassword))) {
-    return badRequestResponse(ERR_ACCOUNT_PASSWORD_CURRENT_WRONG);
+    throw new BusinessError(ERR_ACCOUNT_PASSWORD_CURRENT_WRONG);
   }
 
   if (user.mfaEnable) {
-    if (!parsed.data.mfaCode) return badRequestResponse(ERR_ACCOUNT_MFA_STEPUP_REQUIRED);
+    if (!parsed.data.mfaCode) throw new BusinessError(ERR_ACCOUNT_MFA_STEPUP_REQUIRED);
     const result = await verifyActiveTotp(session.userId, parsed.data.mfaCode);
-    if (result !== "ok") return badRequestResponse(ERR_ACCOUNT_MFA_STEPUP_INVALID);
+    if (result !== "ok") throw new BusinessError(ERR_ACCOUNT_MFA_STEPUP_INVALID);
   }
 
-  if (!meetsPasswordPolicy(newPassword)) return badRequestResponse(ERR_ACCOUNT_PASSWORD_POLICY);
+  if (!meetsPasswordPolicy(newPassword)) throw new BusinessError(ERR_ACCOUNT_PASSWORD_POLICY);
 
   const history = Array.isArray(user.passwordHistory) ? (user.passwordHistory as string[]) : [];
   for (const hash of recentPasswordHashes(user.passwordHash, history)) {
-    if (await verifyPassword(hash, newPassword)) return badRequestResponse(ERR_ACCOUNT_PASSWORD_REUSED);
+    if (await verifyPassword(hash, newPassword)) throw new BusinessError(ERR_ACCOUNT_PASSWORD_REUSED);
   }
 
   const newHash = await hashPassword(newPassword);

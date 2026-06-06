@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { prisma } from "@cloud/db";
 import { assertPermissions } from "@cloud/permissions/server";
-import { successResponse, badRequestResponse } from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
 import { ERR_INVALID_JSON } from "@cloud/request/error-codes";
 import {
   ERR_ACCOUNT_MFA_NOT_ENABLED,
@@ -30,19 +31,19 @@ export const POST = withApiHandler(async (req: Request) => {
   try {
     raw = await req.json();
   } catch {
-    return badRequestResponse(ERR_INVALID_JSON);
+    throw new BusinessError(ERR_INVALID_JSON);
   }
   const parsed = schema.safeParse(raw);
-  if (!parsed.success) return badRequestResponse(ERR_ACCOUNT_MFA_STEPUP_INVALID);
+  if (!parsed.success) throw new BusinessError(ERR_ACCOUNT_MFA_STEPUP_INVALID);
 
   const user = await prisma.sysUser.findUniqueOrThrow({
     where: { userId: session.userId },
     select: { mfaEnable: true },
   });
-  if (!user.mfaEnable) return badRequestResponse(ERR_ACCOUNT_MFA_NOT_ENABLED);
+  if (!user.mfaEnable) throw new BusinessError(ERR_ACCOUNT_MFA_NOT_ENABLED);
 
   const result = await verifyActiveTotp(session.userId, parsed.data.code);
-  if (result !== "ok") return badRequestResponse(ERR_ACCOUNT_MFA_STEPUP_INVALID);
+  if (result !== "ok") throw new BusinessError(ERR_ACCOUNT_MFA_STEPUP_INVALID);
 
   await disableMfa(session.userId);
   return successResponse(await getAccountSecurity(session.userId));

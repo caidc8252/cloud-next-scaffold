@@ -2,7 +2,8 @@
 // 文案不在异常里:展示文案一律由 code 经错误码注册表本地化得出,params 仅供 {name} 占位插值。
 
 // 业务异常允许的 HTTP 状态:面向用户的 40x。401/403 一般交给 AuthzError,业务里少用。
-export type BusinessStatus = 400 | 401 | 403 | 404 | 409 | 422;
+// 423 Locked:账号/MFA 锁定等「资源被锁」语义(如登录 MFA 连错锁定)。
+export type BusinessStatus = 400 | 401 | 403 | 404 | 409 | 422 | 423;
 
 // i18n 命名占位参数(只支持 {name} 替换,不支持 ICU 复数/选择)。
 export type ErrorParams = Record<string, string | number>;

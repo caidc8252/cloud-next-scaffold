@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { prisma } from "@cloud/db";
 import { assertPermissions } from "@cloud/permissions/server";
-import { successResponse, badRequestResponse } from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
 import { ERR_INVALID_JSON } from "@cloud/request/error-codes";
 import { ERR_ACCOUNT_EMAIL_INVALID } from "@/lib/account-error-codes";
 import "@/lib/account-error-messages";
@@ -27,14 +28,14 @@ export const POST = withApiHandler(async (req: Request) => {
   try {
     raw = await req.json();
   } catch {
-    return badRequestResponse(ERR_INVALID_JSON);
+    throw new BusinessError(ERR_INVALID_JSON);
   }
 
   const parsed = schema.safeParse(raw);
-  if (!parsed.success) return badRequestResponse(ERR_ACCOUNT_EMAIL_INVALID);
+  if (!parsed.success) throw new BusinessError(ERR_ACCOUNT_EMAIL_INVALID);
 
   const { purpose, newEmail } = parsed.data;
-  if (purpose === "EMAIL_NEW" && !newEmail) return badRequestResponse(ERR_ACCOUNT_EMAIL_INVALID);
+  if (purpose === "EMAIL_NEW" && !newEmail) throw new BusinessError(ERR_ACCOUNT_EMAIL_INVALID);
 
   const user = await prisma.sysUser.findUniqueOrThrow({ where: { userId: session.userId } });
   const address = purpose === "EMAIL_NEW" ? newEmail! : user.email;

@@ -16,6 +16,11 @@ describe("BusinessError", () => {
     expect(error.status).toBe(409);
     expect(error.params).toEqual({ count: 3 });
   });
+
+  it("allows 423 Locked for lock semantics (e.g. MFA lockout)", () => {
+    const error = new BusinessError("103014", 423);
+    expect(error.status).toBe(423);
+  });
 });
 
 describe("MiddlewareError", () => {
