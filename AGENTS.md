@@ -192,9 +192,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Route Handler 默认同时做两层判断：
   - 登录态 / 权限：优先用 `assertPermissions()`
   - 业务归属校验：例如 `entityId`、`roleId`、`userId` 是否属于当前租户
-- Route Handler 的异常兜底统一走 `apps/web/lib/api-handler.ts`
-  - 可预期的业务校验错误显式返回 `badRequestResponse()`、`notFoundResponse()`、`errorResponse()` 等响应
-  - 不要用 `throw new Error("A valid email is required.")` 表达参数校验、业务冲突、数据不存在这类 expected error
+- Route Handler 的异常兜底统一走 `apps/web/lib/api-handler.ts`（设计与示例见 `docs/exception-handling.md`）
+  - **业务异常一律 throw 类型化异常，不再 return 错误响应**：参数校验、业务冲突、数据不存在等可预期错误用 `throw new BusinessError(code, status?, params?)`（`@cloud/request`），由 `withApiHandler` 捕获后统一出 40x `{ code, message, traceId }`
+    - `code` 走 `PMMNNN` 数字码（注册表内才本地化）；`status` 限 `400|401|403|404|409|422`，默认 400；`params` 是 `{name}` 占位插值参数，渲染进文案、不进响应体
+    - 中间件/基础设施故障（DB 连接、Redis、邮件等）用 `throw new MiddlewareError(ERR_MW_*)`，统一掩码成 503 通用文案（对客户不透明，开发凭 code + traceId 在日志识别）
+    - 开发者诊断信息自己 `console.error` 打（`BusinessError` 不带 devMessage）；所有被捕获的异常都会连堆栈进日志
+  - **仍然禁止 `throw new Error("文本字符串")`** 表达业务错误——要带稳定 `code`，用 `BusinessError` / `MiddlewareError`，不要裸 `Error`
+  - `badRequestResponse()` / `notFoundResponse()` / `errorResponse()` 降级为「mapper 内部构造 Response 用」，业务代码不再直接调用；rsc 页面级预期错误仍走 `notFound()` / `redirect("/403")`
   - 默认用 `withApiHandler()` 包裹整个 handler，不要在每个文件里手写 `try { ... } catch (error) { return handleApiError(error) }`
     - 写法：`export const POST = withApiHandler(async (req) => { ... })`
     - 带动态路由参数时第二个参数照常透传：`withApiHandler(async (req, { params }) => { ... })`

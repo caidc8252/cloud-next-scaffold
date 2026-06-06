@@ -1,12 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 import { AuthzError } from "@cloud/permissions/server";
+import { BusinessError, MiddlewareError } from "@cloud/request";
 import {
   createdResponse,
   noContentResponse,
   successResponse,
   type Pager,
 } from "@cloud/request/server";
-import { ERR_UNAUTHORIZED } from "@cloud/request/error-codes";
+import {
+  ERR_MW_CACHE,
+  ERR_ROLE_DELETE_ASSIGNED,
+  ERR_UNAUTHORIZED,
+} from "@cloud/request/error-codes";
 import { handleApiError, withApiHandler } from "./api-handler";
 
 async function readBody(response: Response) {
@@ -54,6 +59,28 @@ describe("api-handler", () => {
 
     expect(response.status).toBe(422);
     expect(body.code).toBe("custom");
+  });
+
+  it("maps a thrown BusinessError to its localized 40x body", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const response = handleApiError(new BusinessError(ERR_ROLE_DELETE_ASSIGNED, 409));
+    const body = await readBody(response);
+
+    expect(response.status).toBe(409);
+    expect(body.code).toBe(ERR_ROLE_DELETE_ASSIGNED);
+    expect(body.message).toBe("Roles with assigned users cannot be deleted.");
+    spy.mockRestore();
+  });
+
+  it("maps a thrown MiddlewareError to a masked 503", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const response = handleApiError(new MiddlewareError(ERR_MW_CACHE));
+    const body = await readBody(response);
+
+    expect(response.status).toBe(503);
+    expect(body.code).toBe(ERR_MW_CACHE);
+    expect(body.message).toBe("The service is temporarily unavailable. Please try again later.");
+    spy.mockRestore();
   });
 
   it("maps common Prisma errors without exposing raw database details", async () => {

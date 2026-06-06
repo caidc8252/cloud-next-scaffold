@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { prisma } from "@cloud/db";
 import { assertPermissions, updateSession } from "@cloud/permissions/server";
-import { successResponse, badRequestResponse } from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
 import { ERR_INVALID_JSON } from "@cloud/request/error-codes";
 import {
   ERR_ACCOUNT_NICKNAME_REQUIRED,
@@ -44,13 +45,13 @@ export const PATCH = withApiHandler(async (req: Request) => {
   try {
     raw = await req.json();
   } catch {
-    return badRequestResponse(ERR_INVALID_JSON);
+    throw new BusinessError(ERR_INVALID_JSON);
   }
 
   const parsed = patchSchema.safeParse(raw);
   if (!parsed.success) {
     const hasCountryIssue = parsed.error.issues.some((i) => i.path[0] === "country");
-    return badRequestResponse(hasCountryIssue ? ERR_ACCOUNT_COUNTRY_INVALID : ERR_ACCOUNT_NICKNAME_REQUIRED);
+    throw new BusinessError(hasCountryIssue ? ERR_ACCOUNT_COUNTRY_INVALID : ERR_ACCOUNT_NICKNAME_REQUIRED);
   }
 
   const data: { nickName?: string; country?: string | null } = {};

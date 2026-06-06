@@ -31,6 +31,15 @@
       "extend": "You can keep building on top of this shell by adding customer, order, settings, or any other business modules."
     }
   },
+  "errorPage": {
+    "title": "Something went wrong",
+    "description": "The service is temporarily unavailable. Please try again later.",
+    "retry": "Try again",
+    "home": "Back to workspace",
+    "referenceLabel": "Reference",
+    "notFoundTitle": "Page not found",
+    "notFoundDescription": "The page you are looking for does not exist or has been moved."
+  },
   "account": {
     "common": { "back": "Back" },
     "menu": {

@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomBytes } from "node:crypto";
 import { AsyncLocalStorage } from "node:async_hooks";
-import type { CursorPager, ErrorBody, Pager, SuccessBody } from "./index.ts";
+import type { CursorPager, ErrorBody, ErrorParams, Pager, SuccessBody } from "./index.ts";
 import {
   ERR_BAD_REQUEST,
   ERR_UNAUTHORIZED,
@@ -56,11 +56,29 @@ function lookupMessage(code: string, locale: string): string | undefined {
   return extraErrorMessages[locale]?.[code];
 }
 
+// 取某 locale 的「内置 + app 注册」全量文案表。供 next-intl 的 errors 命名空间注入，
+// 让客户端 / RSC 按 code 重译的覆盖面与服务端响应体一致（含 auth / account 等业务域 code）。
+export function getAllErrorMessages(locale: string): Record<string, string> {
+  return { ...getErrorMessages(locale), ...(extraErrorMessages[locale] ?? {}) };
+}
+
+// 命名占位插值：只替换 {name}，未提供的占位原样保留；不支持 ICU 复数/选择，
+// 与客户端 next-intl 处理纯 {name} 占位的结果一致，故服务端只需轻量替换、无需依赖 next-intl。
+function interpolate(template: string, params?: ErrorParams): string {
+  if (!params) return template;
+  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
+    Object.prototype.hasOwnProperty.call(params, key) ? String(params[key]) : match,
+  );
+}
+
 // code 为准：内置或 app 注册的 code 就按当前 locale 出文案（缺当前 locale 退英文）；
 // 都没有（如 storage / database 等未注册的包外 code）才退回调用方显式传入的 message。
-function resolveErrorMessage(code: string, fallback?: string): string {
+// 最后用 params 做 {name} 占位插值。
+function resolveErrorMessage(code: string, fallback?: string, params?: ErrorParams): string {
   const locale = localeStore.getStore() ?? "en";
-  return lookupMessage(code, locale) ?? lookupMessage(code, "en") ?? fallback ?? "An error occurred.";
+  const template =
+    lookupMessage(code, locale) ?? lookupMessage(code, "en") ?? fallback ?? "An error occurred.";
+  return interpolate(template, params);
 }
 
 // 日志固定走英文 / code，避免服务端日志随用户 locale 漂移，影响排查。
@@ -101,15 +119,41 @@ export function noContentResponse(): Response {
   return new Response(null, { status: 204 });
 }
 
+// errorResponse 选项：
+// - params：{name} 占位插值参数，渲染进展示文案，不进响应体；
+// - cause：原始异常，仅用于在日志里打堆栈（满足「所有异常都能从日志定位」），不回前端。
+export type ErrorResponseOptions = {
+  params?: ErrorParams;
+  cause?: unknown;
+};
+
 // message 可选：注册表里有该 code 时按当前 locale 出文案，传入的 message 仅作为
-// 包外 code 的兜底。响应文案本地化，日志保持英文 / code 稳定。
-export function errorResponse(code: string, message?: string, status = 400): Response {
+// 包外 code 的兜底。响应文案本地化，日志保持英文 / code 稳定；有 cause 时连堆栈一起打。
+export function errorResponse(
+  code: string,
+  message?: string,
+  status = 400,
+  options?: ErrorResponseOptions,
+): Response {
   const traceId = generateTraceId(status);
-  console.error(`[${traceId}] [${code}] ${resolveLogMessage(code, message)}`);
+  logError(traceId, code, resolveLogMessage(code, message), options?.cause);
   return Response.json(
-    { message: resolveErrorMessage(code, message), code, traceId } satisfies ErrorBody,
+    {
+      message: resolveErrorMessage(code, message, options?.params),
+      code,
+      traceId,
+    } satisfies ErrorBody,
     { status },
   );
+}
+
+// 统一日志出口：英文/code 稳定，带 cause 时附完整堆栈。
+function logError(traceId: string, code: string, logMessage: string, cause?: unknown): void {
+  if (cause !== undefined) {
+    console.error(`[${traceId}] [${code}] ${logMessage}`, cause);
+  } else {
+    console.error(`[${traceId}] [${code}] ${logMessage}`);
+  }
 }
 
 export function badRequestResponse(code = ERR_BAD_REQUEST, message?: string): Response {

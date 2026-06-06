@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { assertPermissions } from "@cloud/permissions/server";
-import { successResponse, badRequestResponse } from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
 import { ERR_INVALID_JSON } from "@cloud/request/error-codes";
 import {
   ERR_ACCOUNT_MFA_ENROLL_CODE_INVALID,
@@ -28,14 +29,14 @@ export const POST = withApiHandler(async (req: Request) => {
   try {
     raw = await req.json();
   } catch {
-    return badRequestResponse(ERR_INVALID_JSON);
+    throw new BusinessError(ERR_INVALID_JSON);
   }
   const parsed = schema.safeParse(raw);
-  if (!parsed.success) return badRequestResponse(ERR_ACCOUNT_MFA_ENROLL_CODE_INVALID);
+  if (!parsed.success) throw new BusinessError(ERR_ACCOUNT_MFA_ENROLL_CODE_INVALID);
 
   const result = await activateEnrollment(session.userId, parsed.data.mfaInfoId, parsed.data.code);
-  if (result === "missing") return badRequestResponse(ERR_ACCOUNT_MFA_PENDING_MISSING);
-  if (result === "invalid") return badRequestResponse(ERR_ACCOUNT_MFA_ENROLL_CODE_INVALID);
+  if (result === "missing") throw new BusinessError(ERR_ACCOUNT_MFA_PENDING_MISSING);
+  if (result === "invalid") throw new BusinessError(ERR_ACCOUNT_MFA_ENROLL_CODE_INVALID);
 
   return successResponse(await getAccountSecurity(session.userId));
 });

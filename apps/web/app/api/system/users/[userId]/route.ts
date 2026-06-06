@@ -1,17 +1,13 @@
 import { prisma } from "@cloud/db";
-import {
-  successResponse,
-  badRequestResponse,
-  forbiddenResponse,
-  notFoundResponse,
-} from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
 import {
   ERR_INVALID_ID,
   ERR_INVALID_JSON,
   ERR_USER_NOT_FOUND,
   ERR_USER_PROTECTED,
 } from "@cloud/request/error-codes";
-import { assertPermissions, hasPermissions } from "@cloud/permissions/server";
+import { assertPermissions, hasPermissions, AuthzError } from "@cloud/permissions/server";
 import {
   toClientUser,
   extractRoleIds,
@@ -34,11 +30,11 @@ export const PUT = withApiHandler(
     const session = await assertPermissions({ all: ["users.UPD"] });
     const { userId: rawId } = await params;
     const userId = Number(rawId);
-    if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID);
+    if (!Number.isFinite(userId)) throw new BusinessError(ERR_INVALID_ID);
 
     const partnerId = session.currentPartnerId;
     const link = await findUserInPartner(userId, partnerId);
-    if (!link) return notFoundResponse(ERR_USER_NOT_FOUND, "User not found.");
+    if (!link) throw new BusinessError(ERR_USER_NOT_FOUND, 404);
 
     const isProtected = userId === session.userId || link.authorizingType === "ADMIN";
 
@@ -46,12 +42,12 @@ export const PUT = withApiHandler(
     try {
       body = await req.json();
     } catch {
-      return badRequestResponse(ERR_INVALID_JSON);
+      throw new BusinessError(ERR_INVALID_JSON);
     }
 
     // Protected users can only have remark updated
     if (isProtected && body.roleIds !== undefined) {
-      return badRequestResponse(ERR_USER_PROTECTED);
+      throw new BusinessError(ERR_USER_PROTECTED);
     }
 
     const requestedRoleIds =
@@ -66,7 +62,7 @@ export const PUT = withApiHandler(
         requestedRoleIds.some((roleId, index) => roleId !== currentRoleIds[index]);
 
       if (roleIdsChanged && !hasPermissions(session.permissions, { all: ["users.CHANGE_ROLE"] })) {
-        return forbiddenResponse("forbidden", "Forbidden.");
+        throw new AuthzError(403, "forbidden");
       }
     }
 

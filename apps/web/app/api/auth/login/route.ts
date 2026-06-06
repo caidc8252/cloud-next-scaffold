@@ -4,7 +4,8 @@ import { verifyPassword, decryptRsaOaep } from "@cloud/security/server";
 import { getAuthConfig } from "@cloud/config";
 import { createSession } from "@cloud/permissions/server";
 import { buildSessionSnapshot } from "@/lib/session-snapshot";
-import { successResponse, badRequestResponse, errorResponse } from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
 import {
   ERR_AUTH_ACCOUNT_LOCKED,
   ERR_AUTH_ACCOUNT_DISABLED,
@@ -39,12 +40,12 @@ export const POST = withApiHandler(async (req: Request) => {
   try {
     body = await req.json();
   } catch {
-    return badRequestResponse(ERR_AUTH_CREDENTIALS_REQUIRED);
+    throw new BusinessError(ERR_AUTH_CREDENTIALS_REQUIRED);
   }
 
   const parsed = loginSchema.safeParse(body);
   if (!parsed.success) {
-    return badRequestResponse(ERR_AUTH_CREDENTIALS_REQUIRED);
+    throw new BusinessError(ERR_AUTH_CREDENTIALS_REQUIRED);
   }
 
   const auth = getAuthConfig();
@@ -54,17 +55,17 @@ export const POST = withApiHandler(async (req: Request) => {
     where: { username: parsed.data.account },
   });
   if (!user) {
-    return errorResponse(ERR_AUTH_INVALID_CREDENTIALS, undefined, 401);
+    throw new BusinessError(ERR_AUTH_INVALID_CREDENTIALS, 401);
   }
 
   // 3. 账号状态正常性（status 只管账号级；刷错锁不再写 status）
   if (!isAccountActive(user.status)) {
-    return errorResponse(ERR_AUTH_ACCOUNT_DISABLED, undefined, 403);
+    throw new BusinessError(ERR_AUTH_ACCOUNT_DISABLED, 403);
   }
 
   // 4. 刷错锁（仅看时间戳）；过期不重置次数、不清时间戳，直接继续
   if (isLockActive(user.passwordErrorLockExpiredTimestamp, now)) {
-    return errorResponse(ERR_AUTH_ACCOUNT_LOCKED, undefined, 403);
+    throw new BusinessError(ERR_AUTH_ACCOUNT_LOCKED, 403);
   }
 
   // 5. 私钥解密 + 结构校验
@@ -73,12 +74,12 @@ export const POST = withApiHandler(async (req: Request) => {
     const decrypted = decryptRsaOaep(parsed.data.encryptedPassword, auth.rsaPrivateKeyPem);
     payload = payloadSchema.parse(JSON.parse(decrypted));
   } catch {
-    return badRequestResponse(ERR_AUTH_ENCRYPTION_INVALID);
+    throw new BusinessError(ERR_AUTH_ENCRYPTION_INVALID);
   }
 
   // 6. 60s 时间窗
   if (!isTimestampFresh(payload.timestamp, now.getTime(), auth.timestampWindowMs)) {
-    return badRequestResponse(ERR_AUTH_REQUEST_EXPIRED);
+    throw new BusinessError(ERR_AUTH_REQUEST_EXPIRED);
   }
 
   // 7. 密码校验（argon2id）
@@ -97,7 +98,7 @@ export const POST = withApiHandler(async (req: Request) => {
         passwordErrorLockExpiredTimestamp: update.passwordErrorLockExpiredTimestamp,
       },
     });
-    return errorResponse(ERR_AUTH_INVALID_CREDENTIALS, undefined, 401);
+    throw new BusinessError(ERR_AUTH_INVALID_CREDENTIALS, 401);
   }
 
   // 成功是唯一清零点
@@ -128,7 +129,7 @@ export const POST = withApiHandler(async (req: Request) => {
     activePartnerUsers.length === 1 ? activePartnerUsers[0].partnerId : null;
   const snapshot = await buildSessionSnapshot(user.userId, currentPartnerId);
   if (!snapshot) {
-    return errorResponse(ERR_AUTH_INVALID_CREDENTIALS, undefined, 401);
+    throw new BusinessError(ERR_AUTH_INVALID_CREDENTIALS, 401);
   }
   await createSession(snapshot);
 

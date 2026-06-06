@@ -1,5 +1,6 @@
 import { prisma } from "@cloud/db";
-import { successResponse, badRequestResponse, notFoundResponse } from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
 import { ERR_INVALID_ID, ERR_USER_NO_PENDING_INVITE } from "@cloud/request/error-codes";
 import { assertPermissions } from "@cloud/permissions/server";
 import { toClientInvite } from "@/app/(portal)/system/users/_server/user-mapper";
@@ -15,15 +16,14 @@ export const POST = withApiHandler(
     const session = await assertPermissions({ all: ["users.INVITE"] });
     const { userId: rawId } = await params;
     const inviteId = parseInviteId(rawId);
-    if (!Number.isFinite(inviteId)) return badRequestResponse(ERR_INVALID_ID);
+    if (!Number.isFinite(inviteId)) throw new BusinessError(ERR_INVALID_ID);
 
     const partnerId = session.currentPartnerId;
 
     const invite = await prisma.sysOperatorInvite.findFirst({
       where: { operatorInviteId: inviteId, partnerId, status: "PENDING" },
     });
-    if (!invite)
-      return notFoundResponse(ERR_USER_NO_PENDING_INVITE, "No pending invite found.");
+    if (!invite) throw new BusinessError(ERR_USER_NO_PENDING_INVITE, 404);
 
     const updated = await prisma.sysOperatorInvite.update({
       where: { operatorInviteId: invite.operatorInviteId },

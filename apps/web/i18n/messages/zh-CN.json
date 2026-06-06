@@ -31,6 +31,15 @@
       "extend": "你可以在这套骨架之上继续扩展，添加客户、订单、设置或任何其他业务模块。"
     }
   },
+  "errorPage": {
+    "title": "出了点问题",
+    "description": "服务暂时不可用，请稍后重试。",
+    "retry": "重试",
+    "home": "返回工作台",
+    "referenceLabel": "错误编号",
+    "notFoundTitle": "页面不存在",
+    "notFoundDescription": "你访问的页面不存在或已被移动。"
+  },
   "account": {
     "common": { "back": "返回" },
     "menu": {

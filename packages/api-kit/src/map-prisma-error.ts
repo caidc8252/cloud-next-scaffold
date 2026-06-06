@@ -1,6 +1,7 @@
 import "server-only";
 
-import { errorResponse, notFoundResponse } from "@cloud/request/server";
+import { errorResponse } from "@cloud/request/server";
+import { ERR_MW_DB } from "@cloud/request/error-codes";
 import type { ApiErrorMapper } from "./create-api-handler.ts";
 
 // 用鸭子类型识别 Prisma 错误，不直接依赖 @cloud/db / Prisma 运行时。
@@ -52,15 +53,21 @@ function toPrismaLikeError(error: unknown): PrismaLikeError | null {
   return { name, code, clientVersion, meta: error.meta };
 }
 
-// 把常见 Prisma 错误码映射成稳定的 database.* 响应，不向用户泄露原始数据库细节。
+// Prisma 二分:
+// - 连接 / 初始化级(P1xxx)是基础设施故障 → 掩码成 ERR_MW_DB/503 通用文案,与其他中间件一致;
+// - 约束级(P2002 唯一 / P2025 不存在 等)带业务语义 → 保留 4xx + 可读 database.* 文案。
+// 两类都把原始异常作为 cause 传入,日志连堆栈一起打。
 export const mapPrismaError: ApiErrorMapper = (error) => {
   const prismaError = toPrismaLikeError(error);
   if (!prismaError) return null;
 
+  // P1000–P1017:连不上 / 认证失败 / 超时等,统一归到中间件 503,不泄露数据库细节。
+  if (/^P10\d{2}$/.test(prismaError.code)) {
+    return errorResponse(ERR_MW_DB, undefined, 503, { cause: error });
+  }
+
   const mapped = PRISMA_ERROR_RESPONSES[prismaError.code];
   if (!mapped) return null;
 
-  return mapped.status === 404
-    ? notFoundResponse(mapped.code, mapped.message)
-    : errorResponse(mapped.code, mapped.message, mapped.status);
+  return errorResponse(mapped.code, mapped.message, mapped.status, { cause: error });
 };

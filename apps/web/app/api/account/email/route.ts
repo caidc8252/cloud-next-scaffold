@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { prisma } from "@cloud/db";
 import { assertPermissions, updateSession } from "@cloud/permissions/server";
-import { successResponse, badRequestResponse, errorResponse } from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
 import { ERR_INVALID_JSON } from "@cloud/request/error-codes";
 import {
   ERR_ACCOUNT_EMAIL_INVALID,
@@ -35,17 +36,17 @@ export const PATCH = withApiHandler(async (req: Request) => {
   try {
     raw = await req.json();
   } catch {
-    return badRequestResponse(ERR_INVALID_JSON);
+    throw new BusinessError(ERR_INVALID_JSON);
   }
 
   const parsed = schema.safeParse(raw);
-  if (!parsed.success) return badRequestResponse(ERR_ACCOUNT_EMAIL_INVALID);
+  if (!parsed.success) throw new BusinessError(ERR_ACCOUNT_EMAIL_INVALID);
   const { newEmail, currentCode, newCode } = parsed.data;
 
   const user = await prisma.sysUser.findUniqueOrThrow({ where: { userId: session.userId } });
 
   const current = await readVerifyCode(session.userId, "EMAIL_CURRENT");
-  if (!current || current.code !== currentCode) return badRequestResponse(ERR_ACCOUNT_VERIFY_CODE_INVALID);
+  if (!current || current.code !== currentCode) throw new BusinessError(ERR_ACCOUNT_VERIFY_CODE_INVALID);
 
   const next = await readVerifyCode(session.userId, "EMAIL_NEW");
   if (
@@ -53,18 +54,18 @@ export const PATCH = withApiHandler(async (req: Request) => {
     next.code !== newCode ||
     (next.newEmail ?? "").toLowerCase() !== newEmail.toLowerCase()
   ) {
-    return badRequestResponse(ERR_ACCOUNT_VERIFY_CODE_INVALID);
+    throw new BusinessError(ERR_ACCOUNT_VERIFY_CODE_INVALID);
   }
 
   if (newEmail.toLowerCase() === user.email.toLowerCase()) {
-    return badRequestResponse(ERR_ACCOUNT_EMAIL_SAME);
+    throw new BusinessError(ERR_ACCOUNT_EMAIL_SAME);
   }
 
   const taken = await prisma.sysUser.findFirst({
     where: { email: newEmail, NOT: { userId: session.userId } },
     select: { userId: true },
   });
-  if (taken) return errorResponse(ERR_ACCOUNT_EMAIL_TAKEN, undefined, 409);
+  if (taken) throw new BusinessError(ERR_ACCOUNT_EMAIL_TAKEN, 409);
 
   const updated = await prisma.sysUser.update({
     where: { userId: session.userId },

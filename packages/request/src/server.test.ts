@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   badRequestResponse,
   errorResponse,
+  getAllErrorMessages,
   internalErrorResponse,
   registerErrorMessages,
   runWithLocale,
@@ -73,5 +74,47 @@ describe("app-registered error messages", () => {
     registerErrorMessages({ en: { "199002": "Only english." } });
     const ja = await readBody(runWithLocale("ja", () => errorResponse("199002")));
     expect(ja.message).toBe("Only english.");
+  });
+});
+
+describe("i18n params interpolation", () => {
+  it("substitutes {name} placeholders with params in the localized message", async () => {
+    registerErrorMessages({
+      en: { "199010": "Still assigned to {count} member(s)." },
+      "zh-CN": { "199010": "仍被 {count} 个成员绑定。" },
+    });
+
+    const en = await readBody(errorResponse("199010", undefined, 409, { params: { count: 3 } }));
+    expect(en.message).toBe("Still assigned to 3 member(s).");
+
+    const zh = await readBody(
+      runWithLocale("zh-CN", () => errorResponse("199010", undefined, 409, { params: { count: 5 } })),
+    );
+    expect(zh.message).toBe("仍被 5 个成员绑定。");
+  });
+
+  it("leaves unknown placeholders untouched", async () => {
+    registerErrorMessages({ en: { "199011": "Hello {missing}." } });
+    const en = await readBody(errorResponse("199011", undefined, 400, { params: { other: 1 } }));
+    expect(en.message).toBe("Hello {missing}.");
+  });
+});
+
+describe("stack logging", () => {
+  it("logs the cause stack so every caught exception is traceable", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    errorResponse(ERR_USER_NOT_FOUND, undefined, 404, { cause: new Error("boom-stack-marker") });
+    const logged = spy.mock.calls.flat().map(String).join("\n");
+    expect(logged).toContain("boom-stack-marker");
+    spy.mockRestore();
+  });
+});
+
+describe("getAllErrorMessages", () => {
+  it("merges builtin codes with app-registered codes", () => {
+    registerErrorMessages({ en: { "199020": "App scoped." } });
+    const en = getAllErrorMessages("en");
+    expect(en[ERR_INTERNAL]).toBeTruthy(); // builtin present
+    expect(en["199020"]).toBe("App scoped."); // app-registered present
   });
 });

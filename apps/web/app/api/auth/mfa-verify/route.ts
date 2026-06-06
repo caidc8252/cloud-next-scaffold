@@ -2,7 +2,8 @@ import { z } from "zod";
 import { prisma } from "@cloud/db";
 import { createSession } from "@cloud/permissions/server";
 import { buildSessionSnapshot } from "@/lib/session-snapshot";
-import { successResponse, badRequestResponse, errorResponse } from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
 import { ERR_INVALID_JSON } from "@cloud/request/error-codes";
 import {
   ERR_AUTH_MFA_TOKEN_INVALID,
@@ -36,23 +37,23 @@ export const POST = withApiHandler(async (req: Request) => {
   try {
     raw = await req.json();
   } catch {
-    return badRequestResponse(ERR_INVALID_JSON);
+    throw new BusinessError(ERR_INVALID_JSON);
   }
   const parsed = schema.safeParse(raw);
-  if (!parsed.success) return errorResponse(ERR_AUTH_MFA_CODE_INVALID, undefined, 401);
+  if (!parsed.success) throw new BusinessError(ERR_AUTH_MFA_CODE_INVALID, 401);
 
   const userId = await readMfaLoginToken(parsed.data.mfaToken);
-  if (userId === null) return errorResponse(ERR_AUTH_MFA_TOKEN_INVALID, undefined, 401);
+  if (userId === null) throw new BusinessError(ERR_AUTH_MFA_TOKEN_INVALID, 401);
 
   const user = await prisma.sysUser.findUnique({ where: { userId } });
   if (!user || user.status !== "ACTIVE" || !user.mfaEnable) {
-    return errorResponse(ERR_AUTH_MFA_TOKEN_INVALID, undefined, 401);
+    throw new BusinessError(ERR_AUTH_MFA_TOKEN_INVALID, 401);
   }
 
   const result = await verifyActiveTotp(userId, parsed.data.code);
-  if (result === "none") return errorResponse(ERR_AUTH_MFA_NOT_CONFIGURED, undefined, 409);
-  if (result === "locked") return errorResponse(ERR_AUTH_MFA_LOCKED, undefined, 423);
-  if (result === "invalid") return errorResponse(ERR_AUTH_MFA_CODE_INVALID, undefined, 401);
+  if (result === "none") throw new BusinessError(ERR_AUTH_MFA_NOT_CONFIGURED, 409);
+  if (result === "locked") throw new BusinessError(ERR_AUTH_MFA_LOCKED, 423);
+  if (result === "invalid") throw new BusinessError(ERR_AUTH_MFA_CODE_INVALID, 401);
 
   // success → consume the one-time token, then build the real session
   await deleteMfaLoginToken(parsed.data.mfaToken);
@@ -66,7 +67,7 @@ export const POST = withApiHandler(async (req: Request) => {
   );
   const currentPartnerId = activePartnerUsers.length === 1 ? activePartnerUsers[0].partnerId : null;
   const snapshot = await buildSessionSnapshot(userId, currentPartnerId);
-  if (!snapshot) return errorResponse(ERR_AUTH_MFA_TOKEN_INVALID, undefined, 401);
+  if (!snapshot) throw new BusinessError(ERR_AUTH_MFA_TOKEN_INVALID, 401);
   await createSession(snapshot);
 
   if (activePartnerUsers.length === 1) return successResponse({ redirectTo: "/" });

@@ -31,6 +31,15 @@
       "extend": "顧客、注文、設定など、任意の業務モジュールを追加して、このシェルの上に構築を続けられます。"
     }
   },
+  "errorPage": {
+    "title": "問題が発生しました",
+    "description": "サービスを一時的にご利用いただけません。後ほどお試しください。",
+    "retry": "再試行",
+    "home": "ワークスペースへ戻る",
+    "referenceLabel": "エラー番号",
+    "notFoundTitle": "ページが見つかりません",
+    "notFoundDescription": "お探しのページは存在しないか、移動されました。"
+  },
   "account": {
     "common": { "back": "戻る" },
     "menu": {

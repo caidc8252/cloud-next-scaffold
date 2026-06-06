@@ -60,18 +60,24 @@
   - 跨 feature 共享的类型 / helper 放 `app/(portal)/system/_shared/`
 - 跨目录引用一律走 `@/...` 路径别名（tsconfig 已配置），不要再写 `../../../..`。
 - `@cloud/ui` Card 槽位（`CardHeader` / `CardContent` / `CardFooter`）的 padding 是 `group-data-[size=*]/card:p-*` 变体类：消费侧无前缀的 `p-0` / `px-0` **覆盖不掉**（tailwind-merge 不跨变体去重，且变体规则在产物中排在基础工具类之后、同特异性后者赢）。要贴边内容（表格、行列表）给对应槽位加 `flush`（如 `<CardContent flush>`，跳过槽位 padding，行自带内边距），不要用 `!important`。
-- API Route Handler 的异常兜底统一走 `apps/web/lib/api-handler.ts`：
-  - 业务校验错误继续显式返回 `badRequestResponse` / `notFoundResponse` 等响应，不通过 throw 表达。
+- API Route Handler 的异常兜底统一走 `apps/web/lib/api-handler.ts`（完整设计 + 四类 demo 见 `docs/exception-handling.md`）：
+  - **业务异常一律 throw 类型化异常**（不再 return 错误响应）：`@cloud/request` 出 `AppError` 基类 + `BusinessError`（业务 40x，`code`/`status`/`params`）/ `MiddlewareError`（DB/Redis/邮件等基础设施故障，统一 503 通用文案、对客户不透明）。`withApiHandler` 捕获后由 mapper 链统一出响应；`badRequestResponse` 等降级为 mapper 内部构造 Response 用。仍禁止裸 `throw new Error("文本")`。
+  - mapper 链顺序（`api-handler.ts`）：`mapAuthzError` → `mapAppError`（business+middleware）→ `onError`（s3）→ `mapPrismaError` → `mapMiddlewareError`（ioredis 鸭子类型）→ 骨架兜 `ERR_INTERNAL` 500。Prisma 二分：约束冲突（P2002/P2025…）保留 4xx 业务语义；连接/超时（P1xxx）→ `ERR_MW_DB`/503。中间件四码 `ERR_MW_*`（Module 90）进 `@cloud/request` 注册表、四码共用同一句三语通用文案（差异只在 code 给开发/日志）。
+  - 堆栈日志：`errorResponse(code, msg?, status?, { params?, cause? })` 的 `cause` 用于打堆栈（不进响应体）；mapper 把原始异常作 `cause` 传入，所有被捕获异常都连堆栈进日志。
   - 成功 JSON 响应统一为 `{ code: "OK", message: "success", data, page?, limit?, total?, totalPages?, nextCursor?, hasNextPage?, traceId }`；分页字段和 `data` 同级，不再包 `pager`；DELETE 等无内容接口使用 204 空 body。
   - `AuthzError`、常见 Prisma 异常和未知异常由 `handleApiError()` 统一映射，S3 接口通过 `onError: s3ErrorResponse` 保留存储专项错误码。
   - Next 控制流异常（redirect / notFound）必须继续抛出，不要吞掉。
 - 错误文案服务端本地化（**code 为准**）：`@cloud/request/error-messages` 按 locale 维护 `ERR_*` 错误码 → 三语文案（en/zh-CN/ja，类型从 error-codes 推导，缺翻译编译报错）。`errorResponse()` 命中注册表就按当前 locale 出文案，`message` 参数只兜底注册表外的 code（`storage.*` / `database.*` / permissions 的 `forbidden`）。`handleApiError` 把 `AuthzError` 401 统一映射成注册表内的 `ERR_UNAUTHORIZED`（包内置三语、始终在场，不依赖 app 级 `registerErrorMessages` 是否加载，全路由可本地化）；403 暂仍用 `forbidden` + 英文兜底。
   - 决策：helpers 保持同步（团队约定），但 Next 16 读 cookie 是异步的 → 用 `node:async_hooks` 的 `AsyncLocalStorage` 存请求级 locale。`withApiHandler()` 进 handler 前 `await` 解析 `LOCALE_COOKIE`、`runWithLocale()` 注入，handler 内同步构造的 `errorResponse()` 用 `getStore()` 同步取 locale。没设置（非请求上下文 / 没走 withApiHandler）回退英文。
   - locale cookie 解析放在 app 层 `api-handler.ts`（依赖 `@cloud/i18n`），`@cloud/request` 不依赖 `@cloud/i18n`：request 只负责「给定 ALS 里的 locale 就本地化」，app 负责「cookie → locale」。
-  - `apps/web/i18n/request.ts` 另把同一份注册表注入 next-intl 的 `errors` 命名空间，供客户端 / RSC 直接 `useTranslations("errors")(code)` / `getTranslations`。
-  - 注册表外的 **app 级业务域 code**（如 auth）走 `registerErrorMessages(locale -> code -> 文案)` 注册进 server 端解析，`@cloud/request` 自身不收录这些域 code（保持通用）。Auth 文案在 `apps/web/lib/auth-error-messages.ts`，由 auth 路由顶部 side-effect import 触发注册。`storage.*` 仍保留英文兜底（开发向校验，价值低），未纳入本地化。
+  - `apps/web/i18n/request.ts` 用 `getAllErrorMessages(locale)`（内置 + app 注册的**合并表**）注入 next-intl 的 `errors` 命名空间，供客户端 / RSC `useTranslations("errors")(code, params)` / `getTranslations`——与服务端响应体 `message` 同源、覆盖面一致（含 auth 等业务域 code）。文案只用命名占位 `{name}`（不用 ICU 复数），服务端轻量替换与客户端 next-intl 输出一致。
+  - 注册表外的 **app 级业务域 code**（如 auth）走 `registerErrorMessages(locale -> code -> 文案)` 注册进 server 端解析，`@cloud/request` 自身不收录这些域 code（保持通用）。Auth 文案在 `apps/web/lib/auth-error-messages.ts`。**饿汉注册**：`apps/web/lib/register-error-messages.ts` 集中 import 所有 `*-error-messages`，由 `i18n/request.ts` 顶部引入一次——纯页面请求（不经过对应 route）时 `errors` 命名空间也能拿到业务域文案（修了旧的「靠 route 顶部 side-effect import 触发、页面请求时缺注册」的时序坑）。`storage.*` 仍保留英文兜底（开发向校验，价值低），未纳入本地化。
   - 复用同一个 code 配不同用户可见文案的，拆成专属 code（如登录/选组织各用 `ERR_AUTH_CREDENTIALS_REQUIRED` / `ERR_AUTH_ENTITY_REQUIRED`，不再共用 `ERR_AUTH_MISSING_FIELDS`），避免本地化后收敛成同一句。
-- App Router 页面级兜底使用 `app/(portal)/error.tsx`、`app/(public)/error.tsx`、`app/global-error.tsx`、`app/not-found.tsx`；当前 Next.js 16 文档要求错误边界组件使用 `unstable_retry`。
+- App Router 页面级兜底使用 `app/(portal)/error.tsx`、`app/(public)/error.tsx`、`app/global-error.tsx`、`app/not-found.tsx`，都复用纯展示组件 `app/_components/error-state.tsx`（友好文案 + 恢复动作 + 弱化可复制的错误编号）。
+  - 错误边界 props 是 `{ error, unstable_retry }`（Next 16：`unstable_retry` 是传入的 prop，不是 import）；`error.digest` 当屏幕给用户的「错误编号」。
+  - `global-error.tsx` 替换整个 root layout（含 `NextIntlClientProvider`），**拿不到 i18n context**，只能用写死的中性英文文案、且必须自带 `<html>`/`<body>`；其余边界在 layout 内可正常 `useTranslations`/`getTranslations`（文案在 `errorPage` 命名空间）。
+  - RSC 跨边界生产环境只透传 `message`(脱敏)+`digest`，自定义 `code` 丢失：页面要展示精确 code 必须页面内 `catch (e instanceof BusinessError)` 自渲染 `<ErrorState>`，不能依赖 error.tsx。
+  - `apps/web/instrumentation.ts` 的 `onRequestError` 集中记录 RSC/页面未捕获异常的 digest + 堆栈（route handler 异常已被 `withApiHandler` 捕获、不冒泡到这里）；屏幕上的 digest 即可在日志按它定位堆栈。
 - `packages/i18n` 是对 `next-intl` 的薄封装，业务和 UI 一律从 `@cloud/i18n` 三入口取能力，禁止直接 import `next-intl`：
   - locale 清单固定为 `["en", "zh-CN", "ja"]`、`defaultLocale = "en"`，增删语言只改 `packages/i18n`，不在应用层硬编码数组。
   - 走 **cookie 不走 URL 路由**：自定义 `LOCALE_COOKIE="locale"` / `TZ_COOKIE="tz"`，刻意不用 next-intl 默认的 `NEXT_LOCALE`；没有 `app/[locale]/` 分段，切语言靠 `setLocaleAction` 写 cookie + `router.refresh()`。

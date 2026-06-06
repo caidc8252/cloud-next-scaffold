@@ -1,5 +1,6 @@
 import { prisma } from "@cloud/db";
-import { successResponse, badRequestResponse, notFoundResponse } from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
 import {
   ERR_INVALID_ID,
   ERR_INVALID_JSON,
@@ -20,21 +21,20 @@ export const PUT = withApiHandler(
     const session = await assertPermissions({ all: ["users.CHANGE_ROLE"] });
     const { userId: rawId } = await params;
     const inviteId = parseInviteId(rawId);
-    if (!Number.isFinite(inviteId)) return badRequestResponse(ERR_INVALID_ID);
+    if (!Number.isFinite(inviteId)) throw new BusinessError(ERR_INVALID_ID);
 
     let body: { roleIds?: string[] };
     try {
       body = await req.json();
     } catch {
-      return badRequestResponse(ERR_INVALID_JSON);
+      throw new BusinessError(ERR_INVALID_JSON);
     }
 
     const partnerId = session.currentPartnerId;
     const invite = await prisma.sysOperatorInvite.findFirst({
       where: { operatorInviteId: inviteId, partnerId, status: "PENDING" },
     });
-    if (!invite)
-      return notFoundResponse(ERR_USER_NO_PENDING_INVITE, "No pending invite found.");
+    if (!invite) throw new BusinessError(ERR_USER_NO_PENDING_INVITE, 404);
 
     const roleIds = parseRoleIds(body.roleIds);
     const updated = await prisma.sysOperatorInvite.update({

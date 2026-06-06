@@ -1,10 +1,6 @@
 import { prisma } from "@cloud/db";
-import {
-  successResponse,
-  badRequestResponse,
-  notFoundResponse,
-  noContentResponse,
-} from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse, noContentResponse } from "@cloud/request/server";
 import {
   ERR_INVALID_ID,
   ERR_INVALID_JSON,
@@ -21,21 +17,21 @@ export const PUT = withApiHandler(
     const session = await assertPermissions({ all: ["roles.UPD"] });
     const { roleId: rawId } = await params;
     const roleId = Number(rawId);
-    if (!Number.isFinite(roleId)) return badRequestResponse(ERR_INVALID_ID);
+    if (!Number.isFinite(roleId)) throw new BusinessError(ERR_INVALID_ID);
 
     const existing = await prisma.sysRole.findUnique({ where: { roleId } });
     if (
       !existing ||
       (existing.partnerId !== null && existing.partnerId !== session.currentPartnerId)
     ) {
-      return notFoundResponse(ERR_ROLE_NOT_FOUND, "Role not found.");
+      throw new BusinessError(ERR_ROLE_NOT_FOUND, 404);
     }
 
     let body: { name?: string; description?: string; permissions?: string[] };
     try {
       body = await req.json();
     } catch {
-      return badRequestResponse(ERR_INVALID_JSON);
+      throw new BusinessError(ERR_INVALID_JSON);
     }
 
     const isBuiltin = existing.roleType === "BUILTIN";
@@ -68,18 +64,18 @@ export const DELETE = withApiHandler(
     const session = await assertPermissions({ all: ["roles.DELETE"] });
     const { roleId: rawId } = await params;
     const roleId = Number(rawId);
-    if (!Number.isFinite(roleId)) return badRequestResponse(ERR_INVALID_ID);
+    if (!Number.isFinite(roleId)) throw new BusinessError(ERR_INVALID_ID);
 
     const existing = await prisma.sysRole.findUnique({ where: { roleId } });
     if (
       !existing ||
       (existing.partnerId !== null && existing.partnerId !== session.currentPartnerId)
     ) {
-      return notFoundResponse(ERR_ROLE_NOT_FOUND, "Role not found.");
+      throw new BusinessError(ERR_ROLE_NOT_FOUND, 404);
     }
 
     if (existing.roleType === "BUILTIN") {
-      return badRequestResponse(ERR_ROLE_DELETE_BUILTIN);
+      throw new BusinessError(ERR_ROLE_DELETE_BUILTIN);
     }
 
     // 角色绑定走 sys_partner_user.roles JSONB；用 array_contains 判断是否仍被绑定。
@@ -87,7 +83,7 @@ export const DELETE = withApiHandler(
       where: { roles: { array_contains: [{ roleId }] } },
     });
     if (assignedCount > 0) {
-      return badRequestResponse(ERR_ROLE_DELETE_ASSIGNED);
+      throw new BusinessError(ERR_ROLE_DELETE_ASSIGNED, 409);
     }
 
     await prisma.sysRole.delete({ where: { roleId } });

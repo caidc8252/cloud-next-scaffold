@@ -1,5 +1,6 @@
 import { prisma } from "@cloud/db";
-import { successResponse, badRequestResponse, createdResponse } from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse, createdResponse } from "@cloud/request/server";
 import { ERR_INVALID_JSON, ERR_ROLE_NAME_SHORT } from "@cloud/request/error-codes";
 import { assertPermissions } from "@cloud/permissions/server";
 import { toClientRole } from "@/app/(portal)/system/roles/_server/role-mapper";
@@ -54,12 +55,12 @@ export const POST = withApiHandler(async (req: Request) => {
   try {
     body = await req.json();
   } catch {
-    return badRequestResponse(ERR_INVALID_JSON);
+    throw new BusinessError(ERR_INVALID_JSON);
   }
 
   const name = body.name?.trim();
   if (!name || name.length < 2) {
-    return badRequestResponse(ERR_ROLE_NAME_SHORT);
+    throw new BusinessError(ERR_ROLE_NAME_SHORT);
   }
 
   const role = await prisma.sysRole.create({
