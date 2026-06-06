@@ -33,23 +33,22 @@ export function MfaEnrollFlow({
   // Start enrollment once on open. The ref guard keeps it single-fire under React
   // Strict Mode (dev double-invokes effects) — important because reconfigure
   // creates a PENDING row, and a double-fire would orphan one / break activation.
+  // The ref guard alone keeps this single-fire under React Strict Mode (dev
+  // double-invokes effects; the ref persists across the remount). Don't add an
+  // `active`/cleanup cancel flag here: the guard blocks the second run from
+  // re-issuing, so a cleanup that flips `active=false` would drop the one
+  // in-flight response and leave the QR stuck on its loading placeholder.
   const started = useRef(false);
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    let active = true;
     request
       .post<EnrollData>("/api/account/mfa/enroll")
-      .then((res) => {
-        if (active) setEnroll(res.data);
-      })
+      .then((res) => setEnroll(res.data))
       .catch((e) => {
         toastError(e);
         onClose();
       });
-    return () => {
-      active = false;
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
