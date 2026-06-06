@@ -1,117 +1,135 @@
 "use client";
 
-import { useState } from "react";
-import { Check } from "lucide-react";
-import { Button, Field, Input, Modal } from "@cloud/ui/components/ui";
+import { useEffect, useState } from "react";
+import { Button, Field, Input, Modal, toast } from "@cloud/ui/components/ui";
+import { request } from "@cloud/request/client";
+import { toastError } from "@cloud/request/error-toast";
 import { useTranslations } from "@cloud/i18n/client";
-import type { Profile } from "@/app/(portal)/account/_shared/types";
+import type { AccountProfile } from "@/app/(portal)/account/_shared/types";
 
-// Verified email / username change. The codes are simulated client-side (the
-// prototype is a mock) and shown in a hint so they can be entered. Only the
-// final, verified value is applied via onApply → PATCH /api/account/profile.
-//   email:    verify-old → new → verify-new → done (then real sign-out)
-//   username: verify-old → new → done
+// Verified email / username change against the real endpoints. Codes are sent
+// server-side (delivered via a logged stub for now) and verified at apply time.
+//   email:    verify-old → new → verify-new → PATCH /api/account/email
+//   username: verify-old → new → PATCH /api/account/username
 
-const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const genCode = () => String(Math.floor(100000 + Math.random() * 900000));
-
-type Step = "verify-old" | "new" | "verify-new" | "done";
+type Step = "verify-old" | "new" | "verify-new";
+type Purpose = "EMAIL_CURRENT" | "EMAIL_NEW" | "USERNAME_CURRENT";
 
 export function IdentityChangeFlow({
   mode,
-  user,
+  profile,
   onClose,
-  onApply,
+  onApplied,
 }: {
   mode: "email" | "username";
-  user: Profile;
+  profile: AccountProfile;
   onClose: () => void;
-  onApply: (patch: Partial<Profile>) => void;
+  onApplied: (next: AccountProfile) => void;
 }) {
   const t = useTranslations("account");
   const isEmail = mode === "email";
 
   const [step, setStep] = useState<Step>("verify-old");
-  // First code is generated for the current email at mount (lazy init).
-  const [code, setCode] = useState(genCode);
-  const [sentTo, setSentTo] = useState(user.email);
-  const [entry, setEntry] = useState("");
-  const [newVal, setNewVal] = useState("");
-  const [err, setErr] = useState("");
+  const [currentCode, setCurrentCode] = useState("");
+  const [newValue, setNewValue] = useState("");
+  const [newCode, setNewCode] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  function sendTo(addr: string) {
-    setCode(genCode());
-    setSentTo(addr);
-    setEntry("");
-    setErr("");
+  async function requestCode(purpose: Purpose, newEmail?: string) {
+    try {
+      await request.post("/api/account/identity/request-code", {
+        purpose,
+        ...(newEmail ? { newEmail } : {}),
+      });
+    } catch (err) {
+      toastError(err);
+    }
   }
 
-  function checkCode(onOk: () => void) {
-    if (entry.trim() !== code) {
-      setErr(t("identity.err.incorrectCode"));
+  // Send the current-email code when the flow opens.
+  useEffect(() => {
+    void requestCode(isEmail ? "EMAIL_CURRENT" : "USERNAME_CURRENT");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function continueFromNew() {
+    if (isEmail) {
+      const email = newValue.trim();
+      if (!email) return;
+      await requestCode("EMAIL_NEW", email);
+      setStep("verify-new");
       return;
     }
-    setErr("");
-    onOk();
-  }
-
-  function submitNew() {
-    if (isEmail) {
-      const v = newVal.trim();
-      if (!EMAIL_RX.test(v)) return setErr(t("identity.err.invalidEmail"));
-      if (v.toLowerCase() === user.email.toLowerCase()) return setErr(t("identity.err.sameEmail"));
-      setErr("");
-      sendTo(v);
-      setStep("verify-new");
-    } else {
-      const v = newVal.trim();
-      if (!/^[a-z0-9._-]{3,32}$/i.test(v)) return setErr(t("identity.err.invalidUsername"));
-      if (v.toLowerCase() === user.username.toLowerCase()) return setErr(t("identity.err.sameUsername"));
-      setErr("");
-      onApply({ username: v });
-      setStep("done");
+    // username: apply directly with the current-email code
+    setBusy(true);
+    try {
+      const res = await request.patch<AccountProfile>("/api/account/username", {
+        newUsername: newValue.trim(),
+        currentCode: currentCode.trim(),
+      });
+      toast.success(t("identity.doneUsername", { username: res.data.username }));
+      onApplied(res.data);
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setBusy(false);
     }
   }
 
-  const titleKey = `identity.title.${mode}.${step}` as const;
+  async function applyEmail() {
+    setBusy(true);
+    try {
+      const res = await request.patch<AccountProfile>("/api/account/email", {
+        newEmail: newValue.trim(),
+        currentCode: currentCode.trim(),
+        newCode: newCode.trim(),
+      });
+      toast.success(t("identity.doneEmail", { email: res.data.email }));
+      onApplied(res.data);
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setBusy(false);
+    }
+  }
 
-  const otpField = (desc: React.ReactNode) => (
-    <div className="flex flex-col gap-3">
-      <p className="text-sm leading-relaxed text-content-secondary">{desc}</p>
-      <Input
-        inputSize="lg"
-        inputMode="numeric"
-        maxLength={6}
-        value={entry}
-        autoFocus
-        placeholder="000000"
-        className="text-center font-mono text-lg tracking-widest"
-        onChange={(e) => setEntry(e.target.value.replace(/\D/g, "").slice(0, 6))}
-      />
-      <div className="flex items-center justify-between text-xs text-content-tertiary">
-        <button type="button" className="cursor-pointer text-primary hover:underline" onClick={() => sendTo(sentTo)}>
-          {t("identity.resend")}
-        </button>
-        <span>
-          {t("identity.demoCode")} <strong className="text-content-secondary">{code}</strong>
-        </span>
-      </div>
-      {err && <p className="text-xs text-error-strong">{err}</p>}
-    </div>
+  const otpInput = (value: string, onChange: (v: string) => void) => (
+    <Input
+      inputSize="lg"
+      inputMode="numeric"
+      maxLength={6}
+      value={value}
+      autoFocus
+      placeholder="000000"
+      className="text-center font-mono text-lg tracking-widest"
+      onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 6))}
+    />
   );
 
   let body: React.ReactNode;
   let footer: React.ReactNode;
 
   if (step === "verify-old") {
-    body = otpField(t("identity.verifyOldDesc", { email: user.email }));
+    body = (
+      <div className="flex flex-col gap-3">
+        <p className="text-sm leading-relaxed text-content-secondary">
+          {t("identity.verifyOldDesc", { email: profile.email })}
+        </p>
+        {otpInput(currentCode, setCurrentCode)}
+        <button
+          type="button"
+          className="cursor-pointer self-start text-xs text-primary hover:underline"
+          onClick={() => requestCode(isEmail ? "EMAIL_CURRENT" : "USERNAME_CURRENT")}
+        >
+          {t("identity.resend")}
+        </button>
+      </div>
+    );
     footer = (
       <>
-        <Button variant="ghost" onClick={onClose}>
-          {t("identity.cancel")}
-        </Button>
-        <Button variant="primary" onClick={() => checkCode(() => setStep("new"))}>
-          {t("identity.verify")}
+        <Button variant="ghost" onClick={onClose}>{t("identity.cancel")}</Button>
+        <Button variant="primary" disabled={currentCode.length !== 6} onClick={() => setStep("new")}>
+          {t("identity.continue")}
         </Button>
       </>
     );
@@ -123,88 +141,50 @@ export function IdentityChangeFlow({
         </p>
         <Field label={isEmail ? t("identity.newEmailLabel") : t("identity.newUsernameLabel")}>
           <Input
-            value={newVal}
+            value={newValue}
             autoFocus
             placeholder={isEmail ? "name@company.com" : "jordan.diaz"}
             prefix={isEmail ? undefined : "@"}
-            onChange={(e) => {
-              setNewVal(e.target.value);
-              setErr("");
-            }}
+            onChange={(e) => setNewValue(e.target.value)}
           />
         </Field>
-        {err && <p className="text-xs text-error-strong">{err}</p>}
       </div>
     );
     footer = (
       <>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            setErr("");
-            setStep("verify-old");
-          }}
-        >
-          {t("identity.back")}
-        </Button>
-        <Button variant="primary" onClick={submitNew}>
+        <Button variant="ghost" onClick={() => setStep("verify-old")}>{t("identity.back")}</Button>
+        <Button variant="primary" disabled={!newValue.trim() || busy} loading={busy} onClick={continueFromNew}>
           {isEmail ? t("identity.continue") : t("identity.changeUsername")}
-        </Button>
-      </>
-    );
-  } else if (step === "verify-new") {
-    body = otpField(t("identity.verifyNewDesc", { email: newVal }));
-    footer = (
-      <>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            setErr("");
-            setStep("new");
-          }}
-        >
-          {t("identity.back")}
-        </Button>
-        <Button
-          variant="primary"
-          onClick={() =>
-            checkCode(() => {
-              onApply({ email: newVal.trim() });
-              setStep("done");
-            })
-          }
-        >
-          {t("identity.verifyChange")}
         </Button>
       </>
     );
   } else {
     body = (
-      <div className="flex flex-col items-center gap-3 py-2 text-center">
-        <span className="flex size-11 items-center justify-center rounded-full bg-success-bg text-success-strong">
-          <Check size={22} />
-        </span>
+      <div className="flex flex-col gap-3">
         <p className="text-sm leading-relaxed text-content-secondary">
-          {isEmail ? t("identity.doneEmail", { email: newVal }) : t("identity.doneUsername", { username: newVal })}
+          {t("identity.verifyNewDesc", { email: newValue })}
         </p>
+        {otpInput(newCode, setNewCode)}
       </div>
     );
-    footer = isEmail ? (
-      // Email change → real sign-out, mirroring the prototype's "sign back in".
-      <form action="/api/auth/logout" method="post">
-        <Button type="submit" variant="primary">
-          {t("identity.signOut")}
+    footer = (
+      <>
+        <Button variant="ghost" onClick={() => setStep("new")}>{t("identity.back")}</Button>
+        <Button variant="primary" disabled={newCode.length !== 6 || busy} loading={busy} onClick={applyEmail}>
+          {t("identity.verifyChange")}
         </Button>
-      </form>
-    ) : (
-      <Button variant="primary" onClick={onClose}>
-        {t("identity.done")}
-      </Button>
+      </>
     );
   }
 
   return (
-    <Modal open onClose={onClose} size="sm" title={t(titleKey)} footer={<div className="flex justify-end gap-2">{footer}</div>}>
+    <Modal
+      open
+      onClose={onClose}
+      size="sm"
+      title={t(`identity.title.${mode}.${step}`)}
+      footer={<div className="flex justify-end gap-2">{footer}</div>}
+    >
       {body}
     </Modal>
   );

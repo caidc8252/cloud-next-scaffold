@@ -13,6 +13,10 @@ import {
   ERR_AUTH_ACCOUNT_DISABLED,
   ERR_AUTH_ENCRYPTION_INVALID,
   ERR_AUTH_REQUEST_EXPIRED,
+  ERR_AUTH_MFA_TOKEN_INVALID,
+  ERR_AUTH_MFA_CODE_INVALID,
+  ERR_AUTH_MFA_LOCKED,
+  ERR_AUTH_MFA_NOT_CONFIGURED,
 } from "./auth-error-codes.ts";
 
 // Auth 域是 app 级的（不属于 @cloud/request 通用包），所以它的错误码三语文案放在这里，
@@ -31,6 +35,10 @@ const authErrorMessages: Record<string, Record<string, string>> = {
     [ERR_AUTH_ACCOUNT_DISABLED]: "This account is not available.",
     [ERR_AUTH_ENCRYPTION_INVALID]: "Login request could not be processed. Please try again.",
     [ERR_AUTH_REQUEST_EXPIRED]: "Login request expired. Please try again.",
+    [ERR_AUTH_MFA_TOKEN_INVALID]: "Verification session expired. Please sign in again.",
+    [ERR_AUTH_MFA_CODE_INVALID]: "Incorrect verification code.",
+    [ERR_AUTH_MFA_LOCKED]: "Too many incorrect codes. Please try again later.",
+    [ERR_AUTH_MFA_NOT_CONFIGURED]: "Two-factor authentication is not set up. Contact your administrator.",
   },
   "zh-CN": {
     [ERR_AUTH_MISSING_FIELDS]: "请填写必填项。",
@@ -44,6 +52,10 @@ const authErrorMessages: Record<string, Record<string, string>> = {
     [ERR_AUTH_ACCOUNT_DISABLED]: "账号不可用，请联系管理员。",
     [ERR_AUTH_ENCRYPTION_INVALID]: "登录请求无法处理，请重试。",
     [ERR_AUTH_REQUEST_EXPIRED]: "登录请求已过期，请重试。",
+    [ERR_AUTH_MFA_TOKEN_INVALID]: "验证会话已过期，请重新登录。",
+    [ERR_AUTH_MFA_CODE_INVALID]: "验证码不正确。",
+    [ERR_AUTH_MFA_LOCKED]: "验证码错误次数过多，请稍后再试。",
+    [ERR_AUTH_MFA_NOT_CONFIGURED]: "未配置双重验证，请联系管理员。",
   },
   ja: {
     [ERR_AUTH_MISSING_FIELDS]: "必須項目を入力してください。",
@@ -57,6 +69,10 @@ const authErrorMessages: Record<string, Record<string, string>> = {
     [ERR_AUTH_ACCOUNT_DISABLED]: "このアカウントは利用できません。",
     [ERR_AUTH_ENCRYPTION_INVALID]: "ログインリクエストを処理できませんでした。再度お試しください。",
     [ERR_AUTH_REQUEST_EXPIRED]: "ログインリクエストの有効期限が切れました。再度お試しください。",
+    [ERR_AUTH_MFA_TOKEN_INVALID]: "認証セッションの有効期限が切れました。もう一度サインインしてください。",
+    [ERR_AUTH_MFA_CODE_INVALID]: "確認コードが正しくありません。",
+    [ERR_AUTH_MFA_LOCKED]: "確認コードの誤りが多すぎます。しばらくしてからお試しください。",
+    [ERR_AUTH_MFA_NOT_CONFIGURED]: "二要素認証が設定されていません。管理者にお問い合わせください。",
   },
 };
 

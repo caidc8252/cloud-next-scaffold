@@ -3,13 +3,11 @@
 import { useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Activity,
   Building2,
   Check,
   ChevronLeft,
   ChevronRight,
   Globe,
-  HelpCircle,
   LogOut,
   Monitor,
   Moon,
@@ -272,21 +270,6 @@ export function UserMenu({ account, name, email }: UserMenuProps) {
                     </>
                   }
                   onClick={() => setView("lang")}
-                />
-              </div>
-
-              <div className="border-t border-line-subtle p-1">
-                <MenuRow
-                  icon={<Activity size={16} />}
-                  label={t("menu.activity")}
-                  sub={t("menu.activitySub")}
-                  onClick={() => go("/account/activity")}
-                />
-                <MenuRow
-                  icon={<HelpCircle size={16} />}
-                  label={t("menu.help")}
-                  trailing={<kbd className="rounded border border-line-default px-1.5 py-0.5 font-mono text-xs">?</kbd>}
-                  onClick={() => go("/account/help")}
                 />
               </div>
 

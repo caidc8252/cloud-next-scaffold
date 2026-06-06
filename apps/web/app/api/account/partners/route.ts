@@ -1,17 +1,17 @@
 import { assertPermissions } from "@cloud/permissions/server";
 import { successResponse } from "@cloud/request/server";
+import "@/lib/account-error-messages";
 import { withApiHandler } from "@/lib/api-handler";
-import { getPartners } from "@/app/(portal)/account/_server/account-store";
+import { loadAccountPartners } from "@/app/(portal)/account/_server/partner-service";
 
 /**
- * The partners (entities) the signed-in user belongs to, for "Switch partner".
+ * The partners (companies) the signed-in user belongs to — for "Switch partner".
  *
- * Each item carries its contract-type chips, destination portal, join date,
- * access type and locked state — pre-derived for display. Login-only. A real
- * service would build this from the user's EntityUserRelationship rows joined
- * to each entity's live contracts.
+ * All SysPartnerUser rows (incl. LOCKED) ⋈ SysPartner ⋈ non-terminated contract
+ * types; `isCurrent` from session.currentPartnerId. Login-only. Switching itself
+ * reuses POST /api/auth/select-partner.
  */
 export const GET = withApiHandler(async () => {
-  await assertPermissions({ all: [] });
-  return successResponse(getPartners());
+  const session = await assertPermissions({ all: [] });
+  return successResponse(await loadAccountPartners(session.userId, session.currentPartnerId));
 });

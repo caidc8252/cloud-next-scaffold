@@ -1,15 +1,16 @@
 import { requireSession } from "@cloud/permissions/server";
 import { PageBody } from "@/app/(portal)/_components/page-body";
-import { getPartners } from "@/app/(portal)/account/_server/account-store";
+import { loadAccountPartners } from "@/app/(portal)/account/_server/partner-service";
 import { PartnersPageClient } from "@/app/(portal)/account/_components/partners-page";
 
-// "Switch partner" — the entities the user belongs to, each opening in its own
-// portal. Login-only; reached from the user menu.
+// "Switch partner" — the companies the user belongs to. Login-only; reached from
+// the user menu. Switching reuses POST /api/auth/select-partner.
 export default async function PartnersPage() {
-  await requireSession();
+  const session = await requireSession();
+  const partners = await loadAccountPartners(session.userId, session.currentPartnerId);
   return (
     <PageBody>
-      <PartnersPageClient initialPartners={getPartners()} />
+      <PartnersPageClient initialPartners={partners} />
     </PageBody>
   );
 }

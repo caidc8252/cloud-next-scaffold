@@ -2,171 +2,146 @@
 
 import { useState } from "react";
 import { Shield } from "lucide-react";
-import { Badge, Button, Switch, toast } from "@cloud/ui/components/ui";
+import { Badge, Button, Input, Modal, toast } from "@cloud/ui/components/ui";
 import { request } from "@cloud/request/client";
 import { toastError } from "@cloud/request/error-toast";
 import { useTranslations } from "@cloud/i18n/client";
-import type { SecurityState } from "@/app/(portal)/account/_shared/types";
+import type { AccountSecurity } from "@/app/(portal)/account/_shared/types";
 import { UPCard, UPHeader, UPRow } from "./up-chrome";
 import { PasswordChangeFlow } from "./password-change-flow";
-import { AuthenticatorReconfigureFlow } from "./authenticator-reconfigure-flow";
+import { MfaEnrollFlow } from "./mfa-enroll-flow";
 
-const SMS_NUMBER = "+1 (415) ••• 0142";
-
-export function AccountSecurityPageClient({ initialSecurity }: { initialSecurity: SecurityState }) {
+export function AccountSecurityPageClient({ initialSecurity }: { initialSecurity: AccountSecurity }) {
   const t = useTranslations("account");
-  const [security, setSecurity] = useState<SecurityState>(initialSecurity);
+  const [security, setSecurity] = useState(initialSecurity);
   const [pwFlow, setPwFlow] = useState(false);
-  const [authReconfig, setAuthReconfig] = useState(false);
+  const [enrollFlow, setEnrollFlow] = useState(false);
+  const [disableOpen, setDisableOpen] = useState(false);
+  const [disableCode, setDisableCode] = useState("");
+  const [disabling, setDisabling] = useState(false);
 
-  const mfaEnabled = true; // authenticator app is always the active factor in this demo
-  const mfaLabel = security.authenticator.app;
+  const active = security.mfaStatus === "ACTIVE";
 
-  async function patchToggle(patch: { magicLink?: boolean; smsBackup?: boolean }) {
-    // optimistic
-    setSecurity((s) => ({ ...s, ...patch }));
+  // Stable "now" for the render (reading Date.now() during render is impure).
+  const [now] = useState(() => Date.now());
+  const days =
+    security.passwordChangedTimestamp === null
+      ? null
+      : Math.floor((now - new Date(security.passwordChangedTimestamp).getTime()) / 86_400_000);
+  const passwordSub =
+    days === null
+      ? t("security.password.metaUnknown")
+      : t("security.password.meta", { days, expires: Math.max(0, security.passwordExpiryDays - days) });
+
+  async function refresh() {
     try {
-      const res = await request.patch<SecurityState>("/api/account/security", patch);
+      const res = await request.get<AccountSecurity>("/api/account/mfa");
       setSecurity(res.data);
-    } catch (err) {
-      setSecurity(initialSecurity);
-      toastError(err);
+    } catch {
+      // non-fatal; the page keeps the last known state
     }
   }
 
-  async function finishPassword() {
+  async function disable() {
+    setDisabling(true);
     try {
-      const res = await request.post<SecurityState>("/api/account/security/password");
+      const res = await request.post<AccountSecurity>("/api/account/mfa/disable", { code: disableCode.trim() });
       setSecurity(res.data);
-      toast.success(t("security.toast.passwordChanged"));
-    } catch (err) {
-      toastError(err);
+      setDisableOpen(false);
+      setDisableCode("");
+      toast.success(t("security.mfa.disabledToast"));
+    } catch (e) {
+      toastError(e);
+    } finally {
+      setDisabling(false);
     }
   }
-
-  async function finishAuthenticator() {
-    try {
-      const res = await request.post<SecurityState>("/api/account/security/mfa/authenticator");
-      setSecurity(res.data);
-      toast.success(t("security.toast.authReconfigured"));
-    } catch (err) {
-      toastError(err);
-    }
-  }
-
-  async function revokeTokens() {
-    try {
-      const res = await request.post<SecurityState>("/api/account/security/revoke-tokens");
-      setSecurity(res.data);
-      toast.error(t("security.toast.tokensRevoked"));
-    } catch (err) {
-      toastError(err);
-    }
-  }
-
-  const authMeta = security.authenticator.reconfiguredAt
-    ? `${security.authenticator.app} · ${t("security.authenticator.reconfigured", { when: security.authenticator.reconfiguredAt })}`
-    : `${security.authenticator.app} · ${security.authenticator.addedLabel}`;
 
   return (
     <div className="mx-auto max-w-3xl">
       <UPHeader icon={<Shield size={20} />} title={t("security.title")} sub={t("security.sub")} />
 
       <div className="flex flex-col gap-4">
-        {/* Sign-in */}
         <UPCard title={t("security.signin.title")} sub={t("security.signin.sub")}>
           <UPRow
             title={t("security.password.title")}
-            sub={t("security.password.meta", {
-              days: security.password.lastChangedDaysAgo,
-              expires: security.password.expiresInDays,
-            })}
+            sub={passwordSub}
             trailing={
               <Button variant="secondary" onClick={() => setPwFlow(true)}>
                 {t("security.changePassword")}
               </Button>
             }
           />
-          <UPRow
-            title={t("security.magicLink.title")}
-            sub={t("security.magicLink.sub")}
-            trailing={<Switch checked={security.magicLink} onCheckedChange={(v) => patchToggle({ magicLink: v })} />}
-          />
         </UPCard>
 
-        {/* Multi-factor */}
         <UPCard title={t("security.mfa.title")} sub={t("security.mfa.sub")}>
           <UPRow
             title={
               <>
                 {t("security.authenticator.title")}
-                <Badge tone="success">{t("security.authenticator.active")}</Badge>
+                <Badge tone={active ? "success" : "neutral"}>
+                  {active ? t("security.authenticator.active") : t("security.authenticator.off")}
+                </Badge>
               </>
             }
-            sub={authMeta}
+            sub={active ? t("security.authenticator.activeSub") : t("security.authenticator.offSub")}
             trailing={
-              <Button variant="ghost" size="sm" onClick={() => setAuthReconfig(true)}>
-                {t("security.reconfigure")}
-              </Button>
-            }
-          />
-          <UPRow
-            title={t("security.sms.title")}
-            sub={SMS_NUMBER}
-            trailing={<Switch checked={security.smsBackup} onCheckedChange={(v) => patchToggle({ smsBackup: v })} />}
-          />
-        </UPCard>
-
-        {/* Connected services */}
-        <UPCard title={t("security.connected.title")} sub={t("security.connected.sub")}>
-          {security.connectedServices.map((svc) => (
-            <UPRow
-              key={svc.name}
-              title={
-                <>
-                  {svc.name}
-                  {svc.on && <Badge tone="success">{t("security.connected.linked")}</Badge>}
-                </>
-              }
-              sub={svc.sub}
-              trailing={
-                <Button variant="ghost" size="sm" onClick={() => toast(t("security.toast.opening", { name: svc.name }))}>
-                  {svc.on ? t("security.manage") : t("security.connect")}
+              active ? (
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setEnrollFlow(true)}>
+                    {t("security.reconfigure")}
+                  </Button>
+                  <Button variant="ghost-danger" size="sm" onClick={() => setDisableOpen(true)}>
+                    {t("security.disable")}
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="primary" size="sm" onClick={() => setEnrollFlow(true)}>
+                  {t("security.enable")}
                 </Button>
-              }
-            />
-          ))}
-        </UPCard>
-
-        {/* Danger zone */}
-        <UPCard title={t("security.danger.title")} danger>
-          <UPRow
-            title={t("security.revoke.title")}
-            sub={t("security.revoke.sub", { count: security.apiTokenCount })}
-            trailing={
-              <Button variant="danger" size="sm" disabled={security.apiTokenCount === 0} onClick={revokeTokens}>
-                {t("security.revokeBtn")}
-              </Button>
+              )
             }
           />
         </UPCard>
       </div>
 
       {pwFlow && (
-        <PasswordChangeFlow
-          mfaEnabled={mfaEnabled}
-          mfaLabel={mfaLabel}
-          onClose={() => setPwFlow(false)}
-          onDone={finishPassword}
-        />
+        <PasswordChangeFlow mfaEnable={security.mfaEnable} onClose={() => setPwFlow(false)} onDone={refresh} />
       )}
-      {authReconfig && (
-        <AuthenticatorReconfigureFlow
-          appName={security.authenticator.app}
-          onClose={() => setAuthReconfig(false)}
-          onDone={finishAuthenticator}
-        />
+      {enrollFlow && (
+        <MfaEnrollFlow reconfigure={active} onClose={() => setEnrollFlow(false)} onDone={(s) => setSecurity(s)} />
       )}
+
+      <Modal
+        open={disableOpen}
+        onClose={() => !disabling && setDisableOpen(false)}
+        size="sm"
+        title={t("security.disableModal.title")}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setDisableOpen(false)} disabled={disabling}>
+              {t("mfa.cancel")}
+            </Button>
+            <Button variant="danger" loading={disabling} disabled={disableCode.length !== 6} onClick={disable}>
+              {t("security.disable")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-3">
+          <p className="text-sm leading-relaxed text-content-secondary">{t("security.disableModal.desc")}</p>
+          <Input
+            inputSize="lg"
+            inputMode="numeric"
+            maxLength={6}
+            value={disableCode}
+            autoFocus
+            placeholder="000000"
+            className="text-center font-mono text-lg tracking-widest"
+            onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          />
+        </div>
+      </Modal>
     </div>
   );
 }

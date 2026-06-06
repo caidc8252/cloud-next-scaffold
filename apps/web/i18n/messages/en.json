@@ -37,13 +37,10 @@
       "aria": "{name} menu",
       "profile": "My profile",
       "security": "Account & security",
-      "securitySub": "Password · 2FA · Sessions",
+      "securitySub": "Password · 2FA",
       "partners": "Switch partner",
       "theme": "Theme",
       "language": "Language",
-      "activity": "My activity",
-      "activitySub": "Recent actions across the workspace",
-      "help": "Help center",
       "signOut": "Sign out"
     },
     "theme": {
@@ -67,7 +64,7 @@
     "signOut": {
       "title": "Sign out?",
       "body": "You'll be returned to the sign-in screen on this device. Any unsaved drafts in open wizards may be lost.",
-      "note": "Active sessions on other devices will continue. Sign them out from Account & security → Sessions.",
+      "note": "Active sessions on other devices will continue. Sign them out from Account & security.",
       "cancel": "Cancel",
       "confirm": "Sign out"
     },
@@ -92,64 +89,28 @@
         "email": {
           "verify-old": "Change email · verify it's you",
           "new": "Enter new email",
-          "verify-new": "Verify new email",
-          "done": "Email updated"
+          "verify-new": "Verify new email"
         },
         "username": {
           "verify-old": "Change username · verify it's you",
-          "new": "Choose new username",
-          "done": "Username updated"
+          "new": "Choose new username"
         }
       },
-      "verifyOldDesc": "To protect your account, enter the 6-digit code we sent to your current email {email}.",
+      "verifyOldDesc": "To protect your account, enter the 6-digit code we sent to your current email {email}. (Dev: the code is printed to the server log.)",
       "newEmailDesc": "Enter the new email address you want to use to sign in.",
       "newUsernameDesc": "Pick a new username. This is your login handle.",
       "newEmailLabel": "New email",
       "newUsernameLabel": "New username",
-      "verifyNewDesc": "Enter the 6-digit code we sent to your new email {email}.",
-      "doneEmail": "Your email is now {email}. For security you'll be signed out — sign back in with your new email.",
+      "verifyNewDesc": "Enter the 6-digit code we sent to your new email {email}. (Dev: printed to the server log.)",
+      "doneEmail": "Your email is now {email}.",
       "doneUsername": "Your username is now @{username}.",
       "resend": "Resend code",
-      "demoCode": "Demo code:",
       "cancel": "Cancel",
       "verify": "Verify",
       "back": "Back",
       "continue": "Continue",
       "changeUsername": "Change username",
-      "verifyChange": "Verify & change",
-      "signOut": "Sign out",
-      "done": "Done",
-      "err": {
-        "incorrectCode": "Incorrect code. Check the latest code and try again.",
-        "invalidEmail": "Enter a valid email address.",
-        "sameEmail": "That is already your email.",
-        "invalidUsername": "3–32 chars: letters, numbers, dot, dash, underscore.",
-        "sameUsername": "That is already your username."
-      }
-    },
-    "security": {
-      "title": "Account & security",
-      "sub": "Sign-in credentials, multi-factor and connected services",
-      "signin": { "title": "Sign-in", "sub": "Password rotates every 90 days per company policy" },
-      "password": { "title": "Password", "meta": "Last changed {days} days ago · expires in {expires} days" },
-      "changePassword": "Change password",
-      "magicLink": { "title": "Email login link", "sub": "Sign in with a one-time link instead of a password" },
-      "mfa": { "title": "Multi-factor authentication", "sub": "At least one factor is required for admin accounts" },
-      "authenticator": { "title": "Authenticator app", "active": "Active", "reconfigured": "reconfigured {when}" },
-      "reconfigure": "Reconfigure",
-      "sms": { "title": "SMS backup" },
-      "connected": { "title": "Connected services", "sub": "Single sign-on and external identity providers", "linked": "Linked" },
-      "manage": "Manage",
-      "connect": "Connect",
-      "danger": { "title": "Danger zone" },
-      "revoke": { "title": "Revoke all API tokens", "sub": "Invalidate {count} personal access tokens. Integrations will need to reauthenticate." },
-      "revokeBtn": "Revoke tokens",
-      "toast": {
-        "passwordChanged": "Password changed",
-        "authReconfigured": "Authenticator reconfigured",
-        "tokensRevoked": "All tokens revoked",
-        "opening": "Opening {name}"
-      }
+      "verifyChange": "Verify & change"
     },
     "password": {
       "title": {
@@ -161,11 +122,8 @@
       "verifyOldDesc": "To change your password, first confirm your current password.",
       "currentLabel": "Current password",
       "currentPlaceholder": "Enter current password",
-      "mfaNote": "Two-factor is on — you'll confirm a code from {label} next.",
-      "demoPw": "Demo password:",
-      "mfaDesc": "Enter the 6-digit code from {label} to authorize this change.",
-      "useNewCode": "Use a new code",
-      "demoCode": "Demo code:",
+      "mfaNote": "Two-factor is on — you'll confirm a code from your authenticator app next.",
+      "mfaDesc": "Enter the 6-digit code from your authenticator app to authorize this change.",
       "newDesc": "Choose a new password. It must meet company policy and will rotate again in 90 days.",
       "newLabel": "New password",
       "confirmLabel": "Confirm new password",
@@ -182,80 +140,77 @@
       "cancel": "Cancel",
       "continue": "Continue",
       "back": "Back",
-      "verify": "Verify",
       "change": "Change Password",
       "done": "Done",
       "err": {
-        "wrongCurrent": "Current password is incorrect.",
-        "wrongCode": "Incorrect code. Check your authenticator app for the current code.",
         "reqsNotMet": "New password does not meet every requirement.",
         "mismatch": "The two passwords do not match."
       }
     },
-    "authn": {
-      "title": {
-        "verify": "Reconfigure authenticator · confirm it's you",
-        "scan": "Scan the new setup key",
-        "confirm": "Confirm the new authenticator",
-        "done": "Authenticator updated"
+    "security": {
+      "title": "Account & security",
+      "sub": "Sign-in credentials and multi-factor authentication",
+      "signin": { "title": "Sign-in", "sub": "Password rotates every 90 days per company policy" },
+      "password": {
+        "title": "Password",
+        "meta": "Last changed {days} days ago · expires in {expires} days",
+        "metaUnknown": "Rotates every 90 days per company policy"
       },
-      "verifyDesc": "Changing your authenticator is sensitive, so first confirm a code from your current authenticator.",
-      "scanDesc": "In your authenticator app, remove the old {app} entry, then scan this new setup key.",
-      "setupKeyLabel": "Can't scan? Enter this setup key",
-      "confirmDesc": "Enter the 6-digit code shown for the new {app} entry to confirm it's working.",
-      "openApp": "Open your authenticator app for the current code.",
-      "demoCode": "Demo code:",
-      "doneDesc": "Your authenticator app has been reconfigured. The previous setup no longer works.",
+      "changePassword": "Change password",
+      "mfa": {
+        "title": "Multi-factor authentication",
+        "sub": "An authenticator app adds a second factor at sign-in",
+        "disabledToast": "Two-factor disabled"
+      },
+      "authenticator": {
+        "title": "Authenticator app",
+        "active": "Active",
+        "off": "Not set up",
+        "activeSub": "A code from your authenticator is required at sign-in",
+        "offSub": "Add an authenticator app to protect your account"
+      },
+      "reconfigure": "Reconfigure",
+      "disable": "Disable",
+      "enable": "Enable",
+      "disableModal": {
+        "title": "Disable two-factor?",
+        "desc": "Enter a current code from your authenticator app to turn off two-factor authentication."
+      }
+    },
+    "mfa": {
       "cancel": "Cancel",
-      "continue": "Continue",
       "back": "Back",
-      "scanned": "I've scanned it",
-      "confirm": "Confirm",
       "done": "Done",
-      "err": {
-        "wrongCurrent": "Incorrect code. Check your current authenticator.",
-        "wrongNew": "That code doesn't match. Scan the new key, then enter its current code."
+      "enroll": {
+        "enableTitle": "Set up authenticator app",
+        "reconfigureTitle": "Reconfigure authenticator app",
+        "doneTitle": "Authenticator ready",
+        "scanDesc": "Scan this QR code with your authenticator app, or enter the setup key manually.",
+        "setupKey": "Can't scan? Enter this setup key",
+        "scanned": "I've scanned it",
+        "confirmDesc": "Enter the 6-digit code shown in your authenticator app to confirm it's working.",
+        "confirm": "Confirm",
+        "doneDesc": "Your authenticator app is set up. You'll be asked for a code at sign-in."
       }
     },
     "partners": {
       "title": "Switch partner",
-      "sub": "You belong to {count, plural, one {# partner} other {# partners}} across {portals, plural, one {# portal} other {# portals}}. Each partner opens in its own portal.",
+      "sub": "You belong to {count, plural, one {# company} other {# companies}}.",
       "joined": "Joined {date}",
       "adminAccess": "Admin access",
       "roleAccess": "Role-based access",
       "locked": "Locked",
       "noContract": "No active contract",
       "confirm": {
-        "title": "Open {name} in the {portal}?",
-        "body": "This partner runs on a separate portal. You'll leave the Admin Console and continue in the {portal}. Any unsaved changes here will be lost.",
-        "leave": "Leave & continue",
-        "stay": "Stay here"
+        "title": "Switch to {name}?",
+        "body": "You'll switch your active company to {name} and the workspace will reload.",
+        "stay": "Cancel",
+        "leave": "Switch"
       },
       "toast": {
         "locked": "Access locked · {name}",
-        "current": "You're already in the {portal}",
-        "opening": "Opening {portal} · {name}"
+        "current": "You're already in {name}"
       }
-    },
-    "activity": {
-      "title": "My activity",
-      "sub": "Everything you've done across this workspace in the past 30 days",
-      "export": "Export CSV"
-    },
-    "help": {
-      "title": "Help center",
-      "sub": "Guides, references and direct support for the admin console",
-      "searchPlaceholder": "Search articles, e.g. KYC, role inheritance, webhook…",
-      "articles": "{count} articles",
-      "popular": "Popular questions",
-      "results": "Results · {count}",
-      "empty": "No articles match \"{q}\". Try a different keyword or contact support below.",
-      "stuck": { "title": "Still stuck?", "sub": "Reach the platform team directly. Average response is under 4 hours during business days." },
-      "chat": "Start a chat",
-      "chatOpened": "Support chat opened",
-      "email": "Email support@carbon",
-      "shortcuts": "Keyboard shortcuts",
-      "opening": "Opening {name}"
     }
   }
 }

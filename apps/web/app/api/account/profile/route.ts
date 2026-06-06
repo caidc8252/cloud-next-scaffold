@@ -1,45 +1,44 @@
 import { z } from "zod";
-import { assertPermissions } from "@cloud/permissions/server";
+import { prisma } from "@cloud/db";
+import { assertPermissions, updateSession } from "@cloud/permissions/server";
 import { successResponse, badRequestResponse } from "@cloud/request/server";
 import { ERR_INVALID_JSON } from "@cloud/request/error-codes";
+import {
+  ERR_ACCOUNT_NICKNAME_REQUIRED,
+  ERR_ACCOUNT_COUNTRY_INVALID,
+} from "@/lib/account-error-codes";
+import "@/lib/account-error-messages";
 import { withApiHandler } from "@/lib/api-handler";
-import { getProfile, updateProfile } from "@/app/(portal)/account/_server/account-store";
+import { buildSessionSnapshot } from "@/lib/session-snapshot";
+import { toAccountProfile } from "@/app/(portal)/account/_server/account-mapper";
 
 /**
  * The signed-in user's own profile (display name, country, sign-in identity).
  *
- * Read by the "My profile" page and the sidebar user card. Login-only — every
- * authenticated user manages their own profile, no extra permission required.
- * Currently returns the mock store; swap the store call for a real service later.
+ * Login-only — every authenticated user manages their own profile, no extra
+ * permission. Read by the "My profile" page.
  */
 export const GET = withApiHandler(async () => {
-  await assertPermissions({ all: [] });
-  return successResponse(getProfile());
+  const session = await assertPermissions({ all: [] });
+  const user = await prisma.sysUser.findUniqueOrThrow({ where: { userId: session.userId } });
+  return successResponse(toAccountProfile(user));
 });
 
-// Display name and country are edited inline on the profile page; email and
-// username arrive only after the client-side verified change flow completes.
-const profilePatchSchema = z
+const patchSchema = z
   .object({
-    name: z.string().trim().min(1).max(120),
-    country: z.string().trim().length(2),
-    email: z.email(),
-    username: z
-      .string()
-      .trim()
-      .regex(/^[a-z0-9._-]{3,32}$/i),
+    nickName: z.string().trim().min(1).max(100),
+    country: z.string().trim().length(2).nullable(),
   })
   .partial();
 
 /**
- * Update the signed-in user's profile.
+ * Update the signed-in user's editable profile fields (display name, country).
  *
- * Called when the profile page saves name/country, or when the email/username
- * change flow applies its verified new value. Persists to the shared mock store
- * so the change is reflected on the profile page and the sidebar card alike.
+ * Rebuilds the session snapshot afterwards so the top bar / user card reflect a
+ * renamed nickName without a re-login.
  */
 export const PATCH = withApiHandler(async (req: Request) => {
-  await assertPermissions({ all: [] });
+  const session = await assertPermissions({ all: [] });
 
   let raw: unknown;
   try {
@@ -48,8 +47,20 @@ export const PATCH = withApiHandler(async (req: Request) => {
     return badRequestResponse(ERR_INVALID_JSON);
   }
 
-  const parsed = profilePatchSchema.safeParse(raw);
-  if (!parsed.success) return badRequestResponse();
+  const parsed = patchSchema.safeParse(raw);
+  if (!parsed.success) {
+    const hasCountryIssue = parsed.error.issues.some((i) => i.path[0] === "country");
+    return badRequestResponse(hasCountryIssue ? ERR_ACCOUNT_COUNTRY_INVALID : ERR_ACCOUNT_NICKNAME_REQUIRED);
+  }
 
-  return successResponse(updateProfile(parsed.data));
+  const data: { nickName?: string; country?: string | null } = {};
+  if (parsed.data.nickName !== undefined) data.nickName = parsed.data.nickName;
+  if (parsed.data.country !== undefined) data.country = parsed.data.country;
+
+  const user = await prisma.sysUser.update({ where: { userId: session.userId }, data });
+
+  const snapshot = await buildSessionSnapshot(session.userId, session.currentPartnerId);
+  if (snapshot) await updateSession(snapshot);
+
+  return successResponse(toAccountProfile(user));
 });

@@ -6,6 +6,8 @@ const authConfigSchema = z.object({
   AUTH_PASSWORD_LOCK_MINUTES: z.coerce.number().int().positive().default(30),
   AUTH_LOGIN_TIMESTAMP_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
   AUTH_LOGIN_RSA_PRIVATE_KEY: z.string().min(1),
+  // 32 字节、base64 编码的 AES 密钥，用于加密 SysMfaInfo.secretEncrypted（TOTP 密钥）。
+  AUTH_MFA_SECRET_KEY: z.string().min(1),
 });
 
 export type AuthConfig = {
@@ -13,6 +15,7 @@ export type AuthConfig = {
   lockDurationMinutes: number;
   timestampWindowMs: number;
   rsaPrivateKeyPem: string;
+  mfaSecretKey: string;
 };
 
 /** 纯函数：从环境变量解析 auth 运行期配置。密钥/阈值由 env 提供，便于单测注入。 */
@@ -23,5 +26,6 @@ export function parseAuthConfig(env: Record<string, string | undefined>): AuthCo
     lockDurationMinutes: parsed.AUTH_PASSWORD_LOCK_MINUTES,
     timestampWindowMs: parsed.AUTH_LOGIN_TIMESTAMP_WINDOW_SECONDS * 1000,
     rsaPrivateKeyPem: parsed.AUTH_LOGIN_RSA_PRIVATE_KEY,
+    mfaSecretKey: parsed.AUTH_MFA_SECRET_KEY,
   };
 }

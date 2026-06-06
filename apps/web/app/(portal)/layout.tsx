@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { Layout, Sidebar, type SidebarSection } from "@cloud/ui/components/layout";
 import { SidebarProvider, SIDEBAR_COOKIE } from "@cloud/ui";
 import { requireSession } from "@cloud/permissions/server";
-import { getProfile } from "./account/_server/account-store";
 import { getSessionMenus } from "@/lib/session-menus";
 import { UserMenu } from "./_components/user-menu";
 import { getMenuIcon } from "./_components/menu-icon";
@@ -85,9 +84,6 @@ export default async function PortalLayout({
 }) {
   const env = getEnv();
   const session = await requireSession();
-  // The sidebar user card reads the mock profile (same store the account route
-  // handlers write), so a profile/identity edit is reflected here after refresh.
-  const profile = getProfile();
   const cookieStore = await cookies();
   const defaultCollapsed = cookieStore.get(SIDEBAR_COOKIE)?.value === "1";
 
@@ -110,7 +106,11 @@ export default async function PortalLayout({
             }}
             sections={buildSidebarSections(menus)}
             footer={
-              <UserMenu account={profile.username} name={profile.name} email={profile.email} />
+              <UserMenu
+                account={session.username}
+                name={session.displayName ?? session.username}
+                email={session.email ?? ""}
+              />
             }
           />
         }

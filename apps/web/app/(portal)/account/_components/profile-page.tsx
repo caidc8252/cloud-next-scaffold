@@ -16,7 +16,7 @@ import {
 import { request } from "@cloud/request/client";
 import { toastError } from "@cloud/request/error-toast";
 import { useTranslations } from "@cloud/i18n/client";
-import type { Country, Profile } from "@/app/(portal)/account/_shared/types";
+import type { AccountProfile, Country } from "@/app/(portal)/account/_shared/types";
 import { UPCard, UPHeader } from "./up-chrome";
 import { IdentityChangeFlow } from "./identity-change-flow";
 
@@ -25,8 +25,6 @@ function initialsOf(name: string) {
   return (parts.slice(0, 2).map((w) => w[0] ?? "").join("") || "?").toUpperCase();
 }
 
-// One labelled row inside a profile card: label (+ optional value) on the left,
-// control on the right.
 function FRow({
   label,
   value,
@@ -59,33 +57,36 @@ export function ProfilePageClient({
   initialProfile,
   countries,
 }: {
-  initialProfile: Profile;
+  initialProfile: AccountProfile;
   countries: Country[];
 }) {
   const t = useTranslations("account");
   const router = useRouter();
 
-  const [saved, setSaved] = useState<Profile>(initialProfile);
-  const [draft, setDraft] = useState<Profile>(initialProfile);
+  const [saved, setSaved] = useState<AccountProfile>(initialProfile);
+  const [draft, setDraft] = useState<{ nickName: string; country: string | null }>({
+    nickName: initialProfile.nickName,
+    country: initialProfile.country,
+  });
   const [flow, setFlow] = useState<"email" | "username" | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const dirty = draft.name !== saved.name || draft.country !== saved.country;
+  const dirty = draft.nickName !== saved.nickName || draft.country !== saved.country;
 
   async function save() {
-    if (!draft.name.trim()) {
+    if (!draft.nickName.trim()) {
       toast.error(t("profile.nameRequired"));
       return;
     }
     setBusy(true);
     try {
-      const res = await request.patch<Profile>("/api/account/profile", {
-        name: draft.name.trim(),
+      const res = await request.patch<AccountProfile>("/api/account/profile", {
+        nickName: draft.nickName.trim(),
         country: draft.country,
       });
       setSaved(res.data);
-      setDraft(res.data);
-      router.refresh(); // reflect the rename in the sidebar user card
+      setDraft({ nickName: res.data.nickName, country: res.data.country });
+      router.refresh(); // reflect rename in the sidebar/top bar (session rebuilt server-side)
       toast.success(t("profile.saved"));
     } catch (err) {
       toastError(err);
@@ -94,14 +95,10 @@ export function ProfilePageClient({
     }
   }
 
-  async function applyIdentity(patch: Partial<Profile>) {
-    try {
-      const res = await request.patch<Profile>("/api/account/profile", patch);
-      setSaved(res.data);
-      router.refresh();
-    } catch (err) {
-      toastError(err);
-    }
+  function onIdentityApplied(next: AccountProfile) {
+    setSaved(next);
+    setFlow(null);
+    router.refresh();
   }
 
   return (
@@ -109,37 +106,37 @@ export function ProfilePageClient({
       <UPHeader icon={<User size={20} />} title={t("profile.title")} sub={t("profile.sub")} />
 
       <UPCard>
-        {/* Identity */}
         <div className="flex items-center gap-4 border-b border-line-subtle px-5 py-4">
           <div className="flex size-13 flex-none items-center justify-center rounded-xl bg-primary text-lg font-semibold text-primary-foreground">
-            {initialsOf(draft.name)}
+            {initialsOf(draft.nickName)}
           </div>
           <div className="min-w-0">
-            <div className="text-lg font-semibold text-content-primary">{draft.name || "—"}</div>
+            <div className="text-lg font-semibold text-content-primary">{draft.nickName || "—"}</div>
             <div className="font-mono text-xs text-content-tertiary">@{saved.username}</div>
           </div>
         </div>
 
-        {/* Personal details */}
         <div className="border-b border-line-subtle pb-2">
           <SectionTitle>{t("profile.personal")}</SectionTitle>
           <FRow
             label={t("profile.displayName")}
             control={
               <Input
-                value={draft.name}
+                value={draft.nickName}
                 placeholder={t("profile.displayNamePlaceholder")}
-                invalid={!draft.name.trim()}
-                onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+                invalid={!draft.nickName.trim()}
+                onChange={(e) => setDraft((d) => ({ ...d, nickName: e.target.value }))}
               />
             }
           />
           <FRow
             label={t("profile.country")}
             control={
-              <Select value={draft.country} onValueChange={(v) => setDraft((d) => ({ ...d, country: v ?? "" }))}>
+              <Select
+                value={draft.country ?? ""}
+                onValueChange={(v) => setDraft((d) => ({ ...d, country: v ?? null }))}
+              >
                 <SelectTrigger className="w-full">
-                  {/* base-ui Select.Value needs a mapper to show the label, not the raw code */}
                   <SelectValue>
                     {(code) => countries.find((c) => c.code === code)?.name ?? String(code ?? "")}
                   </SelectValue>
@@ -156,7 +153,6 @@ export function ProfilePageClient({
           />
         </div>
 
-        {/* Sign-in & security */}
         <div className="pb-2">
           <SectionTitle>{t("profile.signin")}</SectionTitle>
           <FRow
@@ -183,9 +179,12 @@ export function ProfilePageClient({
           />
         </div>
 
-        {/* Save bar — always present (like the prototype); actions disabled when clean */}
         <div className="flex justify-end gap-2 border-t border-line-subtle bg-surface-3 px-5 py-3.5">
-          <Button variant="ghost" onClick={() => setDraft(saved)} disabled={!dirty || busy}>
+          <Button
+            variant="ghost"
+            onClick={() => setDraft({ nickName: saved.nickName, country: saved.country })}
+            disabled={!dirty || busy}
+          >
             {t("profile.discard")}
           </Button>
           <Button variant="primary" iconLeft={<Check size={16} />} onClick={save} disabled={!dirty} loading={busy}>
@@ -195,7 +194,12 @@ export function ProfilePageClient({
       </UPCard>
 
       {flow && (
-        <IdentityChangeFlow mode={flow} user={saved} onClose={() => setFlow(null)} onApply={applyIdentity} />
+        <IdentityChangeFlow
+          mode={flow}
+          profile={saved}
+          onClose={() => setFlow(null)}
+          onApplied={onIdentityApplied}
+        />
       )}
     </div>
   );
