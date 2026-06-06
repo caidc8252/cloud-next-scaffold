@@ -145,6 +145,29 @@ Tab 上的计数 chip：`ml-1 h-4 min-w-4 rounded-full bg-surface-3 px-1 text-xs
 
 通用原则：**包装 div 必须有职责**（间距分组 / 滚动 / flex 宽度约束）。只有一个子元素且类可以并到子元素上的包装层一律去掉（Card / Button / Input 的根都接受 `className`；注意带 `prefix` 的 Input className 落在内层，需要外包一层做宽度）。
 
+### 3.1 行对齐
+
+**行头带名称/标题、行尾带操作的行，一律垂直居中对齐**（`items-center`）——行头标签与行尾操作落在同一条中线上，不用 `items-start`。这是通用规则，凡是这种形态都适用：区块卡片的行列表（§8.2）、带行尾按钮/开关的设置行/列表行、详情页头（§2.3）、带 `CardAction` 的卡内头带等。
+
+唯一例外：行头是确实多行的块（标题 + 副行 + 元信息）、且操作要对齐到**第一行**时，才改用顶端对齐（`items-start`）——但默认是居中，只有多行行头确有需要时才用 `items-start`。
+
+### 3.2 行内操作的 hover
+
+当一行本身有 hover（`hover:bg-surface-hover`）**且**带行内操作图标时，每个图标的 hover 必须**与行的 hover 区分开**——默认 `ghost` 按钮的 hover 也是 `bg-surface-hover`，落在已 hover 的行上自己的 hover 就看不见了。surface token 是实色（非半透明），所以行内控件要**换 token**，不能指望叠加变深：
+
+- **中性操作**（编辑、更多…）：`ghost` 提一档——`className="hover:bg-surface-active"`（比行深一级）。
+- **危险操作**（删除）：`variant="ghost-danger"`——hover 是 `error-bg` 红色 tint，与中性行 hover 永不撞色，还顺带表达"危险"语义。
+- 操作的 `onClick` 一律 `e.stopPropagation()`，避免触发行的 `onRowClick`；图标用 `flex items-center` 成簇（§3.1）。危险操作仍走确认 Modal（§8.3）。
+
+参考：app-publish 列表表格(行尾的编辑 + 删除)。
+
+### 3.3 图标按钮操作与危险语义
+
+两条不变量，凡是出现操作的地方都适用——不只是滚动的列表行。它们约束的是**变体选择**，不是"能不能加这个操作"：
+
+- **icon-only 的操作按钮只能是 `ghost`（中性）或 `ghost-danger`（危险）——绝不用 `secondary` / `primary` / 带边框。** 纯图标没有文字标签，强调只能靠 hover token，不能靠填充背景（§3.2）。这是对行内图标唯一的硬约束。它**不**禁止行里出现带文字的操作按钮：当某个操作确实够分量（Approve、Activate、行级主 CTA），就用带文字的 `secondary` / `primary` ——只要保持有文字、语义清楚，别把一个裸图标提成填充变体。
+- **所有危险操作必须带 danger 变体，无一例外。** 删除 / 移除 / 撤销 / 终止 / 重置 / 断开：图标按钮形态用 `variant="ghost-danger"`，文字按钮或弹窗 footer 形态用 `variant="danger"`（§8.3）。**不要**靠给中性 `ghost` 染色来表达危险（比如在普通 `ghost` 里塞红色 `Trash2`，或加 `text-error` 类名）——变体本身已经承载了危险 hover token（§3.2）和语义，自定义图标颜色反而和它打架。`ghost-danger` 里的图标要去掉任何 `text-content-*` / `text-error` 覆盖，颜色交给变体。
+
 ---
 
 ## 4. KPI 快捷筛选块
