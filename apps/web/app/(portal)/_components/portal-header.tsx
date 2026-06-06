@@ -56,7 +56,7 @@ function buildGroups(menus: Menu[]): Group[] {
  * How to extend
  * ────────────────────────────────────────────────────────────────
  *
- * Case A — Add a new static group (e.g. "Actions": Logout, Switch entity)
+ * Case A — Add a new static group (e.g. "Actions": Logout, Switch partner)
  *   Render an extra <CommandGroup heading="Actions"> inside <CommandList>.
  *   Each <CommandItem> performs the action in onSelect and calls setOpen(false).
  *   No data fetching needed.

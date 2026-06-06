@@ -27,9 +27,9 @@ export default async function DashboardPage() {
         <GridItem>
           <Card>
             <CardHeader>
-              <CardDescription>{t("entity")}</CardDescription>
-              <CardTitle>{session.entity.entityName}</CardTitle>
-              <Badge tone="info">{session.entity.contractDefineCode}</Badge>
+              <CardDescription>{t("partner")}</CardDescription>
+              <CardTitle>{session.partnerName}</CardTitle>
+              <Badge tone="info">{session.contractTypes.join(", ")}</Badge>
             </CardHeader>
           </Card>
         </GridItem>

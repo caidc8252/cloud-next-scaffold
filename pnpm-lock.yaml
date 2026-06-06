@@ -144,6 +144,9 @@ importers:
       '@cloud/api-kit':
         specifier: workspace:*
         version: link:../../packages/api-kit
+      '@cloud/cache':
+        specifier: workspace:*
+        version: link:../../packages/cache
       '@cloud/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -156,6 +159,9 @@ importers:
       '@cloud/permissions':
         specifier: workspace:*
         version: link:../../packages/permissions
+      '@cloud/platform-config':
+        specifier: workspace:*
+        version: link:../../packages/platform-config
       '@cloud/request':
         specifier: workspace:*
         version: link:../../packages/request
@@ -275,6 +281,9 @@ importers:
 
   packages/permissions:
     dependencies:
+      '@cloud/cache':
+        specifier: workspace:*
+        version: link:../cache
       '@cloud/config':
         specifier: workspace:*
         version: link:../config
@@ -290,6 +299,12 @@ importers:
       server-only:
         specifier: 'catalog:'
         version: 0.0.1
+
+  packages/platform-config:
+    dependencies:
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
 
   packages/request:
     dependencies:
@@ -312,6 +327,9 @@ importers:
       argon2:
         specifier: 'catalog:'
         version: 0.41.1
+      client-only:
+        specifier: 'catalog:'
+        version: 0.0.1
       server-only:
         specifier: 'catalog:'
         version: 0.0.1

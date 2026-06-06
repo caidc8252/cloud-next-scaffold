@@ -145,6 +145,29 @@ Tab count chip: `ml-1 h-4 min-w-4 rounded-full bg-surface-3 px-1 text-xs font-me
 
 General principle: **every wrapper div must have a job** (spacing group / scroll / flex width constraint). A wrapper with a single child whose classes can move onto that child gets removed (Card / Button / Input roots all accept `className`; note an `Input` with `prefix` puts `className` on the inner input — that case keeps an outer width wrapper).
 
+### 3.1 Row alignment
+
+**A row that carries a name/title at its head and an action at its tail is vertically center-aligned** (`items-center`) — the leading label and the trailing action sit on the same center axis, never `items-start`. This is a general rule, applied wherever the shape occurs: section-card row lists (§8.2), settings / list rows with a trailing button or switch, the detail header (§2.3), an in-card head band with a `CardAction`, etc.
+
+Only exception: when the row head is a genuinely multi-line block (title + subline + meta) and the action must align to the *first* line, top-align the row (`items-start`) instead — but center is the default, reach for `items-start` only when the multi-line head actually demands it.
+
+### 3.2 Row-inline action hover
+
+When a row has its own hover (`hover:bg-surface-hover`) **and** carries inline action icons, each icon needs a hover state **distinct from the row's** — a default `ghost` button also hovers to `bg-surface-hover`, so on an already-hovered row its own hover is invisible. The surface tokens are solid (not alpha), so the nested control must switch *token*, not rely on stacking:
+
+- **Neutral action** (edit, more, …): `ghost` bumped one step — `className="hover:bg-surface-active"` (one shade darker than the row).
+- **Destructive action** (delete): `variant="ghost-danger"` — its hover is an `error-bg` tint, which never collides with the neutral row hover and also signals intent.
+- Always `e.stopPropagation()` on the action's `onClick` so it doesn't fire the row's `onRowClick`; group the icons in a `flex items-center` cluster (§3.1). Destructive actions still confirm via a modal (§8.3).
+
+Reference: the app-publish list table (edit + delete in the trailing column).
+
+### 3.3 Icon-button actions & destructive intent
+
+Two invariants, applied everywhere an action appears — not only in scrolling rows. They constrain the *variant*, not whether you may add an action:
+
+- **An icon-only action button is `ghost` (neutral) or `ghost-danger` (destructive) — never `secondary` / `primary` / bordered.** A bare icon carries no label, so emphasis has to come from a hover token, not a filled background (§3.2). This is the only hard cap on row icons. It does **not** forbid a labeled action button in a row: when an action genuinely deserves weight (Approve, Activate, a primary CTA on the row), use a text `secondary` / `primary` button — just keep it labeled so the intent is legible, don't promote a bare icon to a filled variant.
+- **Every destructive action carries a danger variant — no exceptions.** Delete / remove / revoke / terminate / reset / disconnect: an icon-button form is `variant="ghost-danger"`; a text button or modal-footer form is `variant="danger"` (§8.3). **Do not** signal danger by tinting a neutral `ghost` (e.g. a red `Trash2` inside a plain `ghost`, or a `text-error` className) — the variant itself carries both the danger hover token (§3.2) and the affordance, and a custom icon color fights it. Drop any `text-content-*` / `text-error` override on the icon inside a `ghost-danger`; the variant colors it.
+
 ---
 
 ## 4. KPI Quick-Filter Tiles

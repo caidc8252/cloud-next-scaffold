@@ -7,10 +7,17 @@
     "node": ">=20.19.0"
   },
   "scripts": {
+    "gen:manifest": "node scripts/generate-manifest-registry.mjs",
+    "predev": "pnpm gen:manifest",
+    "predev:web": "pnpm gen:manifest",
+    "prebuild": "pnpm gen:manifest",
+    "prebuild:web": "pnpm gen:manifest",
+    "pretest": "pnpm gen:manifest",
     "dev": "pnpm --filter web dev",
     "dev:web": "pnpm --filter web dev",
+    "build:web": "pnpm --filter web build",
     "build": "pnpm db:generate && pnpm -r --filter './apps/*' build",
-    "lint": "eslint apps/web packages/api-kit/src packages/cache/src packages/config/src packages/db packages/i18n/src packages/permissions packages/request/src packages/security packages/storage packages/ui/src packages/ui/docs/examples scripts/prisma.mjs eslint.config.mjs vitest.config.mts",
+    "lint": "eslint apps/web packages/api-kit/src packages/cache/src packages/config/src packages/db packages/i18n/src packages/permissions packages/platform-config/src packages/request/src packages/security packages/storage packages/ui/src packages/ui/docs/examples scripts/prisma.mjs eslint.config.mjs vitest.config.mts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run --passWithNoTests",

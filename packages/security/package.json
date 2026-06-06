@@ -4,11 +4,12 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./client": "./src/client/index.ts",
     "./server": "./src/server/index.ts"
   },
   "dependencies": {
     "argon2": "catalog:",
+    "client-only": "catalog:",
     "server-only": "catalog:"
   }
 }
-

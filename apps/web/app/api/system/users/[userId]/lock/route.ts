@@ -7,7 +7,7 @@ import {
   ERR_USER_CANNOT_DISABLE_SELF,
 } from "@cloud/request/error-codes";
 import { assertPermissions } from "@cloud/permissions/server";
-import { toClientUser, USER_INCLUDE } from "@/app/(portal)/system/users/_server/user-mapper";
+import { toClientUser, userPartnerInclude } from "@/app/(portal)/system/users/_server/user-mapper";
 import { withApiHandler } from "@/lib/api-handler";
 
 export const POST = withApiHandler(
@@ -17,37 +17,32 @@ export const POST = withApiHandler(
     const userId = Number(rawId);
     if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID);
 
-    if (userId === session.id) {
+    if (userId === session.userId) {
       return badRequestResponse(ERR_USER_CANNOT_DISABLE_SELF);
     }
 
-    const entityId = session.entity.entityId;
-    const link = await prisma.sysEntityUser.findUnique({
-      where: { entityId_userId: { entityId, userId } },
+    const partnerId = session.currentPartnerId;
+    const link = await prisma.sysPartnerUser.findUnique({
+      where: { partnerId_userId: { partnerId, userId } },
     });
-    if (!link) return notFoundResponse(ERR_USER_NOT_FOUND, "User not found in this entity.");
+    if (!link) return notFoundResponse(ERR_USER_NOT_FOUND, "User not found in this partner.");
 
     if (link.authorizingType === "ADMIN") {
       return badRequestResponse(ERR_USER_PROTECTED);
     }
 
-    // Toggle entity-user status
-    const newStatus = link.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
-    await prisma.sysEntityUser.update({
-      where: { entityId_userId: { entityId, userId } },
-      data: { status: newStatus, updUserId: session.id },
+    // Toggle partner-user status（账号锁定走 partner-user 维度：ACTIVE ↔ LOCKED）
+    const newStatus = link.status === "ACTIVE" ? "LOCKED" : "ACTIVE";
+    await prisma.sysPartnerUser.update({
+      where: { partnerId_userId: { partnerId, userId } },
+      data: { status: newStatus, updUserId: session.userId },
     });
 
     const updated = await prisma.sysUser.findUniqueOrThrow({
       where: { userId },
-      include: {
-        ...USER_INCLUDE,
-        entityUsers: { where: { entityId }, select: { authorizingType: true, status: true } },
-        userRoles: { where: { entityId }, select: { roleId: true } },
-      },
+      include: userPartnerInclude(partnerId),
     });
 
-    const nameMap = new Map([[session.id, session.username]]);
-    return successResponse(toClientUser(updated, nameMap, nameMap));
+    return successResponse(toClientUser(updated));
   },
 );

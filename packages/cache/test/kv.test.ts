@@ -21,7 +21,6 @@ beforeEach(() => {
   process.env.DATABASE_URL =
     "postgresql://cloud:cloud_dev_password@localhost:5433/cloud_frontend?schema=public";
   process.env.REDIS_URL = "redis://localhost:6379";
-  process.env.AUTH_SESSION_SECRET = "test-session-secret";
   redisMock.get.mockReset();
   redisMock.set.mockReset();
   redisMock.del.mockReset();

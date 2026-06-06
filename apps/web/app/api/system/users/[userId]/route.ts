@@ -12,12 +12,16 @@ import {
   ERR_USER_PROTECTED,
 } from "@cloud/request/error-codes";
 import { assertPermissions, hasPermissions } from "@cloud/permissions/server";
-import { toClientUser, USER_INCLUDE } from "@/app/(portal)/system/users/_server/user-mapper";
+import {
+  toClientUser,
+  extractRoleIds,
+  userPartnerInclude,
+} from "@/app/(portal)/system/users/_server/user-mapper";
 import { withApiHandler } from "@/lib/api-handler";
 
-async function findUserInEntity(userId: number, entityId: number) {
-  return prisma.sysEntityUser.findUnique({
-    where: { entityId_userId: { entityId, userId } },
+async function findUserInPartner(userId: number, partnerId: number) {
+  return prisma.sysPartnerUser.findUnique({
+    where: { partnerId_userId: { partnerId, userId } },
   });
 }
 
@@ -32,13 +36,13 @@ export const PUT = withApiHandler(
     const userId = Number(rawId);
     if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID);
 
-    const entityId = session.entity.entityId;
-    const link = await findUserInEntity(userId, entityId);
+    const partnerId = session.currentPartnerId;
+    const link = await findUserInPartner(userId, partnerId);
     if (!link) return notFoundResponse(ERR_USER_NOT_FOUND, "User not found.");
 
-    const isProtected = userId === session.id || link.authorizingType === "ADMIN";
+    const isProtected = userId === session.userId || link.authorizingType === "ADMIN";
 
-    let body: { displayName?: string; remark?: string; roleIds?: string[] };
+    let body: { remark?: string; roleIds?: string[] };
     try {
       body = await req.json();
     } catch {
@@ -46,7 +50,7 @@ export const PUT = withApiHandler(
     }
 
     // Protected users can only have remark updated
-    if (isProtected && (body.displayName !== undefined || body.roleIds !== undefined)) {
+    if (isProtected && body.roleIds !== undefined) {
       return badRequestResponse(ERR_USER_PROTECTED);
     }
 
@@ -56,11 +60,7 @@ export const PUT = withApiHandler(
         : normalizeRoleIds(body.roleIds.map(Number).filter(Number.isFinite));
 
     if (requestedRoleIds !== null) {
-      const currentRoleLinks = await prisma.sysUserRole.findMany({
-        where: { userId, entityId },
-        select: { roleId: true },
-      });
-      const currentRoleIds = normalizeRoleIds(currentRoleLinks.map((roleLink) => roleLink.roleId));
+      const currentRoleIds = normalizeRoleIds(extractRoleIds(link.roles).map(Number));
       const roleIdsChanged =
         requestedRoleIds.length !== currentRoleIds.length ||
         requestedRoleIds.some((roleId, index) => roleId !== currentRoleIds[index]);
@@ -70,38 +70,22 @@ export const PUT = withApiHandler(
       }
     }
 
-    await prisma.$transaction(async (tx) => {
-      const data: Record<string, unknown> = { updUserId: session.id };
-      if (body.displayName !== undefined) data.displayName = body.displayName.trim() || null;
-      if (body.remark !== undefined) data.remark = body.remark.trim() || null;
-      await tx.sysUser.update({ where: { userId }, data });
+    const partnerUserData: Record<string, unknown> = { updUserId: session.userId };
+    if (body.remark !== undefined) partnerUserData.remark = body.remark.trim() || null;
+    if (requestedRoleIds !== null) {
+      partnerUserData.roles = requestedRoleIds.map((roleId) => ({ roleId }));
+    }
 
-      if (body.roleIds !== undefined) {
-        const nextRoleIds = requestedRoleIds ?? [];
-        await tx.sysUserRole.deleteMany({ where: { userId, entityId } });
-        if (nextRoleIds.length > 0) {
-          await tx.sysUserRole.createMany({
-            data: nextRoleIds.map((roleId) => ({
-              entityId,
-              userId,
-              roleId,
-              creUserId: session.id,
-            })),
-          });
-        }
-      }
+    await prisma.sysPartnerUser.update({
+      where: { partnerId_userId: { partnerId, userId } },
+      data: partnerUserData,
     });
 
     const updated = await prisma.sysUser.findUniqueOrThrow({
       where: { userId },
-      include: {
-        ...USER_INCLUDE,
-        entityUsers: { where: { entityId }, select: { authorizingType: true, status: true } },
-        userRoles: { where: { entityId }, select: { roleId: true } },
-      },
+      include: userPartnerInclude(partnerId),
     });
 
-    const nameMap = new Map([[session.id, session.username]]);
-    return successResponse(toClientUser(updated, nameMap, nameMap));
+    return successResponse(toClientUser(updated));
   },
 );

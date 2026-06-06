@@ -1,10 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Session } from "../src/server/session.ts";
+import type { ActiveSession } from "../src/server/session-store.ts";
 
-const getSessionMock = vi.fn<() => Promise<Session | null>>();
+const getSessionMock = vi.fn<() => Promise<ActiveSession | null>>();
 const redirectMock = vi.fn((url: string): never => {
   throw new Error(`__REDIRECT__:${url}`);
 });
+
+function activeSession(permissions: string[]): ActiveSession {
+  return {
+    userId: 1,
+    username: "alice",
+    displayName: "Alice",
+    email: "alice@example.com",
+    currentPartnerId: 1,
+    partnerName: "Platform",
+    contractTypes: ["ADMIN"],
+    authorizingType: "ADMIN",
+    roles: [],
+    permissions,
+    partners: [],
+    loginAt: 0,
+    expireAt: 0,
+    mfaPassed: true,
+  };
+}
 
 vi.mock("../src/server/dal.ts", () => ({
   getSession: getSessionMock,
@@ -67,21 +86,7 @@ describe("server permissions", () => {
     });
 
     it("throws forbidden with missing permissions when the session lacks access", async () => {
-      getSessionMock.mockResolvedValue({
-        id: 1,
-        username: "alice",
-        displayName: "Alice",
-        email: "alice@example.com",
-        status: "ACTIVE",
-        entity: {
-          entityId: 1,
-          entityName: "Platform",
-          contractDefineCode: "ADMIN",
-        },
-        roles: [],
-        permissions: ["users.VIEW"],
-        menus: [],
-      });
+      getSessionMock.mockResolvedValue(activeSession(["users.VIEW"]));
       const { assertPermissions } = await import("../src/server/permissions.ts");
 
       await expect(
@@ -97,21 +102,7 @@ describe("server permissions", () => {
     });
 
     it("returns the session when all permission checks pass", async () => {
-      const session: Session = {
-        id: 1,
-        username: "alice",
-        displayName: "Alice",
-        email: "alice@example.com",
-        status: "ACTIVE",
-        entity: {
-          entityId: 1,
-          entityName: "Platform",
-          contractDefineCode: "ADMIN",
-        },
-        roles: [],
-        permissions: ["users.VIEW", "users.UPD"],
-        menus: [],
-      };
+      const session = activeSession(["users.VIEW", "users.UPD"]);
       getSessionMock.mockResolvedValue(session);
       const { assertPermissions } = await import("../src/server/permissions.ts");
 
@@ -130,21 +121,7 @@ describe("server permissions", () => {
     });
 
     it("redirects to /403 when the session lacks permission", async () => {
-      getSessionMock.mockResolvedValue({
-        id: 1,
-        username: "alice",
-        displayName: "Alice",
-        email: "alice@example.com",
-        status: "ACTIVE",
-        entity: {
-          entityId: 1,
-          entityName: "Platform",
-          contractDefineCode: "ADMIN",
-        },
-        roles: [],
-        permissions: ["users.VIEW"],
-        menus: [],
-      });
+      getSessionMock.mockResolvedValue(activeSession(["users.VIEW"]));
       const { requirePermissions } = await import("../src/server/permissions.ts");
 
       await expect(requirePermissions({ all: ["users.UPD"] })).rejects.toThrow("__REDIRECT__:/403");

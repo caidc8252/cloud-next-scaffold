@@ -1,23 +1,21 @@
 import "server-only";
 
+export { createSession, updateSession, destroySession } from "./actions.ts";
 export {
-  createSession,
-  destroySession,
-  downgradeSession,
-  upgradeSession,
-} from "./actions.ts";
-export { getPartialSession, getSession, requireSession } from "./dal.ts";
+  getPartialSession,
+  getSession,
+  requireSession,
+  type PartialSession,
+} from "./dal.ts";
 export { AuthzError } from "./errors.ts";
 export { assertPermissions, hasPermissions, requirePermissions } from "./permissions.ts";
 export {
-  decodeSession,
-  encodeSession,
-  SESSION_COOKIE,
+  SID_COOKIE,
   SESSION_TTL_SECONDS,
-  type AuthenticatedSession,
-  type PartialSession,
+  SID_COOKIE_MAX_AGE_SECONDS,
+  sessionStore,
   type Session,
-  type SessionMenu,
-  type SessionPayload,
+  type ActiveSession,
   type SessionRole,
-} from "./session.ts";
+  type SessionPartnerRef,
+} from "./session-store.ts";

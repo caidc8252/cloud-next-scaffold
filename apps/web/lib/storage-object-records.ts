@@ -2,7 +2,7 @@ import "server-only";
 
 import { prisma } from "@cloud/db";
 import type { S3ObjectMetadata, S3StoredObject, S3UploadSession } from "@cloud/storage";
-import type { AuthenticatedSession } from "@cloud/permissions/server";
+import type { ActiveSession } from "@cloud/permissions/server";
 import type { StorageObjectRecord, StorageVisibility } from "../storage/types";
 import { STORAGE_VISIBILITY } from "./storage-visibility";
 
@@ -25,7 +25,7 @@ type StorageObjectRow = {
   creTime: Date;
   uploader?: {
     username: string | null;
-    displayName: string | null;
+    nickName: string | null;
   };
 };
 
@@ -36,7 +36,7 @@ function toNumberSize(value: bigint | number): number {
 }
 
 function toUploaderName(row: StorageObjectRow): string {
-  return row.uploader?.displayName || row.uploader?.username || "Unknown";
+  return row.uploader?.nickName || row.uploader?.username || "Unknown";
 }
 
 export function toStorageObjectRecord(row: StorageObjectRow): StorageObjectRecord {
@@ -62,10 +62,10 @@ export function toStorageObjectRecord(row: StorageObjectRow): StorageObjectRecor
   };
 }
 
-export async function listStorageObjectRecords(session: AuthenticatedSession) {
+export async function listStorageObjectRecords(session: ActiveSession) {
   const rows = await prisma.storageObject.findMany({
     where: {
-      entityId: session.entity.entityId,
+      partnerId: session.currentPartnerId,
       status: ACTIVE_STATUS,
     },
     orderBy: { creTime: "desc" },
@@ -74,7 +74,7 @@ export async function listStorageObjectRecords(session: AuthenticatedSession) {
       uploader: {
         select: {
           username: true,
-          displayName: true,
+          nickName: true,
         },
       },
     },
@@ -84,7 +84,7 @@ export async function listStorageObjectRecords(session: AuthenticatedSession) {
 }
 
 async function upsertStorageObjectRecord(
-  session: AuthenticatedSession,
+  session: ActiveSession,
   storedObject: StorageObjectLike,
   input: {
     originalFilename: string;
@@ -98,14 +98,14 @@ async function upsertStorageObjectRecord(
 ) {
   const existing = await prisma.storageObject.findFirst({
     where: {
-      entityId: session.entity.entityId,
+      partnerId: session.currentPartnerId,
       bucket: storedObject.bucket,
       objectKey: storedObject.objectKey,
     },
   });
 
   const data = {
-    uploaderUserId: session.id,
+    uploaderUserId: session.userId,
     regionId: storedObject.regionId,
     objectUrl: storedObject.objectUrl,
     originalFilename: input.originalFilename,
@@ -117,7 +117,7 @@ async function upsertStorageObjectRecord(
     visibility: input.visibility,
     etag: input.etag ?? ("etag" in storedObject ? storedObject.etag : null) ?? null,
     status: input.status,
-    updUserId: session.id,
+    updUserId: session.userId,
     deletedAt: input.status === ACTIVE_STATUS ? null : existing?.deletedAt,
   };
 
@@ -129,7 +129,7 @@ async function upsertStorageObjectRecord(
           uploader: {
             select: {
               username: true,
-              displayName: true,
+              nickName: true,
             },
           },
         },
@@ -137,16 +137,16 @@ async function upsertStorageObjectRecord(
     : await prisma.storageObject.create({
         data: {
           ...data,
-          entityId: session.entity.entityId,
+          partnerId: session.currentPartnerId,
           bucket: storedObject.bucket,
           objectKey: storedObject.objectKey,
-          creUserId: session.id,
+          creUserId: session.userId,
         },
         include: {
           uploader: {
             select: {
               username: true,
-              displayName: true,
+              nickName: true,
             },
           },
         },
@@ -156,7 +156,7 @@ async function upsertStorageObjectRecord(
 }
 
 export async function createPendingStorageObjectRecord(
-  session: AuthenticatedSession,
+  session: ActiveSession,
   storedObject: StorageObjectLike,
   input: {
     originalFilename: string;
@@ -173,7 +173,7 @@ export async function createPendingStorageObjectRecord(
 }
 
 export async function saveStorageObjectRecord(
-  session: AuthenticatedSession,
+  session: ActiveSession,
   storedObject: S3StoredObject | S3ObjectMetadata,
   input: {
     originalFilename: string;
@@ -191,13 +191,13 @@ export async function saveStorageObjectRecord(
 }
 
 export async function findStorageObjectForDownload(
-  session: AuthenticatedSession,
+  session: ActiveSession,
   storageObjectId: string,
 ) {
   const row = await prisma.storageObject.findFirst({
     where: {
       storageObjectId,
-      entityId: session.entity.entityId,
+      partnerId: session.currentPartnerId,
       status: ACTIVE_STATUS,
     },
   });
@@ -206,7 +206,7 @@ export async function findStorageObjectForDownload(
 }
 
 export async function findDuplicateStorageObjectRecord(
-  session: AuthenticatedSession,
+  session: ActiveSession,
   input: {
     contentHash: string;
     sizeBytes: number;
@@ -215,7 +215,7 @@ export async function findDuplicateStorageObjectRecord(
 ) {
   const row = await prisma.storageObject.findFirst({
     where: {
-      entityId: session.entity.entityId,
+      partnerId: session.currentPartnerId,
       contentHash: input.contentHash,
       sizeBytes: BigInt(input.sizeBytes),
       visibility: input.visibility,
@@ -226,7 +226,7 @@ export async function findDuplicateStorageObjectRecord(
       uploader: {
         select: {
           username: true,
-          displayName: true,
+          nickName: true,
         },
       },
     },

@@ -9,48 +9,54 @@ import {
 import { assertPermissions } from "@cloud/permissions/server";
 import {
   toClientUser,
-  USER_INCLUDE,
-  collectAuxUserIds,
+  toClientInvite,
+  userPartnerInclude,
 } from "@/app/(portal)/system/users/_server/user-mapper";
 import { withApiHandler } from "@/lib/api-handler";
 
 export const GET = withApiHandler(async () => {
   const session = await assertPermissions({ all: ["users.VIEW"] });
-  const entityId = session.entity.entityId;
+  const partnerId = session.currentPartnerId;
 
-  const entityUserLinks = await prisma.sysEntityUser.findMany({
-    where: { entityId, status: "ACTIVE" },
+  // 1. 真实用户（当前 partner 下 ACTIVE / LOCKED 的归属关系）
+  const partnerUserLinks = await prisma.sysPartnerUser.findMany({
+    where: { partnerId, status: { in: ["ACTIVE", "LOCKED"] } },
     select: { userId: true },
   });
-  const userIds = entityUserLinks.map((eu) => eu.userId);
-  if (userIds.length === 0) return successResponse([]);
+  const userIds = partnerUserLinks.map((eu) => eu.userId);
+  const userRows = userIds.length
+    ? await prisma.sysUser.findMany({
+        where: { userId: { in: userIds } },
+        include: userPartnerInclude(partnerId),
+        orderBy: { creTime: "asc" },
+      })
+    : [];
 
-  const rows = await prisma.sysUser.findMany({
-    where: { userId: { in: userIds } },
-    include: {
-      ...USER_INCLUDE,
-      entityUsers: { where: { entityId }, select: { authorizingType: true, status: true } },
-      userRoles: { where: { entityId }, select: { roleId: true } },
-    },
-    orderBy: { creTime: "asc" },
+  // 2. 待消费邀请（sys_operator_invite，无占位用户）
+  const invites = await prisma.sysOperatorInvite.findMany({
+    where: { partnerId, status: "PENDING" },
+    orderBy: { creTime: "desc" },
   });
+  const inviterIds = [...new Set(invites.map((inv) => inv.inviterUserId))];
+  const inviters = inviterIds.length
+    ? await prisma.sysUser.findMany({
+        where: { userId: { in: inviterIds } },
+        select: { userId: true, username: true },
+      })
+    : [];
+  const inviterMap = new Map(inviters.map((u) => [u.userId, u.username]));
 
-  const auxIds = collectAuxUserIds(rows);
-  const auxUsers =
-    auxIds.length > 0
-      ? await prisma.sysUser.findMany({
-          where: { userId: { in: auxIds } },
-          select: { userId: true, username: true },
-        })
-      : [];
-  const nameMap = new Map(auxUsers.map((u) => [u.userId, u.username ?? "system"]));
+  const data = [
+    ...userRows.map((r) => toClientUser(r)),
+    ...invites.map((inv) => toClientInvite(inv, inviterMap.get(inv.inviterUserId) ?? "system")),
+  ];
 
-  return successResponse(rows.map((r) => toClientUser(r, nameMap, nameMap)));
+  return successResponse(data);
 });
 
 export const POST = withApiHandler(async (req: Request) => {
   const session = await assertPermissions({ all: ["users.INVITE"] });
-  let body: { email?: string; roleIds?: string[]; remark?: string };
+  let body: { email?: string; roleIds?: string[] };
   try {
     body = await req.json();
   } catch {
@@ -62,73 +68,28 @@ export const POST = withApiHandler(async (req: Request) => {
     return badRequestResponse(ERR_USER_EMAIL_INVALID);
   }
 
-  const existing = await prisma.sysInvite.findFirst({
-    where: { email, status: "PENDING" },
+  const partnerId = session.currentPartnerId;
+
+  const existing = await prisma.sysOperatorInvite.findFirst({
+    where: { partnerId, inviteEmail: email, status: "PENDING" },
   });
   if (existing) return badRequestResponse(ERR_USER_EMAIL_TAKEN);
 
-  const entityId = session.entity.entityId;
   const token = randomBytes(24).toString("base64url");
   const expiresAt = new Date(Date.now() + 7 * 86_400_000);
+  const roleIds = [...new Set((body.roleIds ?? []).map(Number).filter(Number.isFinite))];
 
-  const user = await prisma.$transaction(async (tx) => {
-    const newUser = await tx.sysUser.create({
-      data: {
-        username: null,
-        passwordHash: "",
-        status: "PENDING",
-        remark: body.remark?.trim() || null,
-        creUserId: session.id,
-        updUserId: session.id,
-      },
-    });
-
-    await tx.sysEntityUser.create({
-      data: {
-        entityId,
-        userId: newUser.userId,
-        authorizingType: "NORMAL",
-        status: "ACTIVE",
-        authorizingTimestamp: new Date(),
-        authorizingUserId: session.id,
-        creUserId: session.id,
-      },
-    });
-
-    await tx.sysInvite.create({
-      data: {
-        userId: newUser.userId,
-        email,
-        token,
-        expiresAt,
-        creUserId: session.id,
-      },
-    });
-
-    const roleIds = (body.roleIds ?? []).map(Number).filter(Number.isFinite);
-    if (roleIds.length > 0) {
-      await tx.sysUserRole.createMany({
-        data: roleIds.map((roleId) => ({
-          entityId,
-          userId: newUser.userId,
-          roleId,
-          creUserId: session.id,
-        })),
-      });
-    }
-
-    return newUser;
-  });
-
-  const full = await prisma.sysUser.findUniqueOrThrow({
-    where: { userId: user.userId },
-    include: {
-      ...USER_INCLUDE,
-      entityUsers: { where: { entityId }, select: { authorizingType: true, status: true } },
-      userRoles: { where: { entityId }, select: { roleId: true } },
+  const invite = await prisma.sysOperatorInvite.create({
+    data: {
+      partnerId,
+      inviterUserId: session.userId,
+      inviteEmail: email,
+      roles: roleIds.map((roleId) => ({ roleId })),
+      token,
+      expiresAt,
+      creUserId: session.userId,
     },
   });
 
-  const nameMap = new Map([[session.id, session.username]]);
-  return createdResponse(toClientUser(full, nameMap, nameMap));
+  return createdResponse(toClientInvite(invite, session.username));
 });

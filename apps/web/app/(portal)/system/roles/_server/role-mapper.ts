@@ -6,24 +6,28 @@ type RoleRow = {
   roleId: number;
   roleName: string;
   roleType: string;
-  contractDefineCode: string | null;
+  contractType: string;
   remark: string | null;
   updTime: Date;
   updUserId: number;
-  permissions: { permissionCode: string }[];
-  _count: { userRoles: number };
+  permissionCodes: unknown;
 };
 
-export function toClientRole(row: RoleRow, updaterName: string): Role {
+/** permission_codes JSONB（List<string>）→ 字符串数组。 */
+export function extractPermissionCodes(codes: unknown): string[] {
+  if (!Array.isArray(codes)) return [];
+  return codes.filter((c): c is string => typeof c === "string");
+}
+
+export function toClientRole(row: RoleRow, updaterName: string, operatorCount: number): Role {
   return {
     id: String(row.roleId),
     name: row.roleName,
     description: row.remark ?? "",
     builtin: row.roleType === "BUILTIN",
-    operatorCount: row._count.userRoles,
-    roleType: "global",
-    contractDefineCode: row.contractDefineCode ?? "ADMIN",
-    permissions: row.permissions.map((p) => p.permissionCode),
+    operatorCount,
+    contractType: row.contractType,
+    permissions: extractPermissionCodes(row.permissionCodes),
     updatedAt: row.updTime.toISOString(),
     updatedBy: updaterName,
   };

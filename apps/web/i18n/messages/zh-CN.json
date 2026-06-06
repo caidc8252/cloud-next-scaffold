@@ -22,7 +22,7 @@
     "description": "此基线在保持刻意精简的同时，延续了经典后台的节奏与布局。",
     "sessionActive": "会话有效",
     "currentAccount": "当前账号",
-    "entity": "组织",
+    "partner": "组织",
     "roles": "角色",
     "panel": {
       "title": "仪表盘",

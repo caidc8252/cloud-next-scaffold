@@ -1,14 +1,9 @@
-import { randomBytes } from "node:crypto";
 import { prisma } from "@cloud/db";
 import { successResponse, badRequestResponse, notFoundResponse } from "@cloud/request/server";
-import {
-  ERR_INVALID_ID,
-  ERR_USER_NOT_FOUND,
-  ERR_USER_RESET_PW_PENDING,
-  ERR_USER_PROTECTED,
-} from "@cloud/request/error-codes";
+import { ERR_INVALID_ID, ERR_USER_NOT_FOUND, ERR_USER_PROTECTED } from "@cloud/request/error-codes";
 import { assertPermissions } from "@cloud/permissions/server";
-import { toClientUser, USER_INCLUDE } from "@/app/(portal)/system/users/_server/user-mapper";
+import { toClientUser, userPartnerInclude } from "@/app/(portal)/system/users/_server/user-mapper";
+import { createPasswordResetToken } from "@/lib/password-reset-token";
 import { withApiHandler } from "@/lib/api-handler";
 
 export const POST = withApiHandler(
@@ -18,51 +13,25 @@ export const POST = withApiHandler(
     const userId = Number(rawId);
     if (!Number.isFinite(userId)) return badRequestResponse(ERR_INVALID_ID);
 
-    const entityId = session.entity.entityId;
-    const link = await prisma.sysEntityUser.findUnique({
-      where: { entityId_userId: { entityId, userId } },
+    const partnerId = session.currentPartnerId;
+    const link = await prisma.sysPartnerUser.findUnique({
+      where: { partnerId_userId: { partnerId, userId } },
     });
     if (!link || link.status !== "ACTIVE")
       return notFoundResponse(ERR_USER_NOT_FOUND, "User not found.");
 
-    if (userId === session.id || link.authorizingType === "ADMIN") {
+    if (userId === session.userId || link.authorizingType === "ADMIN") {
       return badRequestResponse(ERR_USER_PROTECTED);
     }
 
-    const user = await prisma.sysUser.findUniqueOrThrow({ where: { userId } });
-    if (user.status === "PENDING") {
-      return badRequestResponse(ERR_USER_RESET_PW_PENDING);
-    }
-
-    const token = randomBytes(32).toString("base64url");
-    const expiresAt = new Date(Date.now() + 72 * 3_600_000);
-
-    await prisma.$transaction(async (tx) => {
-      await tx.sysPasswordResetRequest.updateMany({
-        where: { userId, status: "PENDING" },
-        data: { status: "SUPERSEDED" },
-      });
-
-      await tx.sysPasswordResetRequest.create({
-        data: {
-          userId,
-          token,
-          expiresAt,
-          creUserId: session.id,
-        },
-      });
-    });
+    // 签发重置 token（存 Redis，72h TTL）；消费端后续补
+    await createPasswordResetToken(userId);
 
     const updated = await prisma.sysUser.findUniqueOrThrow({
       where: { userId },
-      include: {
-        ...USER_INCLUDE,
-        entityUsers: { where: { entityId }, select: { authorizingType: true, status: true } },
-        userRoles: { where: { entityId }, select: { roleId: true } },
-      },
+      include: userPartnerInclude(partnerId),
     });
 
-    const nameMap = new Map([[session.id, session.username]]);
-    return successResponse(toClientUser(updated, nameMap, nameMap));
+    return successResponse(toClientUser(updated));
   },
 );

@@ -1,133 +1,112 @@
 import "server-only";
 
-import type { User, PasswordResetRequest } from "@/app/(portal)/system/_shared/types";
+import type { User } from "@/app/(portal)/system/_shared/types";
+
+// 角色绑定走 sys_partner_user.roles JSONB（List<{roleId}>）；邀请走 sys_operator_invite（无占位
+// 用户）。密码历史走 sys_user.password_history JSONB；重置请求改 Redis，不再有可列出的历史。
+
+type PartnerUserLink = { authorizingType: string; status: string; roles: unknown; remark: string | null };
 
 type UserRow = {
   userId: number;
-  username: string | null;
-  displayName: string | null;
-  email: string | null;
+  username: string;
+  nickName: string;
+  email: string;
   country: string | null;
   status: string;
   lastLoginAt: Date | null;
   passwordChangedTimestamp: Date | null;
   passwordErrorTimes: number;
   passwordErrorLockExpiredTimestamp: Date | null;
-  passwordUpdatedAt: Date | null;
-  remark: string | null;
   creTime: Date;
   updTime: Date;
-  passwordHistory: { userPasswordHistoryId: string; changedTimestamp: Date | null }[];
-  userRoles: { roleId: number }[];
-  entityUsers: { authorizingType: string; status: string }[];
-  invites: {
-    email: string;
-    token: string;
-    expiresAt: Date;
-    status: string;
-    creTime: Date;
-    creUserId: number;
-    resendCount: number;
-  }[];
-  passwordResetRequests: {
-    requestId: number;
-    token: string;
-    expiresAt: Date;
-    consumedAt: Date | null;
-    status: string;
-    creTime: Date;
-    creUserId: number;
-  }[];
+  partnerUsers: PartnerUserLink[];
 };
 
-export function toClientUser(
-  row: UserRow,
-  inviterNameMap: Map<number, string>,
-  requesterNameMap: Map<number, string>,
-): User {
-  const latestInvite = row.invites[0] ?? null;
-  const isPending = row.status === "PENDING";
-  const entityUserStatus = row.entityUsers[0]?.status ?? row.status;
-  const mappedStatus: User["status"] = isPending ? "PENDING" : (entityUserStatus === "ACTIVE" ? "ACTIVE" : "INACTIVE");
+type InviteRow = {
+  operatorInviteId: number;
+  inviteEmail: string;
+  token: string;
+  expiresAt: Date;
+  resendCount: number;
+  creTime: Date;
+  inviterUserId: number;
+  roles: unknown;
+};
+
+/** 原始 roleId 入参（string/number 混入）→ 去重升序的正整数列表（roleId 从 1 起，过滤 0/NaN）。 */
+export function parseRoleIds(input: unknown): number[] {
+  if (!Array.isArray(input)) return [];
+  const ids = input.map(Number).filter((id) => Number.isInteger(id) && id > 0);
+  return [...new Set(ids)].sort((left, right) => left - right);
+}
+
+/** roles JSONB（List<{roleId}>）→ 字符串 roleId 列表。 */
+export function extractRoleIds(roles: unknown): string[] {
+  if (!Array.isArray(roles)) return [];
+  const ids = roles
+    .map((r) => (r && typeof r === "object" ? (r as { roleId?: unknown }).roleId : undefined))
+    .filter((id): id is number => typeof id === "number");
+  return [...new Set(ids)].map(String);
+}
+
+export function toClientUser(row: UserRow): User {
+  const link = row.partnerUsers[0];
+  const partnerStatus = link?.status ?? row.status;
+  const status: User["status"] = partnerStatus === "ACTIVE" ? "ACTIVE" : "INACTIVE";
 
   return {
     id: String(row.userId),
-    loginName: row.username ?? "",
-    displayName: row.displayName ?? "",
-    email: isPending ? "" : (row.email ?? ""),
+    loginName: row.username,
+    displayName: row.nickName,
+    email: row.email,
     country: row.country ?? "",
-    status: mappedStatus,
+    status,
     lastLoginAt: row.lastLoginAt?.toISOString() ?? null,
     passwordChangedTimestamp: row.passwordChangedTimestamp?.getTime() ?? 0,
     passwordErrorTimes: row.passwordErrorTimes,
-    passwordChangeTimes: row.passwordHistory.length,
     passwordErrorLockExpiredTimestamp: row.passwordErrorLockExpiredTimestamp?.getTime() ?? null,
-    passwordUpdatedAt: row.passwordUpdatedAt?.toISOString() ?? null,
-    remark: row.remark ?? "",
+    remark: link?.remark ?? "",
     createdAt: row.creTime.toISOString(),
     updatedAt: row.updTime.toISOString(),
-    authorizingType: row.entityUsers[0]?.authorizingType ?? "NORMAL",
-    roleIds: row.userRoles.map((ur) => String(ur.roleId)),
-    passwordHistory: row.passwordHistory.map((h) => ({
-      hashId: h.userPasswordHistoryId,
-      changedAt: h.changedTimestamp?.toISOString() ?? row.creTime.toISOString(),
-    })),
-    // Invite fields (only for PENDING)
-    ...(latestInvite && isPending ? {
-      invitedAt: latestInvite.creTime.toISOString(),
-      invitedBy: inviterNameMap.get(latestInvite.creUserId) ?? "system",
-      inviteExpiresAt: latestInvite.expiresAt.toISOString(),
-      inviteToken: latestInvite.token,
-      inviteEmail: latestInvite.email,
-      resendCount: latestInvite.resendCount,
-    } : {}),
-    // Password reset requests
-    passwordResetRequests: row.passwordResetRequests.map((r) => toClientResetRequest(r, requesterNameMap)),
+    authorizingType: link?.authorizingType ?? "NORMAL",
+    roleIds: extractRoleIds(link?.roles),
   };
 }
 
-function toClientResetRequest(
-  r: UserRow["passwordResetRequests"][number],
-  nameMap: Map<number, string>,
-): PasswordResetRequest {
+/** 待消费邀请合成为一条 PENDING 列表项（id 前缀 invite-，与真实用户 id 区分）。 */
+export function toClientInvite(row: InviteRow, inviterName: string): User {
   return {
-    id: String(r.requestId),
-    requestedBy: nameMap.get(r.creUserId) ?? "system",
-    requestedAt: r.creTime.toISOString(),
-    expiresAt: r.expiresAt.toISOString(),
-    consumedAt: r.consumedAt?.toISOString() ?? null,
-    status: r.status.toLowerCase() as PasswordResetRequest["status"],
+    id: `invite-${row.operatorInviteId}`,
+    loginName: "",
+    displayName: "",
+    email: "",
+    country: "",
+    status: "PENDING",
+    lastLoginAt: null,
+    passwordChangedTimestamp: 0,
+    passwordErrorTimes: 0,
+    passwordErrorLockExpiredTimestamp: null,
+    remark: "",
+    createdAt: row.creTime.toISOString(),
+    updatedAt: row.creTime.toISOString(),
+    authorizingType: "NORMAL",
+    roleIds: extractRoleIds(row.roles),
+    invitedAt: row.creTime.toISOString(),
+    invitedBy: inviterName,
+    inviteExpiresAt: row.expiresAt.toISOString(),
+    inviteToken: row.token,
+    inviteEmail: row.inviteEmail,
+    resendCount: row.resendCount,
   };
 }
 
-/** Prisma include clause shared by all user queries */
-export const USER_INCLUDE = {
-  passwordHistory: {
-    select: { userPasswordHistoryId: true, changedTimestamp: true },
-    orderBy: { creTime: "desc" as const },
-  },
-  userRoles: { select: { roleId: true } },
-  entityUsers: { select: { authorizingType: true, status: true } },
-  invites: {
-    where: { status: "PENDING" },
-    orderBy: { creTime: "desc" as const },
-    take: 1,
-    select: { email: true, token: true, expiresAt: true, status: true, creTime: true, creUserId: true, resendCount: true },
-  },
-  passwordResetRequests: {
-    orderBy: { creTime: "desc" as const },
-    take: 10,
-    select: { requestId: true, token: true, expiresAt: true, consumedAt: true, status: true, creTime: true, creUserId: true },
-  },
-} as const;
-
-/** Collect unique creUserId values from invites & reset requests for batch username lookup */
-export function collectAuxUserIds(rows: UserRow[]): number[] {
-  const ids = new Set<number>();
-  for (const r of rows) {
-    for (const inv of r.invites) ids.add(inv.creUserId);
-    for (const req of r.passwordResetRequests) ids.add(req.creUserId);
-  }
-  ids.delete(0);
-  return [...ids];
+/** 当前 partner 的用户归属 include（含 roles JSONB，用于推导 roleIds）。 */
+export function userPartnerInclude(partnerId: number) {
+  return {
+    partnerUsers: {
+      where: { partnerId },
+      select: { authorizingType: true, status: true, roles: true, remark: true },
+    },
+  } as const;
 }

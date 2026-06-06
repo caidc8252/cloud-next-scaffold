@@ -3,8 +3,8 @@
 import { useState, useMemo } from "react";
 import { User, Mail, Globe, Clock, Check, Shield, KeyRound, Copy, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle, Collapsible, CollapsibleContent, CollapsibleTrigger, Field, Input, Modal, Switch, Textarea } from "@cloud/ui";
-import type { Role, User as UserType, PasswordResetRequest } from "@/app/(portal)/system/_shared/types";
-import { relTime, fmtDate, fmtDateTime, initials } from "@/app/(portal)/system/_shared/helpers";
+import type { Role, User as UserType } from "@/app/(portal)/system/_shared/types";
+import { relTime, initials } from "@/app/(portal)/system/_shared/helpers";
 import { PASSWORD_POLICY } from "@cloud/config/password-policy";
 
 type UserDetailProps = {
@@ -12,7 +12,7 @@ type UserDetailProps = {
   users: UserType[];
   roles: Role[];
   currentUserId: string;
-  onSave: (u: UserType) => void;
+  onSave: (u: UserType) => Promise<boolean>;
   onResetPassword: () => void;
   onToggleLock: () => void;
 };
@@ -26,8 +26,8 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
   const [draft, setDraft] = useState(user);
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmLock, setConfirmLock] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const [policyOpen, setPolicyOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const [prevId, setPrevId] = useState(user.id);
   if (user.id !== prevId) {
@@ -44,7 +44,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
   const pwAgeDays = draft.passwordChangedTimestamp ? Math.floor((now - draft.passwordChangedTimestamp) / 86_400_000) : null;
   const pwExpired = pwAgeDays !== null && pwAgeDays >= PASSWORD_POLICY.expiryDays;
 
-  const adminRoles = roles.filter((r) => r.contractDefineCode === "ADMIN" && r.roleType === "global");
+  const adminRoles = roles.filter((r) => r.contractType === "ADMIN");
   const assignedRoles = adminRoles.filter((r) => (draft.roleIds ?? []).includes(r.id));
 
   function toggleRole(roleId: string) {
@@ -52,10 +52,14 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
     setDraft({ ...draft, roleIds: ids });
   }
 
-  function save() { onSave(draft); }
-
-  const reqs = user.passwordResetRequests ?? [];
-  const latestReq = reqs[0] ?? null;
+  async function save() {
+    setSaving(true);
+    try {
+      await onSave(draft);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div>
@@ -66,9 +70,9 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <input value={draft.displayName} onChange={(e) => setDraft({ ...draft, displayName: e.target.value })}
-              disabled={isProtected} readOnly={isProtected}
-              className="text-xl font-semibold tracking-tight text-content-primary bg-transparent outline-none disabled:cursor-default border border-transparent py-1 px-2 -ml-2 rounded-md max-w-sm" />
+            <span className="text-xl font-semibold tracking-tight text-content-primary truncate max-w-sm">
+              {user.displayName}
+            </span>
             <span
               className={`font-mono font-semibold uppercase shrink-0 border text-xs tracking-wider ${
                 disabled
@@ -90,8 +94,10 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
           <Button variant="ghost" size="sm" iconLeft={<KeyRound size={14} />} onClick={() => setConfirmReset(true)} disabled={isProtected}>Reset password</Button>
           <Button variant={disabled ? "primary" : "ghost"} size="sm" iconLeft={<Shield size={14} />}
             onClick={() => setConfirmLock(true)} disabled={isProtected}>{disabled ? "Enable" : "Disable"}</Button>
-          <Button variant="primary" size="sm" disabled={!dirty} onClick={save}
-            iconLeft={dirty ? undefined : <Check size={14} />}>{dirty ? "Save changes" : "Saved"}</Button>
+          <Button variant="primary" size="sm" loading={saving} disabled={!dirty || saving} onClick={save}
+            iconLeft={dirty || saving ? undefined : <Check size={14} />}>
+            {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
+          </Button>
         </div>
       </div>
 
@@ -116,7 +122,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-2 gap-2.5">
               <StatCell label="Password age" value={pwAgeDays !== null ? `${pwAgeDays}d` : "—"}
                 sub={pwExpired ? `Expired ${pwAgeDays! - PASSWORD_POLICY.expiryDays}d ago` : `expires in ${PASSWORD_POLICY.expiryDays - (pwAgeDays ?? 0)}d`}
                 tone={pwExpired ? "danger" : pwAgeDays !== null && pwAgeDays >= PASSWORD_POLICY.expiryDays - 14 ? "warn" : "ok"} />
@@ -124,10 +130,6 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
                 value={<>{user.passwordErrorTimes}<span className="text-xs text-content-tertiary font-medium"> / {PASSWORD_POLICY.maxErrorTimes}</span></>}
                 sub={`auto-lock at ${PASSWORD_POLICY.maxErrorTimes}`}
                 tone={user.passwordErrorTimes >= 3 ? "danger" : user.passwordErrorTimes > 0 ? "warn" : "ok"} />
-              <StatCell label="Changed" value={String(user.passwordChangeTimes)} sub="total resets" />
-              <StatCell label="History size"
-                value={<>{(user.passwordHistory ?? []).length}<span className="text-xs text-content-tertiary font-medium"> / {PASSWORD_POLICY.historySize}</span></>}
-                sub="last hashes kept" />
             </div>
           </CardContent>
         </Card>
@@ -198,35 +200,6 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
           </div>
         </Card>
 
-        {/* Password history */}
-        <Card>
-          <Collapsible open={historyOpen} onOpenChange={setHistoryOpen} className="border-0 rounded-none bg-transparent">
-            <CollapsibleTrigger className="px-5 py-3.5 hover:bg-surface-3">
-              <div className="text-left">
-                <div className="text-sm font-semibold">Password history</div>
-                <p className="text-xs text-content-tertiary mt-0.5 font-normal">
-                  Last {PASSWORD_POLICY.historySize} password hashes — none of these may be re-used.
-                </p>
-              </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-0 text-xs text-content-primary">
-              {(user.passwordHistory ?? []).length === 0 && (
-                <div className="px-4 py-6 text-center text-sm text-content-tertiary">No history yet.</div>
-              )}
-              {(user.passwordHistory ?? []).map((h, i) => (
-                <div key={h.hashId} className="grid items-center border-b border-line-subtle last:border-b-0 grid-cols-[24px_1fr_auto] gap-2.5 py-2.5 px-3.5">
-                  <div className={`mx-auto rounded-full size-2 ${i === 0 ? "bg-success-strong" : "bg-content-tertiary"}`} />
-                  <div>
-                    <div className="font-mono font-medium text-xs text-content-primary">{fmtDate(h.changedAt)}</div>
-                    <div className="text-xs text-content-tertiary tabular-nums">{i === 0 ? "current" : relTime(h.changedAt)}</div>
-                  </div>
-                  <code className="text-xs text-content-tertiary">#{h.hashId}</code>
-                </div>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
-        </Card>
-
         {/* Password policy */}
         <Card>
           <Collapsible open={policyOpen} onOpenChange={setPolicyOpen} className="border-0 rounded-none bg-transparent">
@@ -246,18 +219,6 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
           </Collapsible>
         </Card>
 
-        {/* Most recent password reset */}
-        <Card>
-          <CardHeader>
-            <div>
-              <CardTitle>Most recent password reset</CardTitle>
-              <p className="text-xs text-content-tertiary mt-0.5">Reset links are sent to the user&apos;s email and are valid for 72 hours.</p>
-            </div>
-          </CardHeader>
-          {latestReq ? <ResetRecord req={latestReq} email={user.email} /> : (
-            <div className="px-4 py-6 text-center text-sm text-content-tertiary">No reset requests on record for this account.</div>
-          )}
-        </Card>
       </div>
 
       {/* Confirm reset modal */}
@@ -322,46 +283,6 @@ function PolicyRow({ icon, name, desc, val }: { icon: React.ReactNode; name: str
       <span className="text-xs font-semibold font-mono shrink-0 px-2.5 py-1 rounded-md border border-primary/20 text-primary-700 bg-primary-50">
         {val}
       </span>
-    </div>
-  );
-}
-
-function ResetRecord({ req, email }: { req: PasswordResetRequest; email: string }) {
-  const [now] = useState(Date.now);
-  const effectiveStatus = req.status === "pending" && new Date(req.expiresAt).getTime() < now ? "expired" : req.status;
-  const statusBadgeClass = {
-    pending: "text-warning-strong bg-warning-bg border-warning/25",
-    consumed: "text-success-strong bg-success-bg border-success/25",
-    expired: "text-content-tertiary bg-surface-3 border-line-subtle",
-    superseded: "text-content-tertiary bg-surface-3 border-line-subtle",
-  }[effectiveStatus];
-  const statusLabel = { pending: "Pending", consumed: "Consumed", expired: "Expired", superseded: "Superseded" }[effectiveStatus];
-
-  return (
-    <div className="flex gap-3.5 px-5 py-4">
-      <div className="grid place-items-center shrink-0 bg-info-bg text-info-strong border border-info/25 size-9 rounded-lg">
-        <Mail size={16} />
-      </div>
-      <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-        <div className="flex items-center gap-2.5">
-          <span className="text-sm text-content-primary flex-1">Reset link sent to <strong>{email}</strong></span>
-          <span
-            className={`font-mono font-semibold uppercase shrink-0 border text-xs tracking-wider ${statusBadgeClass} py-0.5 px-2 rounded-full`}>
-            {statusLabel}
-          </span>
-        </div>
-        <div className="text-xs text-content-secondary flex items-center gap-1.5 flex-wrap">
-          <span>Requested by <strong className="text-content-primary">{req.requestedBy}</strong></span>
-          <span className="text-content-tertiary">·</span>
-          <span>{relTime(req.requestedAt)} ({fmtDateTime(req.requestedAt)})</span>
-        </div>
-        <div className="text-xs text-content-secondary">
-          {effectiveStatus === "pending" && <>Expires <strong>{relTime(req.expiresAt)}</strong> · Valid for 72h, single-use</>}
-          {effectiveStatus === "consumed" && "User has set a new password."}
-          {effectiveStatus === "expired" && "Link expired without use — admin may issue a new one."}
-          {effectiveStatus === "superseded" && "This link was invalidated when a newer reset was triggered."}
-        </div>
-      </div>
     </div>
   );
 }

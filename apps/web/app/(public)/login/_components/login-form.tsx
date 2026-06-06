@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Input, Label } from "@cloud/ui";
 import { request, RequestError } from "@cloud/request/client";
+import { encryptLoginPassword } from "@/lib/login-crypto";
 
 export function LoginForm() {
   const router = useRouter();
@@ -18,11 +19,20 @@ export function LoginForm() {
     setError(null);
     setPending(true);
     try {
-      const res = await request.post<{ redirectTo: string }>("/api/auth/login", {
-        account,
-        password,
-      });
-      router.replace(res.data.redirectTo);
+      const tsRes = await request.get<{ serverTimestamp: number }>("/api/auth/server-time");
+      const encryptedPassword = await encryptLoginPassword(password, tsRes.data.serverTimestamp);
+      const res = await request.post<{
+        redirectTo?: string;
+        mfaRequired?: boolean;
+        mfaToken?: string;
+      }>("/api/auth/login", { account, encryptedPassword });
+
+      if (res.data.mfaRequired) {
+        router.replace("/mfa");
+        return;
+      }
+
+      router.replace(res.data.redirectTo ?? "/");
       router.refresh();
     } catch (err) {
       const message =

@@ -11,7 +11,7 @@ type PendingInviteDetailProps = {
   roles: Role[];
   onResend: () => void;
   onCancel: () => void;
-  onSave: (u: UserType) => void;
+  onSave: (u: UserType) => Promise<boolean>;
 };
 
 function buildInviteUrl(token: string): string {
@@ -34,11 +34,12 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
   const inviteUrl = buildInviteUrl(user.inviteToken ?? user.id);
   const isExpired = !!user.inviteExpiresAt && new Date(user.inviteExpiresAt).getTime() < now;
 
-  const adminRoles = roles.filter((r) => r.contractDefineCode === "ADMIN" && r.roleType === "global");
+  const adminRoles = roles.filter((r) => r.contractType === "ADMIN");
   const invitedRoles = (user.roleIds ?? []).map((id) => roles.find((r) => r.id === id)).filter(Boolean) as Role[];
 
   const [editingRoles, setEditingRoles] = useState(false);
   const [draftRoleIds, setDraftRoleIds] = useState<Set<string>>(new Set(user.roleIds));
+  const [savingRoles, setSavingRoles] = useState(false);
 
   // Reset draft when user changes
   const [prevId, setPrevId] = useState(user.id);
@@ -54,9 +55,14 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
     setDraftRoleIds(next);
   }
 
-  function saveRoles() {
-    onSave({ ...user, roleIds: [...draftRoleIds] });
-    setEditingRoles(false);
+  async function saveRoles() {
+    setSavingRoles(true);
+    try {
+      const ok = await onSave({ ...user, roleIds: [...draftRoleIds] });
+      if (ok) setEditingRoles(false);
+    } finally {
+      setSavingRoles(false);
+    }
   }
 
   function cancelEditRoles() {
@@ -161,10 +167,6 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
               <dd className="text-content-primary">{user.resendCount ? `${user.resendCount} time${user.resendCount > 1 ? "s" : ""}` : "Never"}</dd>
               <dt className="text-content-tertiary font-medium">Expires</dt>
               <dd className="text-content-primary">{user.inviteExpiresAt ? fmtDateTime(user.inviteExpiresAt) : "—"}</dd>
-              {user.remark && <>
-                <dt className="text-content-tertiary font-medium">Remark</dt>
-                <dd className="text-content-primary">{user.remark}</dd>
-              </>}
             </dl>
           </CardContent>
         </Card>
@@ -205,7 +207,10 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
                 </div>
                 <div className="flex gap-2 justify-end px-5 py-3 border-t border-line-subtle">
                   <Button variant="ghost" size="sm" onClick={cancelEditRoles}>Cancel</Button>
-                  <Button variant="primary" size="sm" disabled={draftRoleIds.size === 0} onClick={saveRoles}>Save</Button>
+                  <Button variant="primary" size="sm" loading={savingRoles}
+                    disabled={draftRoleIds.size === 0 || savingRoles} onClick={saveRoles}>
+                    {savingRoles ? "Saving…" : "Save"}
+                  </Button>
                 </div>
               </>
             ) : (

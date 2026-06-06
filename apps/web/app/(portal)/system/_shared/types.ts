@@ -16,20 +16,10 @@ export type Role = {
   description: string;
   builtin: boolean;
   operatorCount: number;
-  roleType: "global";
-  contractDefineCode: string;
+  contractType: string;
   permissions: string[];
   updatedAt: string;
   updatedBy: string;
-};
-
-export type PasswordResetRequest = {
-  id: string;
-  requestedBy: string;
-  requestedAt: string;
-  expiresAt: string;
-  consumedAt: string | null;
-  status: "pending" | "consumed" | "expired" | "superseded";
 };
 
 export type User = {
@@ -42,15 +32,12 @@ export type User = {
   lastLoginAt: string | null;
   passwordChangedTimestamp: number;
   passwordErrorTimes: number;
-  passwordChangeTimes: number;
   passwordErrorLockExpiredTimestamp: number | null;
-  passwordUpdatedAt: string | null;
   remark: string;
   createdAt: string;
   updatedAt: string;
   authorizingType: string;
   roleIds: string[];
-  passwordHistory: Array<{ hashId: string; changedAt: string }>;
   // Pending invite fields
   invitedAt?: string;
   invitedBy?: string;
@@ -58,5 +45,4 @@ export type User = {
   inviteToken?: string;
   inviteEmail?: string;
   resendCount?: number;
-  passwordResetRequests?: PasswordResetRequest[];
 };

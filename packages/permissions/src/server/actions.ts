@@ -2,58 +2,48 @@ import "server-only";
 
 import { cookies } from "next/headers";
 import {
-  decodeSession,
-  encodeSession,
-  SESSION_COOKIE,
-  SESSION_TTL_SECONDS,
-  type SessionPayload,
-} from "./session.ts";
+  SID_COOKIE,
+  SID_COOKIE_MAX_AGE_SECONDS,
+  sessionStore,
+  type Session,
+} from "./session-store.ts";
 
-function getCookieOptions() {
+// 会话快照由 app 层（apps/web/lib/session-snapshot.ts）构建后传入；
+// 这里只负责把 sid 写进 cookie、把快照落 / 删 Redis，不碰 manifest / DB。
+export type SessionSnapshotInput = Omit<Session, "loginAt" | "expireAt">;
+
+function cookieOptions() {
   return {
     httpOnly: true,
     sameSite: "lax" as const,
     path: "/",
     secure: process.env.NODE_ENV === "production",
-    maxAge: SESSION_TTL_SECONDS,
+    maxAge: SID_COOKIE_MAX_AGE_SECONDS,
   };
 }
 
-async function writeSessionCookie(payload: SessionPayload) {
+/** 新建会话：写 Redis 快照 + 下发 sid cookie。登录时调用。 */
+export async function createSession(snapshot: SessionSnapshotInput): Promise<void> {
+  const { sid } = await sessionStore.create(snapshot);
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, encodeSession(payload), getCookieOptions());
+  cookieStore.set(SID_COOKIE, sid, cookieOptions());
 }
 
-export async function createSession(userId: number, entityId: number | null) {
-  const expiresAt = Date.now() + SESSION_TTL_SECONDS * 1000;
-  await writeSessionCookie({ userId, entityId, expiresAt });
+/** 覆盖当前 sid 的会话（选公司 / 退公司重算）；保留原 loginAt。无 sid 时静默 no-op。 */
+export async function updateSession(snapshot: SessionSnapshotInput): Promise<void> {
+  const cookieStore = await cookies();
+  const sid = cookieStore.get(SID_COOKIE)?.value;
+  if (!sid) return;
+
+  const existing = await sessionStore.read(sid);
+  const loginAt = existing?.loginAt ?? Date.now();
+  await sessionStore.update(sid, { ...snapshot, loginAt });
 }
 
-export async function destroySession() {
+/** 登出：删 Redis 快照 + 清 cookie。 */
+export async function destroySession(): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE);
-}
-
-export async function upgradeSession(entityId: number) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!token) return;
-
-  const payload = decodeSession(token);
-  if (!payload) return;
-
-  const expiresAt = Date.now() + SESSION_TTL_SECONDS * 1000;
-  await writeSessionCookie({ userId: payload.userId, entityId, expiresAt });
-}
-
-export async function downgradeSession() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!token) return;
-
-  const payload = decodeSession(token);
-  if (!payload) return;
-
-  const expiresAt = Date.now() + SESSION_TTL_SECONDS * 1000;
-  await writeSessionCookie({ userId: payload.userId, entityId: null, expiresAt });
+  const sid = cookieStore.get(SID_COOKIE)?.value;
+  if (sid) await sessionStore.destroy(sid);
+  cookieStore.delete(SID_COOKIE);
 }

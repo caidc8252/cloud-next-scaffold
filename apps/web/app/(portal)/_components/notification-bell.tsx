@@ -23,7 +23,7 @@ import {
  * ────────────────────────────────────────────────────────────────
  *
  * Step 1 — Schema + producer (server side, not this file)
- *   Add a sys_notification table (recipientUserId, entityId, type, payload,
+ *   Add a sys_notification table (recipientUserId, partnerId, type, payload,
  *   readAt, creTime). Provide a server-side enqueue function in
  *   apps/web/lib/notifications/server.ts that all features call to write rows.
  *
@@ -31,7 +31,7 @@ import {
  *   GET    /api/notifications              list (paginated)
  *   GET    /api/notifications/unread-count count only (cheap, for the badge)
  *   POST   /api/notifications/read         body: { ids?: number[], all?: boolean }
- *   All three guarded by assertPermissions() and scoped to current entityId.
+ *   All three guarded by assertPermissions() and scoped to current partnerId.
  *
  * Step 3 — Hook (client side, this file)
  *   Replace the hardcoded `count = 0` and empty body below with a hook:
@@ -64,8 +64,8 @@ import {
  * ────────────────────────────────────────────────────────────────
  * - Mount once (in PortalHeader, lives in portal layout). Multiple mounts
  *   would multiply poll requests.
- * - Permission scope is per-entity; on entity switch the list must reset
- *   (current entityId is part of session, so the route handler handles it).
+ * - Permission scope is per-partner; on partner switch the list must reset
+ *   (current partnerId is part of session, so the route handler handles it).
  * - The popover is anchored to the bell button — keep <PopoverTrigger> as
  *   the bell, do not separate them.
  */

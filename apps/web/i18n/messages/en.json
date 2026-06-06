@@ -22,7 +22,7 @@
     "description": "This baseline keeps the classic admin rhythm and layout while staying intentionally minimal.",
     "sessionActive": "Session Active",
     "currentAccount": "Current Account",
-    "entity": "Entity",
+    "partner": "Partner",
     "roles": "Roles",
     "panel": {
       "title": "Dashboard",
