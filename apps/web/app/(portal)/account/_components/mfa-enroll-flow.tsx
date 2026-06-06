@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
 import { Button, Input, Modal } from "@cloud/ui/components/ui";
 import { request } from "@cloud/request/client";
@@ -30,7 +30,13 @@ export function MfaEnrollFlow({
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // Start enrollment once on open. The ref guard keeps it single-fire under React
+  // Strict Mode (dev double-invokes effects) — important because reconfigure
+  // creates a PENDING row, and a double-fire would orphan one / break activation.
+  const started = useRef(false);
   useEffect(() => {
+    if (started.current) return;
+    started.current = true;
     let active = true;
     request
       .post<EnrollData>("/api/account/mfa/enroll")

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Field, Input, Modal, toast } from "@cloud/ui/components/ui";
 import { request } from "@cloud/request/client";
 import { toastError } from "@cloud/request/error-toast";
@@ -46,8 +46,13 @@ export function IdentityChangeFlow({
     }
   }
 
-  // Send the current-email code when the flow opens.
+  // Send the current-email code once when the flow opens. The ref guard keeps it
+  // single-fire under React Strict Mode (dev double-invokes effects), so the code
+  // (and, later, the email) is only issued once.
+  const sentInitial = useRef(false);
   useEffect(() => {
+    if (sentInitial.current) return;
+    sentInitial.current = true;
     void requestCode(isEmail ? "EMAIL_CURRENT" : "USERNAME_CURRENT");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
