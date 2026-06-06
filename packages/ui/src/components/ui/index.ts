@@ -21,6 +21,8 @@ export { Toaster, toast } from './sonner'
 export { Table, type TableProps, type TableColumn, type SortDir } from './table'
 export { VirtualTable, type VirtualTableProps } from './virtual-table'
 export { Pagination, type PaginationProps } from './pagination'
+export { RichPagination, type RichPaginationProps, type RichPaginationRange } from './rich-pagination'
+export { LoadMore, type LoadMoreProps } from './load-more'
 export { KpiTile, type KpiTileProps } from './kpi-tile'
 export { InitialsTile, type InitialsTileProps } from './initials-tile'
 export { ThemeToggle } from './theme-toggle'
@@ -31,6 +33,11 @@ export {
 
 // New components
 export { Alert, AlertTitle, AlertDescription, AlertAction } from './alert'
+export {
+  AlertDialog, AlertDialogTrigger, AlertDialogPortal, AlertDialogOverlay,
+  AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
+} from './alert-dialog'
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './accordion'
 export { AspectRatio } from './aspect-ratio'
 export { Avatar, AvatarImage, AvatarFallback, AvatarGroup } from './avatar'
@@ -48,6 +55,8 @@ export {
   type DateRangePreset,
 } from './date-range-picker'
 export { DateTimePicker, type DateTimePickerProps } from './date-time-picker'
+export { DateTimeRangePicker, type DateTimeRangePickerProps } from './date-time-range-picker'
+export { TimePicker, type TimePickerProps } from './time-picker'
 export {
   type CarouselApi, Carousel, CarouselContent, CarouselItem,
   CarouselPrevious, CarouselNext, CarouselDots, useCarousel,

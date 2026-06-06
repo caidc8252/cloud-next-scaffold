@@ -99,6 +99,10 @@ function InputGroupButton({
       type={type}
       data-size={size}
       variant={variant}
+      // 把 size 透传给 Button：否则 Button 用默认 size 渲染出 h-control-md，而它是自定义
+      // spacing token、tailwind-merge 不与 inputGroupButtonVariants 的 h-6/size-6 去重，
+      // 导致 size class 被默认高度盖住、不生效。
+      size={size}
       className={cn(inputGroupButtonVariants({ size }), className)}
       {...props}
     />

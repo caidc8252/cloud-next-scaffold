@@ -71,7 +71,7 @@ function Modal({
           {hasHeader && (
             <header
               data-slot="modal-header"
-              className="flex shrink-0 items-start justify-between gap-2 border-b border-line-subtle p-4"
+              className="flex shrink-0 items-center justify-between gap-2 border-b border-line-subtle p-4"
             >
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 {title && (
@@ -94,7 +94,7 @@ function Modal({
               {showCloseButton && (
                 <DialogPrimitive.Close
                   data-slot="modal-close"
-                  className="mt-0.5 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-content-tertiary transition-colors hover:bg-surface-hover hover:text-content-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus"
+                  className="inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-content-tertiary transition-colors hover:bg-surface-hover hover:text-content-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus"
                 >
                   <XIcon size={13} />
                   <span className="sr-only">Close</span>

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { format as formatDate, setHours, setMinutes } from "date-fns"
+import { format as formatDate } from "date-fns"
 import { CalendarIcon, XIcon } from "lucide-react"
 
 import { useTranslations } from "@cloud/i18n/client"
@@ -12,7 +12,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "./popover"
 import { Calendar } from "./calendar"
 import { Button } from "./button"
 import { Input } from "./input"
-import { combineDisabledDays, dateTriggerClass, useDateFormat } from "./_date-shared"
+import {
+  applyTimeString,
+  combineDisabledDays,
+  dateTriggerClass,
+  toTimeString,
+  useDateFormat,
+} from "./_date-shared"
 
 interface DateTimePickerProps {
   value?: Date | null
@@ -31,18 +37,6 @@ interface DateTimePickerProps {
   name?: string
   required?: boolean
   id?: string
-}
-
-function toTimeString(d: Date | null | undefined): string {
-  if (!d) return "00:00"
-  const hh = String(d.getHours()).padStart(2, "0")
-  const mm = String(d.getMinutes()).padStart(2, "0")
-  return `${hh}:${mm}`
-}
-
-function applyTimeString(d: Date, hhmm: string): Date {
-  const [hStr, mStr] = hhmm.split(":")
-  return setMinutes(setHours(d, Number(hStr)), Number(mStr))
 }
 
 // Single date + time picker. Trigger is a button styled to look like <Input>;
