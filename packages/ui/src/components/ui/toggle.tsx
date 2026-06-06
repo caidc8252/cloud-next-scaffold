@@ -17,7 +17,11 @@ const toggleVariants = cva(
     // tinted track; the pressed item lifts into a pill (bg-surface-2 + shadow-1). These
     // stacked in-data-[variant=segmented]:… variants override the base bg/border/hover/
     // pressed above; the active look matches TOMS (bg-2 + shadow-1 + primary text).
-    "in-data-[variant=segmented]:rounded in-data-[variant=segmented]:border-0 in-data-[variant=segmented]:bg-transparent in-data-[variant=segmented]:text-content-secondary in-data-[variant=segmented]:hover:bg-transparent in-data-[variant=segmented]:hover:text-content-primary in-data-[variant=segmented]:data-pressed:bg-surface-2 in-data-[variant=segmented]:data-pressed:text-content-primary in-data-[variant=segmented]:data-pressed:shadow-1",
+    "in-data-[variant=segmented]:rounded in-data-[variant=segmented]:border-0 in-data-[variant=segmented]:bg-transparent in-data-[variant=segmented]:text-content-secondary in-data-[variant=segmented]:hover:bg-transparent in-data-[variant=segmented]:hover:text-content-primary in-data-[variant=segmented]:data-pressed:bg-surface-2 in-data-[variant=segmented]:data-pressed:text-content-primary in-data-[variant=segmented]:data-pressed:shadow-1 " +
+    // Inside a "cloud" group: a standalone rounded-full bordered chip (no shared
+    // track). Compact (h-auto + py-1), tints primary when pressed. Overrides the
+    // base height/radius/border/colors so size variant + base don't fight it.
+    "in-data-[variant=cloud]:h-auto in-data-[variant=cloud]:rounded-full in-data-[variant=cloud]:border in-data-[variant=cloud]:border-line-default in-data-[variant=cloud]:bg-surface-2 in-data-[variant=cloud]:px-2.5 in-data-[variant=cloud]:py-1 in-data-[variant=cloud]:text-xs in-data-[variant=cloud]:font-normal in-data-[variant=cloud]:text-content-secondary in-data-[variant=cloud]:hover:bg-surface-2 in-data-[variant=cloud]:hover:border-line-strong in-data-[variant=cloud]:data-pressed:border-primary-500 in-data-[variant=cloud]:data-pressed:bg-primary-50 in-data-[variant=cloud]:data-pressed:font-medium in-data-[variant=cloud]:data-pressed:text-primary-700",
   {
     variants: {
       variant: {

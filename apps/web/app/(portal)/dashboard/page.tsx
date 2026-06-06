@@ -2,12 +2,14 @@ import { ContentHeader, Grid, GridItem, Stack } from "@cloud/ui/components/layou
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@cloud/ui/components/ui";
 import { requirePermissions } from "@cloud/permissions/server";
 import { getTranslations } from "@cloud/i18n/server";
+import { PageBody } from "@/app/(portal)/_components/page-body";
 
 export default async function DashboardPage() {
   const session = await requirePermissions({ all: ["dashboard:view"] });
   const t = await getTranslations("dashboard");
 
   return (
+    <PageBody>
     <Stack gap="var(--space-6)">
       <ContentHeader title={t("title")} description={t("description")}>
         <Badge tone="success">{t("sessionActive")}</Badge>
@@ -54,5 +56,6 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
     </Stack>
+    </PageBody>
   );
 }

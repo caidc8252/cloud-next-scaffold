@@ -118,9 +118,10 @@ export function VirtualTable<R>({
 
   const handleSort = (col: TableColumn<R>) => {
     if (!col.sortable || !onSortChange) return
+    // Tri-state cycle (same as Table): unsorted → asc → desc → unsorted (null clears).
     if (!sort || sort.key !== col.key) onSortChange({ key: col.key, dir: 'asc' })
     else if (sort.dir === 'asc') onSortChange({ key: col.key, dir: 'desc' })
-    else onSortChange({ key: col.key, dir: 'asc' })
+    else onSortChange(null)
   }
 
   const items = virtualizer.getVirtualItems()

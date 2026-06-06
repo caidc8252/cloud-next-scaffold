@@ -3,12 +3,14 @@ import { ContentHeader, Stack } from "@cloud/ui/components/layout";
 import { listStorageObjectRecords } from "@/lib/storage-object-records";
 import { STORAGE_PERMISSIONS } from "@/lib/storage-permissions";
 import { S3UploadDemo } from "@/storage/s3-upload-demo";
+import { PageBody } from "@/app/(portal)/_components/page-body";
 
 export default async function S3UploadDemoPage() {
   const session = await requirePermissions({ all: [STORAGE_PERMISSIONS.VIEW] });
   const records = await listStorageObjectRecords(session);
 
   return (
+    <PageBody>
     <Stack gap="var(--space-6)">
       <ContentHeader
         title="S3 Upload Demo"
@@ -16,5 +18,6 @@ export default async function S3UploadDemoPage() {
       />
       <S3UploadDemo initialRecords={records} />
     </Stack>
+    </PageBody>
   );
 }

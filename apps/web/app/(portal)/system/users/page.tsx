@@ -8,6 +8,7 @@ import {
 } from "@/app/(portal)/system/users/_server/user-mapper";
 import { toClientRole } from "@/app/(portal)/system/roles/_server/role-mapper";
 import { UsersPage } from "@/app/(portal)/system/users/_components/users-page";
+import { PageBody } from "@/app/(portal)/_components/page-body";
 
 async function loadUsers(partnerId: number) {
   const partnerUserLinks = await prisma.sysPartnerUser.findMany({

@@ -77,7 +77,6 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
         "group-data-[variant=line]/tabs-list:px-3 group-data-[variant=line]/tabs-list:py-3 group-data-[variant=line]/tabs-list:-mb-px",
         "group-data-[variant=line]/tabs-list:rounded-t-md group-data-[variant=line]/tabs-list:bg-transparent",
         "group-data-[variant=line]/tabs-list:text-content-secondary",
-        "group-data-[variant=line]/tabs-list:not-disabled:not-data-active:hover:bg-surface-hover group-data-[variant=line]/tabs-list:not-disabled:not-data-active:hover:text-content-primary",
         "group-data-[variant=line]/tabs-list:disabled:text-content-disabled",
         "group-data-[variant=line]/tabs-list:data-active:bg-transparent group-data-[variant=line]/tabs-list:data-active:text-content-primary group-data-[variant=line]/tabs-list:data-active:font-semibold",
         // underline indicator (line variant only)

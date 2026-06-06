@@ -11,7 +11,8 @@ const SIDEBAR_WIDTH_COLLAPSED = 56
 // Full-page shell: fixed-height viewport with an optional sidebar and a sticky header (h-14).
 // The desktop aside width follows useSidebar().collapsed (inline style → SSR-correct, no flash);
 // on mobile the aside is hidden (CSS) and the same sidebar renders inside a left Sheet drawer.
-// Content area is max-w-content centered with px-8 pt-7 pb-16.
+// The scroll area is full-width and UNPADDED: pages own their padding (so full-bleed bands
+// like a white page header can touch the edges without negative-margin tricks).
 export const Layout: React.FC<{
   sidebar?: React.ReactNode
   header?: React.ReactNode
@@ -50,9 +51,7 @@ export const Layout: React.FC<{
           </header>
         )}
         <main className="flex-1 overflow-y-auto bg-surface-1">
-          <div className="mx-auto w-full max-w-content px-8 pt-7 pb-16">
-            {children}
-          </div>
+          {children}
         </main>
       </div>
     </div>

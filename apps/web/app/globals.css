@@ -1,6 +1,6 @@
 @import "@cloud/ui/component-defaults.css";
 @import "@cloud/ui/globals.css";
-@source "../system";
+@source "./";
 
 html,
 body {

@@ -21,6 +21,8 @@ export { Toaster, toast } from './sonner'
 export { Table, type TableProps, type TableColumn, type SortDir } from './table'
 export { VirtualTable, type VirtualTableProps } from './virtual-table'
 export { Pagination, type PaginationProps } from './pagination'
+export { KpiTile, type KpiTileProps } from './kpi-tile'
+export { InitialsTile, type InitialsTileProps } from './initials-tile'
 export { ThemeToggle } from './theme-toggle'
 export {
   ToggleCheckbox, ToggleRadioGroup, ToggleRadio, ToggleSwitch,
@@ -105,6 +107,12 @@ export { Skeleton } from './skeleton'
 export { Slider } from './slider'
 export { Spinner, type SpinnerProps } from './spinner'
 export { Stepper, type StepperProps } from './stepper'
+export { StepIndicator, stepDotVariants, type StepIndicatorProps, type StepIndicatorStep } from './step-indicator'
 export { Textarea } from './textarea'
+export {
+  Timeline, TimelineItem, TimelineMarker, TimelineContent, TimelineHeader,
+  TimelineTitle, TimelineTime, TimelineTimeRow, TimelineDescription, TimelineActor,
+  timelineMarkerVariants, type TimelineTone, type TimelineEntry, type TimelineProps,
+} from './timeline'
 export { Toggle, toggleVariants, type ToggleProps } from './toggle'
 export { ToggleGroup, type ToggleGroupProps } from './toggle-group'

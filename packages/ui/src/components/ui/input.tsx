@@ -11,22 +11,40 @@ const inputSizeClass: Record<string, string> = {
   lg: "h-control-lg text-base px-cx-lg",
 }
 
+// TOMS v2.0 validation states beyond invalid: tone-500 border, tone/30 focus ring.
+const validationClass: Record<string, string> = {
+  warn: "border-warning-500 focus-visible:border-warning-500 focus-visible:ring-warning/30",
+  ok: "border-success-500 focus-visible:border-success-500 focus-visible:ring-success/30",
+}
+
+// Filled variant (TOMS v2.0): tonal fill for dense toolbars / nested forms;
+// border appears only on focus, background returns to surface-2.
+const filledClass =
+  "bg-surface-3 border-transparent hover:bg-surface-hover focus-visible:bg-surface-2 dark:bg-surface-3 dark:hover:bg-surface-hover"
+
 interface InputProps extends Omit<React.ComponentProps<"input">, "prefix" | "suffix"> {
   invalid?: boolean
   inputSize?: "sm" | "md" | "lg"
+  variant?: "default" | "filled"
+  validation?: "warn" | "ok"
   prefix?: React.ReactNode
   suffix?: React.ReactNode
 }
 
 // Single-line text input field.
-// invalid: red border/ring error state (also sets aria-invalid).
+// invalid: red border/ring error state (also sets aria-invalid); takes priority over validation.
+// validation: 'warn'|'ok' — amber/green border + matching focus ring (TOMS v2.0).
+// variant: 'filled' — tonal surface-3 fill for dense toolbars; border only on focus.
 // inputSize: 'sm'|'md'|'lg' — controls height/padding; distinct from the HTML size attribute.
+// readOnly (native attr) renders surface-3 + secondary text automatically.
 // prefix/suffix (ReactNode): wraps the input in a flex container with non-interactive adornments.
 function Input({
   className,
   type,
   invalid,
   inputSize,
+  variant,
+  validation,
   prefix,
   suffix,
   "aria-invalid": ariaInvalid,
@@ -40,7 +58,9 @@ function Input({
       data-slot="input"
       aria-invalid={resolvedInvalid || undefined}
       className={cn(
-        "h-control-md w-full min-w-0 rounded-md border border-line-default bg-surface-2 px-cx-md py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-content-tertiary focus-visible:border-line-focus focus-visible:ring-2 focus-visible:ring-line-focus/30 disabled:cursor-not-allowed disabled:bg-surface-3 disabled:opacity-50 aria-invalid:border-error-strong aria-invalid:ring-2 aria-invalid:ring-error/20 md:text-sm dark:bg-surface-3/30 dark:disabled:bg-surface-3/80 dark:aria-invalid:border-error-strong/50 dark:aria-invalid:ring-error/40",
+        "h-control-md w-full min-w-0 rounded-md border border-line-default bg-surface-2 px-cx-md py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-content-tertiary focus-visible:border-line-focus focus-visible:ring-2 focus-visible:ring-line-focus/30 read-only:bg-surface-3 read-only:text-content-secondary disabled:cursor-not-allowed disabled:bg-surface-3 disabled:opacity-50 aria-invalid:border-error-strong aria-invalid:ring-2 aria-invalid:ring-error/20 md:text-sm dark:bg-surface-3/30 dark:read-only:bg-surface-3/80 dark:disabled:bg-surface-3/80 dark:aria-invalid:border-error-strong/50 dark:aria-invalid:ring-error/40",
+        variant === "filled" && filledClass,
+        validation && !resolvedInvalid && validationClass[validation],
         inputSize && inputSizeClass[inputSize],
         (prefix || suffix) && "rounded-none border-0 bg-transparent focus-visible:ring-0 dark:bg-transparent",
         className
@@ -55,6 +75,12 @@ function Input({
     <div
       className={cn(
         "flex items-center rounded-md border border-line-default bg-surface-2 transition-colors focus-within:border-line-focus focus-within:ring-2 focus-within:ring-line-focus/30 dark:bg-surface-3/30",
+        variant === "filled" &&
+          "bg-surface-3 border-transparent hover:bg-surface-hover focus-within:bg-surface-2 dark:bg-surface-3 dark:hover:bg-surface-hover",
+        validation && !resolvedInvalid && validation === "warn" &&
+          "border-warning-500 focus-within:border-warning-500 focus-within:ring-warning/30",
+        validation && !resolvedInvalid && validation === "ok" &&
+          "border-success-500 focus-within:border-success-500 focus-within:ring-success/30",
         resolvedInvalid && "border-error-strong ring-2 ring-error/20"
       )}
     >

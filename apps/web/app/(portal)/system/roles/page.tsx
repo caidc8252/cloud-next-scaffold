@@ -6,6 +6,7 @@ import { toClientRole } from "@/app/(portal)/system/roles/_server/role-mapper";
 import { extractRoleIds } from "@/app/(portal)/system/users/_server/user-mapper";
 import { RolesPage } from "@/app/(portal)/system/roles/_components/roles-page";
 import type { PermissionGroup } from "@/app/(portal)/system/_shared/types";
+import { PageBody } from "@/app/(portal)/_components/page-body";
 
 async function loadRoles(partnerId: number) {
   const roles = await prisma.sysRole.findMany({
