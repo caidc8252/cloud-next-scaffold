@@ -141,6 +141,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@cloud/api-kit':
+        specifier: workspace:*
+        version: link:../../packages/api-kit
       '@cloud/cache':
         specifier: workspace:*
         version: link:../../packages/cache
@@ -202,6 +205,24 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.3
+
+  packages/api-kit:
+    dependencies:
+      '@cloud/i18n':
+        specifier: workspace:*
+        version: link:../i18n
+      '@cloud/permissions':
+        specifier: workspace:*
+        version: link:../permissions
+      '@cloud/request':
+        specifier: workspace:*
+        version: link:../request
+      next:
+        specifier: ^16.0.0
+        version: 16.2.6(@babel/core@7.29.0)(@playwright/test@1.60.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      server-only:
+        specifier: 'catalog:'
+        version: 0.0.1
 
   packages/cache:
     dependencies:
