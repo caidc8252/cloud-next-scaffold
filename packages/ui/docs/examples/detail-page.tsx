@@ -43,10 +43,19 @@ function TabCount({ children }: { children: ReactNode }) {
   );
 }
 
-// §8.1 — KV grid: dl rows with a fixed w-40 label column.
-function KeyValue({ label, children }: { label: string; children: ReactNode }) {
+// §8.1 — KV grid cell: fixed w-40 label column. `wide` spans every column (for
+// long free-text like address / description) in the auto-fit grid below.
+function KeyValue({
+  label,
+  wide,
+  children,
+}: {
+  label: string;
+  wide?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <div className="flex gap-5">
+    <div className={wide ? "col-span-full flex gap-5" : "flex gap-5"}>
       <dt className="w-40 shrink-0 font-medium text-content-tertiary">{label}</dt>
       <dd className="min-w-0 flex-1 text-content-primary">{children}</dd>
     </div>
@@ -136,10 +145,13 @@ export function DetailPageTemplate() {
               <CardTitle>Summary</CardTitle>
             </CardHeader>
             <CardContent>
-              <dl className="flex flex-col gap-3.5 text-sm">
+              {/* §8.1 — KV grid: auto-fit columns follow the card's own width
+                  (grid-auto-fit-kv, never a hand-written grid-cols-[repeat(auto-fit…)]);
+                  long free-text rows span every column via `wide`. */}
+              <dl className="grid-auto-fit-kv gap-x-8 gap-y-3.5 text-sm">
                 <KeyValue label="Name">Record title</KeyValue>
                 <KeyValue label="Reference">REF-0042</KeyValue>
-                <KeyValue label="Description">
+                <KeyValue label="Description" wide>
                   <span className="whitespace-pre-line">
                     A longer multi-line field, rendered with whitespace preserved.
                   </span>

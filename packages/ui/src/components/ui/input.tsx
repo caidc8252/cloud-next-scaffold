@@ -38,6 +38,9 @@ interface InputProps extends Omit<React.ComponentProps<"input">, "prefix" | "suf
 // inputSize: 'sm'|'md'|'lg' — controls height/padding; distinct from the HTML size attribute.
 // readOnly (native attr) renders surface-3 + secondary text automatically.
 // prefix/suffix (ReactNode): wraps the input in a flex container with non-interactive adornments.
+// ⚠️ 坑：有 prefix/suffix 时 className 落在里层 <input>，不是外层 flex 容器。布局类
+// (mb-*/w-full/self-* 等) 会静默 no-op——外层容器才参与父级文档流。要控外层间距/宽度，
+// 自己包一层 div 把布局类放外面，或改用 InputGroup（其 className 指向外层容器）。
 function Input({
   className,
   type,

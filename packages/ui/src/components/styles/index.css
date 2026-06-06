@@ -200,6 +200,23 @@
 @utility z-cmdk     { z-index: 1090; }
 
 /* ───────────────────────────────────────────────────────
+   Auto-fit responsive grids — column count follows the
+   CONTAINER's width (not viewport breakpoints): one column
+   when narrow, more as it widens. Defined here so consumers
+   never hand-write `grid-cols-[repeat(auto-fit,minmax(…))]`
+   (banned arbitrary value) and never miss the `min(…,100%)`
+   that keeps a column from overflowing a phone-width container.
+   The min-width is the per-archetype "wants to wrap" threshold —
+   named by use, since it depends on cell content, not a token:
+     -kv : label + value KV grids (e.g. detail Overview)
+   Add -card / -compact archetypes when their min is confirmed.
+   ─────────────────────────────────────────────────────── */
+@utility grid-auto-fit-kv {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+}
+
+/* ───────────────────────────────────────────────────────
    shadcn semantic aliases — point to other theme vars.
    ─────────────────────────────────────────────────────── */
 @theme inline {

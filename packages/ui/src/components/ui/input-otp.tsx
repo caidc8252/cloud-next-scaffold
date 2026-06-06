@@ -4,7 +4,12 @@ import { OTPInput, OTPInputContext } from "input-otp"
 import { cn } from "../../lib/utils"
 import { MinusIcon } from "lucide-react"
 
-// Segmented one-time-password input with slot-by-slot character entry.
+// Segmented OTP / verification-code input. Compound — assemble it yourself:
+// <InputOTP maxLength={n} value onChange> (controlled, onChange returns the whole
+// string) wraps <InputOTPGroup>, with one <InputOTPSlot index={i}/> per character
+// (slot count must equal maxLength); put <InputOTPSeparator/> between groups.
+// Presentation + per-slot entry only — no resend / countdown / auto-submit /
+// validation. Restrict input via `pattern`; wire to react-hook-form with Controller.
 function InputOTP({
   className,
   containerClassName,

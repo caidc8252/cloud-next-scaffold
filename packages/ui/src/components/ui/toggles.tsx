@@ -3,7 +3,7 @@ import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox"
 import { Radio as RadioPrimitive } from "@base-ui/react/radio"
 import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group"
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch"
-import { CheckIcon } from "lucide-react"
+import { CheckIcon, MinusIcon } from "lucide-react"
 
 import { cn } from "../../lib/utils"
 import { Label } from "./label"
@@ -35,7 +35,10 @@ function ToggleCheckbox({
   const generatedId = React.useId()
   const inputId = id ?? generatedId
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className="group flex items-center gap-2"
+      data-disabled={disabled ? "true" : undefined}
+    >
       <CheckboxPrimitive.Root
         id={inputId}
         checked={checked}
@@ -45,7 +48,7 @@ function ToggleCheckbox({
         onCheckedChange={onCheckedChange}
         data-slot="checkbox"
         className={cn(
-          "peer relative flex size-4 shrink-0 items-center justify-center rounded-sm border border-line-strong bg-surface-2 transition-colors outline-none cursor-pointer after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:shadow-focus disabled:cursor-not-allowed disabled:opacity-50 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground dark:bg-input/30 dark:data-checked:bg-primary",
+          "peer relative flex size-4 shrink-0 items-center justify-center rounded-sm border border-line-strong bg-surface-2 transition-colors outline-none cursor-pointer after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:shadow-focus disabled:cursor-not-allowed disabled:opacity-50 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground dark:bg-input/30 dark:data-checked:bg-primary data-indeterminate:border-primary data-indeterminate:bg-primary data-indeterminate:text-primary-foreground dark:data-indeterminate:bg-primary",
           className
         )}
       >
@@ -53,7 +56,9 @@ function ToggleCheckbox({
           data-slot="checkbox-indicator"
           className="grid place-content-center text-current transition-none [&>svg]:size-2.5"
         >
-          <CheckIcon />
+          {/* base-ui 在 checked 或 indeterminate 时都渲染 Indicator；用 data-indeterminate 切换勾/横线（与 Checkbox 一致）。 */}
+          <CheckIcon className="in-data-indeterminate:hidden" />
+          <MinusIcon className="hidden in-data-indeterminate:block" />
         </CheckboxPrimitive.Indicator>
       </CheckboxPrimitive.Root>
       {label && <Label htmlFor={inputId}>{label}</Label>}
@@ -105,7 +110,10 @@ function ToggleRadio({
   const generatedId = React.useId()
   const inputId = id ?? generatedId
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className="group flex items-center gap-2"
+      data-disabled={disabled ? "true" : undefined}
+    >
       <RadioPrimitive.Root
         id={inputId}
         value={value}
@@ -155,7 +163,10 @@ function ToggleSwitch({
   const generatedId = React.useId()
   const inputId = id ?? generatedId
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className="group flex items-center gap-2"
+      data-disabled={disabled ? "true" : undefined}
+    >
       <SwitchPrimitive.Root
         id={inputId}
         checked={checked}

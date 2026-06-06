@@ -5,6 +5,10 @@
 > **Compilable templates** (style-only skeletons, excluded from the bundle, ready to read or copy): [examples/list-page.tsx](./examples/list-page.tsx) · [examples/create-form.tsx](./examples/create-form.tsx) · [examples/create-wizard.tsx](./examples/create-wizard.tsx) · [examples/detail-page.tsx](./examples/detail-page.tsx).
 >
 > Baseline rules: `@cloud/ui` primitives + semantic tokens only (`surface/content/line/success/warning/error/info` plus the `teal/violet` category hues). No hex colors, no arbitrary font sizes; every clickable element gets `cursor-pointer`.
+>
+> **Snap to the scale, don't reproduce raw values.** A prototype hands you exact pixels (a `459px` modal, a `13px` gap, an off-palette grey); those are *intent*, not literals to copy. When a prototype value lands between two sanctioned tokens, snap to the **nearest** one — whichever it's closest to wins — and use the primitive's prop / a scale class, never a hand-written arbitrary value (`max-w-[459px]`, `gap-[13px]`, `bg-[#…]`). Example: a 459px modal → `<Modal size="md">` (480px, nearest), **not** `size="sm"` (360px) and **never** `className="sm:max-w-[459px]"`. The point of the locked scale is consistency across pages; an off-scale value that "matches the mockup" trades that away for a difference no user perceives.
+>
+> **Inherit first; density is locked.** Every page inherits the layout rules below before anything else. You may adapt *content* — copy, fields, which cards / columns appear — but **must not** retune the spacing you write yourself: page padding, block / column gaps, the search-band → list-card 16px pull, card-head padding (14·20), and section stacks (`gap-5`). Card radius / 1px border / shadow, header-band padding, and tab-strip height are baked into the `@cloud/ui` primitives (`Card elevation={1}`, `PageHeaderBand`, the line `TabsList`) — inherit them, don't restate or fight them. Diverging older pages converge toward this over time.
 
 ---
 
@@ -83,7 +87,7 @@ The server `page.tsx` stays a thin entry: guard (`requirePermissions`) → fetch
 
 ### 2.1 Full-bleed white band (shared container)
 
-`PageHeaderBand`: `bg-surface-2` + `border-b border-line-subtle`, inner `px-6 py-4`; sits flush under the topbar, spanning edge to edge. The `tabs` slot renders on the band's bottom edge (`flex px-6`) — pass a line-variant `TabsList` (the default) with `shadow-none` so the tab underline merges with the band border.
+`PageHeaderBand`: `bg-surface-2` + `border-b border-line-subtle`, inner `px-6 py-4`; sits flush under the topbar, spanning edge to edge. The `tabs` slot renders on the band's bottom edge (`flex px-6`) — pass a line-variant `TabsList` (the default) with `shadow-none` so the tab underline merges with the band border. The line strip stands **~42px** tall (padding-driven by the line variant, not a fixed `h-*`); if a page needs it exact, size the consumer — don't retune the band.
 
 > **Source & selection rule.** Both `PageHeader` (list / create header, §2.2) and `PageHeaderBand` (detail header, §2.3) live in `@cloud/ui/components/layout`. Use these full-bleed bands for portal management pages (list / create / detail), which dock flush under the topbar at `text-2xl`. For a plain in-content page title (e.g. dashboard, settings) use `ContentHeader` from the same package instead — it's an in-flow `text-3xl` title, not a band.
 
@@ -133,15 +137,18 @@ Tab count chip: `ml-1 h-4 min-w-4 rounded-full bg-surface-3 px-1 text-xs font-me
 
 ## 3. Page Body & Spacing System
 
+**Rhythm in Tailwind** — horizontal baseline is **24px everywhere**: `px-6` page edges + `gap-6` between columns. Vertical rhythm runs **24 → 16 → 20**: big blocks `gap-6` (24px); the search band *hugs* the list card at **16px** (the page rhythm pulled in with `-mt-2` on the card — §5 / §6); card interior **20px** (`p-5` padding, `gap-5` stacks). These densities are fixed (see the intro) — the ladder below is the full set; adjust content, not spacing.
+
 | Level | Value | Notes |
 |---|---|---|
 | Page body padding | `px-6 pt-6 pb-8` | prototype 24px edges; same on the list/wizard body div and every detail `TabsContent` |
-| Page-level block gap | `gap-6` (24px) | KPI tiles ↔ search area ↔ list card; wizard blocks; detail two-column gap |
+| Page-level block gap | `gap-6` (24px) | KPI tiles ↔ search area; wizard blocks; detail two-column gap |
+| Search band ↔ list card | **16px** (`-mt-2` on the card) | the condition band hugs the table — the page `gap-6` pulled in 8px; the band's own `-my-3` is unchanged (§5, §6) |
 | Card stack in a section | `gap-5` (20px) | sibling section cards stacked on a detail tab |
 | Tightly-coupled cards | `gap-3.5` (14px) | a card and its directly-related sub-card (e.g. a list + its collapsed history) |
 | Toolbar ↔ filter feedback | `gap-2.5` (10px) | the two are grouped in one `flex flex-col gap-2.5`, then separated from neighbors by gap-6 |
 | Dense in-card bands | `px-4 py-3` | count band, pagination band, section-card head band |
-| Card slot padding | from Card `size` (md = `p-5`) | custom sizing uses `flush` + own padding (e.g. wizard card head `px-5 py-4`); **never** fight it with `p-0` |
+| Card slot padding | from Card `size` (md = `p-5`) | custom sizing uses `flush` + own padding (e.g. wizard card head `px-5 py-3.5` — 14·20); **never** fight it with `p-0` |
 
 General principle: **every wrapper div must have a job** (spacing group / scroll / flex width constraint). A wrapper with a single child whose classes can move onto that child gets removed (Card / Button / Input roots all accept `className`; note an `Input` with `prefix` puts `className` on the inner input — that case keeps an outer width wrapper).
 
@@ -168,26 +175,45 @@ Two invariants, applied everywhere an action appears — not only in scrolling r
 - **An icon-only action button is `ghost` (neutral) or `ghost-danger` (destructive) — never `secondary` / `primary` / bordered.** A bare icon carries no label, so emphasis has to come from a hover token, not a filled background (§3.2). This is the only hard cap on row icons. It does **not** forbid a labeled action button in a row: when an action genuinely deserves weight (Approve, Activate, a primary CTA on the row), use a text `secondary` / `primary` button — just keep it labeled so the intent is legible, don't promote a bare icon to a filled variant.
 - **Every destructive action carries a danger variant — no exceptions.** Delete / remove / revoke / terminate / reset / disconnect: an icon-button form is `variant="ghost-danger"`; a text button or modal-footer form is `variant="danger"` (§8.3). **Do not** signal danger by tinting a neutral `ghost` (e.g. a red `Trash2` inside a plain `ghost`, or a `text-error` className) — the variant itself carries both the danger hover token (§3.2) and the affordance, and a custom icon color fights it. Drop any `text-content-*` / `text-error` override on the icon inside a `ghost-danger`; the variant colors it.
 
+### 3.4 Clickable surface states (hover / pressed / selected)
+
+Any clickable surface — a list row, a quick-filter tile, a whole pick-one card — earns its affordance from a **background** shift, not a border alone. A border or ring is a *reinforcement*, never the only signal (a 1px line is too easy to miss as the sole hit-state cue). The neutral surface scale steps one solid shade at a time: `surface-2` (rest) → `surface-hover` → `surface-active`. Choose the states by interaction kind:
+
+- **Navigational** (row / card that opens a detail or fires `onRowClick`, then leaves the page): rest = its own bg → `hover:bg-surface-hover` → press beat `active:bg-surface-active`. No persistent lit state, since the click navigates away. This is the §6.2 table row (`onRowClick`) and the §8.2 section-card row.
+- **Selectable / toggle** (stays lit after click — KPI quick-filter, pick-one card, multi-select row): the selected state is **primary-tinted, and it beats hover**. Gate the neutral hover behind `!selected` (`!selected && "hover:bg-surface-hover"`) so the grey wash never paints over the lit tint. Two sanctioned idioms — don't invent a third:
+  - **Row inside a `Table`**: pass `state.selected`; the primitive applies `aria-selected:bg-state-selected aria-selected:hover:bg-state-selected aria-selected:shadow-row-selected` (the `state-selected` token + an inset primary bar). Don't hand-roll it.
+  - **Free-standing tile / card**: `border-primary-500 bg-primary-50` (a tile adds `ring-2 ring-primary-500/10`). `KpiTile` owns this for quick-filters (§4) — use the primitive; only hand-write the pair for a bespoke pick-one card.
+- **Nested actions** on a hoverable row keep their row-distinct hover (§3.2): neutral action → `hover:bg-surface-active` (one shade past the row), destructive → `ghost-danger`.
+
+The one hard rule: **selected ≠ hover.** A lit / selected surface must **not** also carry an unconditional `hover:bg-surface-hover` — on pointer-over it would flicker back to the neutral grey and read as deselected. Always gate hover behind `!selected` (the `KpiTile` and `Table` primitives already do; match them in any hand-rolled selectable list).
+
 ---
 
 ## 4. KPI Quick-Filter Tiles
 
-The tile itself is `KpiTile` from `@cloud/ui` (it owns the styling + a11y below). The **grid, the tile data, and the toolbar/filter linkage stay in the page** — `activeKey` is derived from the applied filter, `onClick` mutates it. Pass `onClick` for an interactive quick-filter; omit it for a pure stat.
+The tile is `KpiTile` from `@cloud/ui` — it owns the styling + a11y (active-beats-hover, keyboard `role="button"`, the non-native-button rule). **Don't hand-roll the tile classes; use the primitive.** The **grid, the tile data, and the toolbar/filter linkage stay in the page:**
 
-A fixed three-column grid; each tile is itself a **clickable status filter** (click to apply, click again to clear):
+- **Grid** (page-owned): `grid grid-cols-3 gap-3` (or `grid-cols-2 sm:grid-cols-4` for four tiles).
+- **`activeKey`** is *derived* from the applied filter, not stored separately; clicking a tile mutates the applied filter (clicking the active one clears it).
+- Pass `onClick` for an interactive quick-filter; **omit it for a pure stat** (renders non-interactive — no cursor / role / keyboard).
+- Standard content is `label` / `value` / `sub`; pass `children` for a custom inner layout.
 
+```tsx
+<div className="grid grid-cols-3 gap-3">
+  {tiles.map((tile) => (
+    <KpiTile
+      key={tile.key}
+      active={tile.key === activeKey}
+      onClick={() => onSelect(tile.key)}   // omit → pure display
+      label={tile.label}
+      value={tile.value}
+      sub={tile.sub}
+    />
+  ))}
+</div>
 ```
-grid grid-cols-3 gap-3
-tile:    button · rounded-lg border px-4 py-3 text-left transition-colors cursor-pointer
-resting: border-line-subtle bg-surface-2 shadow-1 hover:bg-surface-hover
-active:  border-primary-500 bg-primary-50 ring-2 ring-primary-500/10 (label & number switch to primary-700)
-label:   text-2xs font-medium tracking-wider uppercase text-content-tertiary
-value row: mt-1 flex items-baseline gap-1.5
-value:   font-mono text-2xl tracking-tight tabular-nums
-sub:     text-2xs text-content-tertiary
-```
 
-Active styling must beat hover (no hover wash in the active state).
+Active styling beats hover — the component guarantees it (no hover wash on the active tile). This is the free-standing-tile case of the general selectable-surface rule (§3.4).
 
 ---
 
@@ -205,6 +231,7 @@ sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3
 - `-mx-6` + `px-6` makes the band full-bleed; the canvas background `bg-surface-1` masks table rows passing underneath (without the bleed they'd peek through the 24px side gutters)
 - `py-3` gives the docked state 12px of breathing room; `-my-3` cancels it so the resting rhythm stays gap-6
 - `z-10` is enough to sit above table content; overlays (Select dropdowns etc.) render through portals and are unaffected
+- The list card below pulls up with `-mt-2`, landing search band → table at **16px** (tighter than the 24px page rhythm); this band's `-my-3` stays symmetric (§3, §6)
 
 - Row container: `flex flex-wrap items-center gap-2`; every control at `sm` (28px tall)
 - Search input: `prefix={<Search className="size-3.5"/>}`, wrapped in `max-w-64 flex-1`
@@ -221,7 +248,7 @@ sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3
 
 ## 6. List Card
 
-Structure: `Card elevation={1}` → count band → `Table` → pagination band. The three segments separate themselves with borders; the card adds no padding of its own.
+Structure: `Card elevation={1}` → count band → `Table` → pagination band. The three segments separate themselves with borders; the card adds no padding of its own. The card carries `-mt-2` so the sticky condition band → table gap lands at **16px** — it hugs the table, tighter than the 24px page rhythm (§3, §5).
 
 ### 6.1 Count band
 
@@ -247,7 +274,7 @@ Remaining column conventions:
 |---|---|
 | Status | Badge (tone + dot) |
 | Tag set | `flex flex-wrap gap-1`; empty = `—` |
-| Trailing chevron | `width: 48, align: "right"`, passive `ChevronRight size-3.5 text-content-tertiary` — **the whole row is the click target** (`onRowClick`); no inline buttons |
+| Trailing chevron | `width: 48, align: "right"`, passive `ChevronRight size-3.5 text-content-tertiary` — **the whole row is the click target** (`onRowClick`). Default to this; if a row instead needs inline actions (edit/delete), drop the chevron and follow §3.2 for their hover + `stopPropagation` |
 
 - Pass column titles as **uppercase text** (the primitive applies no text-transform)
 - Sorting is tri-state: asc → desc → natural order; handle `onSortChange(null)` (restore seed order) — never ignore it
@@ -280,7 +307,7 @@ Use only when the input is sequential / branching.
 
 - **Step indicator**: `StepIndicator` with card chrome `rounded-xl border border-line-default bg-surface-2 px-5.5 py-4 shadow-1`
 - **Two columns**: `flex flex-col gap-6 lg:flex-row lg:items-start`; main column `min-w-0 flex-1`; the summary rail component carries its own `w-full lg:w-75 lg:shrink-0` (300px) + `sticky top-5`; full-width steps simply don't render the rail
-- **Step card head**: `CardHeader flush className="px-5 py-4"` + `CardTitle className="text-md"` (+ optional `CardDescription text-xs text-content-tertiary`); content uses the default slot padding
+- **Step card head**: `CardHeader flush className="px-5 py-3.5"` (14·20) + `CardTitle className="text-md"` (+ optional `CardDescription text-xs text-content-tertiary`); content uses the default slot padding
 - **Summary rail**: `p-4.5`; heading `text-sm font-semibold mb-3`; `dl flex flex-col gap-2 text-xs`, `dt w-20 shrink-0 text-content-tertiary`; empty values render `—`
 - **Error banner**: inside the main column, `mt-3 rounded-md border border-error/30 bg-error-bg px-3 py-2 text-sm text-error-strong` + `role="alert"`
 - **Footer nav**: `mt-6 flex items-center justify-between`; Back `ghost` (disabled on step 1), Continue `primary` with right chevron, final step swaps to Create `primary` with Check + `loading`
@@ -296,7 +323,8 @@ Validation logic and field groups **live in feature-level shared files** (e.g. `
 
 `flex flex-col gap-6 lg:flex-row lg:items-start`; main card `Card className="min-w-0 flex-1"` (width classes go on the Card itself — no extra wrapper); right rail `flex w-full flex-col gap-6 lg:w-80 lg:shrink-0` (320px).
 
-- **KV grid**: `dl flex flex-col gap-3.5 text-sm`; row `flex gap-5`, `dt w-40 shrink-0 font-medium text-content-tertiary`, `dd min-w-0 flex-1`; missing values render a uniform `Not provided` (tertiary)
+- **KV grid**: `dl grid-auto-fit-kv gap-x-8 gap-y-3.5 text-sm` — columns auto-fit to the card's own width (1 up when narrow, 2–3 as it widens), so the card adapts without viewport breakpoints; row `flex gap-5`, `dt w-40 shrink-0 font-medium text-content-tertiary`, `dd min-w-0 flex-1`; long free-text rows (address / remark) get `col-span-full`; missing values render a uniform `Not provided` (tertiary)
+  - Responsive auto-fit columns always go through the `grid-auto-fit-*` utilities (`@cloud/ui` styles) — never hand-write `grid-cols-[repeat(auto-fit,minmax(…))]` (banned arbitrary value, and easy to drop the `min(…,100%)` that prevents phone-width overflow). The min-width is named by content archetype (`-kv` = label+value); add `-card` / `-compact` in `packages/ui` when their min is agreed.
 - **Stat card**: `Card className="gap-1 px-4 py-3.5"`; label `text-xs font-medium text-content-secondary`, value `text-2xl font-semibold leading-tight`, delta line `mt-0.5 text-xs text-content-tertiary`
 - **PII masking**: masked by default with per-field `Reveal` (`text-xs font-medium text-info-strong hover:underline`); revealing fires an audit-logged toast
 
@@ -304,12 +332,12 @@ Validation logic and field groups **live in feature-level shared files** (e.g. `
 
 - Head: `CardHeader` + `CardTitle className="text-md"` (+ `CardDescription className="text-xs leading-relaxed text-content-tertiary"`); header buttons go in the **`CardAction`** slot (vertically centered against the text block — team spec); no hand-rolled flex containers
 - Row-list content: `CardContent flush` with rows as direct children: `flex items-center gap-3~3.5 px-4~4.5 py-3~3.5 border-b border-line-subtle last:border-b-0`; leading `size-10 rounded-lg` category tile, title `text-sm font-semibold` + chips at `gap-2`, subline `text-xs`
-- Clickable rows: `role="button"` + `cursor-pointer hover:bg-surface-hover`; inline action clusters call `stopPropagation`
+- Clickable rows: `role="button"` + `cursor-pointer hover:bg-surface-hover` (+ `active:bg-surface-active` for the press beat — §3.4); a row that holds a persistent *selected* state goes primary-tinted and suppresses hover while selected (§3.4). Inline action clusters call `stopPropagation` and give their icons a row-distinct hover (§3.2)
 - In-section empty state: `px-4~6 py-8~12 text-center text-sm text-content-tertiary`
 
 ### 8.3 Modals
 
-Every mutation goes through a modal + route handler. Widths: confirmations `sm:max-w-[440px]`, forms `sm:max-w-[620px]`. Footer is always `ghost` Cancel + the primary action (destructive ones use `variant="danger"` + `loading`).
+Every mutation goes through a modal + route handler. **Width is the `Modal` `size` prop — never a hand-written `className="sm:max-w-[…]"`.** The primitive owns the scale: `sm` 360 / `md` 480 (default) / `lg` 640 / `xl` 880. Confirmations → `size="md"` (480), forms → `size="lg"` (640); reach for `xl` only when a form body genuinely needs it. A prototype's off-scale width **snaps to the nearest token** (a 459px design → `md`, a 620px → `lg`; whichever is closest wins — see the snap rule in §1), so the page never carries an arbitrary `max-w-[…]`. Footer is always `ghost` Cancel + the primary action (destructive ones use `variant="danger"` + `loading`).
 
 ---
 
@@ -331,11 +359,16 @@ Every mutation goes through a modal + route handler. Widths: confirmations `sm:m
 ## 10. Cheat Sheet
 
 ```
-page padding        px-6 pt-6 pb-8        block gap gap-6
+page padding        px-6 pt-6 pb-8        block gap gap-6 (24)
+search band→card    -mt-2 → 16px hug      card interior p-5 / gap-5 (20)
 in-card bands       px-4 py-3             card stacks gap-5 (tight 3.5)
+wizard card head    px-5 py-3.5 (14·20)   tabs strip ~42px (line variant)
 condition controls  always size sm        search input max-w-64 flex-1
 sticky condition band  sticky top-0 z-10 -mx-6 -my-3 bg-surface-1 px-6 py-3
 single-step form    sticky header (cancel+submit)   body mx-auto max-w-3xl col, no footer
 wizard rail         w-75 sticky top-5     detail rail w-80
-confirm modal 440px form modal 620px      empty state py-12 centered text-sm tertiary
+modal size prop     sm360 md480 lg640 xl880   confirm md / form lg, snap to nearest (§1,§8.3)
+empty state py-12 centered text-sm tertiary
+clickable surface   hover:bg-surface-hover  press active:bg-surface-active (§3.4)
+selectable surface  selected=primary-tinted, beats hover → gate hover on !selected
 ```
