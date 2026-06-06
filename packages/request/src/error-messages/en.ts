@@ -19,7 +19,14 @@ import {
   ERR_ROLE_NAME_SHORT,
   ERR_ROLE_DELETE_BUILTIN,
   ERR_ROLE_DELETE_ASSIGNED,
+  ERR_MW_DB,
+  ERR_MW_CACHE,
+  ERR_MW_MAIL,
+  ERR_MW_UNKNOWN,
 } from "../error-codes.ts";
+
+// 中间件类四码共用同一句通用文案:差异只在 code(给开发/日志),不在文案(给客户)。
+const MW_UNAVAILABLE = "The service is temporarily unavailable. Please try again later.";
 
 // 英文基底：每个错误码都必须有一条文案，其余 locale 缺 key 时回退到这里。
 export const en: ErrorMessages = {
@@ -45,4 +52,9 @@ export const en: ErrorMessages = {
   [ERR_ROLE_NAME_SHORT]: "The role name is too short.",
   [ERR_ROLE_DELETE_BUILTIN]: "Built-in roles cannot be deleted.",
   [ERR_ROLE_DELETE_ASSIGNED]: "Roles with assigned users cannot be deleted.",
+  // Middleware / Infra（对客户统一文案，开发凭 code 区分）
+  [ERR_MW_DB]: MW_UNAVAILABLE,
+  [ERR_MW_CACHE]: MW_UNAVAILABLE,
+  [ERR_MW_MAIL]: MW_UNAVAILABLE,
+  [ERR_MW_UNKNOWN]: MW_UNAVAILABLE,
 };

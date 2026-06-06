@@ -19,7 +19,14 @@ import {
   ERR_ROLE_NAME_SHORT,
   ERR_ROLE_DELETE_BUILTIN,
   ERR_ROLE_DELETE_ASSIGNED,
+  ERR_MW_DB,
+  ERR_MW_CACHE,
+  ERR_MW_MAIL,
+  ERR_MW_UNKNOWN,
 } from "../error-codes.ts";
+
+// 中间件类四码共用同一句通用文案:差异只在 code(给开发/日志),不在文案(给客户)。
+const MW_UNAVAILABLE = "服务暂时不可用，请稍后重试。";
 
 export const zhCN: ErrorMessages = {
   // 通用
@@ -44,4 +51,9 @@ export const zhCN: ErrorMessages = {
   [ERR_ROLE_NAME_SHORT]: "角色名称太短。",
   [ERR_ROLE_DELETE_BUILTIN]: "内置角色不可删除。",
   [ERR_ROLE_DELETE_ASSIGNED]: "已分配用户的角色不可删除。",
+  // 中间件 / 基础设施（对客户统一文案，开发凭 code 区分）
+  [ERR_MW_DB]: MW_UNAVAILABLE,
+  [ERR_MW_CACHE]: MW_UNAVAILABLE,
+  [ERR_MW_MAIL]: MW_UNAVAILABLE,
+  [ERR_MW_UNKNOWN]: MW_UNAVAILABLE,
 };

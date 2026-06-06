@@ -39,3 +39,12 @@ export type ErrorBody = {
   code: string;
   traceId: string;
 };
+
+// 可抛异常基类与子类(业务 / 中间件)。从 root 导出,server 业务代码与 api-kit mapper 共用同一身份。
+export {
+  AppError,
+  BusinessError,
+  MiddlewareError,
+  type BusinessStatus,
+  type ErrorParams,
+} from "./errors.ts";
