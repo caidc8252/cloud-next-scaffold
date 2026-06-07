@@ -1,30 +1,15 @@
-import { prisma } from "@cloud/db";
 import { BusinessError } from "@cloud/request";
 import { successResponse } from "@cloud/request/server";
-import {
-  ERR_INVALID_ID,
-  ERR_INVALID_JSON,
-  ERR_USER_NOT_FOUND,
-  ERR_USER_PROTECTED,
-} from "@cloud/request/error-codes";
-import { assertPermissions, hasPermissions, AuthzError } from "@cloud/permissions/server";
-import {
-  toClientUser,
-  extractRoleIds,
-  userPartnerInclude,
-} from "@/app/(portal)/system/users/_server/user-mapper";
+import { ERR_BAD_REQUEST, ERR_INVALID_ID, ERR_INVALID_JSON } from "@cloud/request/error-codes";
+import { assertPermissions } from "@cloud/permissions/server";
+import { updateUserSchema } from "@/service/users/schemas/users.schema";
+import { updateUser } from "@/service/users/server/users.service";
 import { withApiHandler } from "@/lib/api-handler";
 
-async function findUserInPartner(userId: number, partnerId: number) {
-  return prisma.sysPartnerUser.findUnique({
-    where: { partnerId_userId: { partnerId, userId } },
-  });
-}
-
-function normalizeRoleIds(roleIds: number[]) {
-  return [...new Set(roleIds)].sort((left, right) => left - right);
-}
-
+/**
+ * 更新某运营人员在当前 partner 下的 remark 与/或角色。需要 users.UPD;
+ * 改角色额外需要 users.CHANGE_ROLE(service 内做范围校验),受保护用户只能改 remark。
+ */
 export const PUT = withApiHandler(
   async (req: Request, { params }: { params: Promise<{ userId: string }> }) => {
     const session = await assertPermissions({ all: ["users.UPD"] });
@@ -32,56 +17,16 @@ export const PUT = withApiHandler(
     const userId = Number(rawId);
     if (!Number.isFinite(userId)) throw new BusinessError(ERR_INVALID_ID);
 
-    const partnerId = session.currentPartnerId;
-    const link = await findUserInPartner(userId, partnerId);
-    if (!link) throw new BusinessError(ERR_USER_NOT_FOUND, 404);
-
-    const isProtected = userId === session.userId || link.authorizingType === "ADMIN";
-
-    let body: { remark?: string; roleIds?: string[] };
+    let raw: unknown;
     try {
-      body = await req.json();
+      raw = await req.json();
     } catch {
       throw new BusinessError(ERR_INVALID_JSON);
     }
 
-    // Protected users can only have remark updated
-    if (isProtected && body.roleIds !== undefined) {
-      throw new BusinessError(ERR_USER_PROTECTED);
-    }
+    const parsed = updateUserSchema.safeParse(raw);
+    if (!parsed.success) throw new BusinessError(ERR_BAD_REQUEST);
 
-    const requestedRoleIds =
-      body.roleIds === undefined
-        ? null
-        : normalizeRoleIds(body.roleIds.map(Number).filter(Number.isFinite));
-
-    if (requestedRoleIds !== null) {
-      const currentRoleIds = normalizeRoleIds(extractRoleIds(link.roles).map(Number));
-      const roleIdsChanged =
-        requestedRoleIds.length !== currentRoleIds.length ||
-        requestedRoleIds.some((roleId, index) => roleId !== currentRoleIds[index]);
-
-      if (roleIdsChanged && !hasPermissions(session.permissions, { all: ["users.CHANGE_ROLE"] })) {
-        throw new AuthzError(403, "forbidden");
-      }
-    }
-
-    const partnerUserData: Record<string, unknown> = { updUserId: session.userId };
-    if (body.remark !== undefined) partnerUserData.remark = body.remark.trim() || null;
-    if (requestedRoleIds !== null) {
-      partnerUserData.roles = requestedRoleIds.map((roleId) => ({ roleId }));
-    }
-
-    await prisma.sysPartnerUser.update({
-      where: { partnerId_userId: { partnerId, userId } },
-      data: partnerUserData,
-    });
-
-    const updated = await prisma.sysUser.findUniqueOrThrow({
-      where: { userId },
-      include: userPartnerInclude(partnerId),
-    });
-
-    return successResponse(toClientUser(updated));
+    return successResponse(await updateUser(session, userId, parsed.data));
   },
 );

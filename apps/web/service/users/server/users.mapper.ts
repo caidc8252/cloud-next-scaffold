@@ -1,13 +1,20 @@
 import "server-only";
 
+import { extractRoleIds } from "@/service/_shared/role-codes";
 import type { User } from "@/app/(portal)/system/_shared/types";
 
-// 角色绑定走 sys_partner_user.roles JSONB（List<{roleId}>）；邀请走 sys_operator_invite（无占位
-// 用户）。密码历史走 sys_user.password_history JSONB；重置请求改 Redis，不再有可列出的历史。
+// Entity → VO 映射。角色绑定走 sys_partner_user.roles JSONB（List<{roleId}>）；邀请走
+// sys_operator_invite（无占位用户）。密码历史走 sys_user.password_history JSONB；重置请求改
+// Redis，不再有可列出的历史。
 
-type PartnerUserLink = { authorizingType: string; status: string; roles: unknown; remark: string | null };
+type PartnerUserLink = {
+  authorizingType: string;
+  status: string;
+  roles: unknown;
+  remark: string | null;
+};
 
-type UserRow = {
+export type UserRow = {
   userId: number;
   username: string;
   nickName: string;
@@ -23,7 +30,7 @@ type UserRow = {
   partnerUsers: PartnerUserLink[];
 };
 
-type InviteRow = {
+export type InviteRow = {
   operatorInviteId: number;
   inviteEmail: string;
   token: string;
@@ -33,22 +40,6 @@ type InviteRow = {
   inviterUserId: number;
   roles: unknown;
 };
-
-/** 原始 roleId 入参（string/number 混入）→ 去重升序的正整数列表（roleId 从 1 起，过滤 0/NaN）。 */
-export function parseRoleIds(input: unknown): number[] {
-  if (!Array.isArray(input)) return [];
-  const ids = input.map(Number).filter((id) => Number.isInteger(id) && id > 0);
-  return [...new Set(ids)].sort((left, right) => left - right);
-}
-
-/** roles JSONB（List<{roleId}>）→ 字符串 roleId 列表。 */
-export function extractRoleIds(roles: unknown): string[] {
-  if (!Array.isArray(roles)) return [];
-  const ids = roles
-    .map((r) => (r && typeof r === "object" ? (r as { roleId?: unknown }).roleId : undefined))
-    .filter((id): id is number => typeof id === "number");
-  return [...new Set(ids)].map(String);
-}
 
 export function toClientUser(row: UserRow): User {
   const link = row.partnerUsers[0];
@@ -101,12 +92,7 @@ export function toClientInvite(row: InviteRow, inviterName: string): User {
   };
 }
 
-/** 当前 partner 的用户归属 include（含 roles JSONB，用于推导 roleIds）。 */
-export function userPartnerInclude(partnerId: number) {
-  return {
-    partnerUsers: {
-      where: { partnerId },
-      select: { authorizingType: true, status: true, roles: true, remark: true },
-    },
-  } as const;
+/** `toClientInvite` 的 id 形如 `invite-<operatorInviteId>`；这里解析回数字 id（非法得 NaN）。 */
+export function parseInviteId(rawId: string): number {
+  return Number(rawId.replace(/^invite-/, ""));
 }

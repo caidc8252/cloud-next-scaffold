@@ -2,7 +2,9 @@ import "server-only";
 
 import type { Role } from "@/app/(portal)/system/_shared/types";
 
-type RoleRow = {
+// Entity → VO 映射。权限码走 sys_role.permission_codes JSONB（List<string>）。
+
+export type RoleRow = {
   roleId: number;
   roleName: string;
   roleType: string;
@@ -16,7 +18,7 @@ type RoleRow = {
 /** permission_codes JSONB（List<string>）→ 字符串数组。 */
 export function extractPermissionCodes(codes: unknown): string[] {
   if (!Array.isArray(codes)) return [];
-  return codes.filter((c): c is string => typeof c === "string");
+  return codes.filter((code): code is string => typeof code === "string");
 }
 
 export function toClientRole(row: RoleRow, updaterName: string, operatorCount: number): Role {

@@ -3,36 +3,21 @@ import "server-only";
 import { prisma } from "@cloud/db";
 import { encryptSecret, decryptSecret } from "@cloud/security/server";
 import { getAuthConfig } from "@cloud/config";
-import { PASSWORD_POLICY } from "@cloud/config/password-policy";
 import { generateTotpSecret, totpKeyUri, verifyTotp } from "@/lib/totp";
-import type { AccountSecurity, MfaStatus } from "@/app/(portal)/account/_shared/types";
+import type { MfaStatus } from "@/app/(portal)/account/_shared/types";
 
-// MFA（TOTP）业务逻辑。状态 = SysUser.mfaEnable + SysMfaInfo.status。
-// 不变量（无 DB 唯一约束，靠这里 + 事务保证）：稳态 ≤1 ACTIVE、≤1 PENDING；
-// Reconfigure 过渡期允许 1 ACTIVE + 1 PENDING。登录校验遍历所有 ACTIVE，任一通过即可。
+// MFA（TOTP）业务逻辑。account（启用/重配/关闭/改密 step-up）与 auth（登录二次校验）共用，
+// 故独立成 service/mfa，避免 auth → account 跨域依赖。
+// 状态 = SysUser.mfaEnable + SysMfaInfo.status。不变量（无 DB 唯一约束，靠这里 + 事务保证）：
+// 稳态 ≤1 ACTIVE、≤1 PENDING；Reconfigure 过渡期允许 1 ACTIVE + 1 PENDING。
+// 登录校验遍历所有 ACTIVE，任一通过即可。
+// 注：本域事务密集（activate / disable 跨表多写），数据访问保留在 service 内（不强拆 repository）。
 
 const MFA_TYPE = "TOTP";
 const MAX_FAIL = 10;
 
 const secretKey = () => getAuthConfig().mfaSecretKey;
 const lockWindowMs = () => getAuthConfig().lockDurationMinutes * 60_000;
-
-/** Account & Security 页所需的安全态 VO（MFA 开关/状态 + 密码元信息）。 */
-export async function getAccountSecurity(userId: number): Promise<AccountSecurity> {
-  const [user, mfaStatus] = await Promise.all([
-    prisma.sysUser.findUniqueOrThrow({
-      where: { userId },
-      select: { mfaEnable: true, passwordChangedTimestamp: true },
-    }),
-    getMfaStatus(userId),
-  ]);
-  return {
-    mfaEnable: user.mfaEnable,
-    mfaStatus,
-    passwordChangedTimestamp: user.passwordChangedTimestamp?.toISOString() ?? null,
-    passwordExpiryDays: PASSWORD_POLICY.expiryDays,
-  };
-}
 
 export async function getMfaStatus(userId: number): Promise<MfaStatus> {
   const rows = await prisma.sysMfaInfo.findMany({

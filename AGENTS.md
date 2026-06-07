@@ -64,8 +64,24 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 登录前页面放在 `apps/web/app/(public)`
 - 登录后的后台页面放在 `apps/web/app/(portal)`
 - API 路由放在 `apps/web/app/api`
-- 共享服务端逻辑优先放在 `apps/web/lib` 或 `packages/*`
+- 业务实现（service / repository / mapper / policy / schema）放在 `apps/web/service/<domain>/`，详见下面「服务端分层」
+- 仅与具体业务无关的通用服务端工具放 `apps/web/lib`；跨业务可复用能力沉淀到 `packages/*`
 - 当前基线已经把后台壳子接在 `app/(portal)` 上，大多数业务页面默认加在这里
+
+### 服务端分层（route / service / schema / policy / data）
+
+> 业务实现按层拆分，落在 `apps/web/service/<domain>/`。**不要再把业务逻辑堆在 route handler 里，也不要放进 route 目录下的 `_server/`**——`_server/` 是历史遗留写法（lint 会拦 route 直接 import `*.repository` / `*.mapper` / `@cloud/db`），见到顺手迁到 `service/`。
+
+- **route**（`app/api/**/route.ts`）：只做 HTTP 适配。顺序 `assertPermissions → 解析参数 / zod parse → 调 service → 返回 envelope`，整体包在 `withApiHandler` 里。route **不直接 `import @cloud/db`**，也不直接 import `*.repository` / `*.mapper`，只依赖 service（需要 mapper 的纯 helper 时由 service re-export 转出）。
+- **schema**（`service/<domain>/schemas/<domain>.schema.ts`）：client + server 共享的 zod，在 route parse、不在 service 里 parse。放在 `server/` 外面，因为客户端表单也要 import。
+- **service**（`service/<domain>/server/<domain>.service.ts`）：业务编排。入参是「已解析的类型化数据 + 当前会话」，**绝不接收 `Request` / `NextRequest` / `URLSearchParams`**。可预期错误一律 `throw BusinessError`，由 route 的 `withApiHandler` 统一兜底。
+- **policy**（`service/<domain>/server/<domain>.policy.ts`）：范围 / 实体级权限校验（例如「这条记录是否属于当前租户」「当前用户能否改这个目标」），尽量写成纯函数便于单测。
+- **data**（`service/<domain>/server/<domain>.repository.ts` + `*.mapper.ts`）：repository 只做 prisma 查询 / 变更，无 session / 权限 / HTTP 感知；mapper 只做 Entity → VO。
+- `server/` 下所有文件加 `import "server-only"`。
+- 跨 domain 复用的纯 helper（如解析角色 JSONB 的 `service/_shared/role-codes.ts`）放 `service/_shared/`，不要让一个 domain reach 进另一个 domain 的 `server/`。
+- 页面保持薄：`page.tsx` 只做顶层取数 + 组合，取数同样调 service（与 route 复用同一套 repository / service），不在 page 里手写 prisma 查询。
+- 两层权限：route 做粗粒度码校验（`assertPermissions(['xxx.UPD'])`），service / policy 做范围校验；按钮显隐只是体验层，不是安全边界。
+- 当前进度：`users` 域已按此结构迁好，可作样板参考（`apps/web/service/users/`）；其余域逐步迁移。
 
 ### 共享能力复用
 
@@ -119,6 +135,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - App Router 页面组件默认使用服务端组件，除非有明确交互需求再加 `"use client"`
 - 只需要登录态的页面，调用 `requireSession()`
 - 页面本身有明确权限要求时，优先调用 `requirePermissions()`，不要只在前端做按钮显隐
+- 页面保持薄：`page.tsx` 只做鉴权 + 顶层取数 + 组合，取数调对应 domain 的 service（见「服务端分层」），不在 page 里手写 prisma 查询或业务逻辑
 - 页面级异常兜底沿用现有文件：
   - `apps/web/app/(portal)/error.tsx`
   - `apps/web/app/(public)/error.tsx`
@@ -188,10 +205,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - 游标 token 由服务端 `encodeCursor()` 签发、只编码锚点 id、对客户端不透明；翻页方向是独立的 `direction` 参数，由客户端显式传，**不编进 token**
   - 服务端按 `query.sortOrder` 设 `orderBy`、`take: limit + 1` 多取一条探测，再交给 `buildCursorPage()` 切片、翻回升序、签发双向游标；不要在 Route Handler 里手写这套逻辑
   - 客户端用 `apps/web/lib/use-cursor-pagination.ts` 的 `useCursorPagination()` 原样回传服务端给的游标 + 方向，**绝不从行 id 自己拼游标**，也不缓存历史游标
-- 新增接口时，优先放在 `apps/web/app/api/*`
-- Route Handler 默认同时做两层判断：
-  - 登录态 / 权限：优先用 `assertPermissions()`
-  - 业务归属校验：例如 `entityId`、`roleId`、`userId` 是否属于当前租户
+- 新增接口时，优先放在 `apps/web/app/api/*`，且**只做 HTTP 适配**，业务逻辑落到 `service/<domain>/`（见「服务端分层」）
+- Route Handler 默认做两层权限：
+  - 登录态 / 粗粒度权限码：优先用 `assertPermissions()`（在 route 里做）
+  - 业务归属 / 范围校验：例如 `entityId`、`roleId`、`userId` 是否属于当前租户——落在 service / policy 层
 - Route Handler 的异常兜底统一走 `apps/web/lib/api-handler.ts`（设计与示例见 `docs/exception-handling.md`）
   - **业务异常一律 throw 类型化异常，不再 return 错误响应**：参数校验、业务冲突、数据不存在等可预期错误用 `throw new BusinessError(code, status?, params?)`（`@cloud/request`），由 `withApiHandler` 捕获后统一出 40x `{ code, message, traceId }`
     - `code` 走 `PMMNNN` 数字码（注册表内才本地化）；`status` 限 `400|401|403|404|409|422`，默认 400；`params` 是 `{name}` 占位插值参数，渲染进文案、不进响应体

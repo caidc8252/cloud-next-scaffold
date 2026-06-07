@@ -1,8 +1,7 @@
 import { assertPermissions } from "@cloud/permissions/server";
 import { successResponse } from "@cloud/request/server";
-import "@/lib/account-error-messages";
+import { getAccountSecurity } from "@/service/account/server/account.service";
 import { withApiHandler } from "@/lib/api-handler";
-import { getAccountSecurity } from "@/app/(portal)/account/_server/mfa-service";
 
 /**
  * The signed-in user's account-security state (MFA flag/status + password meta).

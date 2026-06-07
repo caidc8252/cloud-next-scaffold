@@ -1,17 +1,14 @@
-import { prisma } from "@cloud/db";
 import { BusinessError } from "@cloud/request";
 import { successResponse, noContentResponse } from "@cloud/request/server";
-import {
-  ERR_INVALID_ID,
-  ERR_INVALID_JSON,
-  ERR_ROLE_NOT_FOUND,
-  ERR_ROLE_DELETE_BUILTIN,
-  ERR_ROLE_DELETE_ASSIGNED,
-} from "@cloud/request/error-codes";
+import { ERR_BAD_REQUEST, ERR_INVALID_ID, ERR_INVALID_JSON } from "@cloud/request/error-codes";
 import { assertPermissions } from "@cloud/permissions/server";
-import { toClientRole } from "@/app/(portal)/system/roles/_server/role-mapper";
+import { updateRoleSchema } from "@/service/roles/schemas/roles.schema";
+import { updateRole, deleteRole } from "@/service/roles/server/roles.service";
 import { withApiHandler } from "@/lib/api-handler";
 
+/**
+ * 更新角色(名称 / 描述 / 权限)。需要 roles.UPD;内置角色仅权限可改,跨 partner 角色不可见。
+ */
 export const PUT = withApiHandler(
   async (req: Request, { params }: { params: Promise<{ roleId: string }> }) => {
     const session = await assertPermissions({ all: ["roles.UPD"] });
@@ -19,46 +16,23 @@ export const PUT = withApiHandler(
     const roleId = Number(rawId);
     if (!Number.isFinite(roleId)) throw new BusinessError(ERR_INVALID_ID);
 
-    const existing = await prisma.sysRole.findUnique({ where: { roleId } });
-    if (
-      !existing ||
-      (existing.partnerId !== null && existing.partnerId !== session.currentPartnerId)
-    ) {
-      throw new BusinessError(ERR_ROLE_NOT_FOUND, 404);
-    }
-
-    let body: { name?: string; description?: string; permissions?: string[] };
+    let raw: unknown;
     try {
-      body = await req.json();
+      raw = await req.json();
     } catch {
       throw new BusinessError(ERR_INVALID_JSON);
     }
 
-    const isBuiltin = existing.roleType === "BUILTIN";
+    const parsed = updateRoleSchema.safeParse(raw);
+    if (!parsed.success) throw new BusinessError(ERR_BAD_REQUEST);
 
-    const dataUpdate: Record<string, unknown> = { updUserId: session.userId };
-    if (!isBuiltin) {
-      if (body.name !== undefined) dataUpdate.roleName = body.name.trim();
-      if (body.description !== undefined) dataUpdate.remark = body.description.trim() || null;
-    }
-    if (body.permissions !== undefined) {
-      dataUpdate.permissionCodes = body.permissions;
-    }
-
-    const updated = await prisma.sysRole.update({ where: { roleId }, data: dataUpdate });
-
-    const operatorCount = await prisma.sysPartnerUser.count({
-      where: {
-        partnerId: session.currentPartnerId,
-        status: { in: ["ACTIVE", "LOCKED"] },
-        roles: { array_contains: [{ roleId }] },
-      },
-    });
-
-    return successResponse(toClientRole(updated, session.username, operatorCount));
+    return successResponse(await updateRole(session, roleId, parsed.data));
   },
 );
 
+/**
+ * 删除角色。需要 roles.DELETE;内置角色不可删,仍被用户绑定的角色不可删(409)。
+ */
 export const DELETE = withApiHandler(
   async (_request: Request, { params }: { params: Promise<{ roleId: string }> }) => {
     const session = await assertPermissions({ all: ["roles.DELETE"] });
@@ -66,28 +40,7 @@ export const DELETE = withApiHandler(
     const roleId = Number(rawId);
     if (!Number.isFinite(roleId)) throw new BusinessError(ERR_INVALID_ID);
 
-    const existing = await prisma.sysRole.findUnique({ where: { roleId } });
-    if (
-      !existing ||
-      (existing.partnerId !== null && existing.partnerId !== session.currentPartnerId)
-    ) {
-      throw new BusinessError(ERR_ROLE_NOT_FOUND, 404);
-    }
-
-    if (existing.roleType === "BUILTIN") {
-      throw new BusinessError(ERR_ROLE_DELETE_BUILTIN);
-    }
-
-    // 角色绑定走 sys_partner_user.roles JSONB；用 array_contains 判断是否仍被绑定。
-    const assignedCount = await prisma.sysPartnerUser.count({
-      where: { roles: { array_contains: [{ roleId }] } },
-    });
-    if (assignedCount > 0) {
-      throw new BusinessError(ERR_ROLE_DELETE_ASSIGNED, 409);
-    }
-
-    await prisma.sysRole.delete({ where: { roleId } });
-
+    await deleteRole(session, roleId);
     return noContentResponse();
   },
 );

@@ -1,15 +1,13 @@
-import { prisma } from "@cloud/db";
 import { BusinessError } from "@cloud/request";
 import { noContentResponse } from "@cloud/request/server";
-import { ERR_INVALID_ID, ERR_USER_CANCEL_NOT_PENDING } from "@cloud/request/error-codes";
+import { ERR_INVALID_ID } from "@cloud/request/error-codes";
 import { assertPermissions } from "@cloud/permissions/server";
+import { cancelInvite, parseInviteId } from "@/service/users/server/users.service";
 import { withApiHandler } from "@/lib/api-handler";
 
-// 列表里待消费邀请的 id 形如 `invite-<operatorInviteId>`。
-function parseInviteId(rawId: string): number {
-  return Number(rawId.replace(/^invite-/, ""));
-}
-
+/**
+ * 撤销一条待消费邀请。列表里邀请 id 形如 `invite-<operatorInviteId>`。需要 users.INVITE。
+ */
 export const POST = withApiHandler(
   async (_req: Request, { params }: { params: Promise<{ userId: string }> }) => {
     const session = await assertPermissions({ all: ["users.INVITE"] });
@@ -17,18 +15,7 @@ export const POST = withApiHandler(
     const inviteId = parseInviteId(rawId);
     if (!Number.isFinite(inviteId)) throw new BusinessError(ERR_INVALID_ID);
 
-    const partnerId = session.currentPartnerId;
-    const invite = await prisma.sysOperatorInvite.findFirst({
-      where: { operatorInviteId: inviteId, partnerId },
-    });
-    if (!invite || invite.status !== "PENDING") {
-      throw new BusinessError(ERR_USER_CANCEL_NOT_PENDING);
-    }
-
-    await prisma.sysOperatorInvite.delete({
-      where: { operatorInviteId: invite.operatorInviteId },
-    });
-
+    await cancelInvite(session, inviteId);
     return noContentResponse();
   },
 );

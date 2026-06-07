@@ -1,16 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toClientUser, parseRoleIds } from "./user-mapper";
-
-describe("parseRoleIds", () => {
-  it("parses string ids to deduped, ascending numbers", () => {
-    expect(parseRoleIds(["3", "1", "3", "2"])).toEqual([1, 2, 3]);
-  });
-
-  it("drops non-finite values and returns [] for non-arrays", () => {
-    expect(parseRoleIds(["1", "abc", null, 2])).toEqual([1, 2]);
-    expect(parseRoleIds(undefined)).toEqual([]);
-  });
-});
+import { toClientUser } from "./users.mapper";
 
 function baseRow(overrides: Record<string, unknown> = {}) {
   return {
@@ -43,5 +32,9 @@ describe("toClientUser remark source", () => {
       partnerUsers: [{ authorizingType: "NORMAL", status: "ACTIVE", roles: [], remark: null }],
     });
     expect(toClientUser(row).remark).toBe("");
+  });
+
+  it("derives roleIds from the partner-user roles JSONB", () => {
+    expect(toClientUser(baseRow()).roleIds).toEqual(["7"]);
   });
 });

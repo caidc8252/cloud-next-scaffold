@@ -7,3 +7,4 @@ import "server-only";
 // 由 i18n/request.ts（每个请求都跑）在顶部引入，保证读取前一定已注册。
 // 新增业务域文案模块时，往这里加一行 import 即可。
 import "./auth-error-messages.ts";
+import "./account-error-messages.ts";

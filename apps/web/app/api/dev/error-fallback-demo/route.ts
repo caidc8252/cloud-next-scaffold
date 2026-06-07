@@ -1,3 +1,6 @@
+// dev-only fixture: this route's purpose is to exercise real Prisma queries inline to demo
+// error-fallback + cursor-pagination scenarios; it is intentionally not behind a service layer.
+// eslint-disable-next-line no-restricted-imports
 import { prisma } from "@cloud/db";
 import { assertPermissions } from "@cloud/permissions/server";
 import {

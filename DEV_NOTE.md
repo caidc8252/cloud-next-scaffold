@@ -53,11 +53,17 @@
 - S3 下载前先 `HeadObject` 校验对象和读权限，避免浏览器跳到 S3 XML 错误页；对应 AWS 身份必须允许目标对象的 `s3:GetObject`。
 - 公开图片通过 `storage_object.visibility = PUBLIC` 表达，且只允许 `image/*` 落到 `public/` 前缀。公开访问只暴露 `accessUrl`，S3 bucket policy 只应开放 `public/*`，不要开放整个 bucket。Bucket policy 的匿名 `s3:GetObject` 不等于应用有写权限，上传公开图片仍需要应用 AWS 身份或被 assume role 允许 `s3:PutObject` 到 `public/*`。
 - `storage_object` 只表达文件本体，业务归属统一落在 `storage_attachment`。通用绑定使用 `subjectType + subjectId + purpose`，业务模块负责校验 subject 是否真实存在以及是否允许绑定。
-- 系统管理页面组件（users / roles）属于 `apps/web` 业务代码，按 Next.js 惯例放在 `app/(portal)/system/<feature>/` 下：
-  - `page.tsx` 服务端入口（鉴权 + 数据加载）
+- **服务端分层（route / service / schema / policy / data）**：业务实现拆层落在 `apps/web/service/<domain>/`，不堆在 route handler、也不放 route 目录下的 `_server/`（`_server/` 是历史遗留，lint 拦 route 直接 import `*.repository` / `*.mapper` / `@cloud/db`）。详细规则见 `AGENTS.md` 的「服务端分层」小节，要点：
+  - route 只做 HTTP 适配（`assertPermissions → zod parse → 调 service → envelope`），只依赖 service
+  - schema（client+server 共享 zod）在 `service/<domain>/schemas/`，在 route parse
+  - service / repository / mapper / policy 在 `service/<domain>/server/`，全部 `import "server-only"`；repository 无 session/HTTP 感知、mapper 只做 Entity→VO、policy 做范围校验（纯函数好测）
+  - 跨 domain 纯 helper 放 `service/_shared/`（如解析角色 JSONB 的 `role-codes.ts`）
+  - 业务逻辑进 service 后可 mock repository 边界做单测——这是这次分层的主要收益
+  - **样板**：`users` 域已迁好（`apps/web/service/users/`），新 domain 照此结构；旧域逐步从 `_server/` 迁出
+- 页面组件按 Next.js 惯例仍放在 `app/(portal)/<route>/` 下：
+  - `page.tsx` 服务端入口（鉴权 + 顶层取数，取数调 service，不手写 prisma 查询）
   - `_components/`：客户端组件（list / detail / modal 等）
-  - `_server/`：服务端工具（mapper、纯查询逻辑），文件需 `import "server-only"`
-  - 跨 feature 共享的类型 / helper 放 `app/(portal)/system/_shared/`
+  - 跨 feature 共享的展示类型 / helper 放 `app/(portal)/system/_shared/`
 - 跨目录引用一律走 `@/...` 路径别名（tsconfig 已配置），不要再写 `../../../..`。
 - `@cloud/ui` Card 槽位（`CardHeader` / `CardContent` / `CardFooter`）的 padding 是 `group-data-[size=*]/card:p-*` 变体类：消费侧无前缀的 `p-0` / `px-0` **覆盖不掉**（tailwind-merge 不跨变体去重，且变体规则在产物中排在基础工具类之后、同特异性后者赢）。要贴边内容（表格、行列表）给对应槽位加 `flush`（如 `<CardContent flush>`，跳过槽位 padding，行自带内边距），不要用 `!important`。
 - API Route Handler 的异常兜底统一走 `apps/web/lib/api-handler.ts`（完整设计 + 四类 demo 见 `docs/exception-handling.md`）：
