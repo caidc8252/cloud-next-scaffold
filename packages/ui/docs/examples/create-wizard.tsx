@@ -25,6 +25,7 @@ import {
   CardTitle,
   Field,
   Input,
+  PageBody,
   StepIndicator,
 } from "@cloud/ui";
 
@@ -67,7 +68,7 @@ export function CreateWizardTemplate() {
       </div>
 
       {/* §3 — page body */}
-      <div className="flex flex-col gap-6 px-6 pt-6 pb-8">
+      <PageBody>
         {/* §7 — step indicator wears card chrome */}
         <StepIndicator
           current={0}
@@ -147,7 +148,7 @@ export function CreateWizardTemplate() {
             </dl>
           </aside>
         </div>
-      </div>
+      </PageBody>
     </>
   );
 }

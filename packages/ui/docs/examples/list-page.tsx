@@ -20,7 +20,8 @@ import {
   Button,
   Card,
   Input,
-  KpiTile,
+  StatCard,
+  PageBody,
   Pagination,
   Select,
   SelectContent,
@@ -164,20 +165,20 @@ export function ListPageTemplate() {
         </div>
       </div>
 
-      {/* §3 — page body: px-6 pt-6 pb-8, blocks at gap-6 */}
-      <div className="flex flex-col gap-6 px-6 pt-6 pb-8">
-        {/* §4 — KPI quick-filter tiles. The grid + data + which key is active
-            (derived from the applied filter) live here; KpiTile is the styled,
+      {/* §3 — page body: centralizes padding and block gap */}
+      <PageBody>
+        {/* §4 — stat-card quick filters. The grid + data + which key is active
+            (derived from the applied filter) live here; StatCard is the styled,
             keyboard-accessible leaf. Omit onClick for a pure stat tile. */}
         <div className="grid grid-cols-3 gap-3">
           {STAT_TILES.map((t) => (
-            <KpiTile
+            <StatCard
               key={t.key}
-              active={t.active}
+              selected={t.active}
               onClick={() => {}}
               label={t.label}
               value={t.value}
-              sub={t.sub}
+              description={t.sub}
             />
           ))}
         </div>
@@ -282,7 +283,7 @@ export function ListPageTemplate() {
             <Pagination page={1} pageCount={1} onChange={() => {}} />
           </div>
         </Card>
-      </div>
+      </PageBody>
     </>
   );
 }

@@ -103,7 +103,7 @@ export function Table<R>({
     <div
       className={cn(
         'w-full overflow-auto',
-        bordered && 'border border-line-default rounded-lg',
+        bordered && 'border border-line-default rounded-xl shadow-1',
         className,
       )}
     >
@@ -117,7 +117,7 @@ export function Table<R>({
                 className={cn(
                   HEAD_DENSITY[density],
                   // No text-transform: the header renders col.title exactly as passed.
-                  'text-xs font-medium text-content-tertiary tracking-wide border-b border-line-default',
+                  'text-xs font-semibold text-content-tertiary tracking-overline border-b border-line-default',
                   separator,
                   stickyCell(colIndex, true),
                 )}

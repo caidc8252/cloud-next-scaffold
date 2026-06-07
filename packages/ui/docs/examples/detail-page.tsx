@@ -25,14 +25,13 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  PAGE_BODY_PADDING_CLASS_NAME,
+  StatCard,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@cloud/ui";
-
-// §3 — every tab body shares the page padding.
-const TAB_BODY_CLASS = "px-6 pt-6 pb-8";
 
 // Neutral count chip on a tab; omit when the count is 0.
 function TabCount({ children }: { children: ReactNode }) {
@@ -59,17 +58,6 @@ function KeyValue({
       <dt className="w-40 shrink-0 font-medium text-content-tertiary">{label}</dt>
       <dd className="min-w-0 flex-1 text-content-primary">{children}</dd>
     </div>
-  );
-}
-
-// §8.1 — right-rail stat card composed from Card (no new primitive).
-function StatCard({ label, value, sub }: { label: string; value: ReactNode; sub?: string }) {
-  return (
-    <Card className="gap-1 px-4 py-3.5">
-      <div className="text-xs font-medium text-content-secondary">{label}</div>
-      <div className="text-2xl font-semibold leading-tight text-content-primary">{value}</div>
-      {sub && <div className="mt-0.5 text-xs text-content-tertiary">{sub}</div>}
-    </Card>
   );
 }
 
@@ -138,7 +126,7 @@ export function DetailPageTemplate() {
       </div>
 
       {/* §8.1 — Overview: two columns, main Card carries min-w-0 flex-1 itself */}
-      <TabsContent value="overview" className={TAB_BODY_CLASS}>
+      <TabsContent value="overview" className={PAGE_BODY_PADDING_CLASS_NAME}>
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
           <Card className="min-w-0 flex-1">
             <CardHeader>
@@ -165,8 +153,8 @@ export function DetailPageTemplate() {
 
           {/* Right rail: 320px on lg, stat cards stacked at gap-6 */}
           <div className="flex w-full flex-col gap-6 lg:w-80 lg:shrink-0">
-            <StatCard label="Related items" value={2} sub="2 active" />
-            <StatCard label="Members" value={3} sub="3 active" />
+            <StatCard label="Related items" value={2} description="2 active" />
+            <StatCard label="Members" value={3} description="3 active" />
             <StatCard label="Last activity" value="2 days ago" />
           </div>
         </div>
@@ -174,7 +162,7 @@ export function DetailPageTemplate() {
 
       {/* §8.2 — section card: CardAction slot for header buttons (vertically centered),
           CardContent flush with rows as direct children */}
-      <TabsContent value="collections" className={TAB_BODY_CLASS}>
+      <TabsContent value="collections" className={PAGE_BODY_PADDING_CLASS_NAME}>
         <Card>
           <CardHeader>
             <CardTitle className="text-md">Section title</CardTitle>
@@ -224,7 +212,7 @@ export function DetailPageTemplate() {
         </Card>
       </TabsContent>
 
-      <TabsContent value="items" className={TAB_BODY_CLASS}>
+      <TabsContent value="items" className={PAGE_BODY_PADDING_CLASS_NAME}>
         <div className="px-4 py-12 text-center text-sm text-content-tertiary">
           Section empty state — px-4~6 py-8~12, centered, text-sm tertiary.
         </div>

@@ -25,7 +25,7 @@ const imgRadiusClass: Record<CardSize, string> = {
 
 const elevationClass: Record<CardElevation, string> = {
   0: "shadow-none",
-  1: "shadow-2",
+  1: "shadow-1",
   2: "shadow-3",
 }
 
@@ -95,7 +95,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-title"
       className={cn(
-        "text-base leading-snug font-semibold text-content-primary group-data-[size=sm]/card:text-sm",
+        "text-md leading-snug font-semibold text-content-primary group-data-[size=sm]/card:text-sm",
         className
       )}
       {...props}
@@ -161,5 +161,4 @@ export {
   CardDescription,
   CardContent,
 }
-
 

@@ -17,6 +17,22 @@ describe("buttonVariants — danger hover/active (TOMS v2.0)", () => {
   }
 })
 
+describe("buttonVariants — TOMS component scale", () => {
+  it("default button uses the 36px / 14px / 600 control scale", () => {
+    const classes = buttonVariants()
+    expect(classes).toContain("h-control-md")
+    expect(classes).toContain("text-md")
+    expect(classes).toContain("font-semibold")
+    expect(classes).not.toContain("translate-y-px")
+  })
+
+  it("small button keeps the 28px height without shrinking text below the control scale", () => {
+    const classes = buttonVariants({ size: "sm" })
+    expect(classes).toContain("h-control-sm")
+    expect(classes).not.toContain("text-xs")
+  })
+})
+
 describe("buttonVariants — soft family (TOMS v2.0)", () => {
   it("soft: tonal primary fill", () => {
     const classes = buttonVariants({ variant: "soft" })
