@@ -26,6 +26,7 @@ import {
   CardTitle,
   Field,
   Input,
+  PageBody,
   Textarea,
 } from "@cloud/ui";
 
@@ -60,7 +61,7 @@ export function CreateFormTemplate() {
       </div>
 
       {/* §3 §7.1 — page body: one centered column of section cards at gap-6 */}
-      <div className="px-6 pt-6 pb-8">
+      <PageBody>
         <div className="mx-auto flex max-w-3xl flex-col gap-6">
           {/* Section card 1 — group fields by concern */}
           <Card elevation={1}>
@@ -100,7 +101,7 @@ export function CreateFormTemplate() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </PageBody>
     </>
   );
 }

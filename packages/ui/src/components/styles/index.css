@@ -145,7 +145,7 @@
   --text-md:  14px;
   --text-lg:  16px;
   --text-xl:  18px;
-  --text-2xl: 22px;
+  --text-2xl: 24px;
   --text-3xl: 28px;
   --text-4xl: 36px;
   --text-5xl: 48px;
@@ -172,6 +172,7 @@
   --spacing-cx-sm: 10px;
   --spacing-cx-md: 14px;
   --spacing-cx-lg: 18px;
+  --spacing-stat-card: 92px;
 
   /* ─── Container max-widths → max-w-* ─── */
   --container-content: 1280px; /* TOMS: content max-width 1280 + 24px gutters */
@@ -214,6 +215,10 @@
 @utility grid-auto-fit-kv {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+}
+
+@utility tracking-overline {
+  letter-spacing: 0.06em;
 }
 
 /* ───────────────────────────────────────────────────────

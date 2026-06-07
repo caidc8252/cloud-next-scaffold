@@ -6,7 +6,7 @@ import { Input as InputPrimitive } from "@base-ui/react/input"
 import { cn } from "../../lib/utils"
 
 const inputSizeClass: Record<string, string> = {
-  sm: "h-control-sm text-xs px-cx-sm",
+  sm: "h-control-sm px-cx-sm",
   md: "h-control-md px-cx-md",
   lg: "h-control-lg text-base px-cx-lg",
 }
@@ -61,7 +61,7 @@ function Input({
       data-slot="input"
       aria-invalid={resolvedInvalid || undefined}
       className={cn(
-        "h-control-md w-full min-w-0 rounded-md border border-line-default bg-surface-2 px-cx-md py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-content-tertiary focus-visible:border-line-focus focus-visible:ring-2 focus-visible:ring-line-focus/30 read-only:bg-surface-3 read-only:text-content-secondary disabled:cursor-not-allowed disabled:bg-surface-3 disabled:opacity-50 aria-invalid:border-error-strong aria-invalid:ring-2 aria-invalid:ring-error/20 md:text-sm dark:bg-surface-3/30 dark:read-only:bg-surface-3/80 dark:disabled:bg-surface-3/80 dark:aria-invalid:border-error-strong/50 dark:aria-invalid:ring-error/40",
+        "h-control-md w-full min-w-0 rounded-md border border-line-default bg-surface-2 px-cx-md py-1 text-md transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-content-tertiary focus-visible:border-line-focus focus-visible:ring-2 focus-visible:ring-line-focus/30 read-only:bg-surface-3 read-only:text-content-secondary disabled:cursor-not-allowed disabled:bg-surface-3 disabled:opacity-50 aria-invalid:border-error-strong aria-invalid:ring-2 aria-invalid:ring-error/20 dark:bg-surface-3/30 dark:read-only:bg-surface-3/80 dark:disabled:bg-surface-3/80 dark:aria-invalid:border-error-strong/50 dark:aria-invalid:ring-error/40",
         variant === "filled" && filledClass,
         validation && !resolvedInvalid && validationClass[validation],
         inputSize && inputSizeClass[inputSize],
@@ -103,5 +103,4 @@ function Input({
 }
 
 export { Input }
-
 

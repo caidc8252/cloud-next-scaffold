@@ -6,6 +6,13 @@ import { describe, it, expect } from "vitest"
 import { Input } from "./input"
 
 describe("Input — TOMS v2.0 states", () => {
+  it("uses the 36px / 14px control scale by default", () => {
+    render(<Input placeholder="q" />)
+    const el = screen.getByPlaceholderText("q")
+    expect(el.className).toContain("h-control-md")
+    expect(el.className).toContain("text-md")
+  })
+
   it("filled variant uses the tonal surface", () => {
     render(<Input variant="filled" placeholder="q" />)
     expect(screen.getByPlaceholderText("q").className).toContain("bg-surface-3")

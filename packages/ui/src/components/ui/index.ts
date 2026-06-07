@@ -1,6 +1,6 @@
 export { Button, buttonVariants } from './button'
 export { Combobox, type ComboboxOption, type ComboboxProps } from './combobox'
-export { Badge, badgeVariants } from './badge'
+export { Badge, badgeVariants, type BadgeShape, type BadgeTone } from './badge'
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction, CardFooter } from './card'
 export { Field, type FieldProps } from './field'
 export { Input } from './input'
@@ -23,7 +23,16 @@ export { VirtualTable, type VirtualTableProps } from './virtual-table'
 export { Pagination, type PaginationProps } from './pagination'
 export { RichPagination, type RichPaginationProps, type RichPaginationRange } from './rich-pagination'
 export { LoadMore, type LoadMoreProps } from './load-more'
-export { KpiTile, type KpiTileProps } from './kpi-tile'
+export {
+  StatCard,
+  StatCard as KpiTile,
+  StatGrid,
+  type StatCardProps as KpiTileProps,
+  type StatCardProps,
+  type StatCardTrend,
+  type StatCardVariant,
+  type StatTrendDirection,
+} from './stat-card'
 export { InitialsTile, type InitialsTileProps } from './initials-tile'
 export { ThemeToggle } from './theme-toggle'
 export {

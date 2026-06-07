@@ -7,7 +7,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "../../lib/utils"
 
 const badgeVariants = cva(
-  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!",
+  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!",
   {
     variants: {
       variant: {
@@ -30,6 +30,7 @@ const badgeVariants = cva(
 )
 
 type BadgeTone = "neutral" | "success" | "warning" | "error" | "info"
+type BadgeShape = "pill" | "tag"
 
 const toneVariantMap: Record<BadgeTone, "default" | "secondary" | "destructive" | "outline"> = {
   neutral: "secondary",
@@ -49,6 +50,7 @@ const toneCssMap: Record<BadgeTone, string> = {
 
 interface BadgeProps extends useRender.ComponentProps<"span">, VariantProps<typeof badgeVariants> {
   tone?: BadgeTone
+  shape?: BadgeShape
   // Show a leading status dot. Color follows the text color (bg-current), so it
   // matches the tone and stays darker than the badge background.
   dot?: boolean
@@ -61,6 +63,7 @@ function Badge({
   className,
   variant,
   tone,
+  shape = "pill",
   dot,
   children,
   render,
@@ -71,7 +74,12 @@ function Badge({
     defaultTagName: "span",
     props: mergeProps<"span">(
       {
-        className: cn(badgeVariants({ variant: resolvedVariant }), tone && toneCssMap[tone], className),
+        className: cn(
+          badgeVariants({ variant: resolvedVariant }),
+          tone && toneCssMap[tone],
+          shape === "tag" && "rounded-sm font-mono",
+          className,
+        ),
         children: (
           <>
             {dot && <span className="size-1.5 shrink-0 rounded-full bg-current" aria-hidden />}
@@ -89,6 +97,4 @@ function Badge({
   })
 }
 
-export { Badge, badgeVariants }
-
-
+export { Badge, badgeVariants, type BadgeShape, type BadgeTone }
