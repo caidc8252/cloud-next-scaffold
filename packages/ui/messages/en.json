@@ -22,6 +22,14 @@
       },
       "clear": "Clear",
       "ok": "OK"
+    },
+    "pagination": {
+      "rowsPerPage": "Rows per page",
+      "showing": "Showing {from}–{to} of <b>{total}</b>",
+      "first": "First page",
+      "prev": "Previous page",
+      "next": "Next page",
+      "last": "Last page"
     }
   }
 }
