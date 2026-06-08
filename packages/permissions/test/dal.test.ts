@@ -133,7 +133,8 @@ describe("requireSession", () => {
     await expect(requireSession()).rejects.toThrow("__REDIRECT__:/select-partner");
   });
 
-  it("redirects to locked when partial with no active partner", async () => {
+  it("redirects to select-partner when partial with no selectable partner", async () => {
+    // 空/不可选的落地交给 /select-partner 页展示（未绑定 / 被禁用 / 无有效合同），不再走 /locked
     await seed({
       ...partialSnapshot,
       partners: [
@@ -141,6 +142,6 @@ describe("requireSession", () => {
       ],
     });
     const { requireSession } = await import("../src/server/dal.ts");
-    await expect(requireSession()).rejects.toThrow("__REDIRECT__:/locked");
+    await expect(requireSession()).rejects.toThrow("__REDIRECT__:/select-partner");
   });
 });
