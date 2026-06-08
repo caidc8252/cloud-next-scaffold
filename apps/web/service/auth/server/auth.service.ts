@@ -24,6 +24,8 @@ import {
   computeFailureUpdate,
 } from "@/lib/login-checks";
 import { createMfaLoginToken, readMfaLoginToken, deleteMfaLoginToken } from "@/lib/login-token";
+import { listPartnerChoices } from "./partner-choices";
+import { isPartnerSelectable } from "@/service/auth/partner-choice";
 import * as mfa from "@/service/mfa/server/mfa.service";
 import { loginPayloadSchema, type LoginInput, type MfaVerifyInput } from "@/service/auth/schemas/auth.schema";
 import * as authRepository from "./auth.repository";
@@ -33,20 +35,18 @@ import * as authRepository from "./auth.repository";
 
 export type LoginResult = { mfaRequired: true; mfaToken: string } | { redirectTo: string };
 
-/** 登录完成的公共收尾：按 ACTIVE partner 聚合 → 建会话 → 决定落地路由。 */
+/** 登录完成的公共收尾：按「可选 partner 数」聚合 → 建会话 → 决定落地路由。 */
 async function buildSessionAndRedirect(userId: number, snapshotFailCode: string): Promise<{ redirectTo: string }> {
-  const memberships = await authRepository.listPartnerMemberships(userId);
-  const active = memberships.filter(
-    (pu) => pu.status === "ACTIVE" && pu.partner.status === "ACTIVE",
-  );
-  const currentPartnerId = active.length === 1 ? active[0].partnerId : null;
+  const choices = await listPartnerChoices(userId);
+  const selectable = choices.filter(isPartnerSelectable);
+  const currentPartnerId = selectable.length === 1 ? selectable[0].partnerId : null;
+
   const snapshot = await buildSessionSnapshot(userId, currentPartnerId);
   if (!snapshot) throw new BusinessError(snapshotFailCode, 401);
   await createSession(snapshot);
 
-  if (active.length === 1) return { redirectTo: "/" };
-  if (active.length > 1) return { redirectTo: "/select-partner" };
-  return { redirectTo: "/locked" };
+  // currentPartnerId 落不下来（多选/零选/授权窗口失效）→ 去选择页
+  return { redirectTo: snapshot.currentPartnerId !== null ? "/" : "/select-partner" };
 }
 
 export async function login(input: LoginInput): Promise<LoginResult> {
