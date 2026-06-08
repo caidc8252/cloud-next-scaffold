@@ -47,7 +47,7 @@ export {
   AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle,
   AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
 } from './alert-dialog'
-export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './accordion'
+export { Accordion, AccordionItem, AccordionTrigger, AccordionContent, type AccordionTriggerProps } from './accordion'
 export { AspectRatio } from './aspect-ratio'
 export { Avatar, AvatarImage, AvatarFallback, AvatarGroup } from './avatar'
 export {
