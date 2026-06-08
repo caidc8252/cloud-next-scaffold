@@ -4,9 +4,9 @@
 >
 > **Compilable templates** (style-only skeletons, excluded from the bundle, ready to read or copy): [examples/list-page.tsx](./examples/list-page.tsx) · [examples/create-form.tsx](./examples/create-form.tsx) · [examples/create-wizard.tsx](./examples/create-wizard.tsx) · [examples/detail-page.tsx](./examples/detail-page.tsx).
 >
-> Baseline rules: `@cloud/ui` primitives + semantic tokens only (`surface/content/line/success/warning/error/info` plus the `teal/violet` category hues). No hex colors, no arbitrary font sizes, no arbitrary spacing, and no arbitrary radius values; every clickable element gets `cursor-pointer`.
+> Baseline rules: `@cloud/ui` primitives + semantic tokens only (`surface/content/line/success/warning/error/info` plus the `teal/violet` category hues). No hex colors, no arbitrary font sizes, no arbitrary spacing, no arbitrary width / height, and no arbitrary radius values; every clickable element gets `cursor-pointer`.
 >
-> **Snap to the scale, don't reproduce raw values.** A prototype hands you exact pixels (a `459px` modal, a `13px` gap, an off-palette grey); those are *intent*, not literals to copy. When a prototype value lands between two sanctioned tokens, snap to the **nearest** one, and use the primitive's prop / a scale class, never a hand-written arbitrary value (`max-w-[459px]`, `gap-[13px]`, `bg-[#…]`). Example: a 459px modal → `<Modal size="md">` (480px, nearest), **not** `size="sm"` (360px) and **never** `className="sm:max-w-[459px]"`.
+> **Snap to the scale, don't reproduce raw values.** A prototype hands you exact pixels (a `459px` modal, a `180px` select, a `13px` gap, an off-palette grey); those are *intent*, not literals to copy. When a prototype value lands between two sanctioned tokens, snap to the **nearest** one, and use the primitive's prop / a scale class, never a hand-written arbitrary value (`max-w-[459px]`, `w-[180px]`, `gap-[13px]`, `bg-[#…]`). Example: a 459px modal → `<Modal size="md">` (480px, nearest), **not** `size="sm"` (360px) and **never** `className="sm:max-w-[459px]"`.
 >
 > **Inherit first, adapt by task.** Default pages inherit the standard layout and density below. You may adapt content — copy, fields, which cards / columns appear — and you may choose another documented pattern when the task materially differs. Do not hand-write off-scale spacing or restyle primitives to match a prototype; when a page deviates from a default pattern, it must still use `@cloud/ui` primitives, semantic tokens, and defined density / size scales, and the reason should be recorded per §0.3.
 
@@ -119,7 +119,7 @@ Below are the default management-page skeletons; first check whether §0 applies
 
 ### 1.2 Create Page
 
-Two main shapes: ordinary "new / edit" pages use the **single-step form**; use a **multi-step wizard** when input has sequential dependency, branching, upload / scan / confirm. Very small contextual edits can use modal forms; bulk import and async flows should not be squeezed into a normal form.
+Two main shapes: ordinary "new / edit" pages use the **single-step form**; use a **multi-step wizard** when the flow benefits from step-by-step progression (sequential dependency, branching, upload / scan / confirm, review / approval, async setup, or cross-step summary). Very small contextual edits can use modal forms; bulk import and async flows should not be squeezed into a normal form.
 
 **Single-step form (default)** — Cancel and Submit both live in the sticky header; the body is one centered column of section cards. No footer, no right summary rail, no done step.
 
@@ -139,7 +139,7 @@ Two main shapes: ordinary "new / edit" pages use the **single-step form**; use a
 </>
 ```
 
-**Multi-step wizard** — only when the input is sequential / branching.
+**Multi-step wizard** — when the task benefits from step-by-step progression.
 
 ```tsx
 <>
@@ -147,7 +147,7 @@ Two main shapes: ordinary "new / edit" pages use the **single-step form**; use a
   <PageBody>
     <StepIndicator className="rounded-xl border border-line-default bg-surface-2 px-5.5 py-4 shadow-1" … />
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-      <div className="min-w-0 flex-1">{/* current step card + error banner + footer nav */}</div>
+      <div className="flex min-w-0 flex-1 flex-col gap-6">{/* current step group + footer nav */}</div>
       {/* right sticky summary rail (300px); steps needing full width simply don't render it */}
     </div>
   </PageBody>
@@ -156,7 +156,7 @@ Two main shapes: ordinary "new / edit" pages use the **single-step form**; use a
 
 ### 1.3 Detail Page
 
-Default to one page + Tabs. If a tab is heavy, needs an independent URL, permission boundary, or independent loading boundary, sub-routes are allowed; record the reason per §0.3.
+If the detail page has multiple peer sections, use same-page tabs. One or two core sections can render directly; if a section is heavy, needs an independent URL, permission boundary, or independent loading boundary, sub-routes are allowed with a recorded reason per §0.3.
 
 ```tsx
 <Tabs value={tab} onValueChange={…} className="gap-0">
@@ -166,8 +166,6 @@ Default to one page + Tabs. If a tab is heavy, needs an independent URL, permiss
   <TabsContent value="…" className={PAGE_BODY_PADDING_CLASS_NAME}>…</TabsContent>
 </Tabs>
 ```
-
-The server `page.tsx` stays a thin entry: guard (`requirePermissions`) → fetch → render the client view. No layout markup in it.
 
 ---
 
@@ -181,7 +179,7 @@ The server `page.tsx` stays a thin entry: guard (`requirePermissions`) → fetch
 
 ### 2.2 List / Create Header (`PageHeader`)
 
-- Row container: `flex flex-wrap items-end gap-x-4 gap-y-3`
+- Row container: `flex flex-wrap items-center gap-x-4 gap-y-3`; actions align to the vertical center of the left title/description block
 - Title: `h1` `text-2xl font-semibold tracking-tight text-content-primary`; inline status chip sits at `gap-2.5`
 - Description: `mt-1.5 max-w-3xl text-sm text-content-tertiary`
 - Actions: right-aligned `flex shrink-0 items-center gap-2`. By page type:
@@ -193,27 +191,25 @@ The server `page.tsx` stays a thin entry: guard (`requirePermissions`) → fetch
 
 Inside the band, no card. Layout: `flex flex-wrap items-center gap-4`, left to right.
 
-**A back button is mandatory**: every detail page header starts with a back affordance at the far left, fixed as:
+If the detail header needs a back affordance, place it at the far left and keep it visually consistent:
 
 ```tsx
 <Button
   variant="ghost"
   size="icon-sm"
-  aria-label="Back to list"
-  nativeButton={false}
-  render={<Link href="/manage/<list>" />}
+  aria-label="Back"
 >
   <ChevronLeft className="size-4" />
 </Button>
 ```
 
 - Ghost icon button (`icon-sm`) + `ChevronLeft size-4`, no text.
-- Render it as a real link via `render={<Link/>}` (middle-clickable, hover-previewable) — **not** `onClick + router.push`, and **not** `router.back()`: entering from a deep link / new tab leaves `back()` with no defined destination; `href` points statically at the module's list page.
+- The navigation target and behavior come from the product navigation layer (breadcrumb, known parent route, or explicit return target). Do not hard-code a module-list `href` in this spec.
 - `aria-label` is required for icon-only buttons.
 
 | Element | Spec |
 |---|---|
-| Back | see the mandatory recipe above |
+| Back | optional; if present, use the recipe above |
 | Identity | logo / avatar / initial tile at `lg` size; omit if the record has none |
 | Title row | `h1 text-2xl font-semibold tracking-tight` + status Badge, `gap-2.5` |
 | Meta row | `mt-2 flex flex-wrap gap-x-3.5 gap-y-1.5 text-xs text-content-secondary`; items use icon `size-3.5` + `gap-1` |
@@ -263,7 +259,7 @@ When a row has its own hover (`hover:bg-surface-hover`) **and** carries inline a
 - **Destructive action** (delete): `variant="ghost-danger"` — its hover is an `error-bg` tint and signals intent.
 - Always `e.stopPropagation()` on the action's `onClick` so it doesn't fire the row's `onRowClick`; group icons in a `flex items-center` cluster. Destructive actions still confirm via a modal (§8.3).
 
-Reference: the app-publish list table (edit + delete in the trailing column).
+Example: a hoverable row with edit / delete actions in the trailing column.
 
 ### 3.3 Icon-Button Actions & Destructive Intent
 
@@ -336,15 +332,15 @@ sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3
 - `z-10` is enough above table content; overlays render through portals.
 - The list card below pulls up with `-mt-2`, landing search band → table at **16px**. Rare non-sticky lists do not use this negative-margin pair.
 
-- Row container: `flex flex-wrap items-center gap-2`; every control at `sm` (28px tall).
-- Search input: `prefix={<Search className="size-3.5"/>}`, wrapped in `max-w-64 flex-1`.
-- Select filters: `SelectTrigger size="sm"` at fixed widths (150–200px); use the `SelectValue` render prop to show labels.
-- Submit: `variant="primary" size="sm"` with the Search icon.
+- Row container: `flex flex-wrap items-center gap-2`; every control at `md` (36px tall).
+- Search input: `inputSize="md"` + `prefix={<Search className="size-4"/>}`, wrapped in `max-w-64 flex-1`.
+- Select filters: `SelectTrigger size="md"` at fixed scale widths near the needed range (`w-40` / `w-44` / `w-48`, roughly 150–200px); use the `SelectValue` render prop to show labels. Never write `w-[150px]`, `w-[180px]`, or another page-local arbitrary width just to mirror a prototype.
+- Submit: `variant="primary" size="md"` with the Search icon.
 
 **Filter feedback row**:
 
 - No filters: one-line hint in `text-xs text-content-tertiary`.
-- With filters: `Active filters:` + FilterChips + `Clear all` (`ghost xs`).
+- With filters: localized active-filter label + FilterChips + clear-all action (`ghost xs`).
 - FilterChip: `rounded-full border border-primary-500/25 bg-primary-50 py-0.5 pr-1 pl-2.5 text-xs font-medium text-primary-700`, trailing `Button size="icon-xs" variant="ghost"` X for individual removal.
 
 ---
@@ -388,7 +384,7 @@ Remaining column conventions:
 
 `flex flex-wrap items-center justify-between gap-3 border-t border-line-subtle px-4 py-3`:
 
-- Left: `Rows per page` + `Select sm` (72px) + summary `Showing X–Y of Z` (`text-xs`, digits `tabular-nums`)
+- Left: `Rows per page` + compact `Select sm` using a scale width such as `w-20` (do not write `w-[72px]`) + summary `Showing X–Y of Z` (`text-xs`, digits `tabular-nums`)
 - Right: `Pagination` page buttons (no go-to-page input)
 - Changing page size resets to page 1
 
@@ -396,33 +392,31 @@ Remaining column conventions:
 
 ## 7. Create Page
 
-Two main shapes: **single-step form** (§7.1 — default for ordinary new/edit pages) and **multi-step wizard** (§7.2 — when the flow has sequence, branching, upload / scan / confirm). Very small contextual edits can use modal forms; bulk import, async processing, or long-running flows should use a dedicated page or wizard.
+Two main shapes: **single-step form** (§7.1 — default for ordinary new/edit pages) and **multi-step wizard** (§7.2 — when the flow benefits from step-by-step progression). Very small contextual edits can use modal forms; bulk import, async processing, or long-running flows should use a dedicated page or wizard.
 
 ### 7.1 Single-Step Form
 
-- **Sticky header**: `<PageHeader sticky … />` carries title + description and both actions — `ghost` Cancel plus `primary` Submit. Long forms default to sticky so Submit stays reachable. Ordinary single-step forms do **not** add a bottom action bar; if the task needs persistent preview, draft state, or split editing, first ask whether it is still an ordinary single-step form.
-- **Body**: `PageBody` wraps `<div className="mx-auto flex max-w-3xl flex-col gap-6">` — section cards grouped by concern. No `StepIndicator`, no right summary rail, no done step.
-- **Submit**: guard invalid / in-flight submits in the handler; reveal field errors on first submit; on success navigate straight to the new record's detail page.
+- **Sticky header**: `<PageHeader sticky … />` carries title + description and both actions — `ghost` Cancel plus `primary` Submit. Long forms default to sticky so Submit stays reachable. Single-step forms usually do not need a bottom action bar; add one only when the task needs persistent preview, draft state, split editing, or another clear affordance beyond the header actions.
+- **Body**: `PageBody` wraps `<div className="mx-auto flex max-w-3xl flex-col gap-6">` — section cards grouped by concern. No `StepIndicator`, no right summary rail, no done step by default. Edit-as-detail pages, preview-critical editors, or split editing flows may use a right rail when the rail materially improves review / editing efficiency; record the product reason per §0.3 instead of forcing the default single-column form.
+- **Submit**: guard invalid / in-flight submits in the handler; reveal field errors on first submit.
 
 ### 7.2 Multi-Step Wizard
 
-Use only when input has sequential dependency, branching, upload / scan / confirm, or cross-step summary. Do not switch to a wizard merely because there are many fields; many independent fields still belong in a sectioned single-step form.
+Use when the task benefits from step-by-step progression: sequential dependency, branching, upload / scan / confirm, review / approval, async setup, or cross-step summary. Do not switch to a wizard merely because there are many fields; many independent fields still belong in a sectioned single-step form.
 
 - **Step indicator**: `StepIndicator` with card chrome `rounded-xl border border-line-default bg-surface-2 px-5.5 py-4 shadow-1`
-- **Two columns**: `flex flex-col gap-6 lg:flex-row lg:items-start`; main column `min-w-0 flex-1`; right sticky summary rail carries `w-full lg:w-75 lg:shrink-0` (300px) + `sticky top-5`; full-width steps simply don't render it
+- **Two columns**: `flex flex-col gap-6 lg:flex-row lg:items-start`; main column `flex min-w-0 flex-1 flex-col gap-6`; right sticky summary rail carries `w-full lg:w-75 lg:shrink-0` (300px) + `sticky top-5`; full-width steps simply don't render it
 - **Step card head**: `CardHeader flush className="px-5 py-3.5"` (14·20) + `CardTitle className="text-md"` (+ optional `CardDescription text-xs text-content-tertiary`); content uses default slot padding
 - **Right sticky summary rail**: `p-4.5`; heading `text-sm font-semibold mb-3`; `dl flex flex-col gap-2 text-xs`, `dt w-20 shrink-0 text-content-tertiary`; empty values render `—`
-- **Error banner**: inside the main column, `mt-3 rounded-md border border-error/30 bg-error-bg px-3 py-2 text-sm text-error-strong` + `role="alert"`
-- **Footer nav**: `mt-6 flex items-center justify-between`; Back `ghost` (disabled on step 1), Continue `primary` with right chevron, final step swaps to Create `primary` with Check + `loading`
+- **Error banner**: directly under the current step card inside the same step group, `mt-3 rounded-md border border-error/30 bg-error-bg px-3 py-2 text-sm text-error-strong` + `role="alert"`
+- **Footer nav**: `flex items-center justify-end gap-2`; Back `ghost` (disabled on step 1) sits in the same right-aligned action group as Continue, Continue is `primary` with right chevron, and the final step swaps Continue for Create `primary` with Check + `loading`. Do not add `mt-*` here when the main column already owns vertical spacing with `gap-6`.
 - **Done step**: centered card, `CardContent flex flex-col items-center px-8 py-10`; 72px success disc → status Badge → `text-2xl` heading → `max-w-md text-sm` body → primary CTA
-
-Validation logic and field groups live in feature-level shared files; create pages and detail edit modals consume the same source.
 
 ---
 
 ## 8. Detail Page
 
-Detail pages default to `PageHeaderBand` + content. Use tabs based on content: 1-2 core sections can render directly in overview; multiple peer sections use tabs; heavy sections, independent permissions, or deep-link needs may use sub-routes with a recorded reason.
+Read-only detail pages default to `PageHeaderBand` + content. Use tabs based on content: 1-2 core sections can render directly in overview; multiple peer sections use tabs; heavy sections, independent permissions, or deep-link needs may use sub-routes with a recorded reason. If the product explicitly treats edit as the detail surface, choose the create/edit form pattern that fits the task and do not add tabs or a read-only detail header just to satisfy this section.
 
 ### 8.1 Overview Two-Column
 
@@ -442,7 +436,7 @@ Detail pages default to `PageHeaderBand` + content. Use tabs based on content: 1
 
 ### 8.3 Modals
 
-All mutations still go through route handlers. Small contextual mutations default to modals; long forms, bulk imports, async tasks, or flows that need full-page context do not belong in modals. **Width is the `Modal` `size` prop — never `className="sm:max-w-[…]"`.** The primitive owns the scale: `sm` 360 / `md` 480 / `lg` 640 / `xl` 880. Confirmations → `md`; normal modal forms → `lg`; reach for `xl` only when the body genuinely needs it. Footer is always `ghost` Cancel + the primary action; destructive actions use `variant="danger"` + `loading`.
+Small contextual mutations default to modals; long forms, bulk imports, async tasks, or flows that need full-page context do not belong in modals. **Width is the `Modal` `size` prop — never `className="sm:max-w-[…]"`.** The primitive owns the scale: `sm` 360 / `md` 480 / `lg` 640 / `xl` 880. Confirmations → `md`; normal modal forms → `lg`; reach for `xl` only when the body genuinely needs it. Footer is always `ghost` Cancel + the primary action; destructive actions use `variant="danger"` + `loading`.
 
 ---
 
@@ -484,7 +478,7 @@ card interior         p-5 / gap-5 (20)      card stacks gap-5 (tight 3.5)
 in-card bands         px-4 py-3             wizard card head px-5 py-3.5 (14·20)
 stat cards             pure stat / quick-filter by prototype semantics
 detail tabs           peer sections use tabs; heavy sections may use sub-routes with reason
-condition controls    always size sm        search input max-w-64 flex-1
+condition controls    always size md        search input max-w-64 flex-1
 sticky condition band portal-list default: sticky top-0 z-10 -mx-6 -my-3 bg-surface-1 px-6 py-3
 single-step form      sticky header for long forms; body mx-auto max-w-3xl column
 wizard summary rail   w-75 sticky top-5     detail right rail w-80
