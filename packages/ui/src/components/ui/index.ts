@@ -21,7 +21,7 @@ export { Toaster, toast } from './sonner'
 export { Table, type TableProps, type TableColumn, type SortDir } from './table'
 export { VirtualTable, type VirtualTableProps } from './virtual-table'
 export { Pagination, type PaginationProps } from './pagination'
-export { RichPagination, type RichPaginationProps, type RichPaginationRange } from './rich-pagination'
+export { RichPagination, type RichPaginationProps } from './rich-pagination'
 export { LoadMore, type LoadMoreProps } from './load-more'
 export {
   StatCard,

@@ -2,8 +2,9 @@
 
 import * as React from 'react'
 
+import { useTranslations } from '@cloud/i18n/client'
 import { cn } from '../../lib/utils'
-import { Pagination, type PaginationProps } from './pagination'
+import { Pagination } from './pagination'
 import {
   Select,
   SelectContent,
@@ -12,15 +13,6 @@ import {
   SelectValue,
 } from './select'
 
-export interface RichPaginationRange {
-  /** 1-based index of the first item on the current page (0 when total is 0). */
-  start: number
-  /** 1-based index of the last item on the current page. */
-  end: number
-  /** Total item count across all pages. */
-  total: number
-}
-
 export interface RichPaginationProps {
   /** Current page (1-based). */
   page: number
@@ -28,44 +20,44 @@ export interface RichPaginationProps {
   pageCount: number
   /** Called with the new page when the user navigates. */
   onPageChange: (page: number) => void
-  /** Current rows-per-page value. */
-  pageSize: number
   /** Total item count across all pages, used for the range summary. */
   total: number
-  /** Called with the new rows-per-page value. */
-  onPageSizeChange: (pageSize: number) => void
-  /** Selectable rows-per-page options; @default [10, 25, 50, 100]. */
-  pageSizeOptions?: number[]
-  /** Text shown before the rows-per-page select; @default 'Rows per page'. */
-  rowsPerPageLabel?: React.ReactNode
+  /** Current rows-per-page value (drives the range summary). */
+  pageSize: number
   /**
-   * Renders the range summary from the computed `{ start, end, total }`.
-   * @default `Showing ${start}–${end} of ${total}`
+   * Called with the new rows-per-page value. Omit to hide the rows-per-page
+   * selector entirely (e.g. lists with a fixed page size).
    */
-  summary?: (range: RichPaginationRange) => React.ReactNode
-  /** Forwarded to the inner page-number Pagination (siblingCount, showFirstLast, aria labels…). */
-  paginationProps?: Omit<PaginationProps, 'page' | 'pageCount' | 'onChange'>
+  onPageSizeChange?: (pageSize: number) => void
+  /** Selectable rows-per-page options; @default [10, 25, 50, 100]. */
+  pageSizeOptions?: readonly number[]
+  /** Page buttons shown on each side of the current page; forwarded to Pagination. */
+  siblingCount?: number
+  /** Show first/last jump buttons (« / ») flanking prev/next; forwarded to Pagination. @default false */
+  showFirstLast?: boolean
   className?: string
 }
 
-// Full list/table footer bar: rows-per-page selector + "showing X–Y of Z" range
-// summary on the left, page-number navigation on the right. Text is passed via
-// props (English defaults) so callers localize it — same convention as Pagination.
+// Full list/table footer bar: optional rows-per-page selector + "showing X–Y of Z"
+// range summary on the left, page-number navigation on the right. All text is
+// localized internally via the `ui.pagination` namespace (same convention as
+// DatePicker's `ui.datePicker`), so callers pass only data — no label props.
+// Consuming apps must provide `ui.pagination.*` messages.
 export const RichPagination: React.FC<RichPaginationProps> = ({
   page,
   pageCount,
   onPageChange,
-  pageSize,
   total,
+  pageSize,
   onPageSizeChange,
   pageSizeOptions = [10, 25, 50, 100],
-  rowsPerPageLabel = 'Rows per page',
-  summary,
-  paginationProps,
+  siblingCount,
+  showFirstLast = false,
   className,
 }) => {
-  const start = total === 0 ? 0 : (page - 1) * pageSize + 1
-  const end = Math.min(page * pageSize, total)
+  const t = useTranslations('ui.pagination')
+  const from = total === 0 ? 0 : (page - 1) * pageSize + 1
+  const to = Math.min(page * pageSize, total)
 
   return (
     <div
@@ -76,35 +68,42 @@ export const RichPagination: React.FC<RichPaginationProps> = ({
       )}
     >
       <div className="flex items-center gap-3 text-xs text-content-secondary">
-        <div className="flex items-center gap-1.5">
-          <span>{rowsPerPageLabel}</span>
-          <Select
-            value={String(pageSize)}
-            onValueChange={(value) => onPageSizeChange(Number(value))}
-          >
-            <SelectTrigger size="sm" className="w-[72px]">
-              <SelectValue>{(v: string) => String(v)}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {pageSizeOptions.map((n) => (
-                <SelectItem key={n} value={String(n)}>
-                  {n}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {onPageSizeChange ? (
+          <div className="flex items-center gap-1.5">
+            <span>{t('rowsPerPage')}</span>
+            <Select value={String(pageSize)} onValueChange={(value) => onPageSizeChange(Number(value))}>
+              <SelectTrigger size="sm" className="w-[72px]" aria-label={t('rowsPerPage')}>
+                <SelectValue>{(v: string) => String(v)}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {pageSizeOptions.map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
         <span className="tabular-nums">
-          {summary
-            ? summary({ start, end, total })
-            : `Showing ${start}–${end} of ${total}`}
+          {t.rich('showing', {
+            from,
+            to,
+            total,
+            b: (chunks) => <strong className="font-semibold text-content-primary">{chunks}</strong>,
+          })}
         </span>
       </div>
       <Pagination
         page={page}
         pageCount={pageCount}
         onChange={onPageChange}
-        {...paginationProps}
+        siblingCount={siblingCount}
+        showFirstLast={showFirstLast}
+        firstLabel={t('first')}
+        prevLabel={t('prev')}
+        nextLabel={t('next')}
+        lastLabel={t('last')}
       />
     </div>
   )
