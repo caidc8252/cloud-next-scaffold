@@ -187,6 +187,51 @@
 }
 
 /* ───────────────────────────────────────────────────────
+   Charts (TOMS DS 2.0 · spec/charts.html) — categorical 8 + ramps +
+   structural tokens. In a `@theme static` block so Tailwind ALWAYS emits
+   these CSS vars to :root: the palette is referenced only at RUNTIME
+   (ChartStyle injects `--color-<series>: var(--color-chart-N)`), which the
+   class scanner can't see — a plain `@theme` tree-shakes the unused ones, so
+   chart-4+ silently vanished in light mode. `static` forces all of them out.
+   Dark overrides live in the [data-theme="dark"] block below.
+   ─────────────────────────────────────────────────────── */
+@theme static {
+  /* Categorical 8 — ordinal; always start at chart-1 and step.
+     Tuned for ≥3:1 distinguishability at 8px markers / 1.5px strokes. */
+  --color-chart-1: oklch(52% 0.24 272);   /* accent indigo */
+  --color-chart-2: oklch(58% 0.14 152);   /* teal-green */
+  --color-chart-3: oklch(60% 0.14 230);   /* sky-blue */
+  --color-chart-4: oklch(70% 0.16  70);   /* amber */
+  --color-chart-5: oklch(60% 0.18 320);   /* magenta */
+  --color-chart-6: oklch(58% 0.20  25);   /* red */
+  --color-chart-7: oklch(50% 0.08 200);   /* slate-blue */
+  --color-chart-8: oklch(60% 0.10 290);   /* violet */
+  /* Sequential ramp — heatmaps + density. 100 lightest → 700 darkest */
+  --color-chart-seq-100: oklch(96% 0.03 262);
+  --color-chart-seq-200: oklch(90% 0.06 262);
+  --color-chart-seq-300: oklch(80% 0.09 262);
+  --color-chart-seq-400: oklch(68% 0.13 262);
+  --color-chart-seq-500: oklch(52% 0.16 262);
+  --color-chart-seq-600: oklch(40% 0.14 262);
+  --color-chart-seq-700: oklch(28% 0.10 262);
+  /* Diverging ramp — variance vs target (neg ↔ neutral ↔ pos) */
+  --color-chart-div-neg: oklch(58% 0.20 25);
+  --color-chart-div-mid: oklch(72% 0.005 270);
+  --color-chart-div-pos: oklch(58% 0.14 152);
+  /* Structural — grid/axis/label/dim map onto this repo's line/content tokens
+     (TOMS source names border-subtle / text-tertiary). var()-based, so they
+     follow dark mode through the cascade — no dark override needed below. */
+  --color-chart-grid:        var(--color-line-subtle);
+  --color-chart-axis:        var(--color-content-tertiary);
+  --color-chart-label:       var(--color-content-tertiary);
+  --color-chart-dim:         color-mix(in oklch, var(--color-content-tertiary) 35%, transparent);
+  --color-chart-tooltip-bg:  oklch(18% 0.01 270);
+  --color-chart-tooltip-fg:  oklch(99% 0 0);
+  --color-chart-zoom-fill:   color-mix(in oklch, var(--color-primary-700) 8%, transparent);
+  --color-chart-zoom-stroke: color-mix(in oklch, var(--color-primary-700) 60%, transparent);
+}
+
+/* ───────────────────────────────────────────────────────
    Z-index utilities — defined via @utility because Tailwind
    v4's `--z-{name}` namespace only generates numeric utilities
    (z-10, z-20 etc.). Custom names need explicit declaration.
@@ -344,6 +389,29 @@
   --shadow-cta: inset 0 1px 0 oklch(100% 0 0 / 0.12),
                 0 1px 2px oklch(0% 0 0 / 0.6);
   --shadow-focus: 0 0 0 3px oklch(70% 0.13 264 / 0.40);
+
+  /* Charts · dark — same hues, lifted lightness for the dark canvas.
+     grid/axis/label/dim/zoom are var()-based above → follow automatically. */
+  --color-chart-1: oklch(66% 0.20 272);
+  --color-chart-2: oklch(70% 0.13 152);
+  --color-chart-3: oklch(70% 0.13 230);
+  --color-chart-4: oklch(78% 0.14  70);
+  --color-chart-5: oklch(70% 0.16 320);
+  --color-chart-6: oklch(68% 0.17  25);
+  --color-chart-7: oklch(64% 0.08 200);
+  --color-chart-8: oklch(70% 0.11 290);
+  --color-chart-seq-100: oklch(26% 0.05 262);
+  --color-chart-seq-200: oklch(34% 0.08 262);
+  --color-chart-seq-300: oklch(44% 0.11 262);
+  --color-chart-seq-400: oklch(56% 0.14 262);
+  --color-chart-seq-500: oklch(66% 0.16 262);
+  --color-chart-seq-600: oklch(76% 0.13 262);
+  --color-chart-seq-700: oklch(86% 0.09 262);
+  --color-chart-div-neg: oklch(68% 0.16 25);
+  --color-chart-div-mid: oklch(50% 0.005 270);
+  --color-chart-div-pos: oklch(70% 0.13 152);
+  --color-chart-tooltip-bg: oklch(26% 0.006 260);
+  --color-chart-tooltip-fg: oklch(94% 0.003 260);
 }
 
 @layer base {
