@@ -37,16 +37,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ### 常规文档
 
 - README.md - 项目描述和使用指南
-- DEPLOYMENT.md - 部署指南
-- DEV_NOTE.md - 开发过程中积累的需要长期关注的事情，比如框架新知识、环境配置等
-  - 记录决策依据和最后决策，不需要详细记录做了什么
-  - 记录本项目中积累的基建、框架知识，避免日后重复踩坑
-  - 需要经常 review 此文档，作为日常知识储备
 
-### 临时文档
-
-- WIP.md - 开发计划、任务分解、待办事项等，主要面向中短期
-- TODO.md - 长期开发计划，未来要做的事情
 
 ## 开发流程
 

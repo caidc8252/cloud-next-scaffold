@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { generateKeyPairSync, publicEncrypt, constants } from "node:crypto";
+import {
+  generateKeyPairSync,
+  publicEncrypt,
+  constants,
+  createPrivateKey,
+  createPublicKey,
+} from "node:crypto";
 import { decryptRsaOaep } from "../src/server/rsa.ts";
 import { encryptRsaOaep } from "../src/client/rsa.ts";
 
@@ -9,6 +15,16 @@ function makeKeyPair() {
     publicKeyEncoding: { type: "spki", format: "pem" },
     privateKeyEncoding: { type: "pkcs8", format: "pem" },
   });
+}
+
+/** PKCS#8 私钥 PEM → 裸 DER Buffer。 */
+function privateKeyDer(pem: string): Buffer {
+  return createPrivateKey(pem).export({ type: "pkcs8", format: "der" }) as Buffer;
+}
+
+/** SPKI 公钥 PEM → 裸 base64 DER（无 PEM 头尾，单行）。 */
+function publicKeyDerBase64(pem: string): string {
+  return (createPublicKey(pem).export({ type: "spki", format: "der" }) as Buffer).toString("base64");
 }
 
 describe("decryptRsaOaep", () => {
@@ -30,6 +46,21 @@ describe("decryptRsaOaep", () => {
     const { privateKey } = makeKeyPair();
     expect(() => decryptRsaOaep("not-base64-cipher", privateKey)).toThrow();
   });
+
+  it("accepts a raw DER private key", () => {
+    const { publicKey, privateKey } = makeKeyPair();
+    const plaintext = JSON.stringify({ password: "der-key-pw", timestamp: 1700000000000 });
+    const cipher = publicEncrypt(
+      { key: publicKey, padding: constants.RSA_PKCS1_OAEP_PADDING, oaepHash: "sha256" },
+      Buffer.from(plaintext, "utf8"),
+    ).toString("base64");
+
+    expect(
+      JSON.parse(
+        decryptRsaOaep(cipher, { key: privateKeyDer(privateKey), format: "der", type: "pkcs8" }),
+      ),
+    ).toEqual({ password: "der-key-pw", timestamp: 1700000000000 });
+  });
 });
 
 describe("encryptRsaOaep ↔ decryptRsaOaep round-trip", () => {
@@ -42,6 +73,19 @@ describe("encryptRsaOaep ↔ decryptRsaOaep round-trip", () => {
 
     expect(JSON.parse(decryptRsaOaep(cipher, privateKey))).toEqual({
       password: "p@ss-WORD-12",
+      timestamp: 1700000000000,
+    });
+  });
+
+  it("encrypts when given a bare base64 DER public key (no PEM armor)", async () => {
+    const { publicKey, privateKey } = makeKeyPair();
+    const plaintext = JSON.stringify({ password: "der-pub-pw", timestamp: 1700000000000 });
+
+    const cipher = await encryptRsaOaep(plaintext, publicKeyDerBase64(publicKey));
+    expect(cipher).not.toContain("der-pub-pw");
+
+    expect(JSON.parse(decryptRsaOaep(cipher, privateKey))).toEqual({
+      password: "der-pub-pw",
       timestamp: 1700000000000,
     });
   });

@@ -52,11 +52,7 @@ export async function requireSession(): Promise<ActiveSession> {
     redirect("/api/auth/logout");
   }
 
-  // 有身份但未选公司：有可用公司 → 选公司；否则锁定
-  const hasActivePartner = snapshot.partners.some((partner) => partner.status === "ACTIVE");
-  if (hasActivePartner) {
-    redirect("/select-partner");
-  }
+  // 有身份但未选公司跳转选择
+  redirect("/select-partner");
 
-  redirect("/locked");
 }

@@ -149,10 +149,10 @@ export async function changePassword(
   let next: { password: string; timestamp: number };
   try {
     cur = passwordPayloadSchema.parse(
-      JSON.parse(decryptRsaOaep(input.encryptedCurrentPassword, auth.rsaPrivateKeyPem)),
+      JSON.parse(decryptRsaOaep(input.encryptedCurrentPassword, auth.rsaPrivateKey)),
     );
     next = passwordPayloadSchema.parse(
-      JSON.parse(decryptRsaOaep(input.encryptedNewPassword, auth.rsaPrivateKeyPem)),
+      JSON.parse(decryptRsaOaep(input.encryptedNewPassword, auth.rsaPrivateKey)),
     );
   } catch {
     throw new BusinessError(ERR_AUTH_ENCRYPTION_INVALID);

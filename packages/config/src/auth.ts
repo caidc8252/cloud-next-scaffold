@@ -5,6 +5,7 @@ const authConfigSchema = z.object({
   AUTH_PASSWORD_MAX_ERROR_TIMES: z.coerce.number().int().positive().default(6),
   AUTH_PASSWORD_LOCK_MINUTES: z.coerce.number().int().positive().default(30),
   AUTH_LOGIN_TIMESTAMP_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
+  // base64 编码的 PKCS#8 裸 DER 私钥（与前端 NEXT_PUBLIC_AUTH_LOGIN_RSA_PUBLIC_KEY 成对）。
   AUTH_LOGIN_RSA_PRIVATE_KEY: z.string().min(1),
   // 32 字节、base64 编码的 AES 密钥，用于加密 SysMfaInfo.secretEncrypted（TOTP 密钥）。
   AUTH_MFA_SECRET_KEY: z.string().min(1),
@@ -14,7 +15,8 @@ export type AuthConfig = {
   maxPasswordErrorTimes: number;
   lockDurationMinutes: number;
   timestampWindowMs: number;
-  rsaPrivateKeyPem: string;
+  // RSA 私钥裸 DER（PKCS#8），可直接传给 @cloud/security 的 decryptRsaOaep（PrivateKeyInput 结构）。
+  rsaPrivateKey: { key: Buffer; format: "der"; type: "pkcs8" };
   mfaSecretKey: string;
 };
 
@@ -25,7 +27,12 @@ export function parseAuthConfig(env: Record<string, string | undefined>): AuthCo
     maxPasswordErrorTimes: parsed.AUTH_PASSWORD_MAX_ERROR_TIMES,
     lockDurationMinutes: parsed.AUTH_PASSWORD_LOCK_MINUTES,
     timestampWindowMs: parsed.AUTH_LOGIN_TIMESTAMP_WINDOW_SECONDS * 1000,
-    rsaPrivateKeyPem: parsed.AUTH_LOGIN_RSA_PRIVATE_KEY,
+    // env 里是 base64 编码的 PKCS#8 裸 DER，解码成 Buffer 后包成 DER 入参。
+    rsaPrivateKey: {
+      key: Buffer.from(parsed.AUTH_LOGIN_RSA_PRIVATE_KEY, "base64"),
+      format: "der",
+      type: "pkcs8",
+    },
     mfaSecretKey: parsed.AUTH_MFA_SECRET_KEY,
   };
 }

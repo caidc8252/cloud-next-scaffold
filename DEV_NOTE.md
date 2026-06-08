@@ -131,13 +131,13 @@ pnpm --filter web build
 
 ## 登录安全加固（login-redesign）
 
-- **传输加密**：前端用写死的 RSA-4096 公钥（`apps/web/lib/login-public-key.ts`，与根 `.env` 的 `AUTH_LOGIN_RSA_PRIVATE_KEY` 成对）对 `{password, timestamp}` 做 RSA-OAEP/SHA-256 加密；服务端 `@cloud/security/server` 的 `decryptRsaOaep` 私钥解密。加解密能力在 `@cloud/security` 的 client/server 双入口，密钥由业务侧注入（包不读 env）。静态存储仍是 argon2id（解密后直接 `verifyPassword`），未引入 SHA256。
+- **传输加密**：密钥对统一落根 `.env`，都是 base64 裸 DER（单行，无 `\n` 转义）。公钥 `NEXT_PUBLIC_AUTH_LOGIN_RSA_PUBLIC_KEY`（SPKI DER，`NEXT_PUBLIC_` 构建期内联进客户端 bundle）经 `apps/web/lib/login-crypto.ts` 解码注入前端，对 `{password, timestamp}` 做 RSA-OAEP/SHA-256 加密；私钥 `AUTH_LOGIN_RSA_PRIVATE_KEY`（PKCS#8 DER）由 `@cloud/config` 的 `parseAuthConfig` 解码成 `{key,format:"der",type:"pkcs8"}`（`getAuthConfig().rsaPrivateKey`），服务端 `@cloud/security/server` 的 `decryptRsaOaep` 解密。`@cloud/security` 的 `encryptRsaOaep`/`decryptRsaOaep` 同时接受 PEM 字符串和裸 DER 入参（`PublicKeyInput`/`PrivateKeyInput` 联合类型），密钥由业务侧注入（包不读 env）。静态存储仍是 argon2id（解密后直接 `verifyPassword`），未引入 SHA256。
 - **防重放（时间戳）**：点击登录时先 `GET /api/auth/server-time` 取服务端时间戳，加密进包体；服务端校验 `|now - timestamp| <= 60s`（env `AUTH_LOGIN_TIMESTAMP_WINDOW_SECONDS`，默认 60）。仅时间窗、无 nonce——同一密文 60s 内理论可重放，已接受此 trade-off（攻击窗口极短且需中间人拦截密文）。
 - **锁定与状态解耦**：`SysUser.status` 只表达账号级（仅 `ACTIVE` 放行）；刷错锁只写 `passwordErrorLockExpiredTimestamp`（不再写 `status=LOCKED`）。阈值/时长走 env（`AUTH_PASSWORD_MAX_ERROR_TIMES` 默认 6，`errorTimes >= 6` 上锁；`AUTH_PASSWORD_LOCK_MINUTES` 默认 30）。只有密码正确才清零；锁过期后再错立即重新上锁且次数继续累加。决策逻辑在 `apps/web/lib/login-checks.ts`（纯函数、有单测）。
 - **MFA 分岔**：本期只做分岔点——`SysUser.mfaEnabled` 为真则 `createMfaLoginToken`（`apps/web/lib/login-token.ts`，Redis `mfa:login:*`，TTL 300s）并返回 `{mfaRequired, mfaToken}`，不建正式 session；前端跳 `/mfa`（占位页）。`mfaToken` 暂未被前端消费，下一期补全。
 - **错误码**：新增 `ERR_AUTH_ACCOUNT_DISABLED` / `ERR_AUTH_ENCRYPTION_INVALID` / `ERR_AUTH_REQUEST_EXPIRED`，落 auth 域三语文案（`apps/web/lib/auth-error-messages.ts`）。
 - **下一期 TODO**：MFA verify 端点 + 临时 token 消费/升级为正式 session + 前端把 `mfaToken` 传给 `/mfa` 并做校验。
-- **部署提示**：生产需更换 RSA 密钥对（同时改前端公钥常量 `apps/web/lib/login-public-key.ts` + 私钥 env `AUTH_LOGIN_RSA_PRIVATE_KEY` 并重发）；`pnpm db:push` 需补 `mfa_enabled` 列（schema 已含）。
+- **部署提示**：生产需更换 RSA 密钥对，两把都是 base64 裸 DER 放根 `.env`（公钥 `NEXT_PUBLIC_AUTH_LOGIN_RSA_PUBLIC_KEY` 为 SPKI DER、私钥 `AUTH_LOGIN_RSA_PRIVATE_KEY` 为 PKCS#8 DER，成对）；`NEXT_PUBLIC_*` 构建期内联，换公钥需重新构建客户端；`pnpm db:push` 需补 `mfa_enabled` 列（schema 已含）。
 
 ## 系统库对齐（Partner/Contract/Role/User/MFA/Invite，schema-align）
 

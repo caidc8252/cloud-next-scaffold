@@ -66,7 +66,7 @@ export async function login(input: LoginInput): Promise<LoginResult> {
   let payload: { password: string; timestamp: number };
   try {
     payload = loginPayloadSchema.parse(
-      JSON.parse(decryptRsaOaep(input.encryptedPassword, auth.rsaPrivateKeyPem)),
+      JSON.parse(decryptRsaOaep(input.encryptedPassword, auth.rsaPrivateKey)),
     );
   } catch {
     throw new BusinessError(ERR_AUTH_ENCRYPTION_INVALID);

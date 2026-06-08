@@ -34,7 +34,7 @@ vi.mock("@/lib/login-token", () => ({
 vi.mock("@cloud/security/server", () => ({ verifyPassword: vi.fn(), decryptRsaOaep: vi.fn() }));
 vi.mock("@cloud/config", () => ({
   getAuthConfig: vi.fn(() => ({
-    rsaPrivateKeyPem: "pem",
+    rsaPrivateKey: { key: Buffer.from("ZGVy", "base64"), format: "der", type: "pkcs8" },
     timestampWindowMs: 60_000,
     maxPasswordErrorTimes: 6,
     lockDurationMinutes: 30,
