@@ -4,9 +4,9 @@
 >
 > **可编译样板**（纯样式骨架，不进打包，可直接对照/拷贝）：[examples/list-page.tsx](./examples/list-page.tsx) · [examples/create-form.tsx](./examples/create-form.tsx) · [examples/create-wizard.tsx](./examples/create-wizard.tsx) · [examples/detail-page.tsx](./examples/detail-page.tsx)。
 >
-> 通用前提：只用 `@cloud/ui` 原语 + 语义 token（`surface/content/line/success/warning/error/info` + 类目色 `teal/violet`），不写十六进制、不写任意值字号；可点击元素必须 `cursor-pointer`。
+> 通用前提：只用 `@cloud/ui` 原语 + 语义 token（`surface/content/line/success/warning/error/info` + 类目色 `teal/violet`），不写十六进制、不写任意值字号 / 间距 / 宽高 / 圆角；可点击元素必须 `cursor-pointer`。
 >
-> **吸附到刻度，不要照搬原始值。** 原型给你的是精确像素（`459px` 的弹窗、`13px` 的间距、不在色板里的灰）；那是*意图*，不是要逐字拷贝的字面量。当某个原型值落在两个法定 token 之间，**就近吸附**到最接近的那个——谁近选谁——并用原语的 prop / 刻度类，绝不手写任意值（`max-w-[459px]`、`gap-[13px]`、`bg-[#…]`）。例：459px 弹窗 → `<Modal size="md">`（480px，最近），**不是** `size="sm"`（360px），**更不要** `className="sm:max-w-[459px]"`。锁死刻度的意义是跨页面一致；一个"贴合稿子"的越界值，是拿一致性去换一个用户根本感知不到的差异。
+> **吸附到刻度，不要照搬原始值。** 原型给你的是精确像素（`459px` 的弹窗、`180px` 的下拉、`13px` 的间距、不在色板里的灰）；那是*意图*，不是要逐字拷贝的字面量。当某个原型值落在两个法定 token 之间，**就近吸附**到最接近的那个——谁近选谁——并用原语的 prop / 刻度类，绝不手写任意值（`max-w-[459px]`、`w-[180px]`、`gap-[13px]`、`bg-[#…]`）。例：459px 弹窗 → `<Modal size="md">`（480px，最近），**不是** `size="sm"`（360px），**更不要** `className="sm:max-w-[459px]"`。锁死刻度的意义是跨页面一致；一个"贴合稿子"的越界值，是拿一致性去换一个用户根本感知不到的差异。
 >
 > **优先继承，按任务适配。** 默认页面先继承下面的标准布局和密度；允许调整内容——文案、字段、出现哪些卡片/列，也允许在有明确任务差异时选择本文列出的其他模式。不要为了贴原型而手写任意间距或重写原语样式；需要偏离默认模式时，仍必须落在 `@cloud/ui` 原语、语义 token 和已定义密度/尺寸刻度内，并按 §0.3 记录理由。
 
@@ -86,7 +86,7 @@ Shell `Layout` 的滚动区**无内边距**，页面自己负责留白。页面�
 
 ### 1.2 新增页
 
-两种主形态——普通「新增 / 编辑」页（占多数）用**单步表单**；当输入有顺序依赖、分支、上传/扫描/确认时，才用**多步向导**。很小的上下文修改可以用弹窗表单；批量导入或异步流程不要塞进普通表单。
+两种主形态——普通「新增 / 编辑」页（占多数）用**单步表单**；当任务适合分步骤推进（顺序依赖、分支、上传/扫描/确认、复核/审批、异步准备或跨步骤摘要）时，用**多步向导**。很小的上下文修改可以用弹窗表单；批量导入或异步流程不要塞进普通表单。
 
 **单步表单（默认）**——Cancel 与 Submit **都放吸顶头部**；主体是单列居中的区块卡片。无底栏、无右侧摘要栏、无完成步。
 
@@ -106,7 +106,7 @@ Shell `Layout` 的滚动区**无内边距**，页面自己负责留白。页面�
 </>
 ```
 
-**多步向导**——仅当输入是顺序 / 分支流程时使用。
+**多步向导**——当任务适合分步骤推进时使用。
 
 ```tsx
 <>
@@ -114,7 +114,7 @@ Shell `Layout` 的滚动区**无内边距**，页面自己负责留白。页面�
   <PageBody>
     <StepIndicator className="rounded-xl border border-line-default bg-surface-2 px-5.5 py-4 shadow-1" … />
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-      <div className="min-w-0 flex-1">{/* 当前步骤卡片 + 错误条 + 底部导航 */}</div>
+      <div className="flex min-w-0 flex-1 flex-col gap-6">{/* 当前步骤组 + 底部导航 */}</div>
       {/* 右侧吸顶摘要栏（300px，需全宽的步骤不渲染即可，主列自动铺满） */}
     </div>
   </PageBody>
@@ -123,7 +123,7 @@ Shell `Layout` 的滚动区**无内边距**，页面自己负责留白。页面�
 
 ### 1.3 详情页
 
-默认一个页面 + Tabs 切换。若 tab 内容很重、需要独立 URL、权限边界或独立加载边界，可以改用子路由，并按 §0.3 记录理由。
+详情页有多个同级区块时使用同页 tabs；只有 1-2 个核心区块时可直接铺开。若某个区块很重、需要独立 URL、权限边界或独立加载边界，可以改用子路由，并按 §0.3 记录理由。
 
 ```tsx
 <Tabs value={tab} onValueChange={…} className="gap-0">
@@ -133,8 +133,6 @@ Shell `Layout` 的滚动区**无内边距**，页面自己负责留白。页面�
   <TabsContent value="…" className={PAGE_BODY_PADDING_CLASS_NAME}>…</TabsContent>
 </Tabs>
 ```
-
-服务端 `page.tsx` 保持薄入口：守卫（`requirePermissions`）→ 取数 → 渲染客户端视图，不放布局。
 
 ---
 
@@ -148,7 +146,7 @@ Shell `Layout` 的滚动区**无内边距**，页面自己负责留白。页面�
 
 ### 2.2 列表 / 新增页头（`PageHeader`）
 
-- 行容器：`flex flex-wrap items-end gap-x-4 gap-y-3`
+- 行容器：`flex flex-wrap items-center gap-x-4 gap-y-3`；右侧 actions 与左侧标题 / 描述块垂直居中对齐
 - 标题：`h1` `text-2xl font-semibold tracking-tight text-content-primary`；行内状态 chip 与标题 `gap-2.5`
 - 描述：`mt-1.5 max-w-3xl text-sm text-content-tertiary`
 - 动作区：右侧 `flex shrink-0 items-center gap-2`，按页型：
@@ -160,27 +158,25 @@ Shell `Layout` 的滚动区**无内边距**，页面自己负责留白。页面�
 
 `flex flex-wrap items-center gap-4`，从左到右：
 
-**返回按钮是硬性要求**：详情页页头最左侧必须有返回入口，样式固定为：
+如果详情页头需要返回入口，把它放在最左侧，并保持视觉一致：
 
 ```tsx
 <Button
   variant="ghost"
   size="icon-sm"
-  aria-label="Back to list"
-  nativeButton={false}
-  render={<Link href="/manage/<list>" />}
+  aria-label="Back"
 >
   <ChevronLeft className="size-4" />
 </Button>
 ```
 
 - ghost 幽灵图标按钮（`icon-sm`）+ `ChevronLeft size-4`，不带文字
-- 用 `render={<Link/>}` 渲染成真实链接（可中键新开页、可悬停预览），**不要** `onClick + router.push`，也**不要** `router.back()` —— 从外部直链 / 新标签进入详情页时，`back()` 没有确定去处；`href` 固定指向本模块列表页
+- 导航目标和行为由产品导航层决定（面包屑、已知父级路由或显式 return target）。不要在本规范里硬编码模块列表 `href`
 - `aria-label` 必填（图标按钮无可读文本）
 
 | 元素 | 规范 |
 |---|---|
-| 返回 | 见上方硬性配方 |
+| 返回 | 可选；出现时按上方配方 |
 | 主体标识 | Logo / 头像 / 首字母块 `lg` 尺寸（无标识则省略） |
 | 标题行 | `h1 text-2xl font-semibold tracking-tight` + 状态 Badge，`gap-2.5` |
 | 元信息行 | `mt-2 flex flex-wrap gap-x-3.5 gap-y-1.5 text-xs text-content-secondary`，条目内 icon `size-3.5` + `gap-1` |
@@ -221,7 +217,7 @@ Tab 上的计数 chip：`ml-1 h-4 min-w-4 rounded-full bg-surface-3 px-1 text-xs
 - **危险操作**（删除）：`variant="ghost-danger"`——hover 是 `error-bg` 红色 tint，与中性行 hover 永不撞色，还顺带表达"危险"语义。
 - 操作的 `onClick` 一律 `e.stopPropagation()`，避免触发行的 `onRowClick`；图标用 `flex items-center` 成簇（§3.1）。危险操作仍走确认 Modal（§8.3）。
 
-参考：app-publish 列表表格(行尾的编辑 + 删除)。
+示例：带 hover 的行在行尾放编辑 / 删除操作。
 
 ### 3.3 图标按钮操作与危险语义
 
@@ -294,15 +290,15 @@ sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3
 - `z-10` 足够压住表格内容；弹层（Select 下拉等）走 portal，不受影响
 - 下方列表卡片用 `-mt-2` 上拉，使搜索栏 → 表格间距落到 **16px**（比 24px 页面节奏更紧）；本吸顶条的 `-my-3` 保持对称不变（§3、§6）。少数不吸顶的列表不要使用这组负边距。
 
-- 行容器：`flex flex-wrap items-center gap-2`；所有控件统一 `sm`（28px 高）
-- 搜索输入：带 `prefix={<Search className="size-3.5"/>}`，外包 `max-w-64 flex-1`
-- 下拉筛选：`SelectTrigger size="sm"` 定宽（150–200px）；`SelectValue` 用 render-prop 显示标签（base-ui 默认显示原始 value）
-- 提交按钮：`variant="primary" size="sm"` + Search 图标
+- 行容器：`flex flex-wrap items-center gap-2`；所有控件统一 `md`（36px 高）
+- 搜索输入：`inputSize="md"` + `prefix={<Search className="size-4"/>}`，外包 `max-w-64 flex-1`
+- 下拉筛选：`SelectTrigger size="md"` 使用接近所需范围的刻度宽度（如 `w-40` / `w-44` / `w-48`，约 150–200px）；`SelectValue` 用 render-prop 显示标签（base-ui 默认显示原始 value）。不要为了复刻原型写 `w-[150px]`、`w-[180px]` 或其他页面局部任意宽度。
+- 提交按钮：`variant="primary" size="md"` + Search 图标
 
 **筛选反馈行**（紧贴工具栏下方，`gap-2.5` 分组）：
 
 - 无筛选：一句 `text-xs text-content-tertiary` 的操作提示
-- 有筛选：`Active filters:` + 若干 FilterChip + `Clear all`（ghost xs）
+- 有筛选：本地化的已应用筛选标签 + 若干 FilterChip + 清除全部动作（ghost xs）
 - FilterChip：`rounded-full border border-primary-500/25 bg-primary-50 py-0.5 pr-1 pl-2.5 text-xs font-medium text-primary-700`，尾部 `Button size="icon-xs" variant="ghost"` 的 X 可单独移除
 
 ---
@@ -346,7 +342,7 @@ sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3
 
 `flex flex-wrap items-center justify-between gap-3 border-t border-line-subtle px-4 py-3`：
 
-- 左：`Rows per page` + `Select sm`（72px）+ 摘要 `Showing X–Y of Z`（`text-xs`，数字 `tabular-nums`）
+- 左：`Rows per page` + 紧凑 `Select sm`，使用刻度宽度（如 `w-20`，不要写 `w-[72px]`）+ 摘要 `Showing X–Y of Z`（`text-xs`，数字 `tabular-nums`）
 - 右：`Pagination` 页码（不做 Go-to 跳页输入）
 - 切每页条数后页码归 1
 
@@ -354,24 +350,24 @@ sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3
 
 ## 7. 新增页
 
-两种主形态：**单步表单**（§7.1——普通「新增 / 编辑」页的默认形态）和**多步向导**（§7.2——当流程确实有顺序、分支、上传/扫描/确认时）。非常小的局部修改可用弹窗表单；批量导入、异步处理、长耗时流程应使用独立流程页或向导。
+两种主形态：**单步表单**（§7.1——普通「新增 / 编辑」页的默认形态）和**多步向导**（§7.2——当任务适合分步骤推进时）。非常小的局部修改可用弹窗表单；批量导入、异步处理、长耗时流程应使用独立流程页或向导。
 
 ### 7.1 单步表单
 
-- **吸顶头部**：`<PageHeader sticky … />` 承载标题 + 描述 **以及两个操作**——`ghost` Cancel（`iconLeft={<X/>}`）+ `primary` Submit（`iconLeft` create 用 `Plus` / edit 用 `Check`，pending 时 `loading`）。长表单默认吸顶，使 Submit 在滚动时始终可达；与列表条件区（§5——shell `<main>` 是滚动容器，故 `top-0` 即贴在 app-header 下）一样停靠，不透明的 `bg-surface-2` 遮住从下方穿过的内容。普通单步表单**不再额外做底部操作栏**；若任务需要持续预览、草稿状态或分屏编辑，应先评估是否已经不是普通单步表单。
-- **主体**：`PageBody` 内套 `<div className="mx-auto flex max-w-3xl flex-col gap-6">`——按职责分组的 `Card elevation={1}` 区块卡片（Identity / Visibility / …）。无 `StepIndicator`、无右侧摘要栏、无完成步。
-- **提交**：在 handler 里拦住非法 / 进行中的提交，首次提交时再暴露字段错误；成功后直接 `router.push` 到新记录的详情页——不另做确认页。
+- **吸顶头部**：`<PageHeader sticky … />` 承载标题 + 描述 **以及两个操作**——`ghost` Cancel（`iconLeft={<X/>}`）+ `primary` Submit（`iconLeft` create 用 `Plus` / edit 用 `Check`，pending 时 `loading`）。长表单默认吸顶，使 Submit 在滚动时始终可达；与列表条件区（§5——shell `<main>` 是滚动容器，故 `top-0` 即贴在 app-header 下）一样停靠，不透明的 `bg-surface-2` 遮住从下方穿过的内容。单步表单通常不需要底部操作栏；只有当任务需要持续预览、草稿状态、分屏编辑或头部操作以外的明确 affordance 时再添加。
+- **主体**：`PageBody` 内套 `<div className="mx-auto flex max-w-3xl flex-col gap-6">`——按职责分组的 `Card elevation={1}` 区块卡片（Identity / Visibility / …）。默认无 `StepIndicator`、无右侧摘要栏、无完成步。编辑即详情、强预览编辑器或分屏编辑流程确实能提升复核 / 编辑效率时，可以加右侧栏；按 §0.3 记录产品理由，不要为了默认单列而硬拆。
+- **提交**：在 handler 里拦住非法 / 进行中的提交，首次提交时再暴露字段错误。
 
 ### 7.2 多步向导
 
-仅当输入有顺序依赖、分支、上传/扫描/确认、跨步骤摘要等需求时使用；不要因为字段多就自动改成向导，字段多但彼此独立时仍优先分区卡片的单步表单。
+当任务适合分步骤推进时使用：顺序依赖、分支、上传/扫描/确认、复核/审批、异步准备或跨步骤摘要。不要因为字段多就自动改成向导，字段多但彼此独立时仍优先分区卡片的单步表单。
 
 - **步骤指示**：`StepIndicator` 套卡片外观 `rounded-xl border border-line-default bg-surface-2 px-5.5 py-4 shadow-1`
-- **双栏**：`flex flex-col gap-6 lg:flex-row lg:items-start`；主列 `min-w-0 flex-1`；右侧吸顶摘要栏组件自带 `w-full lg:w-75 lg:shrink-0`（300px）+ `sticky top-5`，需要全宽的步骤直接不渲染该栏
+- **双栏**：`flex flex-col gap-6 lg:flex-row lg:items-start`；主列 `flex min-w-0 flex-1 flex-col gap-6`；右侧吸顶摘要栏组件自带 `w-full lg:w-75 lg:shrink-0`（300px）+ `sticky top-5`，需要全宽的步骤直接不渲染该栏
 - **步骤卡片头**：`CardHeader flush className="px-5 py-3.5"`（14·20）+ `CardTitle className="text-md"`（+ 可选 `CardDescription text-xs text-content-tertiary`）；内容区用默认槽位 padding
 - **右侧吸顶摘要栏**：`p-4.5`，标题 `text-sm font-semibold mb-3`，`dl flex flex-col gap-2 text-xs`，`dt w-20 shrink-0 text-content-tertiary`，空值 `—`
-- **错误条**：主列内 `mt-3 rounded-md border border-error/30 bg-error-bg px-3 py-2 text-sm text-error-strong` + `role="alert"`
-- **底部导航**：`mt-6 flex items-center justify-between`；Back `ghost`（第一步禁用），Continue `primary` 带右箭头，最后一步换 Create `primary` 带 Check + `loading`
+- **错误条**：放在当前步骤卡片下方、同一个 step group 内，`mt-3 rounded-md border border-error/30 bg-error-bg px-3 py-2 text-sm text-error-strong` + `role="alert"`
+- **底部导航**：`flex items-center justify-end gap-2`；Back `ghost`（第一步禁用）与 Continue 放在同一个右对齐操作组里，Continue `primary` 带右箭头，最后一步换 Create `primary` 带 Check + `loading`。主列已经用 `gap-6` 负责纵向间距时，这里不要再加 `mt-*`。
 - **完成步**：居中卡片 `CardContent flex flex-col items-center px-8 py-10`；72px 成功圆标（`size-18 rounded-full border-success/25 bg-success-bg text-success-strong`）→ 状态 Badge → `text-2xl` 标题 → `max-w-md text-sm` 说明 → 主操作按钮
 
 校验逻辑与字段组件**沉到 feature 级共享文件**（如 `_components/<entity>-fields.tsx` 导出的 `isFieldsetValid`），新增页（表单或向导）与详情编辑弹窗复用同一份，不写两遍。
@@ -380,7 +376,7 @@ sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3
 
 ## 8. 详情页
 
-详情页默认使用 `PageHeaderBand` + 内容区。是否使用 tabs 按内容判断：1-2 个核心区块可以直接铺在概览页；多个同级区块才用 tabs；重型区块、独立权限或需要 deep link 的区块可以拆子路由，并记录偏离理由。
+只读详情页默认使用 `PageHeaderBand` + 内容区。是否使用 tabs 按内容判断：1-2 个核心区块可以直接铺在概览页；多个同级区块才用 tabs；重型区块、独立权限或需要 deep link 的区块可以拆子路由，并记录偏离理由。如果产品明确把编辑页作为详情 surface，按任务选择新增 / 编辑表单模式即可，不要为了满足本节而强加 tabs 或只读详情头。
 
 ### 8.1 Overview 双栏
 
@@ -400,7 +396,7 @@ sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3
 
 ### 8.3 弹窗
 
-所有 mutation 仍走 route handler；小型上下文 mutation 默认用弹窗承载，长表单、批量导入、异步任务或需要完整页面上下文的流程不要塞进弹窗。**宽度用 `Modal` 的 `size` prop——绝不手写 `className="sm:max-w-[…]"`。** 刻度由原语掌握：`sm` 360 / `md` 480（默认）/ `lg` 640 / `xl` 880。确认类 → `size="md"`（480），常规弹窗表单 → `size="lg"`（640）；只有表单主体确有需要才上 `xl`。原型给的越界宽度**就近吸附到最接近的 token**（459px 稿 → `md`，620px → `lg`；谁近选谁——见 §1 的吸附规则），页面就永远不带任意值 `max-w-[…]`。footer 固定 `ghost` 取消 + 主操作（危险操作 `variant="danger"` + `loading`）。
+小型上下文 mutation 默认用弹窗承载，长表单、批量导入、异步任务或需要完整页面上下文的流程不要塞进弹窗。**宽度用 `Modal` 的 `size` prop——绝不手写 `className="sm:max-w-[…]"`。** 刻度由原语掌握：`sm` 360 / `md` 480（默认）/ `lg` 640 / `xl` 880。确认类 → `size="md"`（480），常规弹窗表单 → `size="lg"`（640）；只有表单主体确有需要才上 `xl`。原型给的越界宽度**就近吸附到最接近的 token**（459px 稿 → `md`，620px → `lg`；谁近选谁——见 §1 的吸附规则），页面就永远不带任意值 `max-w-[…]`。footer 固定 `ghost` 取消 + 主操作（危险操作 `variant="danger"` + `loading`）。
 
 ---
 
@@ -429,7 +425,7 @@ sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3
 卡内横带          px-4 py-3             向导卡头 px-5 py-3.5（14·20）
 stat cards         按原型语义分纯统计 / 快捷筛选，不统一做可点击
 详情 tabs         多个同级区块时使用；重型区块可用子路由并记录理由
-控件（条件区）    一律 size sm           搜索框 max-w-64 flex-1
+控件（条件区）    一律 size md           搜索框 max-w-64 flex-1
 条件区吸顶        后台列表默认：sticky top-0 z-10 -mx-6 -my-3 bg-surface-1 px-6 py-3
 单步表单          长表单吸顶头部（cancel+submit）  主体 mx-auto max-w-3xl 单列
 向导摘要栏        w-75 sticky top-5      详情右侧栏 w-80

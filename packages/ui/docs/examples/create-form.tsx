@@ -38,7 +38,7 @@ export function CreateFormTemplate() {
           docks under the app header (the shell <main> is the scrollport) and its
           opaque bg-surface-2 masks content scrolling beneath it. */}
       <div className="sticky top-0 z-10 border-b border-line-subtle bg-surface-2">
-        <div className="flex flex-wrap items-end gap-x-4 gap-y-3 px-6 py-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-6 py-4">
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-semibold tracking-tight text-content-primary">
               New record

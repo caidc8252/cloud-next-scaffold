@@ -150,7 +150,7 @@ export function ListPageTemplate() {
     <>
       {/* §2.2 — full-bleed white header band. In apps/web use <PageHeader/> from @cloud/ui/components/layout. */}
       <div className="border-b border-line-subtle bg-surface-2">
-        <div className="flex flex-wrap items-end gap-x-4 gap-y-3 px-6 py-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-6 py-4">
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-semibold tracking-tight text-content-primary">
               Customers
@@ -190,13 +190,13 @@ export function ListPageTemplate() {
             {/* Input with prefix puts className on the inner input → width lives on a wrapper */}
             <div className="max-w-64 flex-1">
               <Input
-                inputSize="sm"
-                prefix={<Search className="size-3.5" />}
+                inputSize="md"
+                prefix={<Search className="size-4" />}
                 placeholder="Search by name, address, license"
               />
             </div>
             <Select value="All" onValueChange={() => {}}>
-              <SelectTrigger size="sm" className="w-[150px]">
+              <SelectTrigger size="md" className="w-40">
                 <SelectValue>{(v) => `Contract: ${String(v)}`}</SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -206,8 +206,8 @@ export function ListPageTemplate() {
             </Select>
             <Button
               variant="primary"
-              size="sm"
-              iconLeft={<Search className="size-3.5" />}
+              size="md"
+              iconLeft={<Search className="size-4" />}
               onClick={() => {}}
             >
               Search
@@ -229,7 +229,7 @@ export function ListPageTemplate() {
         </div>
 
         {/* §6 — list card: count band + Table + pagination band (card adds no padding) */}
-        <Card elevation={1}>
+        <Card elevation={1} className="-mt-2">
           <div className="flex items-center justify-between gap-3 border-b border-line-subtle px-4 py-3">
             <div className="text-sm text-content-secondary">
               <span className="font-mono font-semibold text-content-primary tabular-nums">
@@ -266,7 +266,7 @@ export function ListPageTemplate() {
               <div className="flex items-center gap-1.5">
                 <span>Rows per page</span>
                 <Select value="25" onValueChange={() => {}}>
-                  <SelectTrigger size="sm" className="w-[72px]">
+                  <SelectTrigger size="sm" className="w-20">
                     <SelectValue>{(v) => String(v)}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
