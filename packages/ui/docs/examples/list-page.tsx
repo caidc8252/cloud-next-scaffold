@@ -1,7 +1,7 @@
 "use client";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// STYLE TEMPLATE · List page (spec §1.1 §2.2 §3–§6)
+// STYLE TEMPLATE · List page (spec §1.1 §2.2 §3–§5)
 //
 // Compilable style skeleton for the portal LIST page shape. Reference
 // implementation: apps/web/app/(portal)/manage/customers/_components/customer-list.tsx
@@ -20,9 +20,8 @@ import {
   Button,
   Card,
   Input,
-  StatCard,
   PageBody,
-  Pagination,
+  RichPagination,
   Select,
   SelectContent,
   SelectItem,
@@ -68,7 +67,7 @@ const ROWS: Row[] = [
   },
 ];
 
-// §6.2 — text columns come in exactly three shapes (two-line / numeric mono / plain).
+// §5.2 — text columns come in exactly three shapes (two-line / numeric mono / plain).
 const COLUMNS: TableColumn<Row>[] = [
   {
     key: "name",
@@ -139,12 +138,6 @@ const COLUMNS: TableColumn<Row>[] = [
   },
 ];
 
-const STAT_TILES = [
-  { key: "all", label: "Total customers", value: 54, sub: "all companies", active: true },
-  { key: "active", label: "With active contract", value: 38, sub: "70% of total", active: false },
-  { key: "onboarding", label: "Onboarding", value: 9, sub: "setup in progress", active: false },
-];
-
 export function ListPageTemplate() {
   return (
     <>
@@ -167,23 +160,7 @@ export function ListPageTemplate() {
 
       {/* §3 — page body: centralizes padding and block gap */}
       <PageBody>
-        {/* §4 — stat-card quick filters. The grid + data + which key is active
-            (derived from the applied filter) live here; StatCard is the styled,
-            keyboard-accessible leaf. Omit onClick for a pure stat tile. */}
-        <div className="grid grid-cols-3 gap-3">
-          {STAT_TILES.map((t) => (
-            <StatCard
-              key={t.key}
-              selected={t.active}
-              onClick={() => {}}
-              label={t.label}
-              value={t.value}
-              description={t.sub}
-            />
-          ))}
-        </div>
-
-        {/* §5 — sticky condition band: docks flush under the app header on scroll.
+        {/* §4 — sticky condition band: docks flush under the app header on scroll.
             Full-bleed -mx-6 + canvas bg mask; -my-3 cancels py-3 so resting rhythm stays gap-6. */}
         <div className="sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -228,7 +205,7 @@ export function ListPageTemplate() {
           </div>
         </div>
 
-        {/* §6 — list card: count band + Table + pagination band (card adds no padding) */}
+        {/* §5 — list card: count band + Table + pagination band (card adds no padding) */}
         <Card elevation={1} className="-mt-2">
           <div className="flex items-center justify-between gap-3 border-b border-line-subtle px-4 py-3">
             <div className="text-sm text-content-secondary">
@@ -260,28 +237,15 @@ export function ListPageTemplate() {
             }
           />
 
-          {/* §6.3 — pagination band: rows-per-page + summary | page buttons (no go-to input) */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line-subtle px-4 py-3">
-            <div className="flex items-center gap-3 text-xs text-content-secondary">
-              <div className="flex items-center gap-1.5">
-                <span>Rows per page</span>
-                <Select value="25" onValueChange={() => {}}>
-                  <SelectTrigger size="sm" className="w-20">
-                    <SelectValue>{(v) => String(v)}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[10, 25, 50, 100].map((n) => (
-                      <SelectItem key={n} value={String(n)}>
-                        {n}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <span className="tabular-nums">Showing 1–3 of 3</span>
-            </div>
-            <Pagination page={1} pageCount={1} onChange={() => {}} />
-          </div>
+          {/* §5.3 — RichPagination owns rows-per-page, range summary, and page buttons */}
+          <RichPagination
+            page={1}
+            pageCount={1}
+            onPageChange={() => {}}
+            total={ROWS.length}
+            pageSize={25}
+            onPageSizeChange={() => {}}
+          />
         </Card>
       </PageBody>
     </>

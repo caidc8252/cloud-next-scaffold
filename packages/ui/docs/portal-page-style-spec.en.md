@@ -20,26 +20,24 @@ Rules are split into four levels so one exemplar page does not get mechanically 
 |---|---|---|
 | **MUST** | Design-system and accessibility baseline; do not break | Semantic tokens, `@cloud/ui` primitives, danger variants for destructive actions, `aria-label` on icon-only buttons, selected beats hover |
 | **SHOULD** | Default portal-management behavior unless the task clearly does not fit | List pages use `PageHeader` + condition band + `Table` card; detail pages prefer `PageHeaderBand`; create/edit pages prefer single-step forms |
-| **MAY** | Conditional capabilities | Stat cards / quick-filters, detail tabs, right sticky summary rail, done step |
+| **MAY** | Conditional capabilities | Detail tabs, optional summary rail, completion state |
 | **AVOID** | Usually avoid; explain first if needed | Arbitrary sizes/colors, copying prototype CSS, bypassing primitives for visual similarity |
 
 ### 0.1 Pattern Selection
 
-Read the prototype's page intent and interaction semantics first, then apply the relevant section. A prototype block that looks like a stat card may be pure stats or may be a filter entry; implementation must preserve that semantic difference instead of making every tile clickable.
+Read the prototype's page intent and interaction semantics first, then apply the relevant section. Preserve the prototype's interaction semantics instead of making visually similar blocks behave the same way.
 
 1. **Is this a resource-management page?**
    - Yes: prefer the `PageHeader` / `PageHeaderBand` family.
    - No: consider `ContentHeader` or a task-specific workbench layout; do not force list / create / detail.
 2. **Is this a collection page?**
-   - Search / filter condition bands are sticky by default so users can adjust conditions after scrolling. Keep them in normal flow only for short lists, embedded lists, or pages where filtering is not a core operation.
-   - Prototype stat card is just overview data: use `StatCard` in display-only mode, without `onClick`.
-   - Prototype stat card filters or switches state: use interactive `StatCard`; derive `selected` from the applied filter.
+   - Long management lists usually keep the search / filter condition band reachable while scrolling. Use the shared recipe in [examples/list-page.tsx](./examples/list-page.tsx) or an app-level wrapper instead of inventing per-page sticky math.
    - Multi-select / bulk action flow: use `Table` selected state + a bulk-action area; do not put bulk actions in every row.
 3. **Is this a create / edit page?**
    - Independent fields: single-step form.
-   - Sequential dependency, branching, upload / scan / confirm: multi-step wizard.
+   - Sequential dependency, branching, review, or external processing: multi-step wizard.
    - Very small contextual edit: modal form.
-   - Bulk import, async processing, or long-running flow: dedicated flow page or wizard, not a normal modal.
+   - Batch, external-processing, or long-running flow: dedicated flow page or wizard, not a normal modal.
 4. **Is this a record detail page?**
    - Only 1-2 core sections: use a plain overview page; tabs are unnecessary.
    - Multiple peer sections: use same-page tabs.
@@ -49,8 +47,8 @@ Read the prototype's page intent and interaction semantics first, then apply the
 
 Default to **standard density**: page bodies use `PageBody`; card interiors use `p-5 / gap-5`. Choose another density only when the task shape changes:
 
-- **compact density**: high-frequency operation tables, audit logs, permission matrices, dense settings. Use existing spacing tokens only; do not hand-write arbitrary values.
-- **focused density**: single-task forms, uploads, approval confirmations, or pages that need fewer distractions. Still use existing page padding / Card / Modal scales.
+- **compact density**: high-frequency operation tables, logs, matrices, or dense settings. Use existing spacing tokens only; do not hand-write arbitrary values.
+- **focused density**: single-task forms, confirmations, or pages that need fewer distractions. Still use existing page padding / Card / Modal scales.
 
 Without a clear task reason, return to standard density.
 
@@ -88,7 +86,7 @@ Radius follows the six-step scale from `packages/ui/src/components/styles/index.
 | `--radius-sm` = 4px | `rounded-sm` | Tags, kbd, checkboxes |
 | `--radius-md` = 6px | `rounded-md` | Buttons, inputs, selects, icon buttons, search fields |
 | `--radius-lg` = 8px | `rounded-lg` | In-card notices, small icon blocks, segmented controls, nested small blocks |
-| `--radius-xl` = 12px | `rounded-xl` | Cards, modals, drawers, table containers, stat cards |
+| `--radius-xl` = 12px | `rounded-xl` | Cards, modals, drawers, table containers |
 | `--radius-2xl` = 16px | `rounded-2xl` | Large feature cards, used sparingly |
 | `--radius-full` | `rounded-full` | Pills, avatars, status dots |
 
@@ -110,18 +108,17 @@ Below are the default management-page skeletons; first check whether §0 applies
 <>
   <PageHeader title description actions={<Button variant="primary" iconLeft={<Plus/>}>New …</Button>} />
   <PageBody>
-    {/* ① Stat cards / quick-filters: clickable only when the prototype semantics say so */}
-    {/* ② condition band: toolbar + applied filters; sticky by default on list pages — see §5 */}
-    {/* ③ list card: count band + Table + pagination */}
+    {/* ① condition band: toolbar + applied filters; sticky by default on list pages — see §4 */}
+    {/* ② list card: count band + Table + pagination */}
   </PageBody>
 </>
 ```
 
 ### 1.2 Create Page
 
-Two main shapes: ordinary "new / edit" pages use the **single-step form**; use a **multi-step wizard** when the flow benefits from step-by-step progression (sequential dependency, branching, upload / scan / confirm, review / approval, async setup, or cross-step summary). Very small contextual edits can use modal forms; bulk import and async flows should not be squeezed into a normal form.
+Two main shapes: ordinary "new / edit" pages use the **single-step form**; use a **multi-step wizard** only when the task genuinely benefits from step-by-step progression. Very small contextual edits can use modal forms; long-running or multi-stage flows should use a dedicated page or wizard.
 
-**Single-step form (default)** — Cancel and Submit both live in the sticky header; the body is one centered column of section cards. No footer, no right summary rail, no done step.
+**Single-step form (default)** — Cancel and Submit live in the header; the body is one centered column of section cards. See [examples/create-form.tsx](./examples/create-form.tsx) for the concrete style recipe.
 
 ```tsx
 <>
@@ -139,7 +136,7 @@ Two main shapes: ordinary "new / edit" pages use the **single-step form**; use a
 </>
 ```
 
-**Multi-step wizard** — when the task benefits from step-by-step progression.
+**Multi-step wizard** — when the task benefits from step-by-step progression. See [examples/create-wizard.tsx](./examples/create-wizard.tsx) for the concrete step, footer, summary-rail, and done-state recipe.
 
 ```tsx
 <>
@@ -148,7 +145,7 @@ Two main shapes: ordinary "new / edit" pages use the **single-step form**; use a
     <StepIndicator className="rounded-xl border border-line-default bg-surface-2 px-5.5 py-4 shadow-1" … />
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
       <div className="flex min-w-0 flex-1 flex-col gap-6">{/* current step group + footer nav */}</div>
-      {/* right sticky summary rail (300px); steps needing full width simply don't render it */}
+      {/* optional summary rail, only when it helps the task */}
     </div>
   </PageBody>
 </>
@@ -183,9 +180,9 @@ If the detail page has multiple peer sections, use same-page tabs. One or two co
 - Title: `h1` `text-2xl font-semibold tracking-tight text-content-primary`; inline status chip sits at `gap-2.5`
 - Description: `mt-1.5 max-w-3xl text-sm text-content-tertiary`
 - Actions: right-aligned `flex shrink-0 items-center gap-2`. By page type:
-  - **List** — default one `variant="primary"` main action ("New …"). Import, export, sync, bulk approve, and other secondary actions use `secondary` / `ghost` / overflow menu by priority; do not promote everything to primary.
+  - **List** — default one `variant="primary"` main action ("New …"). Secondary actions use `secondary` / `ghost` / overflow menu by priority; do not promote everything to primary.
   - **Wizard** — one `variant="ghost"` escape action ("Cancel")
-  - **Single-step form** — `ghost` Cancel and `primary` Submit together, with the band set `sticky` so Submit stays reachable while the form scrolls (§7.1)
+  - **Single-step form** — `ghost` Cancel and `primary` Submit together, with the band set `sticky` so Submit stays reachable while the form scrolls (§6.1)
 
 ### 2.3 Detail Header
 
@@ -223,7 +220,7 @@ Tab count chip: `ml-1 h-4 min-w-4 rounded-full bg-surface-3 px-1 text-xs font-me
 
 Spacing follows the `--space-*` variables in `packages/ui/src/components/styles/index.css`: `--space-1` 4px, `--space-2` 8px, `--space-3` 12px, `--space-4` 16px, `--space-5` 20px, `--space-6` 24px, plus `--space-8/10/12` for large empty states and focused moments. In page code, use `@cloud/ui` layout primitives and scale utilities (`px-6`, `gap-5`, `py-3`) instead of arbitrary values.
 
-**Standard density** — page-body density is centralized in `PageBody`. Vertical rhythm runs **24 → 16 → 20**: large blocks 24px; sticky search band → list card tightens to **16px** (the card gets `-mt-2`, see §5 / §6); card interior is **20px** (`p-5` padding, `gap-5` stacks). This is the default portal-management density; except for compact / focused cases in §0.2, adapt content, not spacing.
+**Standard density** — page-body density is centralized in `PageBody`. Vertical rhythm runs **24 → 16 → 20**: large blocks 24px; standard sticky-list recipe tightens the condition band → list card gap to **16px**; card interior is **20px** (`p-5` padding, `gap-5` stacks). This is the default portal-management density; except for compact / focused cases in §0.2, adapt content, not spacing.
 
 Do not tune padding / gaps on one page just to squeeze or stretch content. If the page has too much content, split it into sections, tabs, pagination, or a dedicated flow instead of breaking the density scale.
 
@@ -231,8 +228,8 @@ Do not tune padding / gaps on one page just to squeeze or stretch content. If th
 |---|---|---|
 | Page body | `PageBody` / `PAGE_BODY_PADDING_CLASS_NAME` | Component-owned `px-6 pt-6 pb-8` and block gap; do not hand-write page-body padding / gap in pages |
 | Page gutters / column gap | `px-6` / `gap-6` (`--space-6`, 24px) | Default horizontal rhythm and large page blocks |
-| Page-level block gap | built into `PageBody` (`gap-6`) | Stat cards ↔ search area; wizard blocks; detail two-column gap |
-| Search band ↔ list card | **16px** (`--space-4`, `-mt-2` on the card) | Portal lists default to sticky condition bands that hug the table; rare non-sticky lists keep normal `gap-6` (§5, §6) |
+| Page-level block gap | built into `PageBody` (`gap-6`) | List blocks; wizard blocks; detail two-column gap |
+| Search band ↔ list card | **16px** (`--space-4`) when using the standard sticky-list recipe | Long lists keep conditions close to results; short or embedded lists can keep normal `gap-6` (§4, §5) |
 | Card interior | `p-5` / `gap-5` (`--space-5`, 20px) | Default card content density |
 | Card stack in a section | `gap-5` (20px) | Sibling section cards stacked on a detail tab |
 | Tightly-coupled cards | `gap-3.5` (14px) | A card and its directly-related sub-card; use only where documented |
@@ -247,7 +244,7 @@ General principle: **every wrapper div must have a job** (spacing group / scroll
 
 ### 3.1 Row Alignment
 
-**A row that carries a name/title at its head and an action at its tail is vertically center-aligned** (`items-center`) — the leading label and trailing action sit on the same center axis, never `items-start`. This applies wherever the shape occurs: section-card row lists (§8.2), settings/list rows with a trailing button or switch, the detail header (§2.3), and in-card head bands with `CardAction`.
+**A row that carries a name/title at its head and an action at its tail is vertically center-aligned** (`items-center`) — the leading label and trailing action sit on the same center axis, never `items-start`. This applies wherever the shape occurs: section-card row lists (§7.2), settings/list rows with a trailing button or switch, the detail header (§2.3), and in-card head bands with `CardAction`.
 
 Only exception: when the row head is genuinely multi-line (title + subline + meta) and the action must align to the first line, top-align the row (`items-start`). Center is the default.
 
@@ -257,7 +254,7 @@ When a row has its own hover (`hover:bg-surface-hover`) **and** carries inline a
 
 - **Neutral action** (edit, more, …): `ghost` bumped one step — `className="hover:bg-surface-active"`.
 - **Destructive action** (delete): `variant="ghost-danger"` — its hover is an `error-bg` tint and signals intent.
-- Always `e.stopPropagation()` on the action's `onClick` so it doesn't fire the row's `onRowClick`; group icons in a `flex items-center` cluster. Destructive actions still confirm via a modal (§8.3).
+- Always `e.stopPropagation()` on the action's `onClick` so it doesn't fire the row's `onRowClick`; group icons in a `flex items-center` cluster. Destructive actions still confirm via a modal (§7.3).
 
 Example: a hoverable row with edit / delete actions in the trailing column.
 
@@ -273,64 +270,22 @@ Two invariants apply everywhere an action appears:
 Any clickable surface — list row, quick-filter tile, pick-one card — earns affordance from a **background** shift, not a border alone. Border / ring may reinforce, but cannot be the only signal. Neutral surface scale steps one solid shade at a time: `surface-2` → `surface-hover` → `surface-active`.
 
 - **Navigational** (row / card opens a detail or fires `onRowClick`, then leaves the page): rest = own bg → `hover:bg-surface-hover` → `active:bg-surface-active`. No persistent lit state.
-- **Selectable / toggle** (stays lit after click — stat-card quick-filter, pick-one card, multi-select row): selected is primary-tinted and beats hover. Gate neutral hover behind `!selected`.
+- **Selectable / toggle** (stays lit after click — pick-one card, quick-filter card, multi-select row): selected is primary-tinted and beats hover. Gate neutral hover behind `!selected`.
   - **Row inside a `Table`**: pass `state.selected`; the primitive applies selected styling. Do not hand-roll it.
-  - **Free-standing tile / card**: use `border-primary-500 bg-primary-50` (stat cards add `ring-2 ring-primary-500/10`). `StatCard` owns this for quick-filters (§4).
+  - **Free-standing tile / card**: use `border-primary-500 bg-primary-50`; selectable metric or filter cards may add `ring-2 ring-primary-500/10`.
 - **Nested actions** on a hoverable row keep row-distinct hover (§3.2).
 
 Hard rule: **selected ≠ hover.** A selected surface must not carry unconditional `hover:bg-surface-hover`.
 
 ---
 
-## 4. Stat Cards & Quick Filters
+## 4. Toolbar & Applied Filters
 
-Whether a stat card is clickable depends on prototype semantics, not on whether it visually looks like a card:
+When a list uses an explicit Search button, pressing Enter in a search field must trigger the same search. Lists with cheap local filtering may update immediately; expensive remote queries should avoid firing on every keystroke.
 
-- **Pure stat**: shows totals, ratios, trends, etc.; does not change list conditions. Use `StatCard` without `onClick`, so it renders non-interactive.
-- **Quick filter**: prototype click switches state / filters the list, or the business treats it as a high-frequency state entry. Use interactive `StatCard`; derive `selected` from the applied filter.
-- **No stat card needed**: if the prototype has no overview area, or stats do not help decisions on this list, do not add stat cards just to match the template.
+Long management lists should keep the condition band (toolbar + filter feedback) reachable while scrolling. Keep the implementation centralized: use [examples/list-page.tsx](./examples/list-page.tsx) as the style recipe or wrap it in an app-level list-toolbar component. Do not hand-tune sticky offsets, negative margins, or z-index values page by page.
 
-The card is `StatCard` from `@cloud/ui`; it owns styling + a11y. **Don't hand-roll stat-card classes.** The grid, card data, and toolbar/filter linkage stay in the page:
-
-- **Grid** (page-owned): use `StatGrid` or a documented grid scale such as `grid grid-cols-3 gap-3` (or `grid-cols-2 sm:grid-cols-4` for four cards).
-- **`selectedKey`** is derived from the applied filter, not stored separately; clicking a selected card clears it.
-- Pass `onClick` for an interactive quick-filter; omit it for pure display.
-- Standard content is `label` / `value` / `description` / `trend` / `icon`; pass `children` for custom inner layout.
-
-```tsx
-<div className="grid grid-cols-3 gap-3">
-  {tiles.map((tile) => (
-    <StatCard
-      key={tile.key}
-      selected={tile.key === selectedKey}
-      onClick={() => onSelect(tile.key)}   // omit → pure display
-      label={tile.label}
-      value={tile.value}
-      description={tile.sub}
-    />
-  ))}
-</div>
-```
-
-Selected styling beats hover; the component guarantees it.
-
----
-
-## 5. Toolbar & Applied Filters
-
-**Apply model**: inputs mutate a draft only; results change on Search / Enter, which also resets page to 1. Pages with few filters and cheap feedback may use instant filtering, but avoid firing expensive requests on every keystroke.
-
-**Sticky** is the portal list default: the condition band (toolbar + filter feedback, as one group) docks under the app header while the list scrolls. Short lists, embedded lists, or pages where filters are only auxiliary may keep the band in normal flow, but that is the exception.
-
-```
-sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3
-```
-
-- The shell `Layout`'s `<main>` is the scrollport and the app header lives outside it, so `top-0` lands exactly under the header.
-- `-mx-6` + `px-6` makes the band full-bleed; `bg-surface-1` masks table rows passing underneath.
-- `py-3` gives the docked state 12px of breathing room; `-my-3` cancels it so resting rhythm remains `gap-6`.
-- `z-10` is enough above table content; overlays render through portals.
-- The list card below pulls up with `-mt-2`, landing search band → table at **16px**. Rare non-sticky lists do not use this negative-margin pair.
+Short lists, embedded lists, and pages where filters are secondary may keep the condition band in normal flow.
 
 - Row container: `flex flex-wrap items-center gap-2`; every control at `md` (36px tall).
 - Search input: `inputSize="md"` + `prefix={<Search className="size-4"/>}`, wrapped in `max-w-64 flex-1`.
@@ -345,15 +300,15 @@ sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3
 
 ---
 
-## 6. List Card
+## 5. List Card
 
-Structure: `Card elevation={1}` → count band → `Table` → pagination band. The three segments separate themselves with borders; the card adds no padding of its own. If the page uses the sticky condition band, the card carries `-mt-2`; if the page is one of the rare non-sticky lists, keep normal `gap-6`.
+Structure: `Card elevation={1}` → count band → `Table` → `RichPagination`. The three segments separate themselves with borders; the card adds no padding of its own. When paired with the standard sticky condition band, follow the spacing recipe in [examples/list-page.tsx](./examples/list-page.tsx); non-sticky lists keep normal `gap-6`.
 
-### 6.1 Count Band
+### 5.1 Count Band
 
 `flex items-center justify-between gap-3 border-b border-line-subtle px-4 py-3`. Left: `text-sm text-content-secondary`, number in `font-mono font-semibold tabular-nums text-content-primary`, appending ` matching filters` (tertiary) when filtered. Right: action slot (export button, `secondary sm`).
 
-### 6.2 Table
+### 5.2 Table
 
 Prefer typed `Table<R>` (columns config) over hand-written thead/tbody.
 
@@ -380,69 +335,65 @@ Remaining column conventions:
 - Sorting is tri-state: asc → desc → natural order; handle `onSortChange(null)`.
 - Empty state: `py-12 text-center text-sm text-content-tertiary`, with distinct copy for "no data" vs "no matches".
 
-### 6.3 Pagination Band (`RichPagination`)
+### 5.3 Pagination Band (`RichPagination`)
 
-`flex flex-wrap items-center justify-between gap-3 border-t border-line-subtle px-4 py-3`:
+Use `RichPagination` from `@cloud/ui`; do not recompose its footer from `Select` + `Pagination` in page code. The component owns the footer layout:
 
-- Left: `Rows per page` + compact `Select sm` using a scale width such as `w-20` (do not write `w-[72px]`) + summary `Showing X–Y of Z` (`text-xs`, digits `tabular-nums`)
+- Shell: `flex flex-wrap items-center justify-between gap-3 border-t border-line-subtle px-4 py-3`
+- Left: localized rows-per-page selector (when `onPageSizeChange` is provided) + localized `Showing X-Y of Z` summary (`text-xs`, digits `tabular-nums`)
 - Right: `Pagination` page buttons (no go-to-page input)
-- Changing page size resets to page 1
+- Page-size options default to `[10, 25, 50, 100]`; pass `pageSizeOptions` only when the list needs a different set
+- Reset page to 1 in the page-size-change handler
+- Consumers must provide the `ui.pagination.*` i18n messages used by `@cloud/ui`
 
 ---
 
-## 7. Create Page
+## 6. Create Page
 
-Two main shapes: **single-step form** (§7.1 — default for ordinary new/edit pages) and **multi-step wizard** (§7.2 — when the flow benefits from step-by-step progression). Very small contextual edits can use modal forms; bulk import, async processing, or long-running flows should use a dedicated page or wizard.
+Two main shapes: **single-step form** (§6.1 — default for ordinary new/edit pages) and **multi-step wizard** (§6.2 — when the task benefits from step-by-step progression). Very small contextual edits can use modal forms; multi-stage or long-running flows should use a dedicated page or wizard.
 
-### 7.1 Single-Step Form
+### 6.1 Single-Step Form
 
-- **Sticky header**: `<PageHeader sticky … />` carries title + description and both actions — `ghost` Cancel plus `primary` Submit. Long forms default to sticky so Submit stays reachable. Single-step forms usually do not need a bottom action bar; add one only when the task needs persistent preview, draft state, split editing, or another clear affordance beyond the header actions.
-- **Body**: `PageBody` wraps `<div className="mx-auto flex max-w-3xl flex-col gap-6">` — section cards grouped by concern. No `StepIndicator`, no right summary rail, no done step by default. Edit-as-detail pages, preview-critical editors, or split editing flows may use a right rail when the rail materially improves review / editing efficiency; record the product reason per §0.3 instead of forcing the default single-column form.
-- **Submit**: guard invalid / in-flight submits in the handler; reveal field errors on first submit.
+Single-step forms are the default for independent fields. Use `PageHeader` for the title and actions, then place section cards in a centered column inside `PageBody`. See [examples/create-form.tsx](./examples/create-form.tsx) for the sticky-header and card-stack style recipe.
 
-### 7.2 Multi-Step Wizard
+Do not add footers, rails, or confirmation steps simply because the example exists. Add them only when the page task needs that affordance.
 
-Use when the task benefits from step-by-step progression: sequential dependency, branching, upload / scan / confirm, review / approval, async setup, or cross-step summary. Do not switch to a wizard merely because there are many fields; many independent fields still belong in a sectioned single-step form.
+### 6.2 Multi-Step Wizard
 
-- **Step indicator**: `StepIndicator` with card chrome `rounded-xl border border-line-default bg-surface-2 px-5.5 py-4 shadow-1`
-- **Two columns**: `flex flex-col gap-6 lg:flex-row lg:items-start`; main column `flex min-w-0 flex-1 flex-col gap-6`; right sticky summary rail carries `w-full lg:w-75 lg:shrink-0` (300px) + `sticky top-5`; full-width steps simply don't render it
-- **Step card head**: `CardHeader flush className="px-5 py-3.5"` (14·20) + `CardTitle className="text-md"` (+ optional `CardDescription text-xs text-content-tertiary`); content uses default slot padding
-- **Right sticky summary rail**: `p-4.5`; heading `text-sm font-semibold mb-3`; `dl flex flex-col gap-2 text-xs`, `dt w-20 shrink-0 text-content-tertiary`; empty values render `—`
-- **Error banner**: directly under the current step card inside the same step group, `mt-3 rounded-md border border-error/30 bg-error-bg px-3 py-2 text-sm text-error-strong` + `role="alert"`
-- **Footer nav**: `flex items-center justify-end gap-2`; Back `ghost` (disabled on step 1) sits in the same right-aligned action group as Continue, Continue is `primary` with right chevron, and the final step swaps Continue for Create `primary` with Check + `loading`. Do not add `mt-*` here when the main column already owns vertical spacing with `gap-6`.
-- **Done step**: centered card, `CardContent flex flex-col items-center px-8 py-10`; 72px success disc → status Badge → `text-2xl` heading → `max-w-md text-sm` body → primary CTA
+Use a wizard only when the user must move through meaningful stages: dependency, branching, review, external processing, or cross-step summary. Do not switch to a wizard merely because there are many fields; many independent fields still belong in a sectioned single-step form.
+
+The concrete step indicator, footer navigation, optional summary rail, error banner, and done-state styling live in [examples/create-wizard.tsx](./examples/create-wizard.tsx). Treat that file as a copyable style skeleton, not a product requirement.
 
 ---
 
-## 8. Detail Page
+## 7. Detail Page
 
 Read-only detail pages default to `PageHeaderBand` + content. Use tabs based on content: 1-2 core sections can render directly in overview; multiple peer sections use tabs; heavy sections, independent permissions, or deep-link needs may use sub-routes with a recorded reason. If the product explicitly treats edit as the detail surface, choose the create/edit form pattern that fits the task and do not add tabs or a read-only detail header just to satisfy this section.
 
-### 8.1 Overview Two-Column
+### 7.1 Overview Two-Column
 
 `flex flex-col gap-6 lg:flex-row lg:items-start`; main card `Card className="min-w-0 flex-1"`; right rail `flex w-full flex-col gap-6 lg:w-80 lg:shrink-0` (320px).
 
 - **KV grid**: `dl grid-auto-fit-kv gap-x-8 gap-y-3.5 text-sm`; columns adapt to the card's own width. Row `flex gap-5`, `dt w-40 shrink-0 font-medium text-content-tertiary`, `dd min-w-0 flex-1`; long free-text rows get `col-span-full`; missing values render `Not provided` (tertiary).
   - Responsive auto-fit columns always go through `grid-auto-fit-*` utilities; never hand-write `grid-cols-[repeat(auto-fit,minmax(…))]`.
-- **Stat card**: `Card className="gap-1 px-4 py-3.5"`; label `text-xs font-medium text-content-secondary`, value `text-2xl font-semibold leading-tight`, delta line `mt-0.5 text-xs text-content-tertiary`.
-- **Sensitive fields**: when a detail page includes phone numbers, email addresses, identity numbers, secrets, or similar sensitive data, mask them by default and provide per-field Reveal (`text-xs font-medium text-info-strong hover:underline`). Wire audit / toast behavior at the business layer when revealing must be tracked. Detail pages without sensitive fields do not need Reveal just to satisfy the spec.
+- **Reveal controls**: if a product flow already requires masked values, the per-field Reveal control uses `text-xs font-medium text-info-strong hover:underline`. Masking and reveal policy belong to the business / security layer, not this style spec.
 
-### 8.2 Section Cards
+### 7.2 Section Cards
 
 - Head: `CardHeader` + `CardTitle className="text-md"` (+ `CardDescription className="text-xs leading-relaxed text-content-tertiary"`); header buttons go in `CardAction`, not hand-rolled flex containers.
 - Row-list content: `CardContent flush` with rows as direct children: `flex items-center gap-3~3.5 px-4~4.5 py-3~3.5 border-b border-line-subtle last:border-b-0`; leading `size-10 rounded-lg` category tile, title `text-sm font-semibold` + chips at `gap-2`, subline `text-xs`.
 - Clickable rows: `role="button"` + `cursor-pointer hover:bg-surface-hover` (+ `active:bg-surface-active`). Persistent selected rows use primary tint and suppress hover while selected. Inline action clusters call `stopPropagation` and use row-distinct hover (§3.2).
 - In-section empty state: `px-4~6 py-8~12 text-center text-sm text-content-tertiary`.
 
-### 8.3 Modals
+### 7.3 Modals
 
-Small contextual mutations default to modals; long forms, bulk imports, async tasks, or flows that need full-page context do not belong in modals. **Width is the `Modal` `size` prop — never `className="sm:max-w-[…]"`.** The primitive owns the scale: `sm` 360 / `md` 480 / `lg` 640 / `xl` 880. Confirmations → `md`; normal modal forms → `lg`; reach for `xl` only when the body genuinely needs it. Footer is always `ghost` Cancel + the primary action; destructive actions use `variant="danger"` + `loading`.
+Small contextual mutations default to modals; long forms, batch work, external-processing tasks, or flows that need full-page context do not belong in modals. Width always uses the `Modal` `size` prop (`sm` / `md` / `lg` / `xl`), never page-local max-width classes. Footer is always `ghost` Cancel + the primary action; destructive actions use `variant="danger"` + `loading`.
 
 ---
 
-## 9. Typography & Data Display
+## 8. Typography & Data Display
 
-Portal typography follows the TOMS type scale. Use only **Geist** for headings/body and **Geist Mono** for data-like text; do not introduce page-local fonts. Default weights are `400 / 500 / 600`; `700` is reserved for rare emphasis. Avoid `300 / 800 / 900`.
+Portal typography follows the `@cloud/ui` type scale. Use only **Geist** for headings/body and **Geist Mono** for data-like text; do not introduce page-local fonts. Default weights are `400 / 500 / 600`; `700` is reserved for rare emphasis. Avoid `300 / 800 / 900`.
 
 Data-like text — IDs, serial numbers, timestamps, amounts, percentages, versions, counts, and machine identifiers — uses `font-mono tabular-nums`.
 
@@ -465,7 +416,7 @@ Data-like text — IDs, serial numbers, timestamps, amounts, percentages, versio
 
 ---
 
-## 10. Cheat Sheet
+## 9. Cheat Sheet
 
 ```
 rule levels           MUST baseline / SHOULD default / MAY conditional / AVOID with reason
@@ -473,15 +424,14 @@ color tokens          use semantic utilities from packages/ui styles; no raw hex
 radius scale          4/6/8/12/16/full       no in-between one-off radii
 spacing scale         --space-1..6 = 4..24   --space-8/10/12 for empty/focused states
 page body             PageBody              TabsContent uses PAGE_BODY_PADDING_CLASS_NAME
-sticky search→card    -mt-2 → 16px hug      rare non-sticky lists keep gap-6
+sticky search→card    use list-page recipe   rare non-sticky lists keep gap-6
 card interior         p-5 / gap-5 (20)      card stacks gap-5 (tight 3.5)
 in-card bands         px-4 py-3             wizard card head px-5 py-3.5 (14·20)
-stat cards             pure stat / quick-filter by prototype semantics
 detail tabs           peer sections use tabs; heavy sections may use sub-routes with reason
 condition controls    always size md        search input max-w-64 flex-1
-sticky condition band portal-list default: sticky top-0 z-10 -mx-6 -my-3 bg-surface-1 px-6 py-3
-single-step form      sticky header for long forms; body mx-auto max-w-3xl column
-wizard summary rail   w-75 sticky top-5     detail right rail w-80
+sticky condition band use shared recipe/example; do not tune offsets per page
+single-step form      header actions + centered section-card column
+wizard                only for meaningful stages; concrete chrome lives in example
 modal size prop       sm360 md480 lg640 xl880; small mutations modal, complex flows page/wizard
 empty state           py-12 centered text-sm tertiary
 clickable surface     hover:bg-surface-hover  press active:bg-surface-active (§3.4)

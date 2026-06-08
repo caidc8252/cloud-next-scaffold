@@ -72,7 +72,7 @@ export const RichPagination: React.FC<RichPaginationProps> = ({
           <div className="flex items-center gap-1.5">
             <span>{t('rowsPerPage')}</span>
             <Select value={String(pageSize)} onValueChange={(value) => onPageSizeChange(Number(value))}>
-              <SelectTrigger size="sm" className="w-[72px]" aria-label={t('rowsPerPage')}>
+              <SelectTrigger size="sm" className="w-20" aria-label={t('rowsPerPage')}>
                 <SelectValue>{(v: string) => String(v)}</SelectValue>
               </SelectTrigger>
               <SelectContent>
