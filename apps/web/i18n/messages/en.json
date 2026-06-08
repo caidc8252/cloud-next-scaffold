@@ -221,5 +221,21 @@
         "current": "You're already in {name}"
       }
     }
+  },
+  "auth": {
+    "selectPartner": {
+      "title": "Select organization",
+      "welcome": "Welcome, {name}. Choose an organization to continue.",
+      "empty": "Your account isn't linked to any organization yet. Please contact your administrator.",
+      "badge": {
+        "admin": "Admin access",
+        "normal": "Role-based access"
+      },
+      "reason": {
+        "partnerDisabled": "This organization is disabled",
+        "userDisabled": "Your access to this organization is disabled",
+        "noContract": "This organization has no active contract"
+      }
+    }
   }
 }
