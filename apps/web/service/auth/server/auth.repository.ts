@@ -55,3 +55,28 @@ export function findPartnerMembership(partnerId: number, userId: number) {
     include: { partner: true },
   });
 }
+
+/** 用户全部 partner 归属 + partner 本体 + 各 partner 的 ACTIVE 合同（供选择页/登录路由判定可选性）。 */
+export function listPartnerMembershipsWithContracts(userId: number) {
+  return prisma.sysPartnerUser.findMany({
+    where: { userId },
+    include: {
+      partner: {
+        select: {
+          partnerId: true,
+          partnerName: true,
+          status: true,
+          timezone: true,
+          contracts: {
+            where: { status: "ACTIVE" },
+            select: {
+              authorizedContractType: true,
+              effectiveFromDate: true,
+              effectiveToDate: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
