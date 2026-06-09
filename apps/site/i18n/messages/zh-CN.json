@@ -1,0 +1,96 @@
+{
+  "site": {
+    "metadata": {
+      "title": "Cloud Scaffold 产品门户",
+      "description": "Cloud Scaffold 控制台的轻量产品门户。"
+    },
+    "home": {
+      "brand": "Cloud Scaffold",
+      "login": "登录",
+      "heroEyebrow": "产品门户",
+      "heroTitle": "Cloud Scaffold",
+      "heroDescription": "为多租户运营平台准备的稳定基线，内置鉴权、权限、存储和后台工作流基础。",
+      "primaryAction": "进入控制台",
+      "secondaryAction": "查看能力",
+      "metrics": {
+        "apps": {
+          "value": "多应用",
+          "label": "共享同一套基础能力"
+        },
+        "auth": {
+          "value": "统一鉴权",
+          "label": "复用登录主逻辑"
+        },
+        "ops": {
+          "value": "可扩展",
+          "label": "后台门户基线"
+        }
+      },
+      "capabilitiesTitle": "为平台团队构建",
+      "capabilitiesDescription": "从一个清晰的控制台开始，未来扩展官网、门户和租户应用时，不需要重复实现核心登录流程。",
+      "capabilities": {
+        "auth": {
+          "title": "共享登录能力",
+          "description": "每个 app 保留路由入口，密码校验、锁定规则、会话创建和 MFA 分支沉淀到共享能力。"
+        },
+        "permissions": {
+          "title": "权限感知页面",
+          "description": "服务端守卫贴近页面和数据入口，客户端按钮显隐只负责体验层。"
+        },
+        "storage": {
+          "title": "存储工作流",
+          "description": "S3 上传会话、私有下载、公开图片和附件记录沿用统一平台契约。"
+        }
+      }
+    },
+    "login": {
+      "metadata": {
+        "title": "登录 - Cloud Scaffold",
+        "description": "从产品门户登录，然后选择 partner 工作区。"
+      },
+      "back": "返回门户",
+      "eyebrow": "统一登录",
+      "title": "登录 Cloud Scaffold",
+      "description": "先输入账号。完成认证后，再选择 partner 并进入对应平台。",
+      "form": {
+        "accountLabel": "账号",
+        "accountPlaceholder": "name@example.com",
+        "passwordLabel": "密码",
+        "passwordPlaceholder": "输入密码",
+        "submit": "继续",
+        "pending": "正在登录...",
+        "requiredMessage": "请输入账号和密码。",
+        "defaultError": "登录失败，请重试。",
+        "mfaTitle": "双重验证",
+        "mfaDescription": "请输入认证器应用中的 6 位验证码以完成登录。",
+        "mfaPlaceholder": "000000",
+        "mfaCancel": "取消",
+        "mfaVerify": "验证",
+        "mfaVerifying": "正在验证...",
+        "mfaDefaultError": "验证失败，请重试。"
+      }
+    },
+    "partner": {
+      "metadata": {
+        "title": "选择 partner - Cloud Scaffold",
+        "description": "进入具体平台前选择 partner 工作区。"
+      },
+      "eyebrow": "选择工作区",
+      "title": "选择 partner",
+      "description": "欢迎，{name}。请选择要进入的 partner 工作区。",
+      "active": "可用",
+      "disabled": "已停用",
+      "defaultError": "无法选择该 partner，请重试。"
+    },
+    "locked": {
+      "metadata": {
+        "title": "无可用 partner - Cloud Scaffold",
+        "description": "当前账号没有可用的 partner 工作区。"
+      },
+      "eyebrow": "不可访问",
+      "title": "没有可用的 partner",
+      "description": "账号已完成认证，但目前没有可用的 partner 工作区。",
+      "back": "返回登录"
+    }
+  }
+}

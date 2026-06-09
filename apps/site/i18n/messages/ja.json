@@ -1,0 +1,96 @@
+{
+  "site": {
+    "metadata": {
+      "title": "Cloud Scaffold プロダクトポータル",
+      "description": "Cloud Scaffold コンソールのための簡潔なプロダクトポータル。"
+    },
+    "home": {
+      "brand": "Cloud Scaffold",
+      "login": "ログイン",
+      "heroEyebrow": "プロダクトポータル",
+      "heroTitle": "Cloud Scaffold",
+      "heroDescription": "認証、権限、ストレージ、管理ワークフローを備えた、マルチテナント運用基盤です。",
+      "primaryAction": "コンソールを開く",
+      "secondaryAction": "機能を見る",
+      "metrics": {
+        "apps": {
+          "value": "Multi-app",
+          "label": "共通基盤を再利用"
+        },
+        "auth": {
+          "value": "Unified auth",
+          "label": "ログインロジックを共有"
+        },
+        "ops": {
+          "value": "Ready",
+          "label": "ポータル向けの土台"
+        }
+      },
+      "capabilitiesTitle": "プラットフォームチームのために",
+      "capabilitiesDescription": "明確なコンソールから始め、将来サイトやポータルを増やしても、ログインの中核処理を重複させずに拡張できます。",
+      "capabilities": {
+        "auth": {
+          "title": "共有認証",
+          "description": "各 app にルート入口を残し、パスワード検証、ロック規則、セッション作成、MFA 分岐を共通化します。"
+        },
+        "permissions": {
+          "title": "権限を意識したページ",
+          "description": "サーバー側ガードをページとデータ入口に近づけ、クライアント側制御は体験に限定します。"
+        },
+        "storage": {
+          "title": "ストレージワークフロー",
+          "description": "S3 アップロード、非公開ダウンロード、公開画像、添付レコードを同じ契約で扱います。"
+        }
+      }
+    },
+    "login": {
+      "metadata": {
+        "title": "ログイン - Cloud Scaffold",
+        "description": "プロダクトポータルでログインし、partner ワークスペースを選択します。"
+      },
+      "back": "ポータルに戻る",
+      "eyebrow": "統一ログイン",
+      "title": "Cloud Scaffold にログイン",
+      "description": "まずアカウントを入力します。認証後に partner を選択し、対応するプラットフォームへ進みます。",
+      "form": {
+        "accountLabel": "アカウント",
+        "accountPlaceholder": "name@example.com",
+        "passwordLabel": "パスワード",
+        "passwordPlaceholder": "パスワードを入力",
+        "submit": "続行",
+        "pending": "ログイン中...",
+        "requiredMessage": "アカウントとパスワードを入力してください。",
+        "defaultError": "ログインに失敗しました。もう一度お試しください。",
+        "mfaTitle": "二要素認証",
+        "mfaDescription": "ログインを完了するには、認証アプリの 6 桁コードを入力してください。",
+        "mfaPlaceholder": "000000",
+        "mfaCancel": "キャンセル",
+        "mfaVerify": "確認",
+        "mfaVerifying": "確認中...",
+        "mfaDefaultError": "確認に失敗しました。もう一度お試しください。"
+      }
+    },
+    "partner": {
+      "metadata": {
+        "title": "partner を選択 - Cloud Scaffold",
+        "description": "プラットフォームに入る前に partner ワークスペースを選択します。"
+      },
+      "eyebrow": "ワークスペースを選択",
+      "title": "partner を選択",
+      "description": "ようこそ、{name}。アクセスする partner ワークスペースを選択してください。",
+      "active": "利用可能",
+      "disabled": "無効",
+      "defaultError": "partner を選択できませんでした。もう一度お試しください。"
+    },
+    "locked": {
+      "metadata": {
+        "title": "利用可能な partner がありません - Cloud Scaffold",
+        "description": "このアカウントには利用可能な partner ワークスペースがありません。"
+      },
+      "eyebrow": "アクセス不可",
+      "title": "利用可能な partner がありません",
+      "description": "認証は完了しましたが、利用可能な partner ワークスペースがありません。",
+      "back": "ログインに戻る"
+    }
+  }
+}

@@ -23,19 +23,22 @@ function menuMapFile(appDir) {
   return null;
 }
 
-const apps = readdirSync(appsDir)
+const appDirectories = readdirSync(appsDir)
   .filter((name) => statSync(join(appsDir, name)).isDirectory())
+  .sort((a, b) => a.localeCompare(b));
+
+const sourceApps = appDirectories
   .map((name) => ({ name, file: menuMapFile(name) }))
   .filter((app) => app.file !== null)
   .sort((a, b) => a.name.localeCompare(b.name));
 
-if (apps.length === 0) {
+if (sourceApps.length === 0) {
   throw new Error("[gen:manifest] no apps/*/manifest/_menu.map.ts found");
 }
 
 // 评估每个 _menu.map，取出 appManifest 数据（Node 24 原生 TS 类型擦除，无需额外 loader）。
 const manifests = [];
-for (const app of apps) {
+for (const app of sourceApps) {
   const mod = await import(pathToFileURL(app.file).href);
   const manifest = mod.appManifest;
   if (!manifest ) {
@@ -63,14 +66,20 @@ export const MENUS: MenuEntry[] = ${JSON.stringify(menus, null, 2)};
 export const CONTRACT_KEYS: string[] = ${JSON.stringify(contractKeys)};
 `;
 
-// 每个含 manifest/ 的 app 各写一份全量 barrel（多 app 时各自采集全部）。
-for (const app of apps) {
-  const generatedDir = join(appsDir, app.name, "manifest", "_generated");
+// 每个含 manifest/ 消费目录的 app 各写一份全量 barrel。
+// site 这类消费者无需提供 _menu.map，也不会向全局池贡献菜单或契约。
+const targetApps = appDirectories.filter((name) =>
+  existsSync(join(appsDir, name, "manifest")),
+);
+for (const appName of targetApps) {
+  const generatedDir = join(appsDir, appName, "manifest", "_generated");
   mkdirSync(generatedDir, { recursive: true });
   writeFileSync(join(generatedDir, "apps.ts"), content, "utf8");
 }
 
 console.log(
-  `[gen:manifest] wrote ${apps.length} app(s): ${apps.map((a) => a.name).join(", ")} ` +
+  `[gen:manifest] collected ${sourceApps.length} provider(s): ` +
+    `${sourceApps.map((app) => app.name).join(", ")}; wrote ${targetApps.length} consumer(s): ` +
+    `${targetApps.join(", ")} ` +
     `(contracts: ${contractKeys.join(", ")})`,
 );
