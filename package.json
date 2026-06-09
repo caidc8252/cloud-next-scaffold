@@ -29,6 +29,7 @@
     "db:generate": "node scripts/prisma.mjs generate",
     "db:push": "node scripts/prisma.mjs db push",
     "db:seed": "node scripts/prisma.mjs db seed",
+    "db:seed:portal-login-tests": "pnpm --filter @cloud/db seed:portal-login-tests",
     "db:studio": "node scripts/prisma.mjs studio",
     "db:setup": "pnpm db:generate && pnpm db:push && pnpm db:seed",
     "check:diff-coverage": "vitest run --coverage --coverage.reporter=lcov --coverage.reporter=html && node scripts/check-diff-coverage.mjs",
