@@ -285,7 +285,7 @@ Tab 上的计数 chip：`ml-1 h-4 min-w-4 rounded-full bg-surface-3 px-1 text-xs
 | 列 | 样式 |
 |---|---|
 | 状态列 | Badge（tone + dot） |
-| 标签集合列 | `flex flex-wrap gap-1`，空值 `—` |
+| 标签集合 / 多 Badge 列 | 一律横向：`flex flex-wrap gap-1`，空值 `—`；同一表格单元格里的多个 Badge 不竖向堆叠 |
 | 行尾箭头列 | `width: 48, align: "right"`，被动 `ChevronRight size-3.5 text-content-tertiary`——**整行是点击目标**（`onRowClick`）。默认用这个；若该行确需行内操作（编辑/删除），去掉箭头、按 §3.2 处理其 hover + `stopPropagation` |
 | 操作列 | 图标按钮只用 `ghost` / `ghost-danger`；重要行级动作必须带文字，再使用 `secondary` / `primary` |
 

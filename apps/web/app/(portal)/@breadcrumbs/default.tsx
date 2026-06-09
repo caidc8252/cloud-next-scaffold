@@ -85,7 +85,33 @@ import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
  *        default behavior in Case A). Intermediate segments carry `href` so
  *        users can click back up the tree; the last (current page) has none.
  *
- *     4. The business page typically reads the same record. Put the loader in
+ *     4. If the detail slot links back to its list page, add an explicit slot
+ *        page for that list route too:
+ *
+ *          business page: apps/web/app/(portal)/system/roles/page.tsx
+ *          slot page:     apps/web/app/(portal)/@breadcrumbs/system/roles/page.tsx
+ *
+ *        This list slot usually renders the same single crumb as the menu
+ *        fallback (e.g. <Breadcrumbs items={[{ label: "Roles" }]} />), but it
+ *        gives Next a real @breadcrumbs target during client-side navigation.
+ *        Do not rely on default.tsx for this transition: parallel-route slots
+ *        preserve their active subpage on soft navigation, so going from
+ *        /system/roles/[id] back to /system/roles would otherwise keep the
+ *        stale detail crumb until a hard reload.
+ *
+ *        When using @cloud/ui <Breadcrumbs>, keep the UI package framework
+ *        neutral and inject Next's <Link> through the item's `render` field:
+ *
+ *          <Breadcrumbs items={[
+ *            {
+ *              label: "Roles",
+ *              href: "/system/roles",
+ *              render: <Link href="/system/roles" />,
+ *            },
+ *            { label: role?.roleName ?? `#${id}` },
+ *          ]} />
+ *
+ *     5. The business page typically reads the same record. Put the loader in
  *        e.g. system/<feature>/loader.ts and wrap it in React `cache()` so the
  *        slot and the page share a single DB roundtrip per request:
  *
@@ -126,6 +152,9 @@ import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
  * ────────────────────────────────────────────────────────────────
  * - DO NOT delete default.tsx. Without it, any route that lacks a dedicated
  *   slot file will fail the whole layout.
+ * - default.tsx is only a hard-load / unmatched-slot fallback. It does not
+ *   reset a stale custom slot during client-side navigation; add a matching
+ *   slot page for every route that a custom breadcrumb links back to.
  * - Slots are independent render branches. If a slot fetches sensitive data,
  *   run its own permission checks; do not assume the layout already guarded.
  * - When renaming a route, update the business page and the slot page
