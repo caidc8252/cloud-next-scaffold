@@ -35,6 +35,7 @@
       "@cloud/storage/client": ["./packages/storage/src/client/index.ts"],
       "@cloud/storage/server": ["./packages/storage/src/server/index.ts"],
       "@cloud/ui": ["./packages/ui/src/index.ts"],
+      "@cloud/ui/messages/*": ["./packages/ui/messages/*"],
       "@cloud/ui/*": ["./packages/ui/src/*"]
     }
   },

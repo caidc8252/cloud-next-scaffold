@@ -96,7 +96,8 @@
   - **坑 1（locale 推断）**：因为走 cookie 不走 URL 路由、没有 next-intl middleware，`NextIntlClientProvider` 无法自动推断 locale，dev 期报 `Couldn't infer the locale prop`。必须把 layout 里算好的 locale **显式传** `<NextIntlClientProvider locale={locale}>`；messages / timeZone / formats 仍由 request config 自动注入，不用手传。
   - **坑 2（server action 被 optimize 破坏）**：`@cloud/i18n` 含 `"use server"`（`setLocaleAction` / `setTimeZoneAction`，全仓唯一的 server action）。**不要把它放进 `next.config.ts` 的 `experimental.optimizePackageImports`**——barrel 导入重写会让 server action 模块身份漂移、ID 对不上，运行时报 `Invalid Server Actions request`（`TimeZoneInit` 调 action 时触发）。它留在 `transpilePackages` 即可。改 `next.config.ts` 后必须**重启 dev server**，不是刷新。
   - `NextIntlClientProvider` 由 `@cloud/i18n/client` re-export（包原本漏了，已补），应用层只 import `@cloud/i18n/client`，不直接 import next-intl；`next-intl/plugin` 仅在 `next.config.ts` 这一构建配置处直接 import。
-  - 文案在 `apps/web/i18n/messages/`，`en.json` 为基底，目前只落 `@cloud/ui` 必需的 `ui.datePicker.*`。`apps/web/i18n/messages/messages.test.ts` 守 en 含日期组件全部 key、zh/ja 无孤儿 key。现有页面英文硬编码尚未逐条迁移（独立任务）。
+  - `apps/web/i18n/request.ts` 先合并 `@cloud/ui/messages/<locale>.json`，再叠加 `apps/web/i18n/messages/<locale>.json`，业务 app 只写业务文案和明确覆盖项。`ui.pagination.*` 等共享组件默认文案归 `@cloud/ui`，不要在 app 里复制一份；`ui.datePicker.*` 当前仍在 app 侧保留覆盖文案。
+  - 文案在 `apps/web/i18n/messages/`，`en.json` 为基底。`apps/web/i18n/messages/messages.test.ts` 守 app en 含日期组件覆盖 key、`@cloud/ui` en 含 RichPagination key、app 不重复定义 `ui.pagination`、zh/ja 无孤儿 key。现有页面英文硬编码尚未逐条迁移（独立任务）。
 
 ## 平台 manifest（菜单 / 权限 / 契约 单一真源）
 
