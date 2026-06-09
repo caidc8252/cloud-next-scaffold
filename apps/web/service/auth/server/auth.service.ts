@@ -44,7 +44,7 @@ async function buildSessionAndRedirect(userId: number, snapshotFailCode: string)
   const snapshot = await buildSessionSnapshot(userId, currentPartnerId);
   if (!snapshot) throw new BusinessError(snapshotFailCode, 401);
   await createSession(snapshot);
-
+  console.log(snapshot)
   // currentPartnerId 落不下来（多选/零选/授权窗口失效）→ 去选择页
   return { redirectTo: snapshot.currentPartnerId !== null ? "/" : "/select-partner" };
 }
