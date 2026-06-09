@@ -80,6 +80,15 @@
       "description": "Welcome, {name}. Choose the partner workspace you want to enter.",
       "active": "Active",
       "disabled": "Disabled",
+      "badge": {
+        "admin": "Admin",
+        "normal": "User"
+      },
+      "reason": {
+        "partnerDisabled": "Partner disabled",
+        "userDisabled": "Access disabled",
+        "noContract": "No active contract"
+      },
       "defaultError": "The partner could not be selected. Please try again."
     },
     "locked": {

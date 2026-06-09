@@ -80,6 +80,15 @@
       "description": "ようこそ、{name}。アクセスする partner ワークスペースを選択してください。",
       "active": "利用可能",
       "disabled": "無効",
+      "badge": {
+        "admin": "管理者",
+        "normal": "ユーザー"
+      },
+      "reason": {
+        "partnerDisabled": "Partner が無効です",
+        "userDisabled": "アクセスが無効です",
+        "noContract": "有効な契約がありません"
+      },
       "defaultError": "partner を選択できませんでした。もう一度お試しください。"
     },
     "locked": {

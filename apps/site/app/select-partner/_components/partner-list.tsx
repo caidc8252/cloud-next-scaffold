@@ -5,18 +5,13 @@ import { ArrowRight, Building2, Loader2 } from "lucide-react";
 import { Badge, Button } from "@cloud/ui";
 import { useTranslations } from "@cloud/i18n/client";
 import { request, RequestError } from "@cloud/request/client";
-
-type PartnerOption = {
-  partnerId: number;
-  partnerName: string;
-  active: boolean;
-};
+import { isPartnerSelectable, type PartnerChoice } from "@/lib/partner-choice";
 
 type SelectPartnerResponse = {
   redirectTo: string;
 };
 
-export function PartnerList({ partners }: { partners: PartnerOption[] }) {
+export function PartnerList({ choices }: { choices: PartnerChoice[] }) {
   const t = useTranslations("site.partner");
   const [pendingId, setPendingId] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -41,28 +36,40 @@ export function PartnerList({ partners }: { partners: PartnerOption[] }) {
     }
   }
 
+  function reasonFor(choice: PartnerChoice): string | null {
+    if (choice.partnerStatus !== "ACTIVE") return t("reason.partnerDisabled");
+    if (choice.userStatus !== "ACTIVE") return t("reason.userDisabled");
+    if (!choice.validContract) return t("reason.noContract");
+    return null;
+  }
+
   return (
     <div className="site-partner-list">
       {message ? <div className="site-login-message">{message}</div> : null}
-      {partners.map((partner) => {
-        const isPending = pendingId === partner.partnerId;
+      {choices.map((choice) => {
+        const isPending = pendingId === choice.partnerId;
+        const selectable = isPartnerSelectable(choice);
+        const reason = reasonFor(choice);
 
         return (
           <Button
-            key={partner.partnerId}
+            key={choice.partnerId}
             type="button"
             variant="outline"
             className="site-partner-option"
-            disabled={!partner.active || pendingId !== null}
-            onClick={() => void selectPartner(partner.partnerId)}
+            disabled={!selectable || pendingId !== null}
+            onClick={() => void selectPartner(choice.partnerId)}
           >
             <span className="site-partner-option__identity">
               <Building2 size={19} aria-hidden="true" />
-              <span>{partner.partnerName}</span>
+              <span>
+                <span>{choice.partnerName}</span>
+                {reason ? <span className="site-partner-reason">{reason}</span> : null}
+              </span>
             </span>
             <span className="site-partner-option__status">
-              <Badge tone={partner.active ? "success" : "neutral"} dot>
-                {partner.active ? t("active") : t("disabled")}
+              <Badge tone={selectable ? "success" : "neutral"} dot>
+                {choice.authorizingType === "ADMIN" ? t("badge.admin") : t("badge.normal")}
               </Badge>
               {isPending ? (
                 <Loader2 className="site-partner-spinner" size={18} aria-hidden="true" />

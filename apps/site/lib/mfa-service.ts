@@ -8,7 +8,7 @@ import { verifyTotp } from "./totp";
 const MFA_TYPE = "TOTP";
 const MAX_FAIL = 10;
 
-const secretKey = () => getAuthConfig().mfaSecretKey;
+const secretKey = () => getAuthConfig().aesSecretKey;
 const lockWindowMs = () => getAuthConfig().lockDurationMinutes * 60_000;
 
 export type TotpVerifyResult = "ok" | "invalid" | "none" | "locked";

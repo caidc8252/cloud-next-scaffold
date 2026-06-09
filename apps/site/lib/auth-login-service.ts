@@ -33,6 +33,9 @@ import {
 } from "./login-token";
 import { buildSessionSnapshot } from "./session-snapshot";
 import { verifyActiveTotp } from "./mfa-service";
+import { getWebAppUrl } from "./platform-routing";
+import { isPartnerSelectable } from "./partner-choice";
+import { listPartnerChoices } from "./partner-choices";
 
 const loginSchema = z.object({
   account: z.string().trim().min(1),
@@ -49,8 +52,23 @@ const mfaSchema = z.object({
   code: z.string().trim().length(6),
 });
 
-function redirectForPartnerCount(partnerCount: number): string {
-  return partnerCount > 0 ? "/select-partner" : "/locked";
+async function buildSessionAndRedirect(
+  userId: number,
+  snapshotFailCode: string,
+): Promise<{ redirectTo: string }> {
+  const choices = await listPartnerChoices(userId);
+  const selectable = choices.filter(isPartnerSelectable);
+  const currentPartnerId = selectable.length === 1 ? selectable[0].partnerId : null;
+
+  const snapshot = await buildSessionSnapshot(userId, currentPartnerId);
+  if (!snapshot) {
+    throw new BusinessError(snapshotFailCode, 401);
+  }
+  await createSession(snapshot);
+
+  return {
+    redirectTo: snapshot.currentPartnerId !== null ? getWebAppUrl() : "/select-partner",
+  };
 }
 
 // 登录第一段只证明“账号密码正确”。开启 MFA 时不能提前创建 session，
@@ -88,7 +106,7 @@ export async function loginWithPassword(req: Request): Promise<Response> {
 
   let payload: z.infer<typeof payloadSchema>;
   try {
-    const decrypted = decryptRsaOaep(parsed.data.encryptedPassword, auth.rsaPrivateKeyPem);
+    const decrypted = decryptRsaOaep(parsed.data.encryptedPassword, auth.rsaPrivateKey);
     payload = payloadSchema.parse(JSON.parse(decrypted));
   } catch {
     throw new BusinessError(ERR_AUTH_ENCRYPTION_INVALID);
@@ -130,15 +148,7 @@ export async function loginWithPassword(req: Request): Promise<Response> {
     return successResponse({ mfaRequired: true, mfaToken });
   }
 
-  // 这里仍是 partial session：包含用户和可选 partner 列表，但还没有
-  // currentPartnerId / permissions。选择 partner 后才升级为完整后台 session。
-  const snapshot = await buildSessionSnapshot(user.userId);
-  if (!snapshot) {
-    throw new BusinessError(ERR_AUTH_INVALID_CREDENTIALS, 401);
-  }
-  await createSession(snapshot);
-
-  return successResponse({ redirectTo: redirectForPartnerCount(snapshot.partners.length) });
+  return successResponse(await buildSessionAndRedirect(user.userId, ERR_AUTH_INVALID_CREDENTIALS));
 }
 
 export async function loginWithMfa(req: Request): Promise<Response> {
@@ -168,9 +178,5 @@ export async function loginWithMfa(req: Request): Promise<Response> {
   // mfaToken 是一次性票据，TOTP 通过后立即删除，避免同一个二段登录票据复用。
   await deleteMfaLoginToken(parsed.data.mfaToken);
 
-  const snapshot = await buildSessionSnapshot(userId);
-  if (!snapshot) throw new BusinessError(ERR_AUTH_MFA_TOKEN_INVALID, 401);
-  await createSession(snapshot);
-
-  return successResponse({ redirectTo: redirectForPartnerCount(snapshot.partners.length) });
+  return successResponse(await buildSessionAndRedirect(userId, ERR_AUTH_MFA_TOKEN_INVALID));
 }

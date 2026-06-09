@@ -4,6 +4,12 @@ import { prisma } from "@cloud/db";
 import type { Session, SessionPartnerRef, SessionRole } from "@cloud/permissions/server";
 import { getMenus } from "@/manifest";
 import { resolveEffectivePermissions } from "@/manifest/select";
+import {
+  isAuthorizingWindowOpen,
+  isContractEffective,
+  partnerToday,
+} from "./contract-validity";
+import { selectApplicableRoles } from "./role-selection";
 
 export type SessionSnapshotInput = Omit<Session, "loginAt" | "expireAt">;
 
@@ -15,13 +21,20 @@ type CurrentContext = {
   permissions: string[];
 };
 
-type PartnerUserWithPartner = {
+type ContractRow = {
+  authorizedContractType: string;
+  effectiveFromDate: Date | null;
+  effectiveToDate: Date | null;
+};
+
+type PartnerUserRow = {
   partnerId: number;
   status: string;
   authorizingType: string;
-  authorizingTimestamp: Date | null;
+  authorizingFrom: Date | null;
+  authorizingTo: Date | null;
   roles: unknown;
-  partner: { partnerId: number; partnerName: string; status: string };
+  partner: { partnerId: number; partnerName: string; status: string; timezone: string };
 };
 
 function normalizeAuthorizingType(value: string): "ADMIN" | "NORMAL" {
@@ -43,42 +56,33 @@ function extractPermissionCodes(codes: unknown): string[] {
   return codes.filter((code): code is string => typeof code === "string");
 }
 
-function toPartnerRef(partnerUser: PartnerUserWithPartner): SessionPartnerRef {
+function toPartnerRef(partnerUser: PartnerUserRow): SessionPartnerRef {
   return {
     partnerId: partnerUser.partnerId,
     partnerName: partnerUser.partner.partnerName,
     authorizingType: normalizeAuthorizingType(partnerUser.authorizingType),
     status: partnerUser.status,
-    authorizingFrom: partnerUser.authorizingTimestamp?.toISOString() ?? null,
-    authorizingTo: null,
+    authorizingFrom: partnerUser.authorizingFrom?.toISOString() ?? null,
+    authorizingTo: partnerUser.authorizingTo?.toISOString() ?? null,
   };
 }
 
 async function buildCurrentContext(
-  partnerUser: PartnerUserWithPartner,
-): Promise<CurrentContext | null> {
+  partnerUser: PartnerUserRow,
+  validContracts: ContractRow[],
+): Promise<CurrentContext> {
   const partnerId = partnerUser.partnerId;
-
-  const contracts = await prisma.sysPartnerContract.findMany({
-    where: { authorizedPartnerId: partnerId, status: "ACTIVE" },
-    select: { authorizedContractType: true },
-  });
-  if (contracts.length === 0) return null;
-  const contractTypes = [...new Set(contracts.map((contract) => contract.authorizedContractType))];
-
+  const contractTypes = [...new Set(validContracts.map((contract) => contract.authorizedContractType))];
   const authorizingType = normalizeAuthorizingType(partnerUser.authorizingType);
+
   const roleIds = extractRoleIds(partnerUser.roles);
   const userRoles = roleIds.length
-    ? await prisma.sysRole.findMany({
-        where: { roleId: { in: roleIds } },
-      })
+    ? await prisma.sysRole.findMany({ where: { roleId: { in: roleIds } } })
     : [];
 
   let roles: SessionRole[];
   let grantedRoleCodes: string[] = [];
 
-  // ADMIN partner 用户只受有效合约限制；NORMAL 用户还要经过角色合约类型
-  // 和 partner role blocklist 过滤，最后再从角色 permissionCodes 派生权限。
   if (authorizingType === "ADMIN") {
     roles = userRoles.map((role) => ({
       roleId: role.roleId,
@@ -90,11 +94,14 @@ async function buildCurrentContext(
       where: { partnerId, contractType: { in: contractTypes } },
       select: { roleId: true },
     });
-    const blocked = new Set(blacklist.map((item) => item.roleId));
+    const blockedRoleIds = new Set(blacklist.map((item) => item.roleId));
 
-    const applicable = userRoles.filter(
-      (role) => contractTypes.includes(role.contractType) && !blocked.has(role.roleId),
-    );
+    const applicable = selectApplicableRoles({
+      roles: userRoles,
+      contractTypes,
+      blockedRoleIds,
+      partnerId,
+    });
 
     roles = applicable.map((role) => ({
       roleId: role.roleId,
@@ -110,11 +117,7 @@ async function buildCurrentContext(
   }
 
   const menus = getMenus(contractTypes);
-  const permissions = resolveEffectivePermissions({
-    menus,
-    authorizingType,
-    grantedRoleCodes,
-  });
+  const permissions = resolveEffectivePermissions({ menus, authorizingType, grantedRoleCodes });
 
   return {
     partnerName: partnerUser.partner.partnerName,
@@ -128,28 +131,68 @@ async function buildCurrentContext(
 export async function buildSessionSnapshot(
   userId: number,
   currentPartnerId: number | null = null,
+  now: Date = new Date(),
 ): Promise<SessionSnapshotInput | null> {
   const user = await prisma.sysUser.findUnique({ where: { userId } });
   if (!user || user.status !== "ACTIVE") return null;
 
   const partnerUsers = (await prisma.sysPartnerUser.findMany({
     where: { userId },
-    include: { partner: { select: { partnerId: true, partnerName: true, status: true } } },
-  })) as PartnerUserWithPartner[];
+    include: {
+      partner: {
+        select: { partnerId: true, partnerName: true, status: true, timezone: true },
+      },
+    },
+  })) as PartnerUserRow[];
 
   const activePartnerUsers = partnerUsers.filter(
     (partnerUser) =>
       partnerUser.status === "ACTIVE" && partnerUser.partner.status === "ACTIVE",
   );
+  const activeIds = activePartnerUsers.map((partnerUser) => partnerUser.partnerId);
+
+  const contracts = activeIds.length
+    ? ((await prisma.sysPartnerContract.findMany({
+        where: { authorizedPartnerId: { in: activeIds }, status: "ACTIVE" },
+        select: {
+          authorizedPartnerId: true,
+          authorizedContractType: true,
+          effectiveFromDate: true,
+          effectiveToDate: true,
+        },
+      })) as (ContractRow & { authorizedPartnerId: number })[])
+    : [];
+
+  const validByPartner = new Map<number, ContractRow[]>();
+  for (const partnerUser of activePartnerUsers) {
+    const today = partnerToday(partnerUser.partner.timezone, now);
+    validByPartner.set(
+      partnerUser.partnerId,
+      contracts.filter(
+        (contract) =>
+          contract.authorizedPartnerId === partnerUser.partnerId &&
+          isContractEffective(contract.effectiveFromDate, contract.effectiveToDate, today),
+      ),
+    );
+  }
+
+  const partners = activePartnerUsers
+    .filter((partnerUser) => (validByPartner.get(partnerUser.partnerId)?.length ?? 0) > 0)
+    .map(toPartnerRef);
 
   let current: CurrentContext | null = null;
   if (currentPartnerId !== null) {
     const target = activePartnerUsers.find((partnerUser) => partnerUser.partnerId === currentPartnerId);
-    if (target) current = await buildCurrentContext(target);
+    const validContracts = target ? (validByPartner.get(currentPartnerId) ?? []) : [];
+    if (
+      target &&
+      validContracts.length > 0 &&
+      isAuthorizingWindowOpen(target.authorizingFrom, target.authorizingTo, now)
+    ) {
+      current = await buildCurrentContext(target, validContracts);
+    }
   }
 
-  // currentPartnerId 为空时返回 partial session：只有用户和可选 partner 列表。
-  // 选中 partner 后再次构建，才会带上当前 partner、角色、权限和菜单上下文。
   return {
     userId: user.userId,
     username: user.username,
@@ -161,7 +204,7 @@ export async function buildSessionSnapshot(
     authorizingType: current?.authorizingType ?? null,
     roles: current?.roles ?? [],
     permissions: current?.permissions ?? [],
-    partners: activePartnerUsers.map(toPartnerRef),
+    partners,
     mfaPassed: true,
   };
 }

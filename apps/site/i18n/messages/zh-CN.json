@@ -80,6 +80,15 @@
       "description": "欢迎，{name}。请选择要进入的 partner 工作区。",
       "active": "可用",
       "disabled": "已停用",
+      "badge": {
+        "admin": "管理员",
+        "normal": "用户"
+      },
+      "reason": {
+        "partnerDisabled": "Partner 已停用",
+        "userDisabled": "访问已停用",
+        "noContract": "无有效合同"
+      },
       "defaultError": "无法选择该 partner，请重试。"
     },
     "locked": {

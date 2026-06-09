@@ -1,13 +1,14 @@
 import { redirect } from "next/navigation";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
 import { getPartialSession, getSession } from "@cloud/permissions/server";
+import { getSiteLoginUrl } from "@/lib/site-routing";
 
 export default async function LockedPage() {
   const session = await getSession();
   if (session) redirect("/");
 
   const partial = await getPartialSession();
-  if (!partial) redirect("/login");
+  if (!partial) redirect(getSiteLoginUrl());
 
   const { prisma } = await import("@cloud/db");
   const partnerUsers = await prisma.sysPartnerUser.findMany({
@@ -24,7 +25,7 @@ export default async function LockedPage() {
 
   return (
     <main className="login-screen">
-      <Card className="login-card" style={{ maxWidth: 480 }}>
+      <Card className="login-card">
         <CardHeader className="login-card__body">
           <div className="login-grid">
             <CardTitle>Access disabled</CardTitle>

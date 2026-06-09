@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@cloud/ui";
-import { prisma } from "@cloud/db";
 import { getTranslations } from "@cloud/i18n/server";
 import { getPartialSession, getSession } from "@cloud/permissions/server";
 import { getWebAppUrl } from "@/lib/platform-routing";
+import { listPartnerChoices } from "@/lib/partner-choices";
 import { PartnerList } from "./_components/partner-list";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -24,27 +24,8 @@ export default async function SelectPartnerPage() {
   const partial = await getPartialSession();
   if (!partial) redirect("/login");
 
-  const partnerUsers = await prisma.sysPartnerUser.findMany({
-    where: { userId: partial.userId },
-    include: {
-      partner: {
-        select: {
-          partnerId: true,
-          partnerName: true,
-          status: true,
-        },
-      },
-    },
-    orderBy: { partnerId: "asc" },
-  });
-
-  const partners = partnerUsers.map((partnerUser) => ({
-    partnerId: partnerUser.partnerId,
-    partnerName: partnerUser.partner.partnerName,
-    active: partnerUser.status === "ACTIVE" && partnerUser.partner.status === "ACTIVE",
-  }));
-
-  if (!partners.some((partner) => partner.active)) redirect("/locked");
+  const choices = await listPartnerChoices(partial.userId);
+  if (choices.length === 0) redirect("/locked");
 
   return (
     <main className="site-login-screen">
@@ -58,7 +39,7 @@ export default async function SelectPartnerPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <PartnerList partners={partners} />
+            <PartnerList choices={choices} />
           </CardContent>
         </Card>
       </div>

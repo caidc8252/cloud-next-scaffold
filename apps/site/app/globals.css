@@ -401,9 +401,22 @@ h1 {
 }
 
 .site-partner-option__identity > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.site-partner-option__identity > span > span:first-child {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.site-partner-reason {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  line-height: 1.25;
 }
 
 .site-partner-spinner {
