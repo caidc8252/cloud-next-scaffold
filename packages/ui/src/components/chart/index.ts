@@ -24,6 +24,10 @@ export {
   ChartEmpty,
   type ChartEmptyProps,
 } from "./chart-states"
+export {
+  ChartSparkline,
+  type ChartSparklineProps,
+} from "./chart-sparkline"
 
 // Recharts composition building blocks, re-exported so consumers compose a
 // whole chart out of `@cloud/ui/components/chart` imports and never depend on

@@ -5,6 +5,7 @@ import { beforeAll, describe, expect, it } from "vitest"
 import { BarChart, Bar } from "recharts"
 
 import { ChartContainer, buildChartVars, useChart, type ChartConfig } from "./chart"
+import { ChartSparkline } from "./chart-sparkline"
 
 // Recharts' ResponsiveContainer instantiates a ResizeObserver on mount, which
 // jsdom doesn't provide. A no-op mock lets the wrapper + injected <style> mount
@@ -101,6 +102,43 @@ describe("ChartContainer — slot + scoped style injection", () => {
   })
 })
 
+describe("ChartContainer — accessibility (spec 'Accessibility')", () => {
+  it("becomes role=img with sr-only title/desc wired via aria when labelled", () => {
+    const { container } = render(
+      <ChartContainer
+        config={{ card: {} }}
+        label="Revenue by month"
+        description="Card vs wallet, Jan–Jun"
+      >
+        <BarChart data={[]}>
+          <Bar dataKey="card" />
+        </BarChart>
+      </ChartContainer>,
+    )
+    const root = container.querySelector('[data-slot="chart"]')
+    expect(root?.getAttribute("role")).toBe("img")
+    const titleId = root?.getAttribute("aria-labelledby") ?? ""
+    const descId = root?.getAttribute("aria-describedby") ?? ""
+    expect(container.querySelector(`#${titleId}`)?.textContent).toBe("Revenue by month")
+    expect(container.querySelector(`#${descId}`)?.textContent).toBe(
+      "Card vs wallet, Jan–Jun",
+    )
+  })
+
+  it("omits role/aria when no label is provided", () => {
+    const { container } = render(
+      <ChartContainer config={{ card: {} }}>
+        <BarChart data={[]}>
+          <Bar dataKey="card" />
+        </BarChart>
+      </ChartContainer>,
+    )
+    const root = container.querySelector('[data-slot="chart"]')
+    expect(root?.getAttribute("role")).toBeNull()
+    expect(root?.getAttribute("aria-labelledby")).toBeNull()
+  })
+})
+
 describe("useChart", () => {
   it("throws when used outside <ChartContainer />", () => {
     function Orphan() {
@@ -108,5 +146,30 @@ describe("useChart", () => {
       return null
     }
     expect(() => render(<Orphan />)).toThrow(/ChartContainer/)
+  })
+})
+
+describe("ChartSparkline — fixed-size, axis-free inline trend (spec 'Sparkline')", () => {
+  const data = [{ v: 3 }, { v: 7 }, { v: 5 }, { v: 9 }, { v: 6 }]
+
+  it("renders a fixed-size svg with the line layer and no cartesian axes", () => {
+    const { container } = render(
+      <ChartSparkline data={data} dataKey="v" width={120} height={32} />,
+    )
+    expect(container.querySelector('[data-slot="chart-sparkline"]')).not.toBeNull()
+    const svg = container.querySelector("svg")
+    expect(svg?.getAttribute("width")).toBe("120")
+    expect(svg?.getAttribute("height")).toBe("32")
+    // Sparkline contract: a series line, but no axes / grid.
+    expect(container.querySelector(".recharts-line")).not.toBeNull()
+    expect(container.querySelector(".recharts-cartesian-axis")).toBeNull()
+  })
+
+  it("renders an area layer for variant='area'", () => {
+    const { container } = render(
+      <ChartSparkline data={data} dataKey="v" variant="area" />,
+    )
+    expect(container.querySelector(".recharts-area")).not.toBeNull()
+    expect(container.querySelector(".recharts-cartesian-axis")).toBeNull()
   })
 })

@@ -88,15 +88,25 @@ export function ChartContainer({
   className,
   children,
   config,
+  label,
+  description,
   ...props
 }: React.ComponentProps<"div"> & {
   config: ChartConfig
+  /** Accessible name for the chart region. When set, the container becomes
+   *  `role="img"` with an sr-only title (spec "Accessibility"). Pair with
+   *  `accessibilityLayer` on the Recharts chart for keyboard ← → stepping. */
+  label?: React.ReactNode
+  /** Longer sr-only description, exposed via `aria-describedby`. */
+  description?: React.ReactNode
   children: React.ComponentProps<
     typeof RechartsPrimitive.ResponsiveContainer
   >["children"]
 }) {
   const uniqueId = React.useId()
   const chartId = `chart-${id ?? uniqueId.replace(/:/g, "")}`
+  const titleId = `${chartId}-title`
+  const descId = `${chartId}-desc`
 
   // Mount ResponsiveContainer only once the box has a real size, and seed it
   // with that size as `initialDimension`. Recharts' default initial dimension
@@ -130,13 +140,25 @@ export function ChartContainer({
         ref={ref}
         data-slot="chart"
         data-chart={chartId}
+        role={label ? "img" : undefined}
+        aria-labelledby={label ? titleId : undefined}
+        aria-describedby={description ? descId : undefined}
         className={cn(
           "flex aspect-video justify-center text-xs",
-          "[&_.recharts-surface]:outline-none",
           className,
         )}
         {...props}
       >
+        {label ? (
+          <span id={titleId} className="sr-only">
+            {label}
+          </span>
+        ) : null}
+        {description ? (
+          <span id={descId} className="sr-only">
+            {description}
+          </span>
+        ) : null}
         <ChartStyle id={chartId} config={config} />
         {size ? (
           <RechartsPrimitive.ResponsiveContainer initialDimension={size}>
