@@ -6,6 +6,7 @@
       "@/*": ["./*"],
       "@cloud/config": ["../../packages/config/src/index.ts"],
       "@cloud/db": ["../../packages/db/src/index.ts"],
+      "@cloud/i18n/plugin": ["../../packages/i18n/src/plugin.ts"],
       "@cloud/permissions": ["../../packages/permissions/src/index.ts"],
       "@cloud/permissions/server": ["../../packages/permissions/src/server/index.ts"],
       "@cloud/permissions/client": ["../../packages/permissions/src/client/index.ts"],

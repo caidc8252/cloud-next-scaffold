@@ -53,6 +53,7 @@ const snapshot: Omit<Session, "loginAt" | "expireAt"> = {
 };
 
 beforeEach(() => {
+  delete process.env.SESSION_COOKIE_DOMAIN;
   kvStore.clear();
   cookieJar.clear();
   for (const fn of [kvMock.get, kvMock.set, kvMock.del, kvMock.expire, cookieStore.get, cookieStore.set, cookieStore.delete]) {
@@ -74,13 +75,27 @@ describe("session actions", () => {
     expect(stored).toMatchObject({ userId: 7, currentPartnerId: 9 });
   });
 
+  it("shares the sid cookie with sibling subdomains when configured", async () => {
+    process.env.SESSION_COOKIE_DOMAIN = ".example.com";
+
+    await createSession(snapshot);
+
+    expect(cookieStore.set.mock.calls[0]![2]).toMatchObject({
+      domain: ".example.com",
+    });
+  });
+
   it("destroySession removes the Redis session and clears the cookie", async () => {
     await createSession(snapshot);
     const sid = cookieStore.set.mock.calls[0]![1] as string;
 
     await destroySession();
 
-    expect(cookieStore.delete).toHaveBeenCalledWith(SID_COOKIE);
+    expect(cookieStore.set).toHaveBeenLastCalledWith(
+      SID_COOKIE,
+      "",
+      expect.objectContaining({ maxAge: 0, path: "/" }),
+    );
     expect(await sessionStore.read(sid)).toBeNull();
   });
 

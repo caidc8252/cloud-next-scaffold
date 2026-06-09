@@ -5,9 +5,8 @@ import { Button, Modal } from "@cloud/ui/components/ui";
 import { useTranslations } from "@cloud/i18n/client";
 
 // Sign-out confirmation. Mirrors the prototype's confirm dialog (copy + sessions
-// note + danger action), but the confirm submits the app's REAL logout route
-// (POST /api/auth/logout → clears the session → 303 to /login), reusing the
-// existing auth flow instead of the prototype's mock "signed out" screen.
+// note + danger action), but the confirm submits the app's REAL logout route.
+// The route clears the session and redirects back to the portal sign-in page.
 export function SignOutModal({ open, onCancel }: { open: boolean; onCancel: () => void }) {
   const t = useTranslations("account");
 

@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { config as loadEnv } from "dotenv";
-import createNextIntlPlugin from "next-intl/plugin";
+import createNextIntlPlugin from "@cloud/i18n/plugin";
 import type { NextConfig } from "next";
 
 const appRoot = dirname(fileURLToPath(import.meta.url));
@@ -18,8 +18,12 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 // 把两种访问方式的 origin（localhost 隧道 + 直连 *.app.github.dev）都放行即可。
 // 仅在 Codespaces 下生效，普通本地 / 生产部署不受影响。
 const codespacesForwardingDomain = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN;
+// server action 的 CSRF 校验用 `new URL(origin).host` 取 origin（**带端口**），再对
+// allowedOrigins 精确串比 / 按 `.` 分段通配匹配。经 VS Code 本地隧道访问时 origin 是
+// localhost:3000，与 x-forwarded-host(`*-3000.app.github.dev`) 不等 → 落 allowedOrigins，
+// 所以 localhost 项必须**带端口**，裸 `localhost` 匹配不上 `localhost:3000`。
 const serverActions = codespacesForwardingDomain
-  ? { allowedOrigins: ["localhost","127.0.0.1", `*.${codespacesForwardingDomain}`] }
+  ? { allowedOrigins: ["localhost:3000", "127.0.0.1:3000", `*.${codespacesForwardingDomain}`] }
   : undefined;
 
 // Next 16 dev 默认拦截「非同源」对 /_next/* 等 dev 资源的请求（含 RSC 导航 payload）。
