@@ -20,8 +20,14 @@ const allowedDevOrigins = [
   "127.0.0.1",
   ...(codespacesForwardingDomain ? [`*.${codespacesForwardingDomain}`] : []),
 ];
+// 注意：server action 的 CSRF 校验用 `new URL(origin).host` 取 origin，**带端口**，
+// 再对 allowedOrigins 做精确串比 / 按 `.` 分段的通配匹配（见 next action-handler）。
+// 经 VS Code 本地隧道访问时 origin 是 http://localhost:3100，originHost=`localhost:3100`，
+// 而 x-forwarded-host 是 `*-3100.app.github.dev` → 两者不等 → 落到 allowedOrigins。
+// 所以 localhost 项必须**带端口**，裸 `localhost` 匹配不上 `localhost:3100`。
+// 直连公开的 `*.app.github.dev` 时 origin===x-forwarded-host，无需 allowedOrigins，靠通配兜底。
 const serverActions = codespacesForwardingDomain
-  ? { allowedOrigins: ["localhost", "127.0.0.1", `*.${codespacesForwardingDomain}`] }
+  ? { allowedOrigins: ["localhost:3100", "127.0.0.1:3100", `*.${codespacesForwardingDomain}`] }
   : undefined;
 
 const nextConfig: NextConfig = {
