@@ -111,7 +111,7 @@
       "continueWith": "Continue with <b>{provider}</b>",
       "dividerEmail": "or with your work email",
       "emailLabel": "Account",
-      "emailPlaceholder": "admin or name@company.com",
+      "emailPlaceholder": "name@company.com",
       "passwordLabel": "Password",
       "passwordPlaceholder": "••••••••",
       "forgot": "Forgot password?",

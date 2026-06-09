@@ -11,6 +11,7 @@
     "prisma:push": "prisma db push",
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
+    "preseed:portal-login-tests": "prisma generate",
     "seed:portal-login-tests": "tsx scripts/seed-portal-login-tests.ts"
   },
   "dependencies": {

@@ -11,6 +11,7 @@ import { PepMark } from "@/app/_components/brand";
 import { ProviderButton } from "@/app/_components/provider-button";
 import { PROVIDERS } from "@/app/_components/provider-mark";
 import { AuthLead, Divider, ErrorBanner } from "@/app/(auth)/_components/card-bits";
+import { validateLoginAccount } from "./login-account";
 
 const DEMO_ACCOUNTS = "locked@pep.io · ratelimited@pep.io · nocompany@pep.io · sms@pep.io · solo@pep.io";
 const THIRD_PARTY: ProviderId[] = ["google", "microsoft", "apple"];
@@ -58,10 +59,13 @@ export function LoginForm({
   }
 
   function submitPassword() {
-    if (!accountReady) return setErr(t("errors.accountRequired"));
+    const account = validateLoginAccount(email);
+    if (!account.ok) {
+      return setErr(account.reason === "required" ? t("errors.accountRequired") : t("errors.invalidEmail"));
+    }
     if (pw.length < 6) return setErr(t("errors.passwordMin"));
     setErr("");
-    onPassword(email.trim(), pw);
+    onPassword(account.account, pw);
   }
 
   const providerLabel = (id: ProviderId) =>
@@ -93,7 +97,7 @@ export function LoginForm({
           <Input
             id="login-email"
             type="text"
-          autoComplete="username"
+            autoComplete="username"
             value={email}
             placeholder={t("emailPlaceholder")}
             prefix={<Mail size={14} />}

@@ -70,7 +70,7 @@
       "continueWith": "<b>{provider}</b> で続行",
       "dividerEmail": "または業務用メールで",
       "emailLabel": "アカウント",
-      "emailPlaceholder": "admin または name@company.com",
+      "emailPlaceholder": "name@company.com",
       "passwordLabel": "パスワード",
       "forgot": "パスワードをお忘れですか？",
       "submit": "サインイン",
