@@ -1,6 +1,6 @@
 packages:
-  - "apps/site"
   - "apps/web"
+  - "apps/portal"
   - "packages/api-kit"
   - "packages/cache"
   - "packages/config"

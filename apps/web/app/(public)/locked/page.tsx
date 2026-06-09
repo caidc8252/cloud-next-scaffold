@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
 import { getPartialSession, getSession } from "@cloud/permissions/server";
-import { getSiteLoginUrl } from "@/lib/site-routing";
+import { getPortalLoginUrl } from "@/lib/portal-routing";
 
 export default async function LockedPage() {
   const session = await getSession();
   if (session) redirect("/");
 
   const partial = await getPartialSession();
-  if (!partial) redirect(getSiteLoginUrl());
+  if (!partial) redirect(getPortalLoginUrl());
 
   const { prisma } = await import("@cloud/db");
   const partnerUsers = await prisma.sysPartnerUser.findMany({

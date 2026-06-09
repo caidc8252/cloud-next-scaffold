@@ -1,0 +1,397 @@
+{
+  "portal": {
+    "brand": {
+      "name": "PEP",
+      "full": "Payment Empowerment Platform",
+      "by": "Newland Payment Technology",
+      "console": "Console",
+      "newland": "Newland"
+    },
+    "nav": {
+      "platform": "Platform",
+      "devices": "Devices",
+      "pricing": "Pricing",
+      "docs": "Docs",
+      "signIn": "Sign in",
+      "openConsole": "Open console"
+    },
+    "home": {
+      "eyebrowTag": "For ISO & ISV partners",
+      "eyebrowText": "One console for your entire terminal estate",
+      "title": "Empower every <em>payment terminal</em> you ship.",
+      "sub": "PEP is Newland's partner console — provision devices, push firmware and apps, onboard merchants and watch fleet health, all from one place.",
+      "ctaSignIn": "Sign in to console",
+      "ctaInvite": "I have an invite",
+      "metaUptime": "99.94% fleet uptime",
+      "metaSso": "SSO & SAML ready",
+      "metaBrand": "Your domain, your brand",
+      "capabilitiesOverline": "Core capabilities",
+      "capabilitiesTitle": "Everything the back office needs",
+      "capabilitiesLede": "From the loading dock to the lane — a single source of truth for every device, build and merchant under your contract.",
+      "features": {
+        "deviceFleet": {
+          "title": "Device fleet",
+          "desc": "Provision, group and monitor every terminal you ship — serial, IMEI, firmware and live status in one register."
+        },
+        "firmware": {
+          "title": "Firmware & apps",
+          "desc": "Stage builds, target by model or store, and roll out over-the-air with staged deployments and rollback."
+        },
+        "merchants": {
+          "title": "Merchants & stores",
+          "desc": "Onboard merchants, organise stores, and assign devices down to the lane — with per-merchant entitlements."
+        },
+        "diagnostics": {
+          "title": "Remote diagnostics",
+          "desc": "FlyDesk remote sessions, health snapshots and one-tap reboot when a lane goes dark at 2 a.m."
+        },
+        "geo": {
+          "title": "Geolocation & fence",
+          "desc": "Track device location and draw geofences — get alerted the moment hardware leaves its assigned site."
+        },
+        "alerts": {
+          "title": "Pre-warning alerts",
+          "desc": "Battery, connectivity and tamper signals surfaced before they become a support ticket."
+        }
+      },
+      "brandOverline": "Make it yours",
+      "brandTitle": "Your brand, your identity",
+      "brandStrip": {
+        "domain": { "title": "Custom domain", "desc": "Your operators sign in at your own domain." },
+        "branding": { "title": "Custom branding", "desc": "Your logo on the portal and on terminal boot." },
+        "sso": { "title": "Enterprise SSO", "desc": "Bring your own IdP — Google, Microsoft, Okta, SAML." }
+      },
+      "ctaBandTitle": "Ready when your fleet is.",
+      "ctaBandText": "Sign in with your work account, or accept an invitation from your administrator to get started.",
+      "ctaBandSignIn": "Sign in",
+      "ctaBandInvite": "Accept invite",
+      "footerCopyright": "© 2026 {by}",
+      "footerStatus": "Status",
+      "footerSecurity": "Security",
+      "footerPrivacy": "Privacy",
+      "footerTerms": "Terms",
+      "footerBrokenLink": "Broken link →"
+    },
+    "partner": {
+      "metadata": {
+        "title": "Select partner - PEP Portal",
+        "description": "Choose a partner workspace before entering the console."
+      },
+      "eyebrow": "Choose Workspace",
+      "title": "Select a partner",
+      "description": "Welcome, {name}. Choose the partner workspace you want to enter.",
+      "empty": "No partner workspace is available for this account.",
+      "badge": {
+        "admin": "Admin",
+        "normal": "User"
+      },
+      "reason": {
+        "partnerDisabled": "Partner disabled",
+        "userDisabled": "Access disabled",
+        "noContract": "No active contract"
+      },
+      "defaultError": "The partner could not be selected. Please try again."
+    },
+    "login": {
+      "processing": "Processing",
+      "brand": {
+        "sub": "Newland",
+        "lead": "One console for your <em>payment estate.</em>",
+        "status": "All systems operational · status.pep.io",
+        "highlights": {
+          "devices": { "title": "Device management", "desc": "Provision, group and monitor every payment terminal you ship." },
+          "diagnostics": { "title": "Remote diagnostics", "desc": "Health snapshots, FlyDesk sessions and one-tap reboot." },
+          "parameters": { "title": "Payment parameters", "desc": "Push acquirer, AID and key configs down to the lane." },
+          "merchants": { "title": "Merchant management", "desc": "Onboard merchants, organise stores, assign devices." },
+          "receipts": { "title": "Electronic receipts", "desc": "Centralise e-receipts and transaction records." }
+        }
+      },
+      "title": "Sign in to PEP",
+      "subtitle": "Partner console for {by}.",
+      "continueWith": "Continue with <b>{provider}</b>",
+      "dividerEmail": "or with your work email",
+      "emailLabel": "Account",
+      "emailPlaceholder": "admin or name@company.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "forgot": "Forgot password?",
+      "submit": "Sign in",
+      "invitedOnly": "Invited operators only ·",
+      "haveInvite": "Have an invite?",
+      "demoHint": "Demo: any email + 6-char password. Try {accounts} or an SSO domain (acmepay.com, verakiosk.com).",
+      "togglePassword": "Toggle password visibility",
+      "sso": {
+        "via": "Single sign-on via {provider}",
+        "badge": "SSO",
+        "manages": "Your organization manages this sign-in.",
+        "suspended": "SSO is paused for <b>{partner}</b>. Use password sign-in while an admin restores the contract."
+      },
+      "errors": {
+        "invalidEmail": "Enter a valid email address.",
+        "accountRequired": "Enter your account.",
+        "passwordMin": "Password must be at least 6 characters.",
+        "AUTH_BAD_CREDENTIALS": "Your email or password is incorrect. Please try again.",
+        "generic": "Sign in failed. Please try again."
+      },
+      "idp": {
+        "chooseAccount": "Choose an account",
+        "signIn": "Sign in",
+        "continueTo": "to continue to <b>{target}</b>",
+        "targetConsole": "PEP Partner Console",
+        "targetPartner": "{partner} on PEP",
+        "useAnother": "Use another account",
+        "secure": "Secure",
+        "consent": "{provider} will return a signed <b>id_token</b> with your verified email and a stable <b>sub</b>. PEP validates it server-side — your password is never shared.",
+        "cancel": "Cancel"
+      },
+      "mfa": {
+        "back": "Back to sign in",
+        "eyebrow": "Two-factor authentication",
+        "title": "Enter your verification code",
+        "subTotp": "Open your <b>{hint}</b> and enter the 6-digit code for PEP.",
+        "subSms": "We texted a 6-digit code to <b>{hint}</b>.",
+        "codeLabel": "Verification code",
+        "hintDemo": "Demo: enter any 6 digits to continue.",
+        "hintBad": "This scenario rejects 000000 — five wrong tries triggers a lockout.",
+        "errEnter": "Enter the 6-digit code.",
+        "errWrong": "That code is incorrect. {count} tries remaining before lockout.",
+        "resend": "Resend code",
+        "resendIn": "Resend in {seconds}s",
+        "refresh": "Code refreshes every 30s",
+        "verify": "Verify & continue"
+      },
+      "company": {
+        "back": "Back to sign in",
+        "eyebrow": "Select workspace",
+        "title": "Choose a company",
+        "sub": "Your account has access to multiple companies. Pick one to continue — you can switch later from the console.",
+        "note": "Each company scopes your role independently."
+      },
+      "blocked": {
+        "back": "Back to sign in",
+        "locked": {
+          "eyebrow": "Account locked",
+          "title": "Your account is locked",
+          "body": "This account has been locked for security. An administrator must unlock it before you can sign in again.",
+          "contact": "Contact administrator"
+        },
+        "ratelimit": {
+          "eyebrow": "Too many attempts",
+          "title": "Too many sign-in attempts",
+          "body": "You've reached the maximum number of sign-in attempts. For your security, you can try again in about 1 hour.",
+          "tryAgain": "Try again",
+          "until": "until you can retry",
+          "ready": "you can try again now"
+        },
+        "mfa": {
+          "eyebrow": "Verification locked",
+          "title": "Verification locked",
+          "body": "Too many incorrect codes were entered. This sign-in has been locked for security. Try again later or contact your administrator.",
+          "contact": "Contact administrator"
+        }
+      },
+      "nocompany": {
+        "eyebrow": "No workspace",
+        "title": "No company to enter",
+        "body": "You're signed in, but your account isn't a member of any company yet. Companies are invite-only — ask an administrator to send you an invitation. You can't join one on your own.",
+        "haveInvite": "I have an invite",
+        "back": "Back to sign in"
+      },
+      "busy": {
+        "verifying": "Verifying credentials…",
+        "verifyingCode": "Verifying your code…",
+        "entering": "Entering your console…",
+        "returning": "Returning from {provider}…"
+      }
+    },
+    "forgot": {
+      "back": "Back to sign in",
+      "changeEmail": "Change email",
+      "email": {
+        "eyebrow": "Account recovery",
+        "title": "Reset your password",
+        "sub": "Enter the email on your account and we'll send a 6-digit verification code.",
+        "label": "Work email",
+        "send": "Send verification code",
+        "sending": "Sending code…",
+        "err": "Enter a valid email address."
+      },
+      "code": {
+        "eyebrow": "Step 2 of 3",
+        "title": "Enter the code",
+        "sub": "We sent a 6-digit code to <b>{email}</b>.",
+        "label": "Verification code",
+        "hint": "Demo: enter <code>123456</code> or any 6 digits.",
+        "verify": "Verify & continue",
+        "verifying": "Verifying…",
+        "resend": "Resend code",
+        "resendIn": "Resend in {seconds}s",
+        "err": "Enter the 6-digit code."
+      },
+      "reset": {
+        "eyebrow": "Step 3 of 3",
+        "title": "Set a new password",
+        "sub": "Choose a strong password you don't use anywhere else.",
+        "newLabel": "New password",
+        "newPlaceholder": "At least {min} characters",
+        "confirmLabel": "Confirm password",
+        "confirmPlaceholder": "Repeat password",
+        "mismatch": "Passwords don't match.",
+        "update": "Update password",
+        "updating": "Updating…"
+      },
+      "rules": {
+        "length": "{min}+ characters",
+        "upper": "Uppercase (A-Z)",
+        "lower": "Lowercase (a-z)",
+        "digit": "Digit (0-9)",
+        "symbol": "Symbol (@ # $)"
+      },
+      "done": {
+        "title": "Password updated",
+        "sub": "Your password has been changed. Sign in with your new credentials.",
+        "back": "Back to sign in"
+      }
+    },
+    "onboarding": {
+      "exit": "Exit",
+      "back": "Back",
+      "previous": "Previous",
+      "cancel": "Cancel",
+      "backToLanding": "Back to landing",
+      "previousStep": "Previous step",
+      "invalid": {
+        "title": "Invitation not found",
+        "sub": "The link (<code>{token}</code>) doesn't match any pending invitation. It may have been cancelled, used, or expired.",
+        "home": "Back to home"
+      },
+      "landing": {
+        "eyebrow": "Invitation",
+        "title": "Join {partner}",
+        "sub": "You've been invited to join the PEP partner console. Choose how to continue.",
+        "invitedBy": "Invited by <b>{by}</b> · {contract} contract",
+        "signedInAs": "You're signed in as",
+        "current": "Current",
+        "useThis": "Use this account to join",
+        "signOutOther": "Sign out & use a different account",
+        "registerNew": "Register a new account",
+        "continueWith": "Continue with",
+        "signInExisting": "Sign in with existing account",
+        "expires": "Sent to <b>{email}</b> · expires {when}"
+      },
+      "signin": {
+        "step": "Step 1 of 2",
+        "title": "Sign in to your account",
+        "sub": "Then confirm joining <b>{partner}</b>.",
+        "emailLabel": "Email",
+        "passwordLabel": "Password",
+        "passwordHint": "Demo: any 6+ characters.",
+        "signingIn": "Signing in…",
+        "signIn": "Sign in"
+      },
+      "register": {
+        "stepLabel": "Register · Step {current} of {total}",
+        "steps": {
+          "email": "Email",
+          "newEmail": "New email",
+          "verify": "Verify",
+          "login": "Login name",
+          "password": "Password",
+          "country": "Country",
+          "name": "Name"
+        },
+        "joining": "Joining {partner}",
+        "emailFromInvite": "Email <b>{email}</b>",
+        "fromInvite": "From invite",
+        "customEmail": "Using a different email",
+        "custom": "Custom",
+        "titleEmail": "Confirm your email",
+        "titleName": "What should we call you?",
+        "inviteTitle": "Use my invitation email",
+        "verified": "Verified",
+        "inviteSub": "<b>{email}</b> — already confirmed by opening the invite.",
+        "customTitle": "Use a different email",
+        "customSub": "Enter the new address next, then verify it with a 6-digit code.",
+        "newEmailLabel": "New email address",
+        "newEmailHint": "A 6-digit code will confirm you own this address.",
+        "verifySent": "We sent a code to <b>{email}</b>.",
+        "verifyLabel": "Verification code",
+        "verifyHint": "Demo: <code>123456</code> or any 6 digits.",
+        "verifyErr": "Invalid code. Try 123456.",
+        "resend": "Resend code",
+        "resendIn": "Resend in {seconds}s",
+        "sending": "Sending…",
+        "verifying": "Verifying…",
+        "sendCode": "Send code",
+        "loginLabel": "Choose a login name",
+        "loginErr": "Lowercase letters, digits, . _ - (2–31 chars, start with a letter).",
+        "loginHint": "Used to sign in. Lowercase letters, digits and . _ - only.",
+        "loginPlaceholder": "e.g. kai.tanaka",
+        "passwordLabel": "Set a password",
+        "confirmLabel": "Confirm password",
+        "confirmPlaceholder": "Repeat password",
+        "mismatch": "Passwords don't match.",
+        "countryLabel": "Where are you based?",
+        "countryHint": "Used for compliance routing (locale, audit jurisdiction).",
+        "displayLabel": "Display name",
+        "displayHint": "Appears in audit logs and to colleagues.",
+        "displayPlaceholder": "Kai Tanaka",
+        "continue": "Continue",
+        "reviewConfirm": "Review & confirm"
+      },
+      "confirm": {
+        "eyebrow": "Final step",
+        "title": "Join {partner}",
+        "sub": "Confirm you want to join with the account below. An administrator assigns your access after you join.",
+        "preassigned": "Pre-assigned: {roles}",
+        "joiningAs": "You're joining as",
+        "existing": "Existing",
+        "new": "New",
+        "decline": "Decline",
+        "authorize": "Authorize & join"
+      },
+      "welcome": {
+        "title": "Welcome to PEP, {name}.",
+        "sub": "You're now a member of <b>{partner}</b>. We've recorded your sign-up time and the roles you accepted.",
+        "enter": "Go to console"
+      }
+    },
+    "roles": {
+      "fleetOperator": "Fleet operator",
+      "firmwarePublisher": "Firmware publisher"
+    },
+    "dashboard": {
+      "nav": {
+        "overview": "Overview",
+        "devices": "Devices",
+        "firmware": "Firmware & apps",
+        "merchants": "Merchants",
+        "alerts": "Alerts",
+        "settings": "Settings"
+      },
+      "search": "Search",
+      "signOut": "Sign out",
+      "welcomeTitle": "Good to see you, {name}.",
+      "welcomeSub": "Here's where your fleet stands today.",
+      "kpis": {
+        "activeTerminals": "Active terminals",
+        "fleetUptime": "Fleet uptime",
+        "pendingUpdates": "Pending updates",
+        "openAlerts": "Open alerts"
+      },
+      "deployments": {
+        "title": "No deployments in progress",
+        "sub": "When you stage a firmware or app rollout, its live progress shows up here.",
+        "action": "New deployment"
+      },
+      "placeholder": "This area is a placeholder in the portal mock — the sign-in, onboarding and homepage flows are the focus of this prototype."
+    },
+    "notFound": {
+      "code": "404",
+      "title": "We can't find that page",
+      "sub": "The link may be broken, or the page may have been moved. Let's get you back on track.",
+      "home": "Back to home",
+      "signIn": "Go to sign in"
+    }
+  }
+}

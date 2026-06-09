@@ -4,7 +4,7 @@
 
 ## 默认保留的基线能力
 
-- `apps/site`：产品门户站和统一登录页
+- `apps/portal`：PEP 门户站和统一登录页
 - `apps/web`：单个后台应用
 - `packages/ui`：基础 UI 组件与样式
 - `packages/request`：通用请求封装与错误码
@@ -37,15 +37,15 @@ pnpm dev
 
 打开 http://localhost:3000。
 
-门户站单独启动：
+PEP 门户站单独启动：
 
 ```bash
-pnpm dev:site
+pnpm dev:portal
 ```
 
-打开 http://localhost:3001。门户站登录按钮进入站内 `/login`，登录成功后在 `/select-partner` 选择 partner；site 校验归属并生成完整权限 session 后直接跳到 `WEB_APP_URL`。
+打开 http://localhost:3100。门户站登录按钮进入站内 `/login`，登录成功后在 `/select-partner` 选择 partner；portal 校验归属并生成完整权限 session 后直接跳到 `WEB_APP_URL`。
 
-生产环境若 site 与 web 使用同一根域下的不同子域，需要配置 `SESSION_COOKIE_DOMAIN`，例如 `.example.com`，让两边共享 `sid` cookie。
+生产环境若 portal 与 web 使用同一根域下的不同子域，需要配置 `SESSION_COOKIE_DOMAIN`，例如 `.example.com`，让两边共享 `sid` cookie。
 
 默认种子账号：
 
@@ -54,7 +54,7 @@ pnpm dev:site
 
 ## 当前工作区
 
-- `apps/site`
+- `apps/portal`
 - `apps/web`
 - `packages/api-kit`
 - `packages/config`
@@ -71,10 +71,10 @@ pnpm dev:site
 
 ```txt
 apps/
-  site/                   # 产品门户站和统一登录页
+  portal/                 # PEP 门户站和统一登录页
     app/
-      page.tsx            # 门户首页
-      login/              # 登录页，后续接入认证和 partner 选择
+      (marketing)/        # 门户首页
+      (auth)/login/       # 登录页和 partner 选择
     i18n/
       messages/           # 门户站文案
   web/                    # 后台应用
@@ -231,7 +231,7 @@ export function UsersActions({ permissions }: { permissions: string[] }) {
 
 ### 客户端会话失效自动登出
 
-服务端守卫（`requireSession` / `requirePermissions`）在 401 时会 `redirect("/api/auth/logout")`；客户端的 API 调用也有对称行为。`@cloud/request/client` 在收到 401 时会回调应用注册的处理器，由 [apps/web/lib/session-expiry.ts](apps/web/lib/session-expiry.ts) 判断——只有「会话失效类」错误码（`"unauthenticated"` / `ERR_UNAUTHORIZED` / `ERR_AUTH_NOT_AUTHENTICATED`）才整页跳 `/api/auth/logout`（清残留 cookie → site `/login`）。site 登录页的凭证错误 `ERR_AUTH_INVALID_CREDENTIALS` 也是 401，但不在白名单，不会把登录失败误判为会话过期。
+服务端守卫（`requireSession` / `requirePermissions`）在 401 时会 `redirect("/api/auth/logout")`；客户端的 API 调用也有对称行为。`@cloud/request/client` 在收到 401 时会回调应用注册的处理器，由 [apps/web/lib/session-expiry.ts](apps/web/lib/session-expiry.ts) 判断——只有「会话失效类」错误码（`"unauthenticated"` / `ERR_UNAUTHORIZED` / `ERR_AUTH_NOT_AUTHENTICATED`）才整页跳 `/api/auth/logout`（清残留 cookie → portal `/login`）。portal 登录页的凭证错误 `ERR_AUTH_INVALID_CREDENTIALS` 也是 401，但不在白名单，不会把登录失败误判为会话过期。
 
 机制在包（`setUnauthorizedHandler`，不认识任何 app 路由），策略在 app，通过根 layout 里的 `UnauthorizedRedirect` 组件注册一次。业务组件正常 `catch` + `toastError` 即可，不需要、也不应该自己写 401 跳转。
 

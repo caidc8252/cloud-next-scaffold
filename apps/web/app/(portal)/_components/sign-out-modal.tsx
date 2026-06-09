@@ -6,7 +6,7 @@ import { useTranslations } from "@cloud/i18n/client";
 
 // Sign-out confirmation. Mirrors the prototype's confirm dialog (copy + sessions
 // note + danger action), but the confirm submits the app's REAL logout route.
-// The route clears the session and redirects back to the site sign-in page.
+// The route clears the session and redirects back to the portal sign-in page.
 export function SignOutModal({ open, onCancel }: { open: boolean; onCancel: () => void }) {
   const t = useTranslations("account");
 

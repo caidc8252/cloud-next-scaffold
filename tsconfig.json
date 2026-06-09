@@ -40,9 +40,9 @@
     }
   },
   "include": [
-    "apps/site/**/*.ts",
-    "apps/site/**/*.tsx",
-    "apps/site/next-env.d.ts",
+    "apps/portal/**/*.ts",
+    "apps/portal/**/*.tsx",
+    "apps/portal/next-env.d.ts",
     "apps/web/**/*.ts",
     "apps/web/**/*.tsx",
     "apps/web/next-env.d.ts",

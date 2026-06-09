@@ -1,0 +1,213 @@
+{
+  "portal": {
+    "brand": {
+      "console": "コンソール",
+      "newland": "Newland"
+    },
+    "nav": {
+      "platform": "プラットフォーム",
+      "devices": "デバイス",
+      "pricing": "料金",
+      "docs": "ドキュメント",
+      "signIn": "サインイン",
+      "openConsole": "コンソールを開く"
+    },
+    "home": {
+      "eyebrowTag": "ISO・ISV パートナー向け",
+      "eyebrowText": "端末群全体を 1 つのコンソールで",
+      "title": "出荷するすべての<em>決済端末</em>に力を。",
+      "sub": "PEP は Newland のパートナーコンソールです。デバイスのプロビジョニング、ファームウェアとアプリの配信、加盟店オンボーディング、機器の稼働監視を 1 か所で。",
+      "ctaSignIn": "コンソールにサインイン",
+      "ctaInvite": "招待があります",
+      "metaUptime": "稼働率 99.94%",
+      "metaSso": "SSO・SAML 対応",
+      "metaBrand": "あなたのドメイン、あなたのブランド",
+      "capabilitiesOverline": "主な機能",
+      "capabilitiesTitle": "バックオフィスに必要なすべて",
+      "capabilitiesLede": "搬入から店頭まで——契約下のすべてのデバイス・ビルド・加盟店を単一の信頼できる情報源で。",
+      "brandOverline": "あなた仕様に",
+      "brandTitle": "あなたのブランド、あなたのアイデンティティ",
+      "ctaBandTitle": "機器の準備ができたらいつでも。",
+      "ctaBandText": "業務用アカウントでサインインするか、管理者からの招待を承認して始めましょう。",
+      "ctaBandSignIn": "サインイン",
+      "ctaBandInvite": "招待を承認",
+      "footerCopyright": "© 2026 {by}",
+      "footerStatus": "ステータス",
+      "footerSecurity": "セキュリティ",
+      "footerPrivacy": "プライバシー",
+      "footerTerms": "規約",
+      "footerBrokenLink": "リンク切れ →"
+    },
+    "partner": {
+      "metadata": {
+        "title": "partner を選択 - PEP Portal",
+        "description": "コンソールに入る前に partner ワークスペースを選択します。"
+      },
+      "eyebrow": "ワークスペースを選択",
+      "title": "partner を選択",
+      "description": "ようこそ、{name}。アクセスする partner ワークスペースを選択してください。",
+      "empty": "このアカウントには利用可能な partner ワークスペースがありません。",
+      "badge": {
+        "admin": "管理者",
+        "normal": "ユーザー"
+      },
+      "reason": {
+        "partnerDisabled": "Partner が無効です",
+        "userDisabled": "アクセスが無効です",
+        "noContract": "有効な契約がありません"
+      },
+      "defaultError": "partner を選択できませんでした。もう一度お試しください。"
+    },
+    "login": {
+      "processing": "処理中",
+      "brand": {
+        "sub": "Newland",
+        "lead": "あなたの<em>決済基盤</em>を 1 つのコンソールで。",
+        "status": "すべてのシステムが正常 · status.pep.io"
+      },
+      "title": "PEP にサインイン",
+      "subtitle": "{by} のパートナーコンソール。",
+      "continueWith": "<b>{provider}</b> で続行",
+      "dividerEmail": "または業務用メールで",
+      "emailLabel": "アカウント",
+      "emailPlaceholder": "admin または name@company.com",
+      "passwordLabel": "パスワード",
+      "forgot": "パスワードをお忘れですか？",
+      "submit": "サインイン",
+      "invitedOnly": "招待された担当者のみ ·",
+      "haveInvite": "招待がありますか？",
+      "togglePassword": "パスワード表示の切り替え",
+      "sso": {
+        "via": "{provider} 経由のシングルサインオン",
+        "badge": "SSO",
+        "manages": "このサインインは組織が管理しています。"
+      },
+      "errors": {
+        "AUTH_BAD_CREDENTIALS": "メールまたはパスワードが正しくありません。再試行してください。",
+        "invalidEmail": "有効なメールアドレスを入力してください。",
+        "accountRequired": "アカウントを入力してください。",
+        "passwordMin": "パスワードは 6 文字以上必要です。",
+        "generic": "サインインに失敗しました。再試行してください。"
+      },
+      "idp": {
+        "chooseAccount": "アカウントを選択",
+        "signIn": "サインイン",
+        "targetConsole": "PEP パートナーコンソール",
+        "secure": "安全",
+        "cancel": "キャンセル"
+      },
+      "mfa": {
+        "back": "サインインに戻る",
+        "eyebrow": "二要素認証",
+        "title": "確認コードを入力",
+        "codeLabel": "確認コード",
+        "hintDemo": "デモ：任意の 6 桁を入力すると続行します。",
+        "errEnter": "6 桁のコードを入力してください。",
+        "errWrong": "コードが正しくありません。ロックまであと {count} 回。",
+        "resend": "コードを再送",
+        "resendIn": "{seconds} 秒後に再送",
+        "refresh": "コードは 30 秒ごとに更新されます",
+        "verify": "確認して続行"
+      },
+      "company": {
+        "back": "サインインに戻る",
+        "eyebrow": "ワークスペースを選択",
+        "title": "会社を選択",
+        "note": "会社ごとに役割の範囲が独立しています。"
+      },
+      "blocked": {
+        "back": "サインインに戻る",
+        "locked": { "eyebrow": "アカウントがロック", "title": "アカウントがロックされています", "contact": "管理者に連絡" },
+        "ratelimit": { "eyebrow": "試行回数が多すぎます", "title": "サインイン試行が多すぎます", "tryAgain": "再試行", "until": "後に再試行可能", "ready": "今すぐ再試行できます" },
+        "mfa": { "eyebrow": "確認がロック", "title": "確認がロックされています", "contact": "管理者に連絡" }
+      },
+      "nocompany": {
+        "eyebrow": "ワークスペースなし",
+        "title": "入れる会社がありません",
+        "haveInvite": "招待があります",
+        "back": "サインインに戻る"
+      },
+      "busy": {
+        "verifying": "認証情報を確認中…",
+        "verifyingCode": "コードを確認中…",
+        "entering": "コンソールに入っています…",
+        "returning": "{provider} から戻っています…"
+      }
+    },
+    "forgot": {
+      "back": "サインインに戻る",
+      "changeEmail": "メールを変更",
+      "email": { "eyebrow": "アカウント回復", "title": "パスワードをリセット", "label": "業務用メール", "send": "確認コードを送信", "sending": "送信中…", "err": "有効なメールアドレスを入力してください。" },
+      "code": { "eyebrow": "ステップ 2 / 3", "title": "コードを入力", "label": "確認コード", "verify": "確認して続行", "verifying": "確認中…", "resend": "コードを再送", "resendIn": "{seconds} 秒後に再送", "err": "6 桁のコードを入力してください。" },
+      "reset": { "eyebrow": "ステップ 3 / 3", "title": "新しいパスワードを設定", "newLabel": "新しいパスワード", "newPlaceholder": "{min} 文字以上", "confirmLabel": "パスワードの確認", "confirmPlaceholder": "もう一度入力", "mismatch": "パスワードが一致しません。", "update": "パスワードを更新", "updating": "更新中…" },
+      "rules": { "length": "{min} 文字以上", "upper": "大文字 (A-Z)", "lower": "小文字 (a-z)", "digit": "数字 (0-9)", "symbol": "記号 (@ # $)" },
+      "done": { "title": "パスワードを更新しました", "sub": "パスワードが変更されました。新しい認証情報でサインインしてください。", "back": "サインインに戻る" }
+    },
+    "onboarding": {
+      "exit": "終了",
+      "back": "戻る",
+      "previous": "前へ",
+      "cancel": "キャンセル",
+      "backToLanding": "招待画面に戻る",
+      "previousStep": "前のステップ",
+      "invalid": { "title": "招待が見つかりません", "home": "ホームに戻る" },
+      "landing": {
+        "eyebrow": "招待",
+        "title": "{partner} に参加",
+        "signedInAs": "現在のサインイン",
+        "current": "現在",
+        "useThis": "このアカウントで参加",
+        "signOutOther": "サインアウトして別アカウントを使用",
+        "registerNew": "新規アカウント登録",
+        "continueWith": "続行方法",
+        "signInExisting": "既存アカウントでサインイン"
+      },
+      "signin": { "step": "ステップ 1 / 2", "title": "アカウントにサインイン", "emailLabel": "メール", "passwordLabel": "パスワード", "passwordHint": "デモ：6 文字以上の任意。", "signingIn": "サインイン中…", "signIn": "サインイン" },
+      "register": {
+        "stepLabel": "登録 · ステップ {current} / {total}",
+        "steps": { "email": "メール", "newEmail": "新しいメール", "verify": "確認", "login": "ログイン名", "password": "パスワード", "country": "国", "name": "名前" },
+        "joining": "{partner} に参加",
+        "fromInvite": "招待から",
+        "customEmail": "別のメールを使用",
+        "custom": "カスタム",
+        "titleEmail": "メールを確認",
+        "titleName": "何とお呼びすればよいですか？",
+        "inviteTitle": "招待メールを使用",
+        "verified": "確認済み",
+        "customTitle": "別のメールを使用",
+        "newEmailLabel": "新しいメールアドレス",
+        "verifyLabel": "確認コード",
+        "verifyErr": "コードが無効です。123456 をお試しください。",
+        "resend": "コードを再送",
+        "resendIn": "{seconds} 秒後に再送",
+        "sending": "送信中…",
+        "verifying": "確認中…",
+        "sendCode": "コードを送信",
+        "loginLabel": "ログイン名を選択",
+        "loginPlaceholder": "例：kai.tanaka",
+        "passwordLabel": "パスワードを設定",
+        "confirmLabel": "パスワードの確認",
+        "confirmPlaceholder": "もう一度入力",
+        "mismatch": "パスワードが一致しません。",
+        "countryLabel": "所在地はどこですか？",
+        "displayLabel": "表示名",
+        "displayPlaceholder": "Kai Tanaka",
+        "continue": "続行",
+        "reviewConfirm": "確認して完了"
+      },
+      "confirm": { "eyebrow": "最終ステップ", "title": "{partner} に参加", "preassigned": "事前割り当て：{roles}", "joiningAs": "参加するアカウント", "existing": "既存", "new": "新規", "decline": "辞退", "authorize": "承認して参加" },
+      "welcome": { "title": "PEP へようこそ、{name} さん。", "enter": "コンソールへ" }
+    },
+    "roles": { "fleetOperator": "フリート担当者", "firmwarePublisher": "ファームウェア公開者" },
+    "dashboard": {
+      "nav": { "overview": "概要", "devices": "デバイス", "firmware": "ファームウェアとアプリ", "merchants": "加盟店", "alerts": "アラート", "settings": "設定" },
+      "search": "検索",
+      "signOut": "サインアウト",
+      "welcomeTitle": "ようこそ、{name} さん。",
+      "welcomeSub": "今日のフリートの状況です。",
+      "kpis": { "activeTerminals": "稼働中の端末", "fleetUptime": "稼働率", "pendingUpdates": "保留中の更新", "openAlerts": "未対応アラート" },
+      "deployments": { "title": "進行中のデプロイはありません", "action": "新しいデプロイ" }
+    },
+    "notFound": { "code": "404", "title": "ページが見つかりません", "home": "ホームに戻る", "signIn": "サインインへ" }
+  }
+}
