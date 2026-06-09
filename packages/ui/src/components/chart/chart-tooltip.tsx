@@ -84,7 +84,7 @@ export function ChartTooltipContent({
     <div
       data-slot="chart-tooltip"
       className={cn(
-        "grid min-w-32 items-stretch gap-1.5 rounded-md bg-chart-tooltip-bg px-2.5 py-1.5 text-xs text-chart-tooltip-fg shadow-4",
+        "grid min-w-32 items-stretch gap-1.5 rounded-md bg-chart-tooltip-bg px-2.5 py-2 text-2xs text-chart-tooltip-fg shadow-4",
         className,
       )}
     >
@@ -112,7 +112,7 @@ export function ChartTooltipContent({
                     aria-hidden
                     className={cn(
                       "shrink-0",
-                      indicator === "dot" && "size-2.5 rounded-xs",
+                      indicator === "dot" && "size-2 rounded-full",
                       indicator === "line" && "h-3 w-1 rounded-xs",
                       indicator === "dashed" && "h-0 w-2.5 border-t-2 border-dashed",
                     )}
