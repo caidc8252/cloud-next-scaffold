@@ -59,11 +59,12 @@ export function PartnerList({ choices }: { choices: PartnerChoice[] }) {
           <Button
             key={choice.partnerId}
             type="button"
+            size="auto"
             variant="outline"
             block
             disabled={!selectable || pendingId !== null}
             onClick={() => void selectPartner(choice.partnerId)}
-            className="h-auto justify-start gap-3 px-3 py-3 font-normal"
+            className="justify-start gap-3 p-3 font-normal"
           >
             <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-3 text-content-secondary">
               <Building2 size={18} />
