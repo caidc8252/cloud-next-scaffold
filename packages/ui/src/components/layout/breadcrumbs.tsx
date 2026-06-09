@@ -10,6 +10,7 @@ import {
 export type BreadcrumbsItem = {
   label: React.ReactNode
   href?: string
+  render?: React.ComponentProps<typeof BreadcrumbLink>['render']
 }
 
 interface BreadcrumbsProps {
@@ -28,7 +29,9 @@ function Breadcrumbs({ items }: BreadcrumbsProps) {
           {isLast ? (
             <BreadcrumbPage>{item.label}</BreadcrumbPage>
           ) : item.href ? (
-            <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
+            <BreadcrumbLink href={item.href} render={item.render}>
+              {item.label}
+            </BreadcrumbLink>
           ) : (
             <span>{item.label}</span>
           )}
