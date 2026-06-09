@@ -15,6 +15,7 @@
       "@cloud/security/client": ["../../packages/security/src/client/index.ts"],
       "@cloud/security/server": ["../../packages/security/src/server/index.ts"],
       "@cloud/ui": ["../../packages/ui/src/index.ts"],
+      "@cloud/ui/messages/*": ["../../packages/ui/messages/*"],
       "@cloud/ui/*": ["../../packages/ui/src/*"]
     }
   },

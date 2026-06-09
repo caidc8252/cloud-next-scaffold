@@ -41,8 +41,8 @@ export interface RichPaginationProps {
 // Full list/table footer bar: optional rows-per-page selector + "showing X–Y of Z"
 // range summary on the left, page-number navigation on the right. All text is
 // localized internally via the `ui.pagination` namespace (same convention as
-// DatePicker's `ui.datePicker`), so callers pass only data — no label props.
-// Consuming apps must provide `ui.pagination.*` messages.
+// DatePicker's `ui.datePicker`), so callers pass only data. Defaults ship in
+// @cloud/ui/messages and host apps merge them into their request config.
 export const RichPagination: React.FC<RichPaginationProps> = ({
   page,
   pageCount,
