@@ -327,7 +327,7 @@ Remaining column conventions:
 | Column | Style |
 |---|---|
 | Status | Badge (tone + dot) |
-| Tag set | `flex flex-wrap gap-1`; render chips with `Badge shape="tag"`; empty = `—` |
+| Tag set / multiple badges | Always horizontal: `flex flex-wrap gap-1`; render chips with `Badge shape="tag"`; empty = `—`. Do not stack multiple badges vertically inside one table cell. |
 | Trailing chevron | `width: 48, align: "right"`, passive `ChevronRight size-3.5 text-content-tertiary`; the whole row is the click target (`onRowClick`). If the row needs inline actions, drop the chevron and follow §3.2. |
 | Actions | icon buttons use only `ghost` / `ghost-danger`; important row actions must be labeled, then may use `secondary` / `primary` |
 
