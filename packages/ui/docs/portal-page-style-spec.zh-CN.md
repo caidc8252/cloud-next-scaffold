@@ -230,7 +230,7 @@ Tab 上的计数 chip：`ml-1 h-4 min-w-4 rounded-full bg-surface-3 px-1 text-xs
 - **导航型**（点击打开详情或触发 `onRowClick`、随后离开本页的行 / 卡）：静止 = 自身底色 → `hover:bg-surface-hover` → 按下一拍 `active:bg-surface-active`。不保留点亮态，因为点击就跳走了。对应 §5.2 的表格行（`onRowClick`）和 §7.2 的区块卡片行。
 - **可选 / 切换型**（点击后保持点亮——单选卡、快捷筛选卡、多选行）：选中态是**主色 tint，且压过 hover**。把中性 hover 收在 `!selected` 之后（`!selected && "hover:bg-surface-hover"`），灰底色就永远不会盖住点亮的 tint。两种法定写法——别造第三种：
   - **`Table` 里的行**：传 `state.selected`，原语会施加 `aria-selected:bg-state-selected aria-selected:hover:bg-state-selected aria-selected:shadow-row-selected`（`state-selected` token + 内嵌主色竖条）。不要手搓。
-  - **独立 tile / 卡片**：`border-primary-500 bg-primary-50`；可选择的指标或筛选卡可再加 `ring-2 ring-primary-500/10`。只有定制单选卡才手写这对类。
+  - **独立 tile / 卡片**：集合用 `ToggleGroup variant="plain"`，每个选项用 `Toggle size="auto"`。选中态写在 `data-pressed:*` 上：`data-pressed:border-primary-500 data-pressed:bg-primary-50 data-pressed:hover:bg-primary-50`；可选择的指标或筛选卡可再加 `data-pressed:ring-2 data-pressed:ring-primary-500/10`。除非这个表面是一次性动作、不是持久选择，否则不要再手写 `div role="button"` 来做卡片 / tile 选择器。
 - 可 hover 行上的**行内操作**保持与行区分的 hover（§3.2）：中性操作 → `hover:bg-surface-active`（比行深一档），危险操作 → `ghost-danger`。
 
 唯一硬规则：**选中 ≠ hover。** 点亮 / 选中的表面**不能**再带无条件的 `hover:bg-surface-hover`——指针移上去会闪回中性灰、被读成"已取消选中"。一律把 hover 收在 `!selected` 之后（`Table` 原语已经这么做；手搓可选列表时照做）。

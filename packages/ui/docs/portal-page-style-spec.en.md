@@ -272,7 +272,7 @@ Any clickable surface — list row, quick-filter tile, pick-one card — earns a
 - **Navigational** (row / card opens a detail or fires `onRowClick`, then leaves the page): rest = own bg → `hover:bg-surface-hover` → `active:bg-surface-active`. No persistent lit state.
 - **Selectable / toggle** (stays lit after click — pick-one card, quick-filter card, multi-select row): selected is primary-tinted and beats hover. Gate neutral hover behind `!selected`.
   - **Row inside a `Table`**: pass `state.selected`; the primitive applies selected styling. Do not hand-roll it.
-  - **Free-standing tile / card**: use `border-primary-500 bg-primary-50`; selectable metric or filter cards may add `ring-2 ring-primary-500/10`.
+  - **Free-standing tile / card**: use `ToggleGroup variant="plain"` for the set and `Toggle size="auto"` for each item. Style selected state with `data-pressed:border-primary-500 data-pressed:bg-primary-50 data-pressed:hover:bg-primary-50`; selectable metric or filter cards may add `data-pressed:ring-2 data-pressed:ring-primary-500/10`. Do not hand-roll a `div role="button"` for card / tile option pickers unless the surface is an action rather than a persistent selection.
 - **Nested actions** on a hoverable row keep row-distinct hover (§3.2).
 
 Hard rule: **selected ≠ hover.** A selected surface must not carry unconditional `hover:bg-surface-hover`.
