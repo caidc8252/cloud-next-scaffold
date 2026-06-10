@@ -108,7 +108,7 @@ export function OnboardingScreen({
         name={pending.account.name}
         partner={invitation.partner}
         onEnter={() => {
-          router.replace("/dashboard");
+          router.replace("/select-partner");
           router.refresh();
         }}
       />

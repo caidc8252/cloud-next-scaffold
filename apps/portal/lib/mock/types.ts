@@ -63,13 +63,6 @@ export interface Invitation {
 /** Why a sign-in attempt is blocked. */
 export type AuthBlockType = "locked" | "ratelimit" | "mfa";
 
-/** A single dashboard KPI value (label comes from i18n, value/delta are data). */
-export interface DashboardKpi {
-  key: string;
-  value: string;
-  delta: string;
-}
-
 /** Result of stage-1 password verification. */
 export interface LoginResult {
   status: "ok" | "mfa" | "company" | "nocompany" | "blocked" | "badpw";

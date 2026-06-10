@@ -20,5 +20,5 @@ export const POST = withApiHandler(async (req: Request) => {
   }
   const company = getCompanies().find((c) => c.name === invitation.partner) ?? getCompanies()[0];
   await setSession({ name, email, company });
-  return successResponse({ status: "ok", redirectTo: "/dashboard" });
+  return successResponse({ status: "ok", redirectTo: "/select-partner" });
 });

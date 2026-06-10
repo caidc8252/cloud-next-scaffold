@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { LOCALE_COOKIE, defaultLocale, isLocale } from "@cloud/i18n";
 import { NextIntlClientProvider, TimeZoneInit } from "@cloud/i18n/client";
 import { getMessages, getTimeZone } from "@cloud/i18n/server";
+import { ClientToaster } from "./_components/client-toaster";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -25,6 +26,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <NextIntlClientProvider locale={locale} messages={messages} timeZone={timeZone}>
           <TimeZoneInit />
           {children}
+          <ClientToaster />
         </NextIntlClientProvider>
       </body>
     </html>

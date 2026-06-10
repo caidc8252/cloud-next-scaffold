@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "@cloud/ui";
 import { request, RequestError } from "@cloud/request/client";
 import { useTranslations } from "@cloud/i18n/client";
 import type { Account, AuthBlockType, Company, LoginResult, MfaProfile, ProviderId, SsoTenant } from "@/lib/mock/types";
@@ -60,7 +61,7 @@ export function LoginScreen() {
     setFormError(null);
   }
 
-  async function enterConsole(redirectTo = "/dashboard") {
+  async function enterConsole(redirectTo = "/select-partner") {
     setBusy(t("busy.entering"));
     await delay(500);
     if (redirectTo.startsWith("http://") || redirectTo.startsWith("https://")) {
@@ -128,18 +129,10 @@ export function LoginScreen() {
     }
   }
 
-  function startProvider(id: ProviderId) {
-    setProvider(id);
-    setTenant(null);
-    setAccount(null);
-    setStep("idp");
-  }
-
-  function startEnterprise(tn: SsoTenant, email: string) {
-    setProvider(tn.idp);
-    setTenant(tn);
-    setAccount({ name: deriveName(email), email, sub: `${tn.idp}-00u4f7` });
-    setStep("idp");
+  // 第三方 / 企业 SSO 登录尚未接入：点击直接 toast 提示暂不支持，不再进入
+  // mock 的 IdP 授权流程（下方 "idp" step 与 chooseAccount 暂留作占位，当前不可达）。
+  function notifySsoUnavailable() {
+    toast.info(t("ssoUnavailable"));
   }
 
   async function chooseAccount(acct: { name: string; email: string; sub: string }) {
@@ -188,7 +181,7 @@ export function LoginScreen() {
     try {
       await delay(500);
       const res = await request.post<LoginResponse>("/api/auth/company", { loginToken, companyId });
-      router.replace(res.data.redirectTo ?? "/dashboard");
+      router.replace(res.data.redirectTo ?? "/select-partner");
       router.refresh();
     } catch {
       setBusy(null);
@@ -203,8 +196,8 @@ export function LoginScreen() {
         serverError={formError}
         onClearError={() => setFormError(null)}
         onPassword={handlePassword}
-        onProvider={startProvider}
-        onEnterprise={startEnterprise}
+        onProvider={notifySsoUnavailable}
+        onEnterprise={notifySsoUnavailable}
       />
     );
   } else if (step === "idp" && provider) {

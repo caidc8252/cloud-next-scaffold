@@ -17,7 +17,7 @@ export const POST = withApiHandler(async (req: Request) => {
 
   if (result.status === "ok" && result.account) {
     await setSession(result.account);
-    return successResponse({ status: "ok", redirectTo: "/dashboard" });
+    return successResponse({ status: "ok", redirectTo: "/select-partner" });
   }
   return successResponse(result);
 });
