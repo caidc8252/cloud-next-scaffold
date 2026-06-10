@@ -26,24 +26,38 @@
 
 要求 Node.js `>=20.19.0`（Prisma 7 要求）。
 
+仓库有两个应用，本地各占一个端口：
+
+- **`apps/admin`** — 后台管理应用，跑在 **http://localhost:3000**
+- **`apps/portal`** — 门户站 + 统一登录页，跑在 **http://localhost:3100**
+
+### 一次性准备
+
 ```bash
 pnpm install
-cp .env.example .env
-cp apps/admin/.env.example apps/admin/.env
-docker compose up -d
-pnpm db:setup
-pnpm dev
+cp .env.example .env                         # 根 .env：数据库 / 认证密钥 / Redis
+cp apps/admin/.env.example apps/admin/.env   # admin app 级变量（展示名等）
+docker compose up -d                         # 本地 PostgreSQL + Redis
+pnpm db:setup                                # generate + push + seed
 ```
 
-打开 http://localhost:3000。
+### 启动 admin（后台，:3000）
 
-PEP 门户站单独启动：
+```bash
+pnpm dev:admin        # 等价于 pnpm dev
+```
+
+打开 http://localhost:3000。未登录会被重定向到 portal 的登录页，所以本地完整体验需要同时起 portal。
+
+### 启动 portal（门户 + 统一登录，:3100）
 
 ```bash
 pnpm dev:portal
 ```
 
-打开 http://localhost:3100。门户站登录按钮进入站内 `/login`，登录成功后在 `/select-partner` 选择 partner；portal 校验归属并生成完整权限 session 后直接跳到 `ADMIN_APP_URL`。
+打开 http://localhost:3100。登录入口是门户站内的 `/login`；登录成功后在 `/select-partner` 选择 partner（只有一个可选 partner 时自动跳过），portal 校验归属、生成完整权限 session 后直接跳到 `ADMIN_APP_URL`（默认就是 admin 的 http://localhost:3000）。admin 里登出也会跳回 portal 的 `/login`。
+
+> 本地跑通完整登录链路需要 **admin（:3000）和 portal（:3100）两个都起**：portal 负责登录与 partner 选择，admin 承载登录后的后台业务。只改后台代码时也可以只起 admin，但登录仍然走 portal。
 
 生产环境若 portal 与 admin 使用同一根域下的不同子域，需要配置 `SESSION_COOKIE_DOMAIN`，例如 `.example.com`，让两边共享 `sid` cookie。
 
