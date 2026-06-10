@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Check, Copy, Trash2 } from "lucide-react";
-import { Badge, Button, Textarea, Modal, Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
+import { Badge, Button, Input, Textarea, Modal, Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
 import type { Role, User, PermissionGroup } from "@/app/(portal)/system/_shared/types";
 import { relTime } from "@/app/(portal)/system/_shared/helpers";
 import { PermissionsCard } from "./permissions-card";
@@ -56,10 +56,9 @@ export function RoleEditor({ role, users, permissionGroups, onSave, onDuplicate,
       <div className="border-b border-line-subtle py-4 px-5">
         <div className="flex items-start gap-4">
           <div className="flex-1 min-w-0">
-            <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              className="text-xl font-semibold tracking-tight text-content-primary bg-transparent outline-none w-full hover:border-line-default focus:border-primary focus:ring-1 focus:ring-primary/30 border border-transparent py-1 px-2 -ml-2 rounded-md max-w-sm transition duration-150"
-              disabled={role.builtin} />
-            <div className="flex items-center flex-wrap gap-1.5 mt-1.5 text-xs text-content-tertiary">
+            <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+              className="max-w-sm" aria-label="Role name" disabled={role.builtin} />
+            <div className="flex items-center flex-wrap gap-2 mt-2 text-xs text-content-tertiary">
               <span>{role.operatorCount} operators assigned</span>
               <span className="opacity-50">·</span>
               {role.builtin && <Badge variant="outline">SYSTEM</Badge>}
@@ -79,7 +78,7 @@ export function RoleEditor({ role, users, permissionGroups, onSave, onDuplicate,
           </div>
         </div>
       </div>
-      <div className="flex flex-col pt-4 px-5 pb-6 gap-4">
+      <div className="flex flex-col pt-4 px-5 pb-6 gap-5">
         <PermissionsCard groups={permissionGroups} permissions={draft.permissions}
           onTogglePerm={togglePerm} onToggleGroup={toggleGroup} disabled={role.builtin} />
 
@@ -112,7 +111,7 @@ export function RoleEditor({ role, users, permissionGroups, onSave, onDuplicate,
       <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete role"
         footer={<div className="flex gap-2 justify-end">
           <Button variant="ghost" onClick={() => setConfirmDelete(false)}>Cancel</Button>
-          <Button variant="destructive" onClick={() => { setConfirmDelete(false); onDelete(); }}>Delete</Button>
+          <Button variant="danger" onClick={() => { setConfirmDelete(false); onDelete(); }}>Delete</Button>
         </div>}>
         <p className="text-sm text-content-secondary">
           Are you sure you want to delete <strong>{role.name}</strong>? This action cannot be undone.

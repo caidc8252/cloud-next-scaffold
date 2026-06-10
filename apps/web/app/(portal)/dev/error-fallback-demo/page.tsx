@@ -1,7 +1,6 @@
 import { requireSession } from "@cloud/permissions/server";
-import { ContentHeader } from "@cloud/ui/components/layout";
+import { ContentHeader, PageBody } from "@cloud/ui/components/layout";
 import { BackendErrorDemoPanel } from "./_components/backend-error-demo-panel";
-import { PageBody } from "@/app/(portal)/_components/page-body";
 
 export default async function BackendErrorFallbackDemoPage() {
   await requireSession();

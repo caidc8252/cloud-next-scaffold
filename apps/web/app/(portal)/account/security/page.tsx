@@ -1,5 +1,5 @@
 import { requireSession } from "@cloud/permissions/server";
-import { PageBody } from "@/app/(portal)/_components/page-body";
+import { PageBody } from "@cloud/ui";
 import { getAccountSecurity } from "@/service/account/server/account.service";
 import { AccountSecurityPageClient } from "@/app/(portal)/account/_components/account-security-page";
 

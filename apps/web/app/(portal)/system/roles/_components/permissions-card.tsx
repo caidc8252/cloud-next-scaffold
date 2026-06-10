@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Search, ChevronDown, ChevronRight } from "lucide-react";
-import { Badge, Button, Input, Switch } from "@cloud/ui";
+import { Badge, Button, Card, Input, Switch } from "@cloud/ui";
 import type { PermissionGroup } from "@/app/(portal)/system/_shared/types";
 
 type PermissionsCardProps = {
@@ -47,7 +47,7 @@ export function PermissionsCard({
   }
 
   return (
-    <div className="border border-line-default rounded-xl overflow-hidden">
+    <Card>
       <div className="px-4 py-3 border-b border-line-subtle flex items-center justify-between">
         <div>
           <div className="text-sm font-semibold text-content-primary">Permissions</div>
@@ -65,7 +65,7 @@ export function PermissionsCard({
         </Button>
       </div>
 
-      <div className="px-4 py-2 border-b border-line-subtle flex items-center gap-2">
+      <div className="px-4 py-3 border-b border-line-subtle flex items-center gap-2">
         <Input prefix={<Search size={14} />} placeholder="Search permissions by name…" value={query}
           onChange={(e) => setQuery(e.target.value)} inputSize="sm" className="flex-1" />
         <div className="flex gap-1">
@@ -94,6 +94,8 @@ export function PermissionsCard({
                 <div
                   role="button"
                   tabIndex={0}
+                  aria-expanded={isOpen}
+                  aria-label={`${isOpen ? "Collapse" : "Expand"} ${group.menuTitle}`}
                   className="flex items-center flex-1 min-w-0 cursor-pointer"
                   onClick={() => {
                     const next = new Set(expanded);
@@ -136,7 +138,7 @@ export function PermissionsCard({
                         <div className="text-sm font-medium text-content-primary">{perm.label}</div>
                         <div className="text-xs text-content-tertiary">{perm.desc}</div>
                       </div>
-                      <Badge variant="outline" className="shrink-0 font-mono text-xs">{perm.code}</Badge>
+                      <Badge variant="outline" shape="tag" className="shrink-0">{perm.code}</Badge>
                     </div>
                   ))}
                 </div>
@@ -148,6 +150,6 @@ export function PermissionsCard({
           <div className="px-4 py-8 text-center text-sm text-content-tertiary">No permissions match your filter.</div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }

@@ -9,6 +9,8 @@ import {
   Button,
   Card,
   Input,
+  PageBody,
+  PageHeader,
   toast,
 } from "@cloud/ui";
 import { request } from "@cloud/request/client";
@@ -103,15 +105,17 @@ export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesP
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-content-primary mb-1">Roles</h1>
-        <p className="text-sm text-content-secondary">
-          Carbon platform roles — assignable only to Carbon staff (see <strong>System &rarr; Users</strong>).
-          <span className="text-content-tertiary"> All roles here are bound to the <code className="font-mono text-xs">ADMIN</code> contract.</span>
-        </p>
-      </div>
-      <div className="flex flex-col gap-3.5">
+    <>
+      <PageHeader
+        title="Roles"
+        description="Carbon platform roles — assignable only to Carbon staff. All roles here are bound to the ADMIN contract."
+        actions={
+          <Button variant="primary" iconLeft={<Plus className="size-4" />} onClick={() => setShowNew(true)}>
+            New role
+          </Button>
+        }
+      />
+      <PageBody>
         <Alert variant="info">
           <Shield size={14} />
           <AlertDescription>
@@ -121,35 +125,32 @@ export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesP
           </AlertDescription>
         </Alert>
         <div className="flex items-start gap-4">
-          <Card className="sticky top-4 w-[320px] shrink-0">
-            <div className="flex gap-2 p-2.5 border-b border-line-subtle">
-              <Input prefix={<Search size={14} />} placeholder="Search roles..." value={query}
-                onChange={(e) => setQuery(e.target.value)} inputSize="sm" className="flex-1" />
-              <Button variant="primary" size="sm" onClick={() => setShowNew(true)} iconLeft={<Plus size={14} />}>
-                New role
-              </Button>
+          <Card className="sticky top-6 self-start w-80 shrink-0">
+            <div className="border-b border-line-subtle p-3">
+              <Input prefix={<Search className="size-4" />} placeholder="Search roles..." value={query}
+                onChange={(e) => setQuery(e.target.value)} inputSize="md" />
             </div>
-            <div className="flex flex-col overflow-auto max-h-[calc(100vh-240px)]">
+            <div className="flex max-h-[calc(100dvh-9rem)] flex-col overflow-auto">
               {filtered.map((r) => (
                 <RoleListItem key={r.id} role={r} active={r.id === selectedId} onClick={() => setSelectedId(r.id)} />
               ))}
             </div>
           </Card>
-          <Card className="flex-1 min-w-0">
+          <Card className="min-w-0 flex-1">
             {selected ? (
               <RoleEditor role={selected} users={users} permissionGroups={permissionGroups} onSave={update}
                 onDuplicate={() => setDuplicateSource(selected)} onDelete={() => deleteRole(selected.id)} />
             ) : (
-              <div className="flex items-center justify-center h-64 text-content-tertiary text-sm">
+              <div className="py-12 text-center text-sm text-content-tertiary">
                 Select a role to edit
               </div>
             )}
           </Card>
         </div>
-      </div>
+      </PageBody>
       <NewRoleModal open={showNew} onClose={() => setShowNew(false)} onCreate={createRole} allRoles={roles} />
       <DuplicateRoleModal source={duplicateSource} onClose={() => setDuplicateSource(null)}
         onDuplicate={(name) => duplicateSource && duplicate(duplicateSource, name)} />
-    </div>
+    </>
   );
 }

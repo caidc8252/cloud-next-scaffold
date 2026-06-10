@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Search, Plus } from "lucide-react";
 import { toastError } from "@cloud/request/error-toast";
-import { Button, Card, Input, Modal, toast } from "@cloud/ui";
+import { Button, Card, Input, Modal, PageBody, PageHeader, Toggle, ToggleGroup, toast } from "@cloud/ui";
 import { request } from "@cloud/request/client";
 import type { Role, User } from "@/app/(portal)/system/_shared/types";
 import { UserListItem } from "./user-list-item";
@@ -150,42 +150,45 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
 
   return (
     <>
-      <div>
-        <div className="flex items-start justify-between mb-5">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-content-primary mb-1">Users</h1>
-            <p className="text-sm text-content-secondary">
-              Carbon platform staff accounts. Roles are picked from <strong>System → Roles</strong>.
-            </p>
-          </div>
-          <Button variant="primary" size="sm" iconLeft={<Plus size={14} />} onClick={() => setShowNew(true)}>
+      <PageHeader
+        title="Users"
+        description="Carbon platform staff accounts. Roles are picked from System → Roles."
+        actions={
+          <Button variant="primary" iconLeft={<Plus className="size-4" />} onClick={() => setShowNew(true)}>
             New user
           </Button>
-        </div>
-
-        <div className="grid grid-cols-4 gap-3.5 mb-5">
-          {statItems.map((s) => {
-            const isActive = statusFilter === s.filterKey;
-            return (
-              <button key={s.label} type="button"
-                className={`text-left bg-surface-2 border rounded-xl shadow-sm px-4 py-4 transition-colors cursor-pointer ${isActive ? "border-primary ring-1 ring-primary/30" : "border-line-default hover:border-line-strong"}`}
-                onClick={() => setStatusFilter(isActive ? "all" : s.filterKey)}>
-                <div className="text-xs text-content-tertiary">{s.label}</div>
-                <div className={`text-2xl font-semibold mt-1 tabular-nums ${s.colorClass}`}>
-                  {s.value}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        }
+      />
+      <PageBody>
+        {/* Status quick-filter tiles: selectable surfaces (§3.4) — ToggleGroup
+            owns the single-select, each tile lights primary when pressed. */}
+        <ToggleGroup
+          type="single"
+          variant="plain"
+          value={statusFilter}
+          onValueChange={(v) => setStatusFilter((v ?? "all") as StatusFilter)}
+          className="grid grid-cols-4 gap-3"
+        >
+          {statItems.map((s) => (
+            <Toggle
+              key={s.filterKey}
+              value={s.filterKey}
+              size="auto"
+              className="flex flex-col items-start gap-0 rounded-xl border border-line-default bg-surface-2 px-4 py-4 text-left shadow-1 data-pressed:border-primary-500 data-pressed:bg-primary-50 data-pressed:ring-2 data-pressed:ring-primary-500/10 data-pressed:hover:bg-primary-50"
+            >
+              <span className="text-xs text-content-tertiary">{s.label}</span>
+              <span className={`mt-1 text-2xl font-semibold tabular-nums ${s.colorClass}`}>{s.value}</span>
+            </Toggle>
+          ))}
+        </ToggleGroup>
 
         <div className="flex items-start gap-4">
-          <Card className="sticky top-4 w-[360px] shrink-0">
-            <div className="p-2.5 border-b border-line-subtle">
-              <Input prefix={<Search size={13} />} placeholder="Search by name, login or email…" value={query}
-                onChange={(e) => setQuery(e.target.value)} inputSize="sm" />
+          <Card className="sticky top-6 self-start w-90 shrink-0">
+            <div className="border-b border-line-subtle p-3">
+              <Input prefix={<Search className="size-4" />} placeholder="Search by name, login or email…" value={query}
+                onChange={(e) => setQuery(e.target.value)} inputSize="md" />
             </div>
-            <div className="flex flex-col overflow-auto max-h-[calc(100vh-240px)]">
+            <div className="flex max-h-[calc(100dvh-9rem)] flex-col overflow-auto">
               {filtered.length === 0 && (
                 <div className="px-4 py-8 text-center text-sm text-content-tertiary">
                   {query ? `No users match "${query}"` : "No users in this filter."}
@@ -199,7 +202,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
               ))}
             </div>
           </Card>
-          <Card className="flex-1 min-w-0">
+          <Card className="min-w-0 flex-1">
             {selected ? (
               selected.status === "PENDING" ? (
                 <PendingInviteDetail user={selected} roles={roles}
@@ -209,20 +212,20 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
                   onResetPassword={() => resetPassword(selected)} onToggleLock={() => toggleLock(selected)} />
               )
             ) : (
-              <div className="flex items-center justify-center h-64 text-content-tertiary text-sm">
+              <div className="py-12 text-center text-sm text-content-tertiary">
                 Select a user.
               </div>
             )}
           </Card>
         </div>
-      </div>
+      </PageBody>
       <NewUserModal open={showNew} onClose={() => setShowNew(false)} onCreate={createUser} users={users} roles={roles} />
 
       {/* Cancel invite confirmation */}
       <Modal open={!!confirmCancelId} onClose={() => setConfirmCancelId(null)} title="Cancel invitation?"
         footer={<div className="flex gap-2 justify-end">
           <Button variant="ghost" onClick={() => setConfirmCancelId(null)}>Keep invitation</Button>
-          <Button variant="destructive" onClick={confirmCancelInvite}>Cancel invitation</Button>
+          <Button variant="danger" onClick={confirmCancelInvite}>Cancel invitation</Button>
         </div>}>
         <p className="text-sm text-content-secondary">
           This will permanently remove the pending invitation for{" "}
