@@ -109,6 +109,7 @@
       "title": "Sign in to PEP",
       "subtitle": "Partner console for {by}.",
       "continueWith": "Continue with <b>{provider}</b>",
+      "ssoUnavailable": "Third-party sign-in isn't available yet.",
       "dividerEmail": "or with your work email",
       "emailLabel": "Account",
       "emailPlaceholder": "name@company.com",
@@ -359,32 +360,6 @@
     "roles": {
       "fleetOperator": "Fleet operator",
       "firmwarePublisher": "Firmware publisher"
-    },
-    "dashboard": {
-      "nav": {
-        "overview": "Overview",
-        "devices": "Devices",
-        "firmware": "Firmware & apps",
-        "merchants": "Merchants",
-        "alerts": "Alerts",
-        "settings": "Settings"
-      },
-      "search": "Search",
-      "signOut": "Sign out",
-      "welcomeTitle": "Good to see you, {name}.",
-      "welcomeSub": "Here's where your fleet stands today.",
-      "kpis": {
-        "activeTerminals": "Active terminals",
-        "fleetUptime": "Fleet uptime",
-        "pendingUpdates": "Pending updates",
-        "openAlerts": "Open alerts"
-      },
-      "deployments": {
-        "title": "No deployments in progress",
-        "sub": "When you stage a firmware or app rollout, its live progress shows up here.",
-        "action": "New deployment"
-      },
-      "placeholder": "This area is a placeholder in the portal mock — the sign-in, onboarding and homepage flows are the focus of this prototype."
     },
     "notFound": {
       "code": "404",

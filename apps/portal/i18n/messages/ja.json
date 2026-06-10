@@ -68,6 +68,7 @@
       "title": "PEP にサインイン",
       "subtitle": "{by} のパートナーコンソール。",
       "continueWith": "<b>{provider}</b> で続行",
+      "ssoUnavailable": "サードパーティログインは現在ご利用いただけません。",
       "dividerEmail": "または業務用メールで",
       "emailLabel": "アカウント",
       "emailPlaceholder": "name@company.com",
@@ -199,15 +200,6 @@
       "welcome": { "title": "PEP へようこそ、{name} さん。", "enter": "コンソールへ" }
     },
     "roles": { "fleetOperator": "フリート担当者", "firmwarePublisher": "ファームウェア公開者" },
-    "dashboard": {
-      "nav": { "overview": "概要", "devices": "デバイス", "firmware": "ファームウェアとアプリ", "merchants": "加盟店", "alerts": "アラート", "settings": "設定" },
-      "search": "検索",
-      "signOut": "サインアウト",
-      "welcomeTitle": "ようこそ、{name} さん。",
-      "welcomeSub": "今日のフリートの状況です。",
-      "kpis": { "activeTerminals": "稼働中の端末", "fleetUptime": "稼働率", "pendingUpdates": "保留中の更新", "openAlerts": "未対応アラート" },
-      "deployments": { "title": "進行中のデプロイはありません", "action": "新しいデプロイ" }
-    },
     "notFound": { "code": "404", "title": "ページが見つかりません", "home": "ホームに戻る", "signIn": "サインインへ" }
   }
 }

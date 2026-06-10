@@ -1,8 +1,8 @@
-import { ContentHeader } from "@cloud/ui/components/layout";
+import { ContentHeader, PageBody } from "@cloud/ui/components/layout";
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@cloud/ui/components/ui";
 import { requirePermissions } from "@cloud/permissions/server";
 import { getTranslations } from "@cloud/i18n/server";
-import { PageBody } from "@/app/(portal)/_components/page-body";
+
 
 export default async function DashboardPage() {
   const session = await requirePermissions({ all: ["dashboard:view"] });

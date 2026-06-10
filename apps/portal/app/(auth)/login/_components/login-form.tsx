@@ -207,7 +207,7 @@ export function LoginForm({
         </Button>
       ) : null}
 
-      <div className="mt-5 flex items-center justify-center gap-1.5 text-xs text-content-tertiary">
+      {/* <div className="mt-5 flex items-center justify-center gap-1.5 text-xs text-content-tertiary">
         <ShieldCheck size={11} />
         <span>{t("invitedOnly")}</span>
         <Button
@@ -217,11 +217,11 @@ export function LoginForm({
         >
           {t("haveInvite")}
         </Button>
-      </div>
+      </div> */}
 
-      <p className="mt-3 text-center text-xs leading-snug text-content-tertiary">
+      {/* <p className="mt-3 text-center text-xs leading-snug text-content-tertiary">
         {t("demoHint", { accounts: DEMO_ACCOUNTS })}
-      </p>
+      </p> */}
     </div>
   );
 }

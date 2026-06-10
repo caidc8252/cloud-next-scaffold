@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Mail, User, Clock, Shield, Copy, Pencil, AlertTriangle } from "lucide-react";
-import { Alert, AlertDescription, Button, Card, CardContent, CardHeader, CardTitle, Checkbox, toast } from "@cloud/ui";
+import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle, Checkbox, toast } from "@cloud/ui";
 import type { Role, User as UserType } from "@/app/(portal)/system/_shared/types";
 import { fmtDateTime, relTime } from "@/app/(portal)/system/_shared/helpers";
 
@@ -79,19 +79,13 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
     }
   }
 
-  const headerGradient = isExpired
-    ? "bg-linear-to-br from-error-500 to-error-700"
-    : "bg-linear-to-br from-warning-500 to-warning-700";
-
-  const badgeClass = isExpired
-    ? "text-error-strong bg-error-bg border-error/25"
-    : "text-warning-strong bg-warning-bg border-warning/25";
+  const headerTone = isExpired ? "bg-error-bg text-error-strong" : "bg-warning-bg text-warning-strong";
 
   return (
     <div>
       {/* Header */}
       <div className="flex items-start gap-4 border-b border-line-subtle py-4 px-5">
-        <div className={`shrink-0 grid place-items-center text-content-inverse size-14 rounded-xl ${headerGradient}`}>
+        <div className={`grid size-14 shrink-0 place-items-center rounded-xl ${headerTone}`}>
           <Mail size={22} />
         </div>
         <div className="flex-1 min-w-0">
@@ -99,18 +93,15 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
             <span className="text-xl font-semibold tracking-tight text-content-primary">
               {isExpired ? "Invitation expired" : "Invitation sent"}
             </span>
-            <span
-              className={`font-mono font-semibold uppercase shrink-0 border text-xs tracking-wider ${badgeClass} py-px px-1.5 rounded-sm`}>
-              {isExpired ? "EXPIRED" : "PENDING"}
-            </span>
+            <Badge tone={isExpired ? "error" : "warning"} dot>{isExpired ? "EXPIRED" : "PENDING"}</Badge>
           </div>
-          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-xs text-content-tertiary mt-1.5">
-            <span className="inline-flex items-center gap-1.5"><Mail size={12} /> {user.inviteEmail ?? user.email}</span>
-            <span className="inline-flex items-center gap-1.5"><User size={12} /> Invited by {user.invitedBy}</span>
-            {user.invitedAt && <span className="inline-flex items-center gap-1.5"><Clock size={12} /> Sent {relTime(user.invitedAt)}</span>}
+          <div className="mt-2 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-xs text-content-secondary">
+            <span className="inline-flex items-center gap-1"><Mail className="size-3.5" /> {user.inviteEmail ?? user.email}</span>
+            <span className="inline-flex items-center gap-1"><User className="size-3.5" /> Invited by {user.invitedBy}</span>
+            {user.invitedAt && <span className="inline-flex items-center gap-1"><Clock className="size-3.5" /> Sent {relTime(user.invitedAt)}</span>}
             {user.inviteExpiresAt && (
-              <span className={`inline-flex items-center gap-1.5 ${isExpired ? "text-error-strong" : "text-warning-strong"}`}>
-                <Clock size={12} /> {isExpired ? "Expired" : "Expires"} {relTime(user.inviteExpiresAt)}
+              <span className={`inline-flex items-center gap-1 ${isExpired ? "text-error-strong" : "text-warning-strong"}`}>
+                <Clock className="size-3.5" /> {isExpired ? "Expired" : "Expires"} {relTime(user.inviteExpiresAt)}
               </span>
             )}
           </div>
@@ -122,7 +113,7 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
       </div>
 
       {/* Body */}
-      <div className="flex flex-col gap-4 pt-4 px-5 pb-6">
+      <div className="flex flex-col gap-5 pt-4 px-5 pb-6">
         {isExpired ? (
           <Alert variant="error">
             <AlertTriangle size={14} />
@@ -149,24 +140,36 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
             </div>
           </CardHeader>
           <CardContent>
-            <dl className="grid text-sm grid-cols-[160px_1fr] gap-x-5 gap-y-3.5">
-              <dt className="text-content-tertiary font-medium">Email</dt>
-              <dd className="text-content-primary">{user.inviteEmail ?? user.email}</dd>
-              <dt className="text-content-tertiary font-medium">Invite URL</dt>
-              <dd className="text-content-primary flex items-center gap-2">
-                <code className="font-mono text-xs px-1.5 py-0.5 bg-surface-3 rounded border border-line-subtle truncate max-w-xs">{maskUrl(inviteUrl)}</code>
-                <Button variant="ghost" size="icon-xs" onClick={copyUrl} title="Copy invite URL">
-                  <Copy />
-                </Button>
-              </dd>
-              <dt className="text-content-tertiary font-medium">Invited by</dt>
-              <dd className="text-content-primary">{user.invitedBy}</dd>
-              <dt className="text-content-tertiary font-medium">Sent</dt>
-              <dd className="text-content-primary">{user.invitedAt ? fmtDateTime(user.invitedAt) : "—"}</dd>
-              <dt className="text-content-tertiary font-medium">Resent</dt>
-              <dd className="text-content-primary">{user.resendCount ? `${user.resendCount} time${user.resendCount > 1 ? "s" : ""}` : "Never"}</dd>
-              <dt className="text-content-tertiary font-medium">Expires</dt>
-              <dd className="text-content-primary">{user.inviteExpiresAt ? fmtDateTime(user.inviteExpiresAt) : "—"}</dd>
+            <dl className="flex flex-col gap-3.5 text-sm">
+              <div className="flex gap-5">
+                <dt className="w-40 shrink-0 font-medium text-content-tertiary">Email</dt>
+                <dd className="min-w-0 flex-1 text-content-primary">{user.inviteEmail ?? user.email}</dd>
+              </div>
+              <div className="flex gap-5">
+                <dt className="w-40 shrink-0 font-medium text-content-tertiary">Invite URL</dt>
+                <dd className="flex min-w-0 flex-1 items-center gap-2 text-content-primary">
+                  <code className="truncate rounded border border-line-subtle bg-surface-3 px-1.5 py-0.5 font-mono text-xs">{maskUrl(inviteUrl)}</code>
+                  <Button variant="ghost" size="icon-xs" aria-label="Copy invite URL" title="Copy invite URL" onClick={copyUrl}>
+                    <Copy />
+                  </Button>
+                </dd>
+              </div>
+              <div className="flex gap-5">
+                <dt className="w-40 shrink-0 font-medium text-content-tertiary">Invited by</dt>
+                <dd className="min-w-0 flex-1 text-content-primary">{user.invitedBy}</dd>
+              </div>
+              <div className="flex gap-5">
+                <dt className="w-40 shrink-0 font-medium text-content-tertiary">Sent</dt>
+                <dd className="min-w-0 flex-1 text-content-primary">{user.invitedAt ? fmtDateTime(user.invitedAt) : "—"}</dd>
+              </div>
+              <div className="flex gap-5">
+                <dt className="w-40 shrink-0 font-medium text-content-tertiary">Resent</dt>
+                <dd className="min-w-0 flex-1 text-content-primary">{user.resendCount ? `${user.resendCount} time${user.resendCount > 1 ? "s" : ""}` : "Never"}</dd>
+              </div>
+              <div className="flex gap-5">
+                <dt className="w-40 shrink-0 font-medium text-content-tertiary">Expires</dt>
+                <dd className="min-w-0 flex-1 text-content-primary">{user.inviteExpiresAt ? fmtDateTime(user.inviteExpiresAt) : "—"}</dd>
+              </div>
             </dl>
           </CardContent>
         </Card>
@@ -189,11 +192,11 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
           <div>
             {editingRoles ? (
               <>
-                <div className="flex flex-col gap-1.5 px-5 py-3">
+                <div className="flex flex-col gap-2 px-5 py-3">
                   {adminRoles.map((r) => {
                     const on = draftRoleIds.has(r.id);
                     return (
-                      <label key={r.id} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors ${
+                      <label key={r.id} className={`flex items-center gap-3 px-3 py-3 rounded-lg border cursor-pointer transition-colors ${
                         on ? "bg-primary-50 border-primary/30" : "bg-surface-3 border-line-subtle"
                       }`}>
                         <Checkbox checked={on} onCheckedChange={() => toggleRole(r.id)} />
@@ -216,10 +219,10 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
             ) : (
               <>
                 {invitedRoles.length === 0 && (
-                  <div className="px-4 py-6 text-center text-sm text-content-tertiary">No roles pre-assigned.</div>
+                  <div className="px-4 py-8 text-center text-sm text-content-tertiary">No roles pre-assigned.</div>
                 )}
                 {invitedRoles.map((r) => (
-                  <div key={r.id} className="flex items-center gap-2.5 px-5 py-3 border-b border-line-subtle last:border-b-0">
+                  <div key={r.id} className="flex items-center gap-3 px-5 py-3 border-b border-line-subtle last:border-b-0">
                     <div className="grid place-items-center shrink-0 bg-surface-3 text-content-secondary size-7 rounded-lg">
                       <Shield size={13} />
                     </div>

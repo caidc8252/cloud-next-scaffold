@@ -46,7 +46,7 @@ export function NewUserModal({ open, onClose, onCreate, users, roles }: NewUserM
         <Button variant="ghost" onClick={() => { onClose(); reset(); }}>Cancel</Button>
         <Button variant="primary" disabled={!valid} iconLeft={<Mail size={14} />} onClick={handleCreate}>Send invitation</Button>
       </div>}>
-      <div className="flex flex-col gap-3.5">
+      <div className="flex flex-col gap-4">
         <Alert variant="info">
           <Info size={13} />
           <AlertDescription>
@@ -66,11 +66,11 @@ export function NewUserModal({ open, onClose, onCreate, users, roles }: NewUserM
 
         <Field label={`Pre-assigned roles (${roleIds.size})`} required
           hint="Roles the invitee will hold once they accept. They'll see these on the authorization step.">
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             {adminRoles.map((r) => {
               const on = roleIds.has(r.id);
               return (
-                <label key={r.id} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors ${
+                <label key={r.id} className={`flex items-center gap-3 px-3 py-3 rounded-lg border cursor-pointer transition-colors ${
                   on ? "bg-primary-50 border-primary/30" : "bg-surface-3 border-line-subtle"
                 }`}>
                   <Checkbox checked={on} onCheckedChange={() => toggleRole(r.id)} />

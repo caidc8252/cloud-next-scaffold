@@ -68,6 +68,7 @@
       "title": "登录 PEP",
       "subtitle": "{by} 合作伙伴控制台。",
       "continueWith": "使用 <b>{provider}</b> 继续",
+      "ssoUnavailable": "第三方登录暂未开放。",
       "dividerEmail": "或使用你的工作邮箱",
       "emailLabel": "账号",
       "emailPlaceholder": "name@company.com",
@@ -199,15 +200,6 @@
       "welcome": { "title": "欢迎加入 PEP，{name}。", "enter": "进入控制台" }
     },
     "roles": { "fleetOperator": "机群操作员", "firmwarePublisher": "固件发布者" },
-    "dashboard": {
-      "nav": { "overview": "概览", "devices": "设备", "firmware": "固件与应用", "merchants": "商户", "alerts": "告警", "settings": "设置" },
-      "search": "搜索",
-      "signOut": "退出登录",
-      "welcomeTitle": "很高兴见到你，{name}。",
-      "welcomeSub": "这是你的机群今日概况。",
-      "kpis": { "activeTerminals": "活跃终端", "fleetUptime": "机群在线率", "pendingUpdates": "待更新", "openAlerts": "未处理告警" },
-      "deployments": { "title": "暂无进行中的部署", "action": "新建部署" }
-    },
     "notFound": { "code": "404", "title": "找不到该页面", "home": "返回首页", "signIn": "前往登录" }
   }
 }

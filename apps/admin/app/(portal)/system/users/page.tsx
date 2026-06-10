@@ -10,6 +10,8 @@ export default async function SystemUsersPage() {
     listUsersAndInvites(partnerId),
     listRoles(partnerId),
   ]);
+  // PageHeader (full-bleed band) + PageBody are owned by UsersPage, since the
+  // primary "New user" action lives in the header and drives client state.
   return (
     <UsersPage
       initialUsers={initialUsers}

@@ -17,11 +17,6 @@ type UserDetailProps = {
   onToggleLock: () => void;
 };
 
-function avatarGradient(locked: boolean): string {
-  if (locked) return "bg-linear-to-br from-error-500 to-error-700";
-  return "bg-linear-to-br from-primary-500 to-accent-600";
-}
-
 export function UserDetail({ user, users, roles, currentUserId, onSave, onResetPassword, onToggleLock }: UserDetailProps) {
   const [draft, setDraft] = useState(user);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -65,29 +60,22 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
     <div>
       {/* Header */}
       <div className="flex items-start gap-4 border-b border-line-subtle py-4 px-5">
-        <div className={`shrink-0 grid place-items-center text-content-inverse font-semibold text-xl tracking-tight size-14 rounded-xl ${avatarGradient(disabled)}`}>
+        <div className="grid size-14 shrink-0 place-items-center rounded-xl bg-surface-3 text-xl font-semibold tracking-tight text-content-secondary">
           {displayInitials}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="text-xl font-semibold tracking-tight text-content-primary truncate max-w-sm">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="max-w-sm truncate text-xl font-semibold tracking-tight text-content-primary">
               {user.displayName}
             </span>
-            <span
-              className={`font-mono font-semibold uppercase shrink-0 border text-xs tracking-wider ${
-                disabled
-                  ? "text-error-strong bg-error-bg border-error/25"
-                  : "text-success-strong bg-success-bg border-success/25"
-              } py-px px-1.5 rounded-sm`}>
-              {user.status}
-            </span>
+            <Badge tone={disabled ? "error" : "success"} dot>{user.status}</Badge>
             {draft.authorizingType === "ADMIN" && <Badge variant="outline" title="Implicit admin — bypasses role checks">ADMIN</Badge>}
           </div>
-          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-xs text-content-tertiary mt-1.5">
-            <span className="inline-flex items-center gap-1.5"><User size={12} /> @{user.loginName}</span>
-            <span className="inline-flex items-center gap-1.5"><Mail size={12} /> {user.email}</span>
-            <span className="inline-flex items-center gap-1.5"><Globe size={12} /> {user.country}</span>
-            {user.lastLoginAt && <span className="inline-flex items-center gap-1.5"><Clock size={12} /> Last login {relTime(user.lastLoginAt)}</span>}
+          <div className="mt-2 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-xs text-content-secondary">
+            <span className="inline-flex items-center gap-1"><User className="size-3.5" /> @{user.loginName}</span>
+            <span className="inline-flex items-center gap-1"><Mail className="size-3.5" /> {user.email}</span>
+            <span className="inline-flex items-center gap-1"><Globe className="size-3.5" /> {user.country}</span>
+            {user.lastLoginAt && <span className="inline-flex items-center gap-1"><Clock className="size-3.5" /> Last login {relTime(user.lastLoginAt)}</span>}
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -102,7 +90,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
       </div>
 
       {/* Body */}
-      <div className="flex flex-col gap-4 pt-4 px-5 pb-6">
+      <div className="flex flex-col gap-5 pt-4 px-5 pb-6">
         {/* Disabled banner */}
         {disabled && (
           <Alert variant="error">
@@ -122,7 +110,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 gap-3">
               <StatCell label="Password age" value={pwAgeDays !== null ? `${pwAgeDays}d` : "—"}
                 sub={pwExpired ? `Expired ${pwAgeDays! - PASSWORD_POLICY.expiryDays}d ago` : `expires in ${PASSWORD_POLICY.expiryDays - (pwAgeDays ?? 0)}d`}
                 tone={pwExpired ? "danger" : pwAgeDays !== null && pwAgeDays >= PASSWORD_POLICY.expiryDays - 14 ? "warn" : "ok"} />
@@ -182,7 +170,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
               const on = draft.roleIds.includes(r.id);
               const usersWithRole = users.filter((u) => (u.roleIds ?? []).includes(r.id));
               return (
-                <div key={r.id} className="flex items-center gap-2.5 px-5 py-3 border-b border-line-subtle last:border-b-0">
+                <div key={r.id} className="flex items-center gap-3 px-5 py-3 border-b border-line-subtle last:border-b-0">
                   <Switch checked={on} onCheckedChange={() => toggleRole(r.id)} size="sm" disabled={isProtected} />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold text-content-primary flex items-center gap-2">
@@ -243,7 +231,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
           title={disabled ? "Enable account?" : "Disable account?"}
           onConfirm={() => { setConfirmLock(false); onToggleLock(); }}
           confirmLabel={disabled ? "Enable" : "Disable account"}
-          confirmVariant={disabled ? "primary" : "destructive"}>
+          confirmVariant={disabled ? "primary" : "danger"}>
           <p className="text-sm text-content-secondary">
             {disabled
               ? <>Enable <strong>{user.displayName}</strong> — they will be able to access this organization immediately.</>
@@ -262,7 +250,7 @@ function StatCell({ label, value, sub, tone }: {
 }) {
   const toneClass = tone === "danger" ? "text-error-strong" : tone === "warn" ? "text-warning-strong" : tone === "ok" ? "text-success-strong" : "";
   return (
-    <div className="bg-surface-3 border border-line-subtle rounded-lg px-3.5 py-3">
+    <div className="bg-surface-3 border border-line-subtle rounded-lg px-4 py-3">
       <div className="text-xs font-medium uppercase tracking-wide text-content-tertiary">{label}</div>
       <div className={`text-lg font-semibold mt-1 tabular-nums ${toneClass}`}>{value}</div>
       <div className="text-xs text-content-tertiary mt-0.5">{sub}</div>
@@ -280,7 +268,7 @@ function PolicyRow({ icon, name, desc, val }: { icon: React.ReactNode; name: str
         <div className="text-sm font-semibold text-content-primary">{name}</div>
         <div className="text-xs text-content-tertiary mt-0.5">{desc}</div>
       </div>
-      <span className="text-xs font-semibold font-mono shrink-0 px-2.5 py-1 rounded-md border border-primary/20 text-primary-700 bg-primary-50">
+      <span className="text-xs font-semibold font-mono shrink-0 px-2.5 py-1 rounded-sm border border-primary/20 text-primary-700 bg-primary-50">
         {val}
       </span>
     </div>
@@ -289,7 +277,7 @@ function PolicyRow({ icon, name, desc, val }: { icon: React.ReactNode; name: str
 
 function ConfirmModal({ open, onClose, title, onConfirm, confirmLabel, confirmVariant, children }: {
   open: boolean; onClose: () => void; title: string; onConfirm: () => void;
-  confirmLabel: string; confirmVariant: "primary" | "destructive"; children: React.ReactNode;
+  confirmLabel: string; confirmVariant: "primary" | "danger"; children: React.ReactNode;
 }) {
   return (
     <Modal open={open} onClose={onClose} title={title}

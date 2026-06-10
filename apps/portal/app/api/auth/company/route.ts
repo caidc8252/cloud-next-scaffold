@@ -18,5 +18,5 @@ export const POST = withApiHandler(async (req: Request) => {
     throw new MockHttpError(AUTH_SIGNIN_FAILED, "Sign-in session expired.", 401);
   }
   await setSession(account);
-  return successResponse({ status: "ok", redirectTo: "/dashboard" });
+  return successResponse({ status: "ok", redirectTo: "/select-partner" });
 });

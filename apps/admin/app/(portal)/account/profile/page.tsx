@@ -1,5 +1,5 @@
 import { requireSession } from "@cloud/permissions/server";
-import { PageBody } from "@/app/(portal)/_components/page-body";
+import { PageBody } from "@cloud/ui";
 import { COUNTRIES } from "@/service/account/server/countries";
 import { getProfile } from "@/service/account/server/account.service";
 import { ProfilePageClient } from "@/app/(portal)/account/_components/profile-page";

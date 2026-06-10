@@ -3,6 +3,6 @@ import { getSession } from "@/lib/mock/session";
 import { ForgotScreen } from "./_components/forgot-screen";
 
 export default async function ForgotPasswordPage() {
-  if (await getSession()) redirect("/dashboard");
+  if (await getSession()) redirect("/select-partner");
   return <ForgotScreen />;
 }

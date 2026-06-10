@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Mail, Shield, RefreshCw, X } from "lucide-react";
-import { Button } from "@cloud/ui";
+import { Badge, Button, cn, type BadgeTone } from "@cloud/ui";
 import type { User } from "@/app/(portal)/system/_shared/types";
 import { relTime, initials } from "@/app/(portal)/system/_shared/helpers";
 
@@ -14,18 +14,18 @@ type UserListItemProps = {
   onCancel?: () => void;
 };
 
-const STATUS_BADGE_CLASS = {
-  ACTIVE: "text-success-strong bg-success-bg border-success/25",
-  INACTIVE: "text-error-strong bg-error-bg border-error/25",
-  PENDING: "text-warning-strong bg-warning-bg border-warning/25",
-  EXPIRED: "text-error-strong bg-error-bg border-error/25",
-} as const;
+const STATUS_TONE: Record<string, BadgeTone> = {
+  ACTIVE: "success",
+  INACTIVE: "error",
+  PENDING: "warning",
+  EXPIRED: "error",
+};
 
-function avatarGradient(status: User["status"], expired: boolean): string {
-  if (status === "INACTIVE") return "bg-linear-to-br from-error-500 to-error-700";
-  if (status === "PENDING" && expired) return "bg-linear-to-br from-error-500 to-error-700";
-  if (status === "PENDING") return "bg-linear-to-br from-warning-500 to-warning-700";
-  return "bg-linear-to-br from-primary-500 to-accent-600";
+// Solid status tint for the avatar tile (no gradients on management pages, §0.4).
+function avatarTone(status: User["status"], expired: boolean): string {
+  if (status === "INACTIVE") return "bg-error-bg text-error-strong";
+  if (status === "PENDING") return expired ? "bg-error-bg text-error-strong" : "bg-warning-bg text-warning-strong";
+  return "bg-primary-50 text-primary-700";
 }
 
 export function UserListItem({ user, active, onClick, onResend, onCancel }: UserListItemProps) {
@@ -42,29 +42,31 @@ export function UserListItem({ user, active, onClick, onResend, onCancel }: User
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
-      className={`flex items-center gap-3 w-full px-3.5 py-3 text-left transition-colors border-b border-line-subtle last:border-b-0 hover:bg-surface-hover cursor-pointer ${active ? "bg-primary-50" : ""}`}
+      className={cn(
+        "flex w-full items-center gap-3 border-b border-line-subtle px-4 py-3 text-left transition-colors last:border-b-0 cursor-pointer",
+        active ? "bg-primary-50" : "hover:bg-surface-hover",
+      )}
     >
       <div
-        className={`shrink-0 grid place-items-center text-content-inverse font-semibold text-xs tracking-tight size-9 rounded-lg ${avatarGradient(user.status, isExpired)}`}
+        className={cn(
+          "grid size-9 shrink-0 place-items-center rounded-lg text-xs font-semibold tracking-tight",
+          avatarTone(user.status, isExpired),
+        )}
       >
         {isPending ? <Mail size={14} /> : initials(displayName)}
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 text-sm font-semibold text-content-primary">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 text-sm font-semibold text-content-primary">
           {isPending
-            ? <span className="text-content-tertiary italic font-medium">{isExpired ? "Invitation expired" : "Invitation sent"}</span>
+            ? <span className="font-medium italic text-content-tertiary">{isExpired ? "Invitation expired" : "Invitation sent"}</span>
             : <span className="truncate">{displayName}</span>}
-          {disabled && <Shield size={11} className="text-error shrink-0" />}
+          {disabled && <Shield size={11} className="shrink-0 text-error" />}
         </div>
-        <div className="font-mono text-xs text-content-tertiary mt-0.5 truncate">
+        <div className="mt-0.5 truncate font-mono text-xs text-content-tertiary">
           {isPending ? user.inviteEmail ?? user.email : `@${user.loginName}`}
         </div>
-        <div className="flex items-center gap-1.5 mt-0.5 text-xs">
-          <span
-            className={`font-mono font-semibold uppercase border text-xs tracking-wider ${STATUS_BADGE_CLASS[badgeKey]} py-px px-1.5 rounded-sm`}
-          >
-            {badgeKey}
-          </span>
+        <div className="mt-1 flex items-center gap-2 text-xs">
+          <Badge tone={STATUS_TONE[badgeKey]} dot>{badgeKey}</Badge>
           {!isPending && user.lastLoginAt && <span className="text-content-tertiary">· {relTime(user.lastLoginAt)}</span>}
           {isPending && user.inviteExpiresAt && (
             <span className="text-content-tertiary">
@@ -74,14 +76,16 @@ export function UserListItem({ user, active, onClick, onResend, onCancel }: User
         </div>
       </div>
       {isPending && (
-        <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+        <div className="flex shrink-0 gap-1">
           {onResend && (
-            <Button variant="ghost" size="icon-xs" title="Resend invitation" onClick={onResend}>
+            <Button variant="ghost" size="icon-xs" aria-label="Resend invitation" title="Resend invitation"
+              className="hover:bg-surface-active" onClick={(e) => { e.stopPropagation(); onResend(); }}>
               <RefreshCw />
             </Button>
           )}
           {onCancel && (
-            <Button variant="ghost-danger" size="icon-xs" title="Cancel invitation" onClick={onCancel}>
+            <Button variant="ghost-danger" size="icon-xs" aria-label="Cancel invitation" title="Cancel invitation"
+              onClick={(e) => { e.stopPropagation(); onCancel(); }}>
               <X />
             </Button>
           )}

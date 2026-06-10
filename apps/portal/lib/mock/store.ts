@@ -2,7 +2,6 @@ import "server-only";
 import type {
   Account,
   Company,
-  DashboardKpi,
   IdpAccount,
   Invitation,
   LoginResult,
@@ -40,13 +39,6 @@ const IDP_ACCOUNTS: Record<string, IdpAccount[]> = {
   apple: [{ name: "Jordan Diaz", email: "jordan.diaz@brightpos.com", sub: "a-001932.7fa2" }],
   microsoft: [{ name: "Jordan Diaz", email: "jordan.diaz@brightpos.com", sub: "m-9d2e1f77-aad" }],
 };
-
-const DASHBOARD_KPIS: DashboardKpi[] = [
-  { key: "activeTerminals", value: "4,182", delta: "+38" },
-  { key: "fleetUptime", value: "99.94%", delta: "30d" },
-  { key: "pendingUpdates", value: "126", delta: "12 stores" },
-  { key: "openAlerts", value: "7", delta: "2 critical" },
-];
 
 // The invitation an invitee lands on. `roles` are kept as stable codes; the
 // UI localizes their labels.
@@ -91,7 +83,6 @@ export const listIdpAccounts = (provider: ProviderId | string): IdpAccount[] =>
   IDP_ACCOUNTS[provider] ?? [];
 export const getInvitation = (inviteToken: string): Invitation | null =>
   inviteToken === INVITATION.token ? INVITATION : null;
-export const getDashboardKpis = (): DashboardKpi[] => DASHBOARD_KPIS;
 
 // ── Scenario engine: companies + MFA a login resolves to ─────────────
 // Tweaks are gone, so scenarios are deterministic by email/password.
