@@ -56,22 +56,5 @@ export const appManifest = defineAppManifest({
         { code: "users.CHANGE_ROLE", label: "Change Role", desc: "Change user's assigned role" },
       ],
     },
-
-    // ── Storage ───────────────────────────────────────────
-    { menuCode: "storage", menuTitle: "Storage", parentMenuCode: null, path: null, icon: "database", contractTypes: ["*"], order: 200 },
-    {
-      menuCode: "s3Upload",
-      menuTitle: "S3 Upload",
-      parentMenuCode: "storage",
-      path: "/storage/s3-upload",
-      icon: "upload-cloud",
-      contractTypes: ["*"],
-      order: 201,
-      permissions: [
-        { code: "storage.VIEW", label: "View Storage", desc: "View uploaded S3 objects" },
-        { code: "storage.UPLOAD", label: "Upload File", desc: "Upload files to S3" },
-        { code: "storage.DOWNLOAD", label: "Download File", desc: "Download uploaded S3 objects" },
-      ],
-    },
   ],
 });

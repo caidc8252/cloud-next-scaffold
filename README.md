@@ -309,9 +309,9 @@ await uploadFileToS3FromBrowser({
 });
 ```
 
-当前默认策略：`<= 5 MB` 的浏览器文件走服务端上传，`> 5 MB` 走浏览器直传；直传中超过 100 MB 时自动使用 multipart upload。当前 Admin 演示页面位于 `/storage/s3-upload`，上传前会先计算 SHA-256 并调用 `/api/storage/uploads/duplicate` 检查同租户、同可见性下是否已有相同内容文件，命中时直接复用旧 `storage_object`。小文件会调用 `/api/storage/s3-upload-server` 并直接写入上传记录；大文件会通过 `/api/storage/s3-upload-session` 获取临时上传会话，浏览器上传完成后调用 `/api/storage/uploads/complete` 做 S3 `HeadObject` 校验并写入记录。历史记录列表来自 `/api/storage/uploads`，下载按钮调用 `/api/storage/uploads/[storageObjectId]/download` 获取 5 分钟下载链接。
+当前脚手架保留 `@cloud/storage` 包和 `storage_object` / `storage_attachment` 数据模型，但不再内置 S3 上传演示页面。业务应用需要文件上传时，应在对应 domain 下按上面的 package 能力接入，并把文件归属关系写入 `storage_attachment`。
 
-文件业务归属不要写进 `storage_object`。`storage_object` 只保存文件本体；应用包、头像、合同附件等业务关系写入 `storage_attachment`。通用接口 `/api/storage/attachments` 支持按 `subjectType + subjectId + purpose` 查询附件，也支持把已上传完成的 `storageObjectId` 绑定到业务对象。常用约定示例：应用安装包 `APP / <appId> / PACKAGE`，用户头像 `SYS_USER / <userId> / AVATAR`，合同附件 `CONTRACT / <contractId> / ATTACHMENT`。
+文件业务归属不要写进 `storage_object`。`storage_object` 只保存文件本体；应用包、头像、合同附件等业务关系写入 `storage_attachment`，用 `subjectType + subjectId + purpose` 表达绑定关系。常用约定示例：应用安装包 `APP / <appId> / PACKAGE`，用户头像 `SYS_USER / <userId> / AVATAR`，合同附件 `CONTRACT / <contractId> / ATTACHMENT`。
 
 新增或重置本地数据库后，需要执行：
 
@@ -320,7 +320,7 @@ pnpm db:push
 pnpm db:seed
 ```
 
-`db:push` 会创建 `storage_object` / `storage_attachment` 表，`db:seed` 会补齐 Storage 菜单和 `storage.VIEW` / `storage.UPLOAD` / `storage.DOWNLOAD` 权限。
+`db:push` 会创建 `storage_object` / `storage_attachment` 表；`db:seed` 不再初始化 S3 demo 菜单或 `storage.*` 权限。
 
 ## 国际化
 
@@ -624,21 +624,7 @@ export const POST = withApiHandler(
 - 未知异常：返回 `ERR_INTERNAL`，避免泄露内部细节
 - Next 控制流异常（redirect / notFound）会继续向上抛出，不会被吞掉
 
-S3 / 存储接口需要保留存储专项错误码，把 `onError` 作为 `withApiHandler()` 的第二个参数：
-
-```ts
-import { s3ErrorResponse } from "@/lib/s3-error-response";
-
-export const GET = withApiHandler(
-  async () => {
-    // ...
-    return successResponse(records);
-  },
-  { onError: s3ErrorResponse },
-);
-```
-
-注意：`withApiHandler` 只兜 handler 整体的异常，handler 内部用于解析 JSON / formData 的局部 `try / catch` 不受影响，照常保留。如果确实需要在某处手动处理，仍可直接调用 `handleApiError(error)` / `handleApiError(error, { onError: s3ErrorResponse })`。
+专项错误码可以通过 `withApiHandler()` 的第二个参数注入 `onError` mapper。`withApiHandler` 只兜 handler 整体的异常，handler 内部用于解析 JSON / formData 的局部 `try / catch` 不受影响，照常保留。如果确实需要在某处手动处理，仍可直接调用 `handleApiError(error)`，或在业务侧提供对应的 `onError` mapper。
 
 错误响应包含 `code`、`message`、`traceId`。当前 `traceId` 是响应生成时创建的错误编号，不是完整请求链路的 `requestId`。
 
