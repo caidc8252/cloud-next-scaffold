@@ -65,7 +65,10 @@ function Input({
         variant === "filled" && filledClass,
         validation && !resolvedInvalid && validationClass[validation],
         inputSize && inputSizeClass[inputSize],
-        (prefix || suffix) && "rounded-none border-0 bg-transparent focus-visible:ring-0 dark:bg-transparent",
+        // 有 prefix/suffix 时错误态由外层容器统一表达，内层 input 必须把自己的
+        // aria-invalid 描边/ring 一并清掉——否则外层一圈、内层 aria-invalid:ring 又一圈，
+        // 出现两层同心红 ring（border-0 只归零边框宽度，关不掉作为 box-shadow 的 ring）。
+        (prefix || suffix) && "rounded-none border-0 bg-transparent focus-visible:ring-0 dark:bg-transparent aria-invalid:border-0 aria-invalid:ring-0",
         className
       )}
       {...props}

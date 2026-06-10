@@ -37,4 +37,24 @@ describe("Input — TOMS v2.0 states", () => {
     render(<Input readOnly placeholder="q" />)
     expect(screen.getByPlaceholderText("q").className).toContain("read-only:bg-surface-3")
   })
+
+  it("with a prefix, the invalid ring is drawn only by the outer wrapper", () => {
+    // 回归：prefix + invalid 时，外层容器画一圈错误 ring，内层 input 必须把自己的
+    // aria-invalid ring/border 清掉，避免两层同心红 ring（见 input.tsx 注释）。
+    const { container } = render(<Input prefix={<span>@</span>} invalid placeholder="q" />)
+    const inner = screen.getByPlaceholderText("q")
+    const wrapper = container.querySelector("div.flex.items-center") as HTMLElement
+
+    // 外层容器承担错误态
+    expect(wrapper.className).toContain("ring-2")
+    expect(wrapper.className).toContain("border-error-strong")
+
+    // 内层 input 仍标记 aria-invalid（a11y），但视觉 ring/border 被清掉。
+    // 关键：twMerge 必须把基础串里的 aria-invalid:ring-2 真正剔除——否则两条同 group
+    // 同时存在时，编译 CSS 里 ring-2 在后、按源码序胜出，第二圈 ring 仍会出现。
+    expect(inner.getAttribute("aria-invalid")).toBe("true")
+    expect(inner.className).toContain("aria-invalid:ring-0")
+    expect(inner.className).toContain("aria-invalid:border-0")
+    expect(inner.className).not.toContain("aria-invalid:ring-2")
+  })
 })
