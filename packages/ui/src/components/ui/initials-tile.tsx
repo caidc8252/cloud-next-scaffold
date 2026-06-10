@@ -7,7 +7,8 @@ import { cn } from "../../lib/utils"
 // Distinct from <Avatar>: Avatar is a CIRCULAR profile picture with an image +
 // caller-supplied fallback; InitialsTile is a SQUARE rounded surface-3 block
 // that has no image and computes its own initials. Use Avatar for round
-// profile pictures, InitialsTile for square brand/identity marks.
+// profile pictures, InitialsTile for square brand/identity marks. The tile uses
+// dedicated avatar tokens so dark mode can stay distinct from card surfaces.
 
 const SIZE = {
   xs: "size-7 rounded-md text-xs",
@@ -35,7 +36,7 @@ function InitialsTile({ name, size = "sm", className }: InitialsTileProps) {
     <span
       aria-hidden
       className={cn(
-        "grid shrink-0 place-items-center bg-surface-3 font-semibold text-content-secondary",
+        "grid shrink-0 place-items-center bg-avatar-bg font-semibold text-avatar-fg",
         SIZE[size],
         className,
       )}

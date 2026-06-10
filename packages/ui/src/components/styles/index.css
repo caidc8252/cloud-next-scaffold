@@ -103,6 +103,10 @@
   --color-content-inverse:    oklch(99% 0     0);
   --color-content-on-primary: oklch(99% 0     0);
 
+  /* ─── Avatar · bg-avatar-bg / text-avatar-fg ─── */
+  --color-avatar-bg: var(--color-surface-3);
+  --color-avatar-fg: var(--color-content-secondary);
+
   /* ─── Lines · border-line-{subtle|default|strong|focus} ─── */
   --color-line-subtle:  oklch(93% 0.005 90);
   --color-line-default: oklch(89% 0.005 90);
@@ -314,6 +318,9 @@
    [data-theme="dark"] specificity (0,1,0) wins over :root.
    ─────────────────────────────────────────────────────── */
 [data-theme="dark"], .dark {
+  --color-avatar-bg: oklch(30% 0.006 260);
+  --color-avatar-fg: oklch(84% 0.005 260);
+
   --color-brand-mono:        oklch(86% 0.005 260);
   --color-brand-mono-strong: oklch(96% 0.003 260);
   --color-brand-mono-soft:   oklch(70% 0.006 260);
