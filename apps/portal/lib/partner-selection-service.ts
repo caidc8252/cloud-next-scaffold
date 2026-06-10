@@ -1,14 +1,14 @@
 import "server-only";
 
 import { prisma } from "@cloud/db";
-import { updateSession } from "@cloud/permissions/server";
+import { createSessionHandoffToken, updateSession } from "@cloud/permissions/server";
 import { BusinessError } from "@cloud/request";
 import {
   ERR_AUTH_INVALID_PARTNER,
   ERR_AUTH_NOT_AUTHENTICATED,
   ERR_AUTH_PARTNER_REQUIRED,
 } from "./auth-error-codes";
-import { getAdminAppUrl } from "./platform-routing";
+import { getAdminSessionHandoffUrl } from "./platform-routing";
 import { buildSessionSnapshot } from "./session-snapshot";
 
 type PartialSession = {
@@ -40,11 +40,7 @@ export async function selectPartnerForPlatform(
     include: { partner: { select: { status: true } } },
   });
 
-  if (
-    !partnerUser ||
-    partnerUser.status !== "ACTIVE" ||
-    partnerUser.partner.status !== "ACTIVE"
-  ) {
+  if (!partnerUser || partnerUser.status !== "ACTIVE" || partnerUser.partner.status !== "ACTIVE") {
     throw new BusinessError(ERR_AUTH_INVALID_PARTNER);
   }
 
@@ -54,8 +50,13 @@ export async function selectPartnerForPlatform(
   }
 
   await updateSession(snapshot);
+  // partner 选择完成后仍从 portal 跳 admin，需要用一次性 token 完成跨 host 会话交接。
+  const handoffToken = await createSessionHandoffToken();
+  if (!handoffToken) {
+    throw new BusinessError(ERR_AUTH_NOT_AUTHENTICATED, 401);
+  }
 
   return {
-    redirectTo: getAdminAppUrl(),
+    redirectTo: getAdminSessionHandoffUrl(handoffToken),
   };
 }

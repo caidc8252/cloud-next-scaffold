@@ -3,7 +3,7 @@ import "server-only";
 import { z } from "zod";
 import { prisma } from "@cloud/db";
 import { getAuthConfig } from "@cloud/config";
-import { createSession } from "@cloud/permissions/server";
+import { createSession, createSessionHandoffToken } from "@cloud/permissions/server";
 import { BusinessError } from "@cloud/request";
 import { ERR_INVALID_JSON } from "@cloud/request/error-codes";
 import { successResponse } from "@cloud/request/server";
@@ -26,14 +26,10 @@ import {
   isLockActive,
   isTimestampFresh,
 } from "./login-checks";
-import {
-  createMfaLoginToken,
-  deleteMfaLoginToken,
-  readMfaLoginToken,
-} from "./login-token";
+import { createMfaLoginToken, deleteMfaLoginToken, readMfaLoginToken } from "./login-token";
 import { buildSessionSnapshot } from "./session-snapshot";
 import { verifyActiveTotp } from "./mfa-service";
-import { getAdminAppUrl } from "./platform-routing";
+import { getAdminSessionHandoffUrl } from "./platform-routing";
 import { isPartnerSelectable } from "./partner-choice";
 import { listPartnerChoices } from "./partner-choices";
 
@@ -64,10 +60,13 @@ async function buildSessionAndRedirect(
   if (!snapshot) {
     throw new BusinessError(snapshotFailCode, 401);
   }
-  await createSession(snapshot);
+  const sid = await createSession(snapshot);
+  // 直达 admin 前先签发交接 token，让 admin 在自己的 host 下写 sid cookie。
+  const handoffToken =
+    snapshot.currentPartnerId !== null ? await createSessionHandoffToken(sid) : null;
 
   return {
-    redirectTo: snapshot.currentPartnerId !== null ? getAdminAppUrl() : "/select-partner",
+    redirectTo: handoffToken ? getAdminSessionHandoffUrl(handoffToken) : "/select-partner",
   };
 }
 

@@ -1,12 +1,13 @@
 import "server-only";
 
-export { createSession, updateSession, destroySession } from "./actions.ts";
 export {
-  getPartialSession,
-  getSession,
-  requireSession,
-  type PartialSession,
-} from "./dal.ts";
+  consumeSessionHandoffToken,
+  createSession,
+  createSessionHandoffToken,
+  destroySession,
+  updateSession,
+} from "./actions.ts";
+export { getPartialSession, getSession, requireSession, type PartialSession } from "./dal.ts";
 export { AuthzError } from "./errors.ts";
 export { assertPermissions, hasPermissions, requirePermissions } from "./permissions.ts";
 export {

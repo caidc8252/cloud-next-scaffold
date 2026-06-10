@@ -16,3 +16,13 @@ export function getAdminAppUrl(): string {
   const configured = process.env.ADMIN_APP_URL?.trim();
   return parseAdminAppUrl(configured || DEFAULT_ADMIN_APP_URL).toString();
 }
+
+// 跨 app 登录跳转统一走 admin 的交接入口，由目标 host 自己写 sid cookie；
+// 直接跳 ADMIN_APP_URL 在 Codespaces 这类端口子域环境下会丢 host-only cookie。
+export function getAdminSessionHandoffUrl(token: string): string {
+  const url = new URL(getAdminAppUrl());
+  url.pathname = "/api/auth/session-handoff";
+  url.search = "";
+  url.searchParams.set("token", token);
+  return url.toString();
+}
