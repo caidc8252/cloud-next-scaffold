@@ -31,6 +31,9 @@ function InputOTP({
   )
 }
 
+// 错误态的「单一所有者」：标了 aria-invalid 的 slot 是它的后代时，由这一层 :has()
+// 统一画一圈红边框 + 红 ring（unified treatment）。slot 自己不再重复描边——否则
+// group 一圈  + 命中的 slot 各自再一道，出现重复校验样式（与 Input prefix 那个坑同源）。
 function InputOTPGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -59,7 +62,9 @@ function InputOTPSlot({
       data-slot="input-otp-slot"
       data-active={isActive}
       className={cn(
-        "relative flex size-10 h-12 items-center justify-center border border-line-default bg-surface-2 text-xl font-mono font-semibold rounded-md transition-all outline-none first:mr-0 aria-invalid:border-error-strong data-[active=true]:z-10 data-[active=true]:border-primary data-[active=true]:ring-2 data-[active=true]:ring-primary/25 data-[active=true]:aria-invalid:border-error-strong",
+        // 不在 slot 上画 aria-invalid 边框：错误态由 InputOTPGroup 的 :has() 统一兜（见上）。
+        // 这里只保留 active（当前输入位）的 primary 高亮——错误组内仍能看清光标所在格。
+        "relative flex size-10 h-12 items-center justify-center border border-line-default bg-surface-2 text-xl font-mono font-semibold rounded-md transition-all outline-none first:mr-0 data-[active=true]:z-10 data-[active=true]:border-primary data-[active=true]:ring-2 data-[active=true]:ring-primary/25",
         className
       )}
       {...props}

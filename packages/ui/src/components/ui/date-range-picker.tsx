@@ -87,6 +87,8 @@ interface DateRangePickerProps {
 
   size?: "sm" | "md" | "lg"
   disabled?: boolean
+  /** Error state: red border/ring on the trigger + aria-invalid (matches Input/Select). */
+  invalid?: boolean
   className?: string
   required?: boolean
   id?: string
@@ -108,6 +110,7 @@ function DateRangePicker({
   disabledDays,
   size = "md",
   disabled,
+  invalid,
   className,
   required,
   id,
@@ -159,6 +162,7 @@ function DateRangePicker({
         <PopoverTrigger
           id={id}
           disabled={disabled}
+          aria-invalid={invalid || undefined}
           aria-label={effectivePlaceholder}
           className={dateTriggerClass(size, showClear)}
         >

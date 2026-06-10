@@ -46,11 +46,14 @@ const triggerSizeClass: Record<"sm" | "md" | "lg", string> = {
   lg: "h-control-lg px-cx-lg text-base",
 }
 
-// Tailwind class string for the input-styled trigger button that all three
-// date pickers share. showClear adds right padding to make room for the X icon.
+// Tailwind class string for the input-styled trigger button that all date
+// pickers share. showClear adds right padding to make room for the X icon.
+// 错误态：触发器自己挂 aria-invalid（各 picker 由 invalid prop 透传），这一组
+// aria-invalid:* 变体随属性生效，画红边框 + 红 ring；与 Input/Select 错误态一致。
+// 触发器外层只有一个无边框定位 div，单层 ring，无 Input 那种双层问题。
 function dateTriggerClass(size: "sm" | "md" | "lg", showClear: boolean): string {
   return cn(
-    "inline-flex w-full items-center gap-2 rounded-md border border-line-default bg-surface-2 transition-colors outline-none cursor-pointer hover:border-line-strong focus-visible:border-line-focus focus-visible:ring-2 focus-visible:ring-line-focus/30 disabled:cursor-not-allowed disabled:opacity-50",
+    "inline-flex w-full items-center gap-2 rounded-md border border-line-default bg-surface-2 transition-colors outline-none cursor-pointer hover:border-line-strong focus-visible:border-line-focus focus-visible:ring-2 focus-visible:ring-line-focus/30 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error-strong aria-invalid:ring-2 aria-invalid:ring-error/20 dark:aria-invalid:border-error-strong/50 dark:aria-invalid:ring-error/40",
     triggerSizeClass[size],
     showClear && "pr-7",
   )
