@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { usePathname } from 'next/navigation'
 import { cn } from '../../lib/utils'
 import { useSidebar } from '../../lib/sidebar'
 import { Sheet, SheetContent, SheetTitle } from '../ui/sheet'
@@ -20,6 +21,12 @@ export const Layout: React.FC<{
   className?: string
 }> = ({ sidebar, header, children, className }) => {
   const { collapsed, mobileOpen, setMobileOpen } = useSidebar()
+  const pathname = usePathname()
+  const scrollRootRef = React.useRef<HTMLElement | null>(null)
+
+  React.useEffect(() => {
+    scrollRootRef.current?.scrollTo({ top: 0, left: 0 })
+  }, [pathname])
 
   return (
     <div className={cn('flex h-screen overflow-hidden', className)}>
@@ -50,7 +57,11 @@ export const Layout: React.FC<{
             {header}
           </header>
         )}
-        <main className="flex-1 overflow-y-auto bg-surface-1">
+        <main
+          ref={scrollRootRef}
+          data-layout-scroll-root
+          className="flex-1 overflow-y-auto bg-surface-1"
+        >
           {children}
         </main>
       </div>
