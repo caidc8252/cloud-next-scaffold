@@ -20,7 +20,6 @@ import {
   ToggleSwitch,
   type TableColumn,
 } from "@cloud/ui/components/ui";
-import { Stack } from "@cloud/ui/components/layout";
 import { SERVER_S3_UPLOAD_THRESHOLD_BYTES } from "../lib/s3-upload-policy";
 import type {
   DuplicateStorageObjectResponse,
@@ -359,7 +358,7 @@ export function S3UploadDemo({ initialRecords }: S3UploadDemoProps) {
   }
 
   return (
-    <Stack gap="var(--space-4)">
+    <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>S3 Upload</CardTitle>
@@ -368,9 +367,10 @@ export function S3UploadDemo({ initialRecords }: S3UploadDemoProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Stack gap="var(--space-4)">
-            <div className="grid gap-3 md:grid-cols-[1fr_240px]">
+          <div className="flex flex-col gap-4">
+            <div className="grid gap-3 md:grid-cols-3">
               <Input
+                className="md:col-span-2"
                 type="file"
                 accept={isPublicUpload ? "image/*" : undefined}
                 disabled={isBusy}
@@ -443,7 +443,7 @@ export function S3UploadDemo({ initialRecords }: S3UploadDemoProps) {
             )}
 
             {error && <p className="text-sm text-error">{error}</p>}
-          </Stack>
+          </div>
         </CardContent>
       </Card>
 
@@ -475,6 +475,6 @@ export function S3UploadDemo({ initialRecords }: S3UploadDemoProps) {
           />
         </CardContent>
       </Card>
-    </Stack>
+    </div>
   );
 }
