@@ -52,12 +52,34 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ### 目录约定
 
-- 登录前页面放在 `apps/admin/app/(public)`
-- 登录后的后台页面放在 `apps/admin/app/(portal)`
-- API 路由放在 `apps/admin/app/api`
-- 业务实现（service / repository / mapper / policy / schema）放在 `apps/admin/service/<domain>/`，详见下面「服务端分层」
-- 仅与具体业务无关的通用服务端工具放 `apps/admin/lib`；跨业务可复用能力沉淀到 `packages/*`
-- 当前基线已经把后台壳子接在 `app/(portal)` 上，大多数业务页面默认加在这里
+- 先判断代码归属，再决定目录：产品业务优先落到对应 `apps/*`；跨应用、跨业务可复用的能力才沉淀到 `packages/*`；测试、脚本、配置分别放到仓库既有目录，不要在业务目录里混放。
+- `apps/admin` 是后台管理应用，也是默认的业务开发主应用：
+  - 登录前页面放在 `apps/admin/app/(public)`。
+  - 登录后的后台页面放在 `apps/admin/app/(portal)`，当前后台壳子已经接在这里，大多数后台业务页面默认加在这里。
+  - API 路由放在 `apps/admin/app/api`，只做 HTTP 适配，不承载业务编排和数据库访问。
+  - 后台业务实现放在 `apps/admin/service/<domain>/`，按 schema / service / policy / repository / mapper 分层，详见下面「服务端分层」。
+  - 后台应用私有工具放在 `apps/admin/lib`；只在后台应用内复用的组件放在就近 `_components` 或 `apps/admin/app/_components`；菜单清单放在 `apps/admin/manifest`；后台文案放在 `apps/admin/i18n/messages`。
+- `apps/portal` 是面向外部用户的门户应用，不要把后台管理页面放进这里：
+  - 登录 / 注册等认证页面放在 `apps/portal/app/(auth)`。
+  - 门户控制台页面放在 `apps/portal/app/(console)`。
+  - 官网 / 营销 / 公开展示页面放在 `apps/portal/app/(marketing)`。
+  - 门户 API 路由放在 `apps/portal/app/api`；门户私有工具放在 `apps/portal/lib`；门户私有组件放在就近 `_components` 或 `apps/portal/app/_components`；门户文案放在 `apps/portal/i18n/messages`。
+- 如需新增新的应用，优先参考 `apps/admin` 的目录结构建立 `app` / `service` / `lib` / `manifest` / `i18n/messages` 等目录；仅按新应用实际职责裁剪，不要另起一套不兼容约定。
+- `packages/*` 只放项目级共享能力，新增前先检查现有包导出，避免重复造轮子：
+  - `packages/ui` 放共享 UI 组件、布局组件、主题能力和通用样式工具。
+  - `packages/request` 放客户端请求封装、服务端响应辅助、错误码和错误提示。
+  - `packages/permissions` 放登录态聚合、权限守卫和权限上下文。
+  - `packages/db` 放 Prisma schema、Client、seed 和数据库脚本入口。
+  - `packages/security` 放密码哈希、加解密等安全基础能力。
+  - `packages/storage` 放 S3 上传会话、浏览器直传、服务端上传和存储配置归一化。
+  - `packages/config` / `packages/platform-config` 放环境变量读取、配置校验和平台配置。
+  - `packages/i18n` 放 locale 清单、格式预设、cookie 常量和 i18n 薄封装。
+  - `packages/api-kit` 放 API handler 骨架和错误 mapper 组合。
+  - `packages/cache` 放跨应用可复用的缓存能力。
+- `e2e` 放端到端测试；单元测试 / 组件测试优先跟随被测代码就近放置，除非现有目录已有同类约定。
+- `scripts` 放仓库级脚本；只服务某个 package 或 app 的脚本优先放到对应包内，避免根目录脚本膨胀。
+- 根目录只放 monorepo 配置、构建配置、README / AGENTS / DEV_NOTE 等项目文档；不要在根目录新增业务代码。
+- `.next`、`node_modules`、构建产物、缓存目录和生成文件不要手改，也不要作为业务实现依赖。
 
 ### 服务端分层（route / service / schema / policy / data）
 
