@@ -45,12 +45,11 @@ code in the recovery / register flows: `123456` (or any 6 digits).
 - `app/api/**` — remaining prototype handlers for onboarding / forgot-password /
   dashboard / SSO
 - `lib/mock/` — prototype-only store and view types
-- `app/_components` — brand marks, auth shell, provider button, account chip,
-  locale switcher · `app/(auth)/_components` — shared auth-card bits
+- `app/_components` — brand marks, auth shell, provider button, account chip ·
+  `app/(auth)/_components` — shared auth-card bits
 
 ## i18n
 
 All visible copy is routed through `@cloud/i18n` (`en` base, `zh-CN` / `ja`
 overlays). The chrome and headings are translated in all three locales; longer
 marketing/body prose falls back to English (the package's English-base design).
-Switch language via the globe in the home nav / dashboard header.

@@ -16,7 +16,6 @@ import type { LucideIcon } from "lucide-react";
 import { Badge, Button } from "@cloud/ui";
 import { getTranslations } from "@cloud/i18n/server";
 import { PepLogo } from "@/app/_components/brand";
-import { LocaleSwitcher } from "@/app/_components/locale-switcher";
 
 const FEATURES: { key: string; Icon: LucideIcon }[] = [
   { key: "deviceFleet", Icon: Smartphone },
@@ -55,7 +54,6 @@ export default async function HomePage() {
         </div>
         <div className="flex-1" />
         <div className="flex items-center gap-2.5">
-          <LocaleSwitcher />
           <Button render={<Link href="/login" />} nativeButton={false} variant="ghost" size="sm">
             {t("nav.signIn")}
           </Button>

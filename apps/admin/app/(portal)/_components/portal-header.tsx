@@ -11,7 +11,6 @@ import {
   CommandItem,
   CommandList,
 } from "@cloud/ui";
-import { LocaleSwitcher } from "./locale-switcher";
 import { getMenuIcon } from "./menu-icon";
 import { NotificationBell } from "./notification-bell";
 
@@ -137,12 +136,7 @@ export function PortalHeader({
         leading={<SidebarTrigger />}
         breadcrumbs={breadcrumbs}
         onSearchClick={() => setOpen(true)}
-        notification={
-          <div className="flex items-center gap-2">
-            <LocaleSwitcher />
-            <NotificationBell />
-          </div>
-        }
+        notification={<NotificationBell />}
       />
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Search menus…" />

@@ -10,7 +10,6 @@ import { useTranslations } from "@cloud/i18n/client";
 import type { Account, DashboardKpi } from "@/lib/mock/types";
 import { initials } from "@/lib/format";
 import { PepLogo } from "@/app/_components/brand";
-import { LocaleSwitcher } from "@/app/_components/locale-switcher";
 
 const NAV: { key: string; Icon: LucideIcon }[] = [
   { key: "overview", Icon: Gauge },
@@ -102,7 +101,6 @@ export function DashboardScreen({ account }: { account: Account }) {
         <header className="flex h-[60px] items-center gap-3.5 border-b border-line-subtle bg-surface-2 px-7">
           <span className="text-base font-semibold">{t(`nav.${active}`)}</span>
           <div className="flex-1" />
-          <LocaleSwitcher />
           <Button variant="secondary" size="sm" iconLeft={<Search size={15} />}>
             {t("search")}
           </Button>

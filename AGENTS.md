@@ -230,7 +230,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 - **页面文案禁止硬编码**：所有面向用户的可见文案（页面、组件、表单、按钮、提示、空态、错误展示等）一律走 i18n，从 message 取，不在 JSX / 字符串里写死中英文字面量
   - 客户端组件用 `useTranslations`，RSC 用 `getTranslations`，文案落到 `apps/admin/i18n/messages/`，`en.json` 为基底
-  - 新增文案先补 key（en 必填，其余 locale 只写差异，缺 key 自动回退英文），再在页面引用，不要先硬编码再说
+  - 新增文案先补 key，再在页面引用，不要先硬编码再说
+  - 新增或修改面向用户的文案时，`en` / `zh-CN` / `ja` 三种 locale 都要同步补齐；初版可以先用机器翻译占位，但不要只写英语依赖回退
   - 例外：日志、调试信息、不展示给用户的内部标识不强制
 - 国际化统一走 `@cloud/i18n`（`next-intl` 薄封装），**禁止在业务或 UI 里直接 import `next-intl`**，lint 会拦
   - RSC / route handler 用 `@cloud/i18n/server`（`createI18nRequestConfig` / `deepMerge` / `set*Action`）
@@ -239,7 +240,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - locale 清单固定为 `["en", "zh-CN", "ja"]`，一律 `import { locales }`，不要在应用层重写数组；增删语言改 `packages/i18n`
 - cookie 名用常量 `LOCALE_COOKIE` / `TZ_COOKIE`，禁止硬编码 `"NEXT_LOCALE"`、`"locale"` 字面量
 - locale / 时区收窄用 `isLocale(x)`，禁止 `as Locale`；`set*Action` 对非法输入静默 no-op，需要给用户反馈就在输入边界自行校验
-- message 以 `en` 为基底，其余 locale 只写差异，缺 key 自动回退英文；不要把各 locale 写成全量副本
+- message 以 `en` 为基底，其余 locale 只写与英文不同的 key，缺 key 自动回退英文；回退只作为兼容兜底，不作为新增文案时偷懒不翻译的理由
 - namespace 用点分层级、与模块对应（`auth.login.*`、`system.users.*`、`ui.datePicker.*`）；`ui.*` 命名空间归 `@cloud/ui` 占用，使用其日期组件的页面必须提供 `ui.datePicker.*`，否则开发期触发 missing message
 - 数字 / 日期格式化走 `formats` 预设（`useFormatter` + `numberFormats` / `dateTimeFormats`），不在业务里散落 `Intl.NumberFormat` 配置；新增样式改 `packages/i18n` 的 `formats.ts`
 - 切换语言 / 时区只通过 `set*Action`（`@cloud/i18n/actions`）+ `router.refresh()`，不自己写 cookie；语言切换 UI（`LocaleSwitcher`）在 `apps/admin` 用 `@cloud/ui` 的 `Popover` 组合（不用 `DropdownMenu`：header 是 `sticky z-sticky`，而 `DropdownMenuContent` 钉死 `z-50` 且不暴露 Positioner className，会被 header 盖住；`Popover` 用 `z-popover` 高于 header），不放回 `@cloud/i18n`（否则与 `@cloud/ui → @cloud/i18n` 循环依赖）
