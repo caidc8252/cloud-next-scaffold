@@ -7,10 +7,21 @@
     "node": ">=20.19.0"
   },
   "scripts": {
-    "dev": "pnpm --filter web dev",
-    "dev:web": "pnpm --filter web dev",
+    "gen:manifest": "node scripts/generate-manifest-registry.mjs",
+    "predev": "pnpm gen:manifest",
+    "predev:admin": "pnpm gen:manifest",
+    "predev:portal": "pnpm gen:manifest",
+    "prebuild": "pnpm gen:manifest",
+    "prebuild:admin": "pnpm gen:manifest",
+    "prebuild:portal": "pnpm gen:manifest",
+    "pretest": "pnpm gen:manifest",
+    "dev": "pnpm --filter admin dev",
+    "dev:admin": "pnpm --filter admin dev",
+    "dev:portal": "pnpm --filter portal dev",
+    "build:admin": "pnpm --filter admin build",
+    "build:portal": "pnpm --filter portal build",
     "build": "pnpm db:generate && pnpm -r --filter './apps/*' build",
-    "lint": "eslint apps/web packages/api-kit/src packages/cache/src packages/config/src packages/db packages/i18n/src packages/permissions packages/request/src packages/security packages/storage packages/ui/src packages/ui/docs/examples scripts/prisma.mjs eslint.config.mjs vitest.config.mts",
+    "lint": "eslint apps/admin apps/portal packages/api-kit/src packages/cache/src packages/config/src packages/db packages/i18n/src packages/permissions packages/platform-config/src packages/request/src packages/security packages/storage packages/ui/src packages/ui/docs/examples scripts/prisma.mjs eslint.config.mjs vitest.config.mts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run --passWithNoTests",
@@ -18,8 +29,11 @@
     "db:generate": "node scripts/prisma.mjs generate",
     "db:push": "node scripts/prisma.mjs db push",
     "db:seed": "node scripts/prisma.mjs db seed",
+    "db:seed:portal-login-tests": "pnpm --filter @cloud/db seed:portal-login-tests",
     "db:studio": "node scripts/prisma.mjs studio",
-    "db:setup": "pnpm db:generate && pnpm db:push && pnpm db:seed"
+    "db:setup": "pnpm db:generate && pnpm db:push && pnpm db:seed",
+    "check:diff-coverage": "vitest run --coverage --coverage.reporter=lcov --coverage.reporter=html && node scripts/check-diff-coverage.mjs",
+    "test:e2e": "docker compose -f docker-compose.e2e.yml up -d --wait postgres-e2e && pnpm db:push && pnpm db:seed && playwright test && E2E_MARKER_ROOTS='apps/*/src apps/*/app apps/*/middleware.ts' node scripts/check-e2e-orphans.mjs"
   },
   "dependencies": {
     "next": "16.2.6",
@@ -44,6 +58,8 @@
     "tw-animate-css": "^1.4.0",
     "typescript": "^5",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.1.6"
+    "vitest": "^4.1.6",
+    "@vitest/coverage-v8": "^4.1.0",
+    "@playwright/test": "^1.49.0"
   }
 }

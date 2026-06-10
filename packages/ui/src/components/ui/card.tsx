@@ -25,7 +25,7 @@ const imgRadiusClass: Record<CardSize, string> = {
 
 const elevationClass: Record<CardElevation, string> = {
   0: "shadow-none",
-  1: "shadow-2",
+  1: "shadow-1",
   2: "shadow-3",
 }
 
@@ -36,7 +36,7 @@ const slotPaddingClass =
 // top/bottom padding is 16px (py-4) while horizontal stays 20px (px-5). sm/lg
 // keep the uniform slot padding.
 const headerPaddingClass =
-  "group-data-[size=sm]/card:p-3 group-data-[size=md]/card:px-5 group-data-[size=md]/card:py-4 group-data-[size=lg]/card:p-6"
+  "group-data-[size=sm]/card:p-3 group-data-[size=md]/card:px-5 group-data-[size=md]/card:py-3.5 group-data-[size=lg]/card:p-6"
 
 // flush: drops the size-based slot padding for full-bleed content (tables, row
 // lists) — rows then own their padding. Needed because the slot padding is a
@@ -95,7 +95,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-title"
       className={cn(
-        "text-base leading-snug font-semibold text-content-primary group-data-[size=sm]/card:text-sm",
+        "text-md leading-snug font-semibold text-content-primary group-data-[size=sm]/card:text-sm",
         className
       )}
       {...props}
@@ -161,5 +161,4 @@ export {
   CardDescription,
   CardContent,
 }
-
 

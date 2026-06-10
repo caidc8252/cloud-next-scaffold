@@ -2,7 +2,7 @@
 
 import { type Locale, isLocale } from "@cloud/i18n"
 import { useLocale } from "@cloud/i18n/client"
-import { startOfDay, endOfDay } from "date-fns"
+import { startOfDay, endOfDay, setHours, setMinutes } from "date-fns"
 import { enUS, zhCN, ja, type Locale as DateFnsLocale } from "date-fns/locale"
 
 import { cn } from "../../lib/utils"
@@ -79,4 +79,27 @@ function combineDisabledDays(
   return (d) => matchers.some((fn) => fn(d))
 }
 
-export { useDateFormat, dateFnsLocales, defaultFormats, dateTriggerClass, combineDisabledDays }
+// 24-hour "HH:mm" string from a Date (null/undefined → "00:00"). Used by the
+// time inputs in DateTimePicker / DateTimeRangePicker.
+function toTimeString(d: Date | null | undefined): string {
+  if (!d) return "00:00"
+  const hh = String(d.getHours()).padStart(2, "0")
+  const mm = String(d.getMinutes()).padStart(2, "0")
+  return `${hh}:${mm}`
+}
+
+// Apply an "HH:mm" string onto a date, returning a new Date with that time-of-day.
+function applyTimeString(d: Date, hhmm: string): Date {
+  const [hStr, mStr] = hhmm.split(":")
+  return setMinutes(setHours(d, Number(hStr)), Number(mStr))
+}
+
+export {
+  useDateFormat,
+  dateFnsLocales,
+  defaultFormats,
+  dateTriggerClass,
+  combineDisabledDays,
+  toTimeString,
+  applyTimeString,
+}

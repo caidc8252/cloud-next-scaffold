@@ -42,8 +42,16 @@ describe("Table — TOMS v2.0 variants", () => {
     const { container } = render(
       <Table columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} bordered />,
     )
-    expect(container.firstElementChild?.className).toContain("rounded-lg")
+    expect(container.firstElementChild?.className).toContain("rounded-xl")
+    expect(container.firstElementChild?.className).toContain("shadow-1")
     expect(screen.getByText("alpha").closest("td")?.className).toContain("border-r")
+  })
+
+  it("header uses the TOMS overline weight and tracking", () => {
+    render(<Table columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} />)
+    const header = screen.getByText("Name").closest("th")
+    expect(header?.className).toContain("font-semibold")
+    expect(header?.className).toContain("tracking-overline")
   })
 
   it("rowState drives aria-selected / data-disabled / data-expanded", () => {

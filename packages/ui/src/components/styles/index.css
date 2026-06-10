@@ -103,6 +103,10 @@
   --color-content-inverse:    oklch(99% 0     0);
   --color-content-on-primary: oklch(99% 0     0);
 
+  /* ─── Avatar · bg-avatar-bg / text-avatar-fg ─── */
+  --color-avatar-bg: var(--color-surface-3);
+  --color-avatar-fg: var(--color-content-secondary);
+
   /* ─── Lines · border-line-{subtle|default|strong|focus} ─── */
   --color-line-subtle:  oklch(93% 0.005 90);
   --color-line-default: oklch(89% 0.005 90);
@@ -145,7 +149,7 @@
   --text-md:  14px;
   --text-lg:  16px;
   --text-xl:  18px;
-  --text-2xl: 22px;
+  --text-2xl: 24px;
   --text-3xl: 28px;
   --text-4xl: 36px;
   --text-5xl: 48px;
@@ -172,6 +176,7 @@
   --spacing-cx-sm: 10px;
   --spacing-cx-md: 14px;
   --spacing-cx-lg: 18px;
+  --spacing-stat-card: 92px;
 
   /* ─── Container max-widths → max-w-* ─── */
   --container-content: 1280px; /* TOMS: content max-width 1280 + 24px gutters */
@@ -183,6 +188,51 @@
   --breakpoint-lg:  1024px;
   --breakpoint-xl:  1280px;
   --breakpoint-2xl: 1536px;
+}
+
+/* ───────────────────────────────────────────────────────
+   Charts (TOMS DS 2.0 · spec/charts.html) — categorical 8 + ramps +
+   structural tokens. In a `@theme static` block so Tailwind ALWAYS emits
+   these CSS vars to :root: the palette is referenced only at RUNTIME
+   (ChartStyle injects `--color-<series>: var(--color-chart-N)`), which the
+   class scanner can't see — a plain `@theme` tree-shakes the unused ones, so
+   chart-4+ silently vanished in light mode. `static` forces all of them out.
+   Dark overrides live in the [data-theme="dark"] block below.
+   ─────────────────────────────────────────────────────── */
+@theme static {
+  /* Categorical 8 — ordinal; always start at chart-1 and step.
+     Tuned for ≥3:1 distinguishability at 8px markers / 1.5px strokes. */
+  --color-chart-1: oklch(58% 0.18 262);   /* indigo — brand family */
+  --color-chart-2: oklch(64% 0.15 152);   /* teal-green */
+  --color-chart-3: oklch(64% 0.15 230);   /* sky-blue */
+  --color-chart-4: oklch(74% 0.15  70);   /* amber */
+  --color-chart-5: oklch(64% 0.17 320);   /* magenta */
+  --color-chart-6: oklch(62% 0.18  25);   /* red */
+  --color-chart-7: oklch(56% 0.10 200);   /* slate-blue */
+  --color-chart-8: oklch(64% 0.13 290);   /* violet */
+  /* Sequential ramp — heatmaps + density. 100 lightest → 700 darkest */
+  --color-chart-seq-100: oklch(95% 0.03 262);
+  --color-chart-seq-200: oklch(89% 0.06 262);
+  --color-chart-seq-300: oklch(82% 0.09 262);
+  --color-chart-seq-400: oklch(74% 0.12 262);
+  --color-chart-seq-500: oklch(66% 0.15 262);
+  --color-chart-seq-600: oklch(58% 0.17 262);
+  --color-chart-seq-700: oklch(50% 0.18 262);
+  /* Diverging ramp — variance vs target (neg ↔ neutral ↔ pos) */
+  --color-chart-div-neg: oklch(62% 0.15 25);
+  --color-chart-div-mid: oklch(80% 0.004 260);
+  --color-chart-div-pos: oklch(58% 0.18 262);
+  /* Structural — grid/axis/label/dim map onto this repo's line/content tokens
+     (TOMS source names border-subtle / text-tertiary). var()-based, so they
+     follow dark mode through the cascade — no dark override needed below. */
+  --color-chart-grid:        var(--color-line-subtle);
+  --color-chart-axis:        var(--color-content-tertiary);
+  --color-chart-label:       var(--color-content-tertiary);
+  --color-chart-dim:         color-mix(in oklch, var(--color-content-tertiary) 35%, transparent);
+  --color-chart-tooltip-bg:  oklch(18% 0.01 270);
+  --color-chart-tooltip-fg:  oklch(99% 0 0);
+  --color-chart-zoom-fill:   color-mix(in oklch, var(--color-primary-700) 8%, transparent);
+  --color-chart-zoom-stroke: color-mix(in oklch, var(--color-primary-700) 60%, transparent);
 }
 
 /* ───────────────────────────────────────────────────────
@@ -198,6 +248,27 @@
 @utility z-tooltip  { z-index: 1070; }
 @utility z-toast    { z-index: 1080; }
 @utility z-cmdk     { z-index: 1090; }
+
+/* ───────────────────────────────────────────────────────
+   Auto-fit responsive grids — column count follows the
+   CONTAINER's width (not viewport breakpoints): one column
+   when narrow, more as it widens. Defined here so consumers
+   never hand-write `grid-cols-[repeat(auto-fit,minmax(…))]`
+   (banned arbitrary value) and never miss the `min(…,100%)`
+   that keeps a column from overflowing a phone-width container.
+   The min-width is the per-archetype "wants to wrap" threshold —
+   named by use, since it depends on cell content, not a token:
+     -kv : label + value KV grids (e.g. detail Overview)
+   Add -card / -compact archetypes when their min is confirmed.
+   ─────────────────────────────────────────────────────── */
+@utility grid-auto-fit-kv {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+}
+
+@utility tracking-overline {
+  letter-spacing: 0.06em;
+}
 
 /* ───────────────────────────────────────────────────────
    shadcn semantic aliases — point to other theme vars.
@@ -247,6 +318,9 @@
    [data-theme="dark"] specificity (0,1,0) wins over :root.
    ─────────────────────────────────────────────────────── */
 [data-theme="dark"], .dark {
+  --color-avatar-bg: oklch(30% 0.006 260);
+  --color-avatar-fg: oklch(84% 0.005 260);
+
   --color-brand-mono:        oklch(86% 0.005 260);
   --color-brand-mono-strong: oklch(96% 0.003 260);
   --color-brand-mono-soft:   oklch(70% 0.006 260);
@@ -322,6 +396,29 @@
   --shadow-cta: inset 0 1px 0 oklch(100% 0 0 / 0.12),
                 0 1px 2px oklch(0% 0 0 / 0.6);
   --shadow-focus: 0 0 0 3px oklch(70% 0.13 264 / 0.40);
+
+  /* Charts · dark — same hues, lifted lightness for the dark canvas.
+     grid/axis/label/dim/zoom are var()-based above → follow automatically. */
+  --color-chart-1: oklch(66% 0.14 262);
+  --color-chart-2: oklch(68% 0.12 152);
+  --color-chart-3: oklch(68% 0.12 230);
+  --color-chart-4: oklch(74% 0.12  70);
+  --color-chart-5: oklch(68% 0.13 320);
+  --color-chart-6: oklch(66% 0.14  25);
+  --color-chart-7: oklch(62% 0.09 200);
+  --color-chart-8: oklch(68% 0.11 290);
+  --color-chart-seq-100: oklch(30% 0.06 262);
+  --color-chart-seq-200: oklch(38% 0.09 262);
+  --color-chart-seq-300: oklch(46% 0.13 262);
+  --color-chart-seq-400: oklch(56% 0.16 262);
+  --color-chart-seq-500: oklch(66% 0.16 262);
+  --color-chart-seq-600: oklch(76% 0.13 262);
+  --color-chart-seq-700: oklch(86% 0.09 262);
+  --color-chart-div-neg: oklch(70% 0.14 25);
+  --color-chart-div-mid: oklch(46% 0.004 260);
+  --color-chart-div-pos: oklch(70% 0.16 262);
+  --color-chart-tooltip-bg: oklch(26% 0.006 260);
+  --color-chart-tooltip-fg: oklch(94% 0.003 260);
 }
 
 @layer base {

@@ -7,7 +7,7 @@
 // wizard — a plain form with no steps. Cancel + Submit both live in a STICKY
 // header; the body is one centered column of section cards. No footer, no
 // summary rail, no done step. Reference implementation:
-// apps/web/app/(portal)/app/app-publish/new/_components/app-form.tsx
+// apps/admin/app/(portal)/app/app-publish/new/_components/app-form.tsx
 //
 // Style-only: static fields, no-op handlers. In a real page: useState for the
 // form, shared field components + one validation source (see §7), POST via
@@ -26,18 +26,19 @@ import {
   CardTitle,
   Field,
   Input,
+  PageBody,
   Textarea,
 } from "@cloud/ui";
 
 export function CreateFormTemplate() {
   return (
     <>
-      {/* §2.2 §7.1 — STICKY header band carrying both actions. In apps/web use
+      {/* §2.2 §7.1 — STICKY header band carrying both actions. In apps/admin use
           <PageHeader sticky actions={<>{cancel}{submit}</>} />. The band
           docks under the app header (the shell <main> is the scrollport) and its
           opaque bg-surface-2 masks content scrolling beneath it. */}
       <div className="sticky top-0 z-10 border-b border-line-subtle bg-surface-2">
-        <div className="flex flex-wrap items-end gap-x-4 gap-y-3 px-6 py-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-6 py-4">
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-semibold tracking-tight text-content-primary">
               New record
@@ -60,7 +61,7 @@ export function CreateFormTemplate() {
       </div>
 
       {/* §3 §7.1 — page body: one centered column of section cards at gap-6 */}
-      <div className="px-6 pt-6 pb-8">
+      <PageBody>
         <div className="mx-auto flex max-w-3xl flex-col gap-6">
           {/* Section card 1 — group fields by concern */}
           <Card elevation={1}>
@@ -100,7 +101,7 @@ export function CreateFormTemplate() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </PageBody>
     </>
   );
 }

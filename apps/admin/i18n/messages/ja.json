@@ -1,0 +1,137 @@
+{
+  "ui": {
+    "datePicker": {
+      "clear": "クリア",
+      "ok": "OK",
+      "placeholder": {
+        "date": "日付を選択",
+        "dateTime": "日時を選択",
+        "range": "期間を選択"
+      },
+      "presets": {
+        "today": "今日",
+        "last7": "過去 7 日間",
+        "last30": "過去 30 日間",
+        "thisMonth": "今月",
+        "lastMonth": "先月"
+      }
+    }
+  },
+  "dashboard": {
+    "title": "ダッシュボード",
+    "description": "このベースラインは、意図的にミニマルでありながら、従来の管理画面のリズムとレイアウトを維持します。",
+    "sessionActive": "セッション有効",
+    "currentAccount": "現在のアカウント",
+    "partner": "パートナー",
+    "roles": "ロール",
+    "panel": {
+      "title": "ダッシュボード",
+      "description": "このスキャフォールドは、コンパクトながら完全なデフォルトワークスペースを備えています。",
+      "welcome": "メインエリアはシンプルなウェルカムブロックから始まり、デフォルトメニューに役立つランディングページを提供します。",
+      "extend": "顧客、注文、設定など、任意の業務モジュールを追加して、このシェルの上に構築を続けられます。"
+    }
+  },
+  "errorPage": {
+    "title": "問題が発生しました",
+    "description": "サービスを一時的にご利用いただけません。後ほどお試しください。",
+    "retry": "再試行",
+    "home": "ワークスペースへ戻る",
+    "referenceLabel": "エラー番号",
+    "notFoundTitle": "ページが見つかりません",
+    "notFoundDescription": "お探しのページは存在しないか、移動されました。"
+  },
+  "account": {
+    "common": { "back": "戻る" },
+    "menu": {
+      "aria": "{name} メニュー",
+      "profile": "プロフィール",
+      "security": "アカウントとセキュリティ",
+      "securitySub": "パスワード · 2要素",
+      "partners": "パートナーを切り替え",
+      "theme": "テーマ",
+      "language": "言語",
+      "signOut": "サインアウト"
+    },
+    "theme": {
+      "light": "ライト",
+      "dark": "ダーク",
+      "system": "システムに合わせる",
+      "desc": {
+        "light": "日中の作業に適した明るい表示",
+        "dark": "暗い場所でも目に優しい表示",
+        "system": "OS の外観に従う"
+      },
+      "toast": {
+        "light": "テーマをライトに設定しました",
+        "dark": "テーマをダークに設定しました",
+        "system": "テーマをシステムに設定しました"
+      }
+    },
+    "signOut": {
+      "title": "サインアウトしますか？",
+      "cancel": "キャンセル",
+      "confirm": "サインアウト"
+    },
+    "profile": {
+      "title": "プロフィール",
+      "sub": "個人情報とサインインを管理します。",
+      "personal": "個人情報",
+      "displayName": "表示名",
+      "country": "国",
+      "signin": "サインインとセキュリティ",
+      "username": "ユーザー名",
+      "email": "メール",
+      "change": "変更",
+      "discard": "破棄",
+      "save": "変更を保存",
+      "nameRequired": "表示名を入力してください",
+      "saved": "プロフィールを更新しました"
+    },
+    "security": {
+      "title": "アカウントとセキュリティ",
+      "sub": "サインイン認証情報と多要素認証",
+      "signin": { "title": "サインイン", "sub": "会社ポリシーにより、パスワードは 90 日ごとにローテーションされます" },
+      "password": { "title": "パスワード", "metaUnknown": "会社ポリシーにより 90 日ごとにローテーション" },
+      "changePassword": "パスワードを変更",
+      "mfa": { "title": "多要素認証", "sub": "認証アプリがサインイン時に第二要素を追加します", "disabledToast": "二要素認証を無効にしました" },
+      "authenticator": {
+        "title": "認証アプリ",
+        "active": "有効",
+        "off": "未設定",
+        "activeSub": "サインイン時に認証アプリのコードが必要です",
+        "offSub": "アカウントを保護するために認証アプリを追加します"
+      },
+      "reconfigure": "再設定",
+      "disable": "無効化",
+      "enable": "有効化",
+      "disableModal": { "title": "二要素認証を無効にしますか？", "desc": "認証アプリの現在のコードを入力して二要素認証をオフにします。" }
+    },
+    "mfa": {
+      "cancel": "キャンセル",
+      "back": "戻る",
+      "done": "完了",
+      "enroll": {
+        "enableTitle": "認証アプリを設定",
+        "reconfigureTitle": "認証アプリを再設定",
+        "doneTitle": "認証アプリの準備完了",
+        "scanDesc": "認証アプリでこの QR コードをスキャンするか、セットアップキーを手動で入力してください。",
+        "setupKey": "スキャンできない場合はこのセットアップキーを入力",
+        "scanned": "スキャンしました",
+        "confirmDesc": "認証アプリに表示される 6 桁のコードを入力して確認します。",
+        "confirm": "確認",
+        "doneDesc": "認証アプリが設定されました。サインイン時にコードを求められます。"
+      }
+    },
+    "partners": {
+      "title": "パートナーを切り替え",
+      "sub": "あなたは {count} 社に所属しています。",
+      "joined": "参加日 {date}",
+      "adminAccess": "管理者アクセス",
+      "roleAccess": "ロールベースのアクセス",
+      "locked": "ロック中",
+      "noContract": "有効な契約なし",
+      "confirm": { "title": "{name} に切り替えますか？", "body": "現在の会社を {name} に切り替え、ワークスペースを再読み込みします。", "stay": "キャンセル", "leave": "切り替え" },
+      "toast": { "locked": "アクセスがロックされています · {name}", "current": "すでに {name} にいます" }
+    }
+  }
+}

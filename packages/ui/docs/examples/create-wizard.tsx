@@ -6,7 +6,7 @@
 // Compilable style skeleton for the portal CREATE (wizard) page shape — the
 // labels/fields below are neutral placeholders; reuse this shape in any module.
 // Reference implementation:
-// apps/web/app/(portal)/manage/customers/new/_components/customer-wizard.tsx
+// apps/admin/app/(portal)/manage/customers/new/_components/customer-wizard.tsx
 //
 // Style-only: static step, no-op handlers, <a> stands in for next/link. In a
 // real page: useState for step/form, shared field components + one validation
@@ -25,6 +25,7 @@ import {
   CardTitle,
   Field,
   Input,
+  PageBody,
   StepIndicator,
 } from "@cloud/ui";
 
@@ -49,9 +50,9 @@ const Dash = () => <span className="text-content-tertiary">—</span>;
 export function CreateWizardTemplate() {
   return (
     <>
-      {/* §2.2 — header band; escape action is ghost Cancel. Use <PageHeader/> (@cloud/ui/components/layout) in apps/web. */}
+      {/* §2.2 — header band; escape action is ghost Cancel. Use <PageHeader/> (@cloud/ui/components/layout) in apps/admin. */}
       <div className="border-b border-line-subtle bg-surface-2">
-        <div className="flex flex-wrap items-end gap-x-4 gap-y-3 px-6 py-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-6 py-4">
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-semibold tracking-tight text-content-primary">
               New record
@@ -67,7 +68,7 @@ export function CreateWizardTemplate() {
       </div>
 
       {/* §3 — page body */}
-      <div className="flex flex-col gap-6 px-6 pt-6 pb-8">
+      <PageBody>
         {/* §7 — step indicator wears card chrome */}
         <StepIndicator
           current={0}
@@ -77,39 +78,41 @@ export function CreateWizardTemplate() {
 
         {/* §7 — two-column row; a full-width step simply doesn't render the rail */}
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-          <div className="min-w-0 flex-1">
-            {/* Step card: flush head px-5 py-4 + text-md title; content keeps slot padding */}
-            <Card>
-              <CardHeader flush className="px-5 py-4">
-                <CardTitle className="text-md">Primary information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4.5">
-                  <Field label="Name" required>
-                    <Input placeholder="Display name" />
-                  </Field>
-                  <div className="grid grid-cols-2 gap-4.5">
-                    <Field label="Reference code">
-                      <Input placeholder="Optional identifier" />
+          <div className="flex min-w-0 flex-1 flex-col gap-6">
+            <div>
+              {/* Step card: flush head px-5 py-4 + text-md title; content keeps slot padding */}
+              <Card>
+                <CardHeader flush className="px-5 py-4">
+                  <CardTitle className="text-md">Primary information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4.5">
+                    <Field label="Name" required>
+                      <Input placeholder="Display name" />
                     </Field>
-                    <Field label="Owner">
-                      <Input placeholder="Responsible person" />
-                    </Field>
+                    <div className="grid grid-cols-2 gap-4.5">
+                      <Field label="Reference code">
+                        <Input placeholder="Optional identifier" />
+                      </Field>
+                      <Field label="Owner">
+                        <Input placeholder="Responsible person" />
+                      </Field>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {/* §7 — error banner (render under the step card when the POST fails) */}
-            <div
-              className="mt-3 rounded-md border border-error/30 bg-error-bg px-3 py-2 text-sm text-error-strong"
-              role="alert"
-            >
-              Failed to create record.
+              {/* §7 — error banner (render under the step card when the POST fails) */}
+              <div
+                className="mt-3 rounded-md border border-error/30 bg-error-bg px-3 py-2 text-sm text-error-strong"
+                role="alert"
+              >
+                Failed to create record.
+              </div>
             </div>
 
-            {/* §7 — footer nav: Back ghost (disabled on step 1) | Continue primary; last step → Create */}
-            <div className="mt-6 flex items-center justify-between">
+            {/* §7 — footer nav: right-aligned Back ghost + Continue primary; last step → Create */}
+            <div className="flex items-center justify-end gap-2">
               <Button
                 variant="ghost"
                 iconLeft={<ChevronLeft className="size-4" />}
@@ -147,7 +150,7 @@ export function CreateWizardTemplate() {
             </dl>
           </aside>
         </div>
-      </div>
+      </PageBody>
     </>
   );
 }

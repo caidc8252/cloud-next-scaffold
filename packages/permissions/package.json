@@ -9,6 +9,7 @@
     "./server": "./src/server/index.ts"
   },
   "dependencies": {
+    "@cloud/cache": "workspace:*",
     "@cloud/config": "workspace:*",
     "@cloud/db": "workspace:*",
     "server-only": "catalog:"

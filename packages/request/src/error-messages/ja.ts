@@ -19,7 +19,14 @@ import {
   ERR_ROLE_NAME_SHORT,
   ERR_ROLE_DELETE_BUILTIN,
   ERR_ROLE_DELETE_ASSIGNED,
+  ERR_MW_DB,
+  ERR_MW_CACHE,
+  ERR_MW_MAIL,
+  ERR_MW_UNKNOWN,
 } from "../error-codes.ts";
+
+// 中间件类四码共用同一句通用文案:差异只在 code(给开发/日志),不在文案(给客户)。
+const MW_UNAVAILABLE = "サービスを一時的にご利用いただけません。後ほどお試しください。";
 
 export const ja: ErrorMessages = {
   // 共通
@@ -44,4 +51,9 @@ export const ja: ErrorMessages = {
   [ERR_ROLE_NAME_SHORT]: "ロール名が短すぎます。",
   [ERR_ROLE_DELETE_BUILTIN]: "組み込みロールは削除できません。",
   [ERR_ROLE_DELETE_ASSIGNED]: "ユーザーが割り当てられているロールは削除できません。",
+  // ミドルウェア / インフラ（顧客向けは統一文言、開発は code で区別）
+  [ERR_MW_DB]: MW_UNAVAILABLE,
+  [ERR_MW_CACHE]: MW_UNAVAILABLE,
+  [ERR_MW_MAIL]: MW_UNAVAILABLE,
+  [ERR_MW_UNKNOWN]: MW_UNAVAILABLE,
 };

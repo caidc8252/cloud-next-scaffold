@@ -32,6 +32,8 @@ export interface VirtualTableProps<R> {
   onReachEnd?: () => void
   /** Footer shown while loading the next page. Defaults to a centered spinner. */
   loadingFooter?: React.ReactNode
+  /** Persistent footer rendered inside the scroll viewport, below the rows — e.g. a LoadMore button that's revealed only when scrolled to the bottom. */
+  footer?: React.ReactNode
 }
 
 // Windowed data table that shares the columns/sort/rowKey contract with <Table>.
@@ -89,6 +91,7 @@ export function VirtualTable<R>({
   isLoadingMore = false,
   onReachEnd,
   loadingFooter,
+  footer,
 }: VirtualTableProps<R>) {
   const scrollRef = React.useRef<HTMLDivElement | null>(null)
   const scrollEnabled = Boolean(onReachEnd)
@@ -211,6 +214,9 @@ export function VirtualTable<R>({
             })}
           </div>
         )}
+
+        {/* Persistent footer inside the scroll viewport (below the rows). */}
+        {footer != null && <div>{footer}</div>}
 
         {/* Scroll-loading sentinel + footer */}
         {scrollEnabled && (

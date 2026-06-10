@@ -37,16 +37,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ### 常规文档
 
 - README.md - 项目描述和使用指南
-- DEPLOYMENT.md - 部署指南
-- DEV_NOTE.md - 开发过程中积累的需要长期关注的事情，比如框架新知识、环境配置等
-  - 记录决策依据和最后决策，不需要详细记录做了什么
-  - 记录本项目中积累的基建、框架知识，避免日后重复踩坑
-  - 需要经常 review 此文档，作为日常知识储备
 
-### 临时文档
-
-- WIP.md - 开发计划、任务分解、待办事项等，主要面向中短期
-- TODO.md - 长期开发计划，未来要做的事情
 
 ## 开发流程
 
@@ -61,11 +52,49 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ### 目录约定
 
-- 登录前页面放在 `apps/web/app/(public)`
-- 登录后的后台页面放在 `apps/web/app/(portal)`
-- API 路由放在 `apps/web/app/api`
-- 共享服务端逻辑优先放在 `apps/web/lib` 或 `packages/*`
-- 当前基线已经把后台壳子接在 `app/(portal)` 上，大多数业务页面默认加在这里
+- 先判断代码归属，再决定目录：产品业务优先落到对应 `apps/*`；跨应用、跨业务可复用的能力才沉淀到 `packages/*`；测试、脚本、配置分别放到仓库既有目录，不要在业务目录里混放。
+- `apps/admin` 是后台管理应用，也是默认的业务开发主应用：
+  - 登录前页面放在 `apps/admin/app/(public)`。
+  - 登录后的后台页面放在 `apps/admin/app/(portal)`，当前后台壳子已经接在这里，大多数后台业务页面默认加在这里。
+  - API 路由放在 `apps/admin/app/api`，只做 HTTP 适配，不承载业务编排和数据库访问。
+  - 后台业务实现放在 `apps/admin/service/<domain>/`，按 schema / service / policy / repository / mapper 分层，详见下面「服务端分层」。
+  - 后台应用私有工具放在 `apps/admin/lib`；只在后台应用内复用的组件放在就近 `_components` 或 `apps/admin/app/_components`；菜单清单放在 `apps/admin/manifest`；后台文案放在 `apps/admin/i18n/messages`。
+- `apps/portal` 是面向外部用户的门户应用，不要把后台管理页面放进这里：
+  - 登录 / 注册等认证页面放在 `apps/portal/app/(auth)`。
+  - 门户控制台页面放在 `apps/portal/app/(console)`。
+  - 官网 / 营销 / 公开展示页面放在 `apps/portal/app/(marketing)`。
+  - 门户 API 路由放在 `apps/portal/app/api`；门户私有工具放在 `apps/portal/lib`；门户私有组件放在就近 `_components` 或 `apps/portal/app/_components`；门户文案放在 `apps/portal/i18n/messages`。
+- 如需新增新的应用，优先参考 `apps/admin` 的目录结构建立 `app` / `service` / `lib` / `manifest` / `i18n/messages` 等目录；仅按新应用实际职责裁剪，不要另起一套不兼容约定。
+- `packages/*` 只放项目级共享能力，新增前先检查现有包导出，避免重复造轮子：
+  - `packages/ui` 放共享 UI 组件、布局组件、主题能力和通用样式工具。
+  - `packages/request` 放客户端请求封装、服务端响应辅助、错误码和错误提示。
+  - `packages/permissions` 放登录态聚合、权限守卫和权限上下文。
+  - `packages/db` 放 Prisma schema、Client、seed 和数据库脚本入口。
+  - `packages/security` 放密码哈希、加解密等安全基础能力。
+  - `packages/storage` 放 S3 上传会话、浏览器直传、服务端上传和存储配置归一化。
+  - `packages/config` / `packages/platform-config` 放环境变量读取、配置校验和平台配置。
+  - `packages/i18n` 放 locale 清单、格式预设、cookie 常量和 i18n 薄封装。
+  - `packages/api-kit` 放 API handler 骨架和错误 mapper 组合。
+  - `packages/cache` 放跨应用可复用的缓存能力。
+- `e2e` 放端到端测试；单元测试 / 组件测试优先跟随被测代码就近放置，除非现有目录已有同类约定。
+- `scripts` 放仓库级脚本；只服务某个 package 或 app 的脚本优先放到对应包内，避免根目录脚本膨胀。
+- 根目录只放 monorepo 配置、构建配置、README / AGENTS / DEV_NOTE 等项目文档；不要在根目录新增业务代码。
+- `.next`、`node_modules`、构建产物、缓存目录和生成文件不要手改，也不要作为业务实现依赖。
+
+### 服务端分层（route / service / schema / policy / data）
+
+> 业务实现按层拆分，落在 `apps/admin/service/<domain>/`。**不要再把业务逻辑堆在 route handler 里，也不要放进 route 目录下的 `_server/`**——`_server/` 是历史遗留写法（lint 会拦 route 直接 import `*.repository` / `*.mapper` / `@cloud/db`），见到顺手迁到 `service/`。
+
+- **route**（`app/api/**/route.ts`）：只做 HTTP 适配。顺序 `assertPermissions → 解析参数 / zod parse → 调 service → 返回 envelope`，整体包在 `withApiHandler` 里。route **不直接 `import @cloud/db`**，也不直接 import `*.repository` / `*.mapper`，只依赖 service（需要 mapper 的纯 helper 时由 service re-export 转出）。
+- **schema**（`service/<domain>/schemas/<domain>.schema.ts`）：client + server 共享的 zod，在 route parse、不在 service 里 parse。放在 `server/` 外面，因为客户端表单也要 import。
+- **service**（`service/<domain>/server/<domain>.service.ts`）：业务编排。入参是「已解析的类型化数据 + 当前会话」，**绝不接收 `Request` / `NextRequest` / `URLSearchParams`**。可预期错误一律 `throw BusinessError`，由 route 的 `withApiHandler` 统一兜底。
+- **policy**（`service/<domain>/server/<domain>.policy.ts`）：范围 / 实体级权限校验（例如「这条记录是否属于当前租户」「当前用户能否改这个目标」），尽量写成纯函数便于单测。
+- **data**（`service/<domain>/server/<domain>.repository.ts` + `*.mapper.ts`）：repository 只做 prisma 查询 / 变更，无 session / 权限 / HTTP 感知；mapper 只做 Entity → VO。
+- `server/` 下所有文件加 `import "server-only"`。
+- 跨 domain 复用的纯 helper（如解析角色 JSONB 的 `service/_shared/role-codes.ts`）放 `service/_shared/`，不要让一个 domain reach 进另一个 domain 的 `server/`。
+- 页面保持薄：`page.tsx` 只做顶层取数 + 组合，取数同样调 service（与 route 复用同一套 repository / service），不在 page 里手写 prisma 查询。
+- 两层权限：route 做粗粒度码校验（`assertPermissions(['xxx.UPD'])`），service / policy 做范围校验；按钮显隐只是体验层，不是安全边界。
+- 当前进度：`users` 域已按此结构迁好，可作样板参考（`apps/admin/service/users/`）；其余域逐步迁移。
 
 ### 共享能力复用
 
@@ -83,6 +112,18 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - `@cloud/config`：环境变量读取、配置校验、密码策略等基础配置能力
   - `@cloud/i18n`：`next-intl` 薄封装，固定 locale 清单、自定义 locale/时区 cookie、英文基底 + 深合并、格式预设、`TimeZoneInit`、locale/时区 server action（`@cloud/i18n/actions`）
   - `@cloud/api-kit`：API 兜底骨架 `createApiHandler`（控制流重抛 + `runWithLocale` 包装 + 未知异常 500），及本栈默认件 `mapAuthzError` / `mapPrismaError` / `resolveLocaleFromCookie` / `composeMappers`；各 app 在自己的 `lib/api-handler.ts` 里注入 config 组装出 `withApiHandler` / `handleApiError`
+
+### 能力归属与配置注入（架构 rule，持续维护）
+
+> 本节是踩坑沉淀的硬规则，新增/调整能力归属时回来更新，别让它过期。
+
+- **能力的两端不要拆散**：一个能力若同时有客户端和服务端实现（加解密、请求封装、权限上下文、上传直传等），**整体沉淀进同一个 `packages/*` 包**，用 `./client` / `./server` 双入口（分别加 `client-only` / `server-only` 守卫），不要把其中一端留在 `apps/*` 里平行实现。
+  - 反例（本仓真实踩坑）：RSA 登录加密——解密放了 `@cloud/security/server`，却差点把浏览器端加密写在 `apps/admin`。正确做法是同包加 `@cloud/security/client` 的 `encryptRsaOaep`，与 `server` 的 `decryptRsaOaep` 成对。
+  - 判断「该不该进包」：跨业务可复用、职责边界清晰 → 进包双入口；仅当前页面私有逻辑 → 留业务目录，别过早抽公共层。
+- **包只做纯能力，配置由业务侧注入**：密钥、凭证、连接串、bucket、私钥/公钥等**运行期配置不在包内读 `.env`**，由业务侧（`@cloud/config` 或路由）读出后作为参数显式传入包函数（沿用 `@cloud/storage` 的 S3 配置注入范式）。
+  - 包函数签名优先 `fn(input, config)`，而不是 `fn(input)` 内部偷读 env。
+- **部署相关的常量留在 app**：写死前端的公钥 PEM、对外 URL、展示名等部署/环境相关字面量留在 `apps/*`（如薄 wrapper），不进通用包；通用包保持与具体部署解耦。
+- 新增包能力前，先按上面三条自检：两端是否拆散了？是否在包里偷读 env？是否把部署常量塞进了包？
 
 ### 存储与 S3
 
@@ -103,15 +144,16 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ### 页面开发
 
-- 新增后台页面时，优先在 `apps/web/app/(portal)` 下创建路由目录和 `page.tsx`
+- 新增后台页面时，优先在 `apps/admin/app/(portal)` 下创建路由目录和 `page.tsx`
 - App Router 页面组件默认使用服务端组件，除非有明确交互需求再加 `"use client"`
 - 只需要登录态的页面，调用 `requireSession()`
 - 页面本身有明确权限要求时，优先调用 `requirePermissions()`，不要只在前端做按钮显隐
+- 页面保持薄：`page.tsx` 只做鉴权 + 顶层取数 + 组合，取数调对应 domain 的 service（见「服务端分层」），不在 page 里手写 prisma 查询或业务逻辑
 - 页面级异常兜底沿用现有文件：
-  - `apps/web/app/(portal)/error.tsx`
-  - `apps/web/app/(public)/error.tsx`
-  - `apps/web/app/global-error.tsx`
-  - `apps/web/app/not-found.tsx`
+  - `apps/admin/app/(portal)/error.tsx`
+  - `apps/admin/app/(public)/error.tsx`
+  - `apps/admin/app/global-error.tsx`
+  - `apps/admin/app/not-found.tsx`
 - 调整错误边界前先阅读 `node_modules/next/dist/docs/` 中当前 Next.js 版本的错误处理约定；当前错误边界重试入口是 `unstable_retry()`
 
 ### 菜单约定
@@ -127,7 +169,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ### 鉴权与权限
 
 - 登录态与权限守卫优先直接从 `@cloud/permissions/server` 引入，不要在业务代码里继续写很深的相对路径
-- `apps/web/lib/auth.ts` 目前只保留兼容导出，默认不要作为新代码入口
+- `apps/admin/lib/auth.ts` 目前只保留兼容导出，默认不要作为新代码入口
 - `getSession()` 用于读取会话，未登录时返回 `null`
 - `requireSession()` 用于强制登录，未登录时会跳转并清理状态
 - `assertPermissions()` 用于接口 / Route Handler 的服务端权限校验
@@ -156,7 +198,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ### 接口与请求
 
 - 本项目不使用 Server Action
-  - 所有表单提交、数据 mutation 一律走 Route Handler（`apps/web/app/api/*`）
+  - 所有表单提交、数据 mutation 一律走 Route Handler（`apps/admin/app/api/*`）
   - 鉴权、登录、选择组织等公开页面的提交同样走 API，不写 `"use server"` action
   - 客户端用 `@cloud/request/client` 调接口，拿到返回后再自行用 `useRouter()` 跳转
   - 历史遗留的 Server Action 见到即顺手改成 API，不要新增
@@ -164,9 +206,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 客户端使用 `@cloud/request/client`
 - 客户端收到「会话失效类」401 会自动跳登出，机制在包、策略在 app，**不要在业务组件里手写 401 跳转**：
   - 包：`@cloud/request/client` 的 `setUnauthorizedHandler(fn)` 在 `status===401` 时回调 `fn(RequestError)`，然后照常 throw（不吞错，组件原有 `catch` / `toastError` 不变）；包不认识任何 app 路由或错误码
-  - 策略：`apps/web/lib/session-expiry.ts` 的 `handleUnauthorized` 按**白名单 code** 决定是否登出——`{ "unauthenticated", ERR_UNAUTHORIZED, ERR_AUTH_NOT_AUTHENTICATED }` 命中才 `window.location.replace("/api/auth/logout")`（与服务端 `requirePermissions` 401 出口一致：清残留 cookie → 303 `/login`）；模块级 `redirecting` 锁防并发重复跳
+  - 策略：`apps/admin/lib/session-expiry.ts` 的 `handleUnauthorized` 按**白名单 code** 决定是否登出——`{ "unauthenticated", ERR_UNAUTHORIZED, ERR_AUTH_NOT_AUTHENTICATED }` 命中才 `window.location.replace("/api/auth/logout")`（与服务端 `requirePermissions` 401 出口一致：清残留 cookie → 303 `/login`）；模块级 `redirecting` 锁防并发重复跳
   - 登录页凭证错误 `ERR_AUTH_INVALID_CREDENTIALS` 也是 401，但**刻意不在白名单**，不会误跳；新增 401 码默认不触发登出，属于「会话失效」语义才往白名单补
-  - 注册：`apps/web/app/_components/unauthorized-redirect.tsx`（tiny client 组件）在根 layout 挂一次
+  - 注册：`apps/admin/app/_components/unauthorized-redirect.tsx`（tiny client 组件）在根 layout 挂一次
 - 服务端响应优先使用 `@cloud/request/server` 提供的响应辅助函数
 - 成功 JSON 响应必须走 `successResponse()` / `createdResponse()`，body 形状为 `{ code: "OK", message: "success", data, page?, limit?, total?, totalPages?, nextCursor?, prevCursor?, hasNextPage?, hasPrevPage?, traceId }`，分页字段与 `data` 同级
 - DELETE 或其他无需 body 的接口使用 `noContentResponse()` 返回 204，response body 必须为空
@@ -175,14 +217,18 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - 双向游标分页统一走 `@cloud/request/server` 的 `readCursorQuery(token, direction)` + `buildCursorPage()`，配合 `CursorPager`，响应带 `nextCursor` / `prevCursor` / `hasNextPage` / `hasPrevPage`
   - 游标 token 由服务端 `encodeCursor()` 签发、只编码锚点 id、对客户端不透明；翻页方向是独立的 `direction` 参数，由客户端显式传，**不编进 token**
   - 服务端按 `query.sortOrder` 设 `orderBy`、`take: limit + 1` 多取一条探测，再交给 `buildCursorPage()` 切片、翻回升序、签发双向游标；不要在 Route Handler 里手写这套逻辑
-  - 客户端用 `apps/web/lib/use-cursor-pagination.ts` 的 `useCursorPagination()` 原样回传服务端给的游标 + 方向，**绝不从行 id 自己拼游标**，也不缓存历史游标
-- 新增接口时，优先放在 `apps/web/app/api/*`
-- Route Handler 默认同时做两层判断：
-  - 登录态 / 权限：优先用 `assertPermissions()`
-  - 业务归属校验：例如 `entityId`、`roleId`、`userId` 是否属于当前租户
-- Route Handler 的异常兜底统一走 `apps/web/lib/api-handler.ts`
-  - 可预期的业务校验错误显式返回 `badRequestResponse()`、`notFoundResponse()`、`errorResponse()` 等响应
-  - 不要用 `throw new Error("A valid email is required.")` 表达参数校验、业务冲突、数据不存在这类 expected error
+  - 客户端用 `apps/admin/lib/use-cursor-pagination.ts` 的 `useCursorPagination()` 原样回传服务端给的游标 + 方向，**绝不从行 id 自己拼游标**，也不缓存历史游标
+- 新增接口时，优先放在 `apps/admin/app/api/*`，且**只做 HTTP 适配**，业务逻辑落到 `service/<domain>/`（见「服务端分层」）
+- Route Handler 默认做两层权限：
+  - 登录态 / 粗粒度权限码：优先用 `assertPermissions()`（在 route 里做）
+  - 业务归属 / 范围校验：例如 `entityId`、`roleId`、`userId` 是否属于当前租户——落在 service / policy 层
+- Route Handler 的异常兜底统一走 `apps/admin/lib/api-handler.ts`（设计与示例见 `docs/exception-handling.md`）
+  - **业务异常一律 throw 类型化异常，不再 return 错误响应**：参数校验、业务冲突、数据不存在等可预期错误用 `throw new BusinessError(code, status?, params?)`（`@cloud/request`），由 `withApiHandler` 捕获后统一出 40x `{ code, message, traceId }`
+    - `code` 走 `PMMNNN` 数字码（注册表内才本地化）；`status` 限 `400|401|403|404|409|422`，默认 400；`params` 是 `{name}` 占位插值参数，渲染进文案、不进响应体
+    - 中间件/基础设施故障（DB 连接、Redis、邮件等）用 `throw new MiddlewareError(ERR_MW_*)`，统一掩码成 503 通用文案（对客户不透明，开发凭 code + traceId 在日志识别）
+    - 开发者诊断信息自己 `console.error` 打（`BusinessError` 不带 devMessage）；所有被捕获的异常都会连堆栈进日志
+  - **仍然禁止 `throw new Error("文本字符串")`** 表达业务错误——要带稳定 `code`，用 `BusinessError` / `MiddlewareError`，不要裸 `Error`
+  - `badRequestResponse()` / `notFoundResponse()` / `errorResponse()` 降级为「mapper 内部构造 Response 用」，业务代码不再直接调用；rsc 页面级预期错误仍走 `notFound()` / `redirect("/403")`
   - 默认用 `withApiHandler()` 包裹整个 handler，不要在每个文件里手写 `try { ... } catch (error) { return handleApiError(error) }`
     - 写法：`export const POST = withApiHandler(async (req) => { ... })`
     - 带动态路由参数时第二个参数照常透传：`withApiHandler(async (req, { params }) => { ... })`
@@ -205,8 +251,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ### 国际化 / i18n
 
 - **页面文案禁止硬编码**：所有面向用户的可见文案（页面、组件、表单、按钮、提示、空态、错误展示等）一律走 i18n，从 message 取，不在 JSX / 字符串里写死中英文字面量
-  - 客户端组件用 `useTranslations`，RSC 用 `getTranslations`，文案落到 `apps/web/i18n/messages/`，`en.json` 为基底
-  - 新增文案先补 key（en 必填，其余 locale 只写差异，缺 key 自动回退英文），再在页面引用，不要先硬编码再说
+  - 客户端组件用 `useTranslations`，RSC 用 `getTranslations`，文案落到 `apps/admin/i18n/messages/`，`en.json` 为基底
+  - 新增文案先补 key，再在页面引用，不要先硬编码再说
+  - 新增或修改面向用户的文案时，`en` / `zh-CN` / `ja` 三种 locale 都要同步补齐；初版可以先用机器翻译占位，但不要只写英语依赖回退
   - 例外：日志、调试信息、不展示给用户的内部标识不强制
 - 国际化统一走 `@cloud/i18n`（`next-intl` 薄封装），**禁止在业务或 UI 里直接 import `next-intl`**，lint 会拦
   - RSC / route handler 用 `@cloud/i18n/server`（`createI18nRequestConfig` / `deepMerge` / `set*Action`）
@@ -215,10 +262,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - locale 清单固定为 `["en", "zh-CN", "ja"]`，一律 `import { locales }`，不要在应用层重写数组；增删语言改 `packages/i18n`
 - cookie 名用常量 `LOCALE_COOKIE` / `TZ_COOKIE`，禁止硬编码 `"NEXT_LOCALE"`、`"locale"` 字面量
 - locale / 时区收窄用 `isLocale(x)`，禁止 `as Locale`；`set*Action` 对非法输入静默 no-op，需要给用户反馈就在输入边界自行校验
-- message 以 `en` 为基底，其余 locale 只写差异，缺 key 自动回退英文；不要把各 locale 写成全量副本
+- message 以 `en` 为基底，其余 locale 只写与英文不同的 key，缺 key 自动回退英文；回退只作为兼容兜底，不作为新增文案时偷懒不翻译的理由
 - namespace 用点分层级、与模块对应（`auth.login.*`、`system.users.*`、`ui.datePicker.*`）；`ui.*` 命名空间归 `@cloud/ui` 占用，使用其日期组件的页面必须提供 `ui.datePicker.*`，否则开发期触发 missing message
 - 数字 / 日期格式化走 `formats` 预设（`useFormatter` + `numberFormats` / `dateTimeFormats`），不在业务里散落 `Intl.NumberFormat` 配置；新增样式改 `packages/i18n` 的 `formats.ts`
-- 切换语言 / 时区只通过 `set*Action`（`@cloud/i18n/actions`）+ `router.refresh()`，不自己写 cookie；语言切换 UI（`LocaleSwitcher`）在 `apps/web` 用 `@cloud/ui` 的 `Popover` 组合（不用 `DropdownMenu`：header 是 `sticky z-sticky`，而 `DropdownMenuContent` 钉死 `z-50` 且不暴露 Positioner className，会被 header 盖住；`Popover` 用 `z-popover` 高于 header），不放回 `@cloud/i18n`（否则与 `@cloud/ui → @cloud/i18n` 循环依赖）
+- 切换语言 / 时区只通过 `set*Action`（`@cloud/i18n/actions`）+ `router.refresh()`，不自己写 cookie；语言切换 UI（`LocaleSwitcher`）在 `apps/admin` 用 `@cloud/ui` 的 `Popover` 组合（不用 `DropdownMenu`：header 是 `sticky z-sticky`，而 `DropdownMenuContent` 钉死 `z-50` 且不暴露 Positioner className，会被 header 盖住；`Popover` 用 `z-popover` 高于 header），不放回 `@cloud/i18n`（否则与 `@cloud/ui → @cloud/i18n` 循环依赖）
 - 开发期 `missing message` 抛错是特性，补 key，不要去关 `getMessageFallback`
 - 接入新应用必须四件套齐全：`withNextIntl` 插件 → request config 调 `createI18nRequestConfig` → root layout 包 `NextIntlClientProvider` → 树内挂 `TimeZoneInit`；root layout 的 `<html lang>` 读实际 locale，不要硬编码
 
@@ -250,6 +297,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - 函数使用动词或动宾短语命名，类使用名词命名，bool 变量使用 is/has/can 开头
 - 单组件、库、脚本的长度不要超过 400 行，尽量控制在 300 行附近
 - 适量注释，配置项、变量要足够
+- 新增或迁移代码要适当补充注释，优先解释业务意图、架构边界、兼容壳、迁移原因和安全取舍；不要写复述代码表面行为的注释
 
 
 
@@ -262,3 +310,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 如果数据库的 key 名没有重复和歧义，尽量保持所有的表一致。
 数据的关联关系大部分都是通过关联关系表进行查询。 除非是为了性能优化，且 关联关系值为单值。 数组是不行的 
+
+### 已批准例外：角色/权限关联用 JSONB 数组
+
+- 对齐系统 DB 脚本（Partner/Contract/Role/User/MFA/Invite）后，**两处**关联刻意用 JSONB 数组替代关联表，是上面「数组不行」规则的**已批准例外**：
+  - `sys_partner_user.roles`：用户在某 partner 下绑定的角色，`List<{roleId}>`，取代旧 `sys_user_role` join 表
+  - `sys_role.permission_codes`：角色含的权限码，`List<string>`，取代旧 `sys_role_permission` join 表
+- 理由：读多写少、反查频率低（「哪些用户绑角色 X / 哪些角色含权限 Y」），会话聚合一次性读出后在内存里派生；脚本也为这两列配了 GIN 反查索引意图（Prisma 暂不发 GIN，反查走 `array_contains`）。
+- **不要扩大这个例外**：新增关联关系仍默认走关联表；只有同样满足「读多写少 + 单一聚合入口 + 反查低频」时，回到本节讨论后再加。

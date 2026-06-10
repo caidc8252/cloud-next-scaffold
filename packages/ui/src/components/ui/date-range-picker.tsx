@@ -210,12 +210,26 @@ function DateRangePicker({
         <Calendar
           mode="range"
           selected={draft}
-          onSelect={(range) => {
-            setDraft(range)
-            if (range?.from && range.to) {
-              setValue({ from: range.from, to: range.to })
-              setOpen(false)
+          // react-day-picker 受控、且当前 selected 是 { from, to: undefined } 中间态时，
+          // 第二次点击会把起点重置成新 from、而不是补终点（选不出范围）。这里保留 onSelect
+          // 以维持受控（让 selected={draft} 真正驱动渲染），但忽略它回传的 range，改用第二个
+          // 参数 triggerDate（本次点击的那一天）自己管理两次点击：第一下设起点，第二下补终点、
+          // 规范化先后、提交并关闭。
+          onSelect={(_range, triggerDate, modifiers) => {
+            if (modifiers.disabled || !triggerDate) return
+            // react-day-picker 第一次点击就回传 { from, to: from }（from=to），会让
+            // 「range.from && range.to」误判为已完成、第一次点就关闭。改用 triggerDate（本次
+            // 点击日）配合我们自己的 draft 阶段：无起点→设起点；已有起点无终点→补终点、规范化
+            // 先后、提交并关闭。
+            if (!draft?.from || draft.to) {
+              setDraft({ from: triggerDate, to: undefined })
+              return
             }
+            const from = draft.from <= triggerDate ? draft.from : triggerDate
+            const to = draft.from <= triggerDate ? triggerDate : draft.from
+            setDraft({ from, to })
+            setValue({ from, to })
+            setOpen(false)
           }}
           locale={dateFnsLocale}
           disabled={combineDisabledDays(minDate, maxDate, disabledDays)}

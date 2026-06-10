@@ -1,10 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
 import { AuthzError } from "@cloud/permissions/server";
-import { ERR_INTERNAL, ERR_UNAUTHORIZED } from "@cloud/request/error-codes";
+import { BusinessError, MiddlewareError } from "@cloud/request";
+import {
+  ERR_INTERNAL,
+  ERR_MW_CACHE,
+  ERR_MW_DB,
+  ERR_ROLE_DELETE_ASSIGNED,
+  ERR_UNAUTHORIZED,
+} from "@cloud/request/error-codes";
 import {
   composeMappers,
   createApiHandler,
+  mapAppError,
   mapAuthzError,
+  mapMiddlewareError,
   mapPrismaError,
   type ApiErrorMapper,
 } from "./index.ts";
@@ -124,5 +133,55 @@ describe("mapPrismaError", () => {
 
   it("returns null for non-Prisma errors", () => {
     expect(mapPrismaError(new Error("plain"))).toBeNull();
+  });
+
+  it("maps connection-level P1001 to the masked ERR_MW_DB 503", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const response = mapPrismaError(prisma("P1001"));
+    expect(response?.status).toBe(503);
+    expect((await readBody(response!)).code).toBe(ERR_MW_DB);
+    spy.mockRestore();
+  });
+});
+
+describe("mapAppError", () => {
+  it("maps BusinessError to its status + code (and localizes the message)", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const response = mapAppError(new BusinessError(ERR_ROLE_DELETE_ASSIGNED, 409, { count: 3 }));
+    expect(response?.status).toBe(409);
+    const body = await readBody(response!);
+    expect(body.code).toBe(ERR_ROLE_DELETE_ASSIGNED);
+    expect(body.message).not.toContain("undefined");
+    spy.mockRestore();
+  });
+
+  it("maps MiddlewareError to a 503 with the masked code", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const response = mapAppError(new MiddlewareError(ERR_MW_CACHE));
+    expect(response?.status).toBe(503);
+    expect((await readBody(response!)).code).toBe(ERR_MW_CACHE);
+    spy.mockRestore();
+  });
+
+  it("returns null for non-AppError errors", () => {
+    expect(mapAppError(new Error("plain"))).toBeNull();
+  });
+});
+
+describe("mapMiddlewareError", () => {
+  it("maps ioredis-specific errors to the masked ERR_MW_CACHE 503", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const redisError = Object.assign(new Error("Reached the max retries"), {
+      name: "MaxRetriesPerRequestError",
+    });
+    const response = mapMiddlewareError(redisError);
+    expect(response?.status).toBe(503);
+    expect((await readBody(response!)).code).toBe(ERR_MW_CACHE);
+    spy.mockRestore();
+  });
+
+  it("returns null for ambiguous / non-redis errors", () => {
+    expect(mapMiddlewareError(new Error("plain"))).toBeNull();
+    expect(mapMiddlewareError(Object.assign(new Error("x"), { code: "ECONNREFUSED" }))).toBeNull();
   });
 });

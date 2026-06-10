@@ -29,8 +29,11 @@ const toggleVariants = cva(
         outline: "bg-transparent",
       },
       size: {
+        // Fixed-height control sizes. Use size="auto" for content-driven
+        // toggles; className="h-auto" does not dedupe custom h-control-*.
         sm: "h-control-sm px-cx-sm text-xs",
         md: "h-control-md px-cx-md text-sm",
+        auto: "gap-1.5 px-cx-md py-2 text-sm",
       },
     },
     defaultVariants: { variant: "default", size: "md" },
@@ -43,6 +46,7 @@ interface ToggleProps
 
 // Press-toggle button with on/off state. Used standalone or as a child of <ToggleGroup>.
 // pressed/defaultPressed/onPressedChange follow the base-ui Toggle contract.
+// size: sm/md are fixed-height controls; auto is content-driven for option cards.
 function Toggle({
   className,
   variant,

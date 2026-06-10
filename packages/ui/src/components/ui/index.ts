@@ -1,6 +1,6 @@
 export { Button, buttonVariants } from './button'
 export { Combobox, type ComboboxOption, type ComboboxProps } from './combobox'
-export { Badge, badgeVariants } from './badge'
+export { Badge, badgeVariants, type BadgeShape, type BadgeTone } from './badge'
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction, CardFooter } from './card'
 export { Field, type FieldProps } from './field'
 export { Input } from './input'
@@ -21,7 +21,18 @@ export { Toaster, toast } from './sonner'
 export { Table, type TableProps, type TableColumn, type SortDir } from './table'
 export { VirtualTable, type VirtualTableProps } from './virtual-table'
 export { Pagination, type PaginationProps } from './pagination'
-export { KpiTile, type KpiTileProps } from './kpi-tile'
+export { RichPagination, type RichPaginationProps } from './rich-pagination'
+export { LoadMore, type LoadMoreProps } from './load-more'
+export {
+  StatCard,
+  StatCard as KpiTile,
+  StatGrid,
+  type StatCardProps as KpiTileProps,
+  type StatCardProps,
+  type StatCardTrend,
+  type StatCardVariant,
+  type StatTrendDirection,
+} from './stat-card'
 export { InitialsTile, type InitialsTileProps } from './initials-tile'
 export { ThemeToggle } from './theme-toggle'
 export {
@@ -31,7 +42,12 @@ export {
 
 // New components
 export { Alert, AlertTitle, AlertDescription, AlertAction } from './alert'
-export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './accordion'
+export {
+  AlertDialog, AlertDialogTrigger, AlertDialogPortal, AlertDialogOverlay,
+  AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
+} from './alert-dialog'
+export { Accordion, AccordionItem, AccordionTrigger, AccordionContent, type AccordionTriggerProps } from './accordion'
 export { AspectRatio } from './aspect-ratio'
 export { Avatar, AvatarImage, AvatarFallback, AvatarGroup } from './avatar'
 export {
@@ -48,6 +64,8 @@ export {
   type DateRangePreset,
 } from './date-range-picker'
 export { DateTimePicker, type DateTimePickerProps } from './date-time-picker'
+export { DateTimeRangePicker, type DateTimeRangePickerProps } from './date-time-range-picker'
+export { TimePicker, type TimePickerProps } from './time-picker'
 export {
   type CarouselApi, Carousel, CarouselContent, CarouselItem,
   CarouselPrevious, CarouselNext, CarouselDots, useCarousel,

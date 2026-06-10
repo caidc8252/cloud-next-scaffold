@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { usePathname } from 'next/navigation'
 import { cn } from '../../lib/utils'
 import { useSidebar } from '../../lib/sidebar'
 import { Sheet, SheetContent, SheetTitle } from '../ui/sheet'
@@ -20,6 +21,12 @@ export const Layout: React.FC<{
   className?: string
 }> = ({ sidebar, header, children, className }) => {
   const { collapsed, mobileOpen, setMobileOpen } = useSidebar()
+  const pathname = usePathname()
+  const scrollRootRef = React.useRef<HTMLElement | null>(null)
+
+  React.useEffect(() => {
+    scrollRootRef.current?.scrollTo({ top: 0, left: 0 })
+  }, [pathname])
 
   return (
     <div className={cn('flex h-screen overflow-hidden', className)}>
@@ -50,54 +57,14 @@ export const Layout: React.FC<{
             {header}
           </header>
         )}
-        <main className="flex-1 overflow-y-auto bg-surface-1">
+        <main
+          ref={scrollRootRef}
+          data-layout-scroll-root
+          className="flex-1 overflow-y-auto bg-surface-1"
+        >
           {children}
         </main>
       </div>
     </div>
   )
 }
-
-export interface GridProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** @default 12 */
-  columns?: number
-  /** Accepts any CSS length or a design-token var e.g. 'var(--space-4)'; @default 'var(--space-4)' */
-  gap?: number | string
-}
-
-// CSS grid wrapper. columns defaults to 12; gap accepts any CSS length or design-token var.
-export const Grid: React.FC<GridProps> = ({ columns = 12, gap = 'var(--space-4)', style, children, ...rest }) => (
-  <div
-    style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, gap, ...style }}
-    {...rest}
-  >
-    {children}
-  </div>
-)
-
-export interface GridItemProps extends React.HTMLAttributes<HTMLDivElement> {
-  span?: number
-}
-
-// Grid child. span: number of columns to occupy (default 1). Sets minWidth:0 to prevent overflow.
-export const GridItem: React.FC<GridItemProps> = ({ span = 1, style, ...rest }) => (
-  <div style={{ gridColumn: `span ${span} / span ${span}`, minWidth: 0, ...style }} {...rest} />
-)
-
-export interface StackProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** @default 'column' */
-  direction?: 'row' | 'column'
-  /** Accepts any CSS length or a design-token var e.g. 'var(--space-3)'; @default 'var(--space-3)' */
-  gap?: number | string
-  align?: React.CSSProperties['alignItems']
-  justify?: React.CSSProperties['justifyContent']
-  wrap?: boolean
-}
-
-// Flex container. direction: 'column'(default)|'row'; gap defaults to var(--space-3). Accepts align, justify, wrap.
-export const Stack: React.FC<StackProps> = ({ direction = 'column', gap = 'var(--space-3)', align, justify, wrap, style, ...rest }) => (
-  <div
-    style={{ display: 'flex', flexDirection: direction, gap, alignItems: align, justifyContent: justify, flexWrap: wrap ? 'wrap' : undefined, ...style }}
-    {...rest}
-  />
-)

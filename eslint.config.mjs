@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import { nextKitGuardrail } from './eslint.nextkit.mjs';
 
 export default defineConfig([
   ...nextVitals,
@@ -26,4 +27,6 @@ export default defineConfig([
     ".agents/**",
     ".playwright-mcp/**",
   ]),
+  // next-kit:eslint-restricted-imports v6
+  ...nextKitGuardrail({ appApi: ["apps/*/app/api/**/*.{ts,tsx,js,jsx}"] }),
 ]);

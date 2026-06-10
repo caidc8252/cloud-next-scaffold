@@ -1,59 +1,107 @@
 import "server-only";
 
+import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
+import { kv } from "@cloud/cache";
 import {
-  decodeSession,
-  encodeSession,
-  SESSION_COOKIE,
-  SESSION_TTL_SECONDS,
-  type SessionPayload,
-} from "./session.ts";
+  SID_COOKIE,
+  SID_COOKIE_MAX_AGE_SECONDS,
+  sessionStore,
+  type Session,
+} from "./session-store.ts";
 
-function getCookieOptions() {
+// 会话快照由 app 层构建后传入；
+// 这里只负责把 sid 写进 cookie、把快照落 / 删 Redis，不碰 manifest / DB。
+export type SessionSnapshotInput = Omit<Session, "loginAt" | "expireAt">;
+
+const HANDOFF_TTL_SECONDS = 60;
+const handoffKey = (token: string) => `session-handoff:${token}`;
+
+type SessionHandoff = {
+  sid: string;
+  createdAt: number;
+};
+
+function cookieOptions() {
+  const domain = process.env.SESSION_COOKIE_DOMAIN?.trim();
   return {
     httpOnly: true,
     sameSite: "lax" as const,
     path: "/",
     secure: process.env.NODE_ENV === "production",
-    maxAge: SESSION_TTL_SECONDS,
+    maxAge: SID_COOKIE_MAX_AGE_SECONDS,
+    ...(domain ? { domain } : {}),
   };
 }
 
-async function writeSessionCookie(payload: SessionPayload) {
+async function setSidCookie(sid: string): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, encodeSession(payload), getCookieOptions());
+  cookieStore.set(SID_COOKIE, sid, cookieOptions());
 }
 
-export async function createSession(userId: number, entityId: number | null) {
-  const expiresAt = Date.now() + SESSION_TTL_SECONDS * 1000;
-  await writeSessionCookie({ userId, entityId, expiresAt });
+/** 新建会话：写 Redis 快照 + 下发 sid cookie。登录时调用。 */
+export async function createSession(snapshot: SessionSnapshotInput): Promise<string> {
+  const { sid } = await sessionStore.create(snapshot);
+  await setSidCookie(sid);
+  return sid;
 }
 
-export async function destroySession() {
+/** 覆盖当前 sid 的会话（选公司 / 退公司重算）；保留原 loginAt。无 sid 时静默 no-op。 */
+export async function updateSession(snapshot: SessionSnapshotInput): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE);
+  const sid = cookieStore.get(SID_COOKIE)?.value;
+  if (!sid) return;
+
+  const existing = await sessionStore.read(sid);
+  const loginAt = existing?.loginAt ?? Date.now();
+  await sessionStore.update(sid, { ...snapshot, loginAt });
 }
 
-export async function upgradeSession(entityId: number) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!token) return;
+/**
+ * 为跨 host 应用切换签发一次性会话交接 token。
+ *
+ * Codespaces 这类环境会把不同端口暴露成不同子域，浏览器不会携带 host-only
+ * cookie；也不应把 sid cookie 放大到整个公共开发域。交接 token 只在 Redis
+ * 中短暂保存 sid，目标 app 消费后在自己的 host 下重新写同一个 sid cookie。
+ */
+export async function createSessionHandoffToken(sid?: string): Promise<string | null> {
+  let currentSid = sid;
+  if (!currentSid) {
+    const cookieStore = await cookies();
+    currentSid = cookieStore.get(SID_COOKIE)?.value;
+  }
+  if (!currentSid) return null;
 
-  const payload = decodeSession(token);
-  if (!payload) return;
+  const session = await sessionStore.read(currentSid);
+  if (!session) return null;
 
-  const expiresAt = Date.now() + SESSION_TTL_SECONDS * 1000;
-  await writeSessionCookie({ userId: payload.userId, entityId, expiresAt });
+  const token = randomBytes(32).toString("base64url");
+  await kv.set(
+    handoffKey(token),
+    { sid: currentSid, createdAt: Date.now() } satisfies SessionHandoff,
+    HANDOFF_TTL_SECONDS,
+  );
+  return token;
 }
 
-export async function downgradeSession() {
+/** 消费一次性会话交接 token，并在当前 app host 下写入 sid cookie。 */
+export async function consumeSessionHandoffToken(token: string): Promise<boolean> {
+  const handoff = await kv.get<SessionHandoff>(handoffKey(token));
+  await kv.del(handoffKey(token));
+  if (!handoff) return false;
+
+  const session = await sessionStore.read(handoff.sid);
+  if (!session) return false;
+
+  await setSidCookie(handoff.sid);
+  await sessionStore.touch(handoff.sid);
+  return true;
+}
+
+/** 登出：删 Redis 快照 + 清 cookie。 */
+export async function destroySession(): Promise<void> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!token) return;
-
-  const payload = decodeSession(token);
-  if (!payload) return;
-
-  const expiresAt = Date.now() + SESSION_TTL_SECONDS * 1000;
-  await writeSessionCookie({ userId: payload.userId, entityId: null, expiresAt });
+  const sid = cookieStore.get(SID_COOKIE)?.value;
+  if (sid) await sessionStore.destroy(sid);
+  cookieStore.set(SID_COOKIE, "", { ...cookieOptions(), maxAge: 0 });
 }

@@ -32,6 +32,158 @@
     height: 0.875rem;
   }
 
+  /* ─── Chart base theme (TOMS DS 2.0 · spec/charts.html) ───────────────
+     Styles Recharts' own generated SVG so any composition inside
+     <ChartContainer> is on-spec for free: dashed hairline grid, mono
+     tertiary axis labels, round line caps, no default focus box.
+     All var()-based → follows dark mode through the cascade.
+     NOTE: deliberately does NOT set stroke-width — line/area weight stays a
+     per-instance prop (<Line strokeWidth={2} />) so consumers keep control. */
+  [data-slot="chart"] {
+    /* Grid: 1px dashed hairlines */
+    .recharts-cartesian-grid line {
+      stroke: var(--color-chart-grid);
+      stroke-dasharray: 2 3;
+    }
+    /* Axis baseline + tick marks: solid line-default */
+    .recharts-cartesian-axis-line,
+    .recharts-cartesian-axis-tick-line {
+      stroke: var(--color-line-default);
+    }
+    /* All chart text is mono + tabular; tick values are 9.5px tertiary */
+    .recharts-text {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+    .recharts-cartesian-axis-tick-value {
+      fill: var(--color-chart-axis);
+      font-size: 9.5px;
+    }
+    /* Line / area curves: round cap + join (weight stays a prop) */
+    .recharts-curve {
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    /* Active dot: 2px surface halo per spec */
+    .recharts-active-dot circle {
+      stroke: var(--color-surface-2);
+      stroke-width: 2px;
+    }
+    /* Hover cursor: a faint fill band on bars (Rectangle) + a dashed crosshair
+       on lines/areas (Curve). Both render as <path>, told apart by co-class
+       (recharts-rectangle vs recharts-curve) — so the bar band never gets the
+       dashed border, and the line crosshair never gets a fill. */
+    .recharts-tooltip-cursor {
+      fill: color-mix(in oklch, var(--color-content-primary) 6%, transparent);
+    }
+    .recharts-curve.recharts-tooltip-cursor {
+      fill: none;
+      stroke: var(--color-line-strong);
+      stroke-dasharray: 2 3;
+    }
+    /* ── Interaction states (spec "Interaction state — formal model") ──── */
+    /* Mouse focus: no box. Keyboard focus (:focus-visible): a 1.5px
+       primary-700 ring — previously the outline was removed with no
+       replacement, so keyboard focus was invisible. */
+    .recharts-surface:focus,
+    .recharts-layer:focus,
+    .recharts-sector:focus,
+    .recharts-rectangle:focus,
+    .recharts-dot:focus {
+      outline: none;
+    }
+    &:focus-visible,
+    .recharts-surface:focus-visible,
+    .recharts-sector:focus-visible,
+    .recharts-rectangle:focus-visible,
+    .recharts-dot:focus-visible,
+    .recharts-curve:focus-visible {
+      outline: 1.5px solid var(--color-primary-700);
+      outline-offset: 1px;
+    }
+    /* Consumer-applied datum states (set via className on a series / <Cell>;
+       Recharts forwards className onto the rendered SVG primitive). */
+    .is-selected {
+      stroke: var(--color-primary-700);
+      stroke-width: 2px;
+      paint-order: stroke;   /* stroke reads as an outer halo, not an inset */
+    }
+    .is-dimmed { opacity: 0.25; }   /* sibling of a hovered / selected series */
+    .is-filtered {                  /* legend toggled off / excluded by filter */
+      opacity: 0.18;
+      fill: var(--color-chart-dim);
+      stroke: var(--color-chart-dim);
+    }
+    /* Hover: the geometry itself brightens ×1.08. De-emphasised data opts out
+       so hover can't fight the dim / filtered treatment. */
+    .recharts-rectangle:hover,
+    .recharts-sector:hover {
+      filter: brightness(1.08);
+    }
+    .is-dimmed:hover,
+    .is-filtered:hover {
+      filter: none;
+    }
+    /* Polar (radar / radial): grid rings + spokes use the hairline token */
+    .recharts-polar-grid-angle line,
+    .recharts-polar-grid-concentric polygon,
+    .recharts-polar-grid-concentric circle {
+      stroke: var(--color-chart-grid);
+    }
+    .recharts-polar-angle-axis-tick-value,
+    .recharts-polar-radius-axis-tick-value {
+      fill: var(--color-chart-axis);
+      font-size: 9.5px;
+    }
+    /* Radial bar track behind each ring */
+    .recharts-radial-bar-background-sector {
+      fill: var(--color-surface-3);
+    }
+    /* Zoom brush (drag-select an x-range): tokens from --color-chart-zoom-* */
+    .recharts-brush-slide {
+      fill: var(--color-chart-zoom-fill);
+      fill-opacity: 1;
+      stroke: var(--color-chart-zoom-stroke);
+    }
+    .recharts-brush > rect:first-of-type {
+      fill: var(--color-surface-2);
+      stroke: var(--color-line-default);
+    }
+    .recharts-brush-traveller rect {
+      fill: var(--color-line-strong);
+    }
+  }
+
+  /* Sparkline: tiny inline trend (fixed-size LineChart/AreaChart, no axes).
+     Not under [data-slot="chart"] — match the main chart's round line caps. */
+  [data-slot="chart-sparkline"] .recharts-curve {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* Loading skeleton — shimmer across the whole chart area (spec
+     .tds-chart-skeleton). Keyframes are defined below, outside @layer. */
+  [data-slot="chart-skeleton"] {
+    background: linear-gradient(
+      90deg,
+      var(--color-surface-3) 0%,
+      color-mix(in oklch, var(--color-surface-3) 50%, var(--color-surface-2) 50%) 50%,
+      var(--color-surface-3) 100%
+    );
+    background-size: 200% 100%;
+    animation: chart-skeleton-shimmer 1.6s linear infinite;
+  }
+
+}
+
+/* Skeleton shimmer keyframes (top level; reduced-motion pauses it). */
+@keyframes chart-skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="chart-skeleton"] { animation: none; }
 }
 
 /* ─── Toast enhancements (outside @layer for sonner specificity) ─── */
