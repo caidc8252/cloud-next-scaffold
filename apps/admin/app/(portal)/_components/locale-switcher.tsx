@@ -16,7 +16,7 @@ import { setLocaleAction } from "@cloud/i18n/actions";
 // 业务侧无法抬层，弹层顶部会被 header 盖住。Popover 用语义层 `z-popover`(1060) 高于
 // header，和相邻的 NotificationBell 一致。（DropdownMenu 的 z-50 是 @cloud/ui 的待修 bug。）
 //
-// 因为 @cloud/ui 依赖 @cloud/i18n，开关 UI 放在 apps/web 组合 @cloud/ui primitives，
+// 因为 @cloud/ui 依赖 @cloud/i18n，开关 UI 放在 apps/admin 组合 @cloud/ui primitives，
 // 不能放回 @cloud/i18n（会循环依赖）。
 export function LocaleSwitcher() {
   const locale = useLocale() as Locale;

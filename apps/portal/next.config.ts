@@ -11,7 +11,7 @@ loadEnv({ path: join(appRoot, "../../.env") });
 // 业务 / UI 代码仍走 @cloud/i18n 三入口，不直接 import next-intl。
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
-// 与 apps/web 同源的 Codespaces 端口转发处理：经 VS Code 转发访问时浏览器 origin
+// 与 apps/admin 同源的 Codespaces 端口转发处理：经 VS Code 转发访问时浏览器 origin
 // 与 dev server origin 不一致，会拦 RSC 导航 / dev 资源。放行转发域名 + 本地隧道。
 // 仅影响开发态，不放宽生产安全。
 const codespacesForwardingDomain = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN;

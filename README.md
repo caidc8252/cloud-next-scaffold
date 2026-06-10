@@ -5,7 +5,7 @@
 ## 默认保留的基线能力
 
 - `apps/portal`：PEP 门户站和统一登录页
-- `apps/web`：单个后台应用
+- `apps/admin`：单个后台应用
 - `packages/ui`：基础 UI 组件与样式
 - `packages/request`：通用请求封装与错误码
 - `packages/api-kit`：API 兜底骨架与本栈默认错误映射（跨 app 复用）
@@ -15,7 +15,7 @@
 - `packages/db`：Prisma + PostgreSQL 数据层
 - `packages/security`：密码哈希、RSA 加解密
 - `packages/permissions`：权限判断 + 服务端登录态与前端权限 hook
-- `apps/web/system`：系统管理页面组件（用户管理、角色管理）
+- `apps/admin/system`：系统管理页面组件（用户管理、角色管理）
 - API 统一错误响应、权限异常兜底、页面级错误边界
 - 登录页、登录态、Entity 选择页、锁定说明页
 - 完整的 Entity / 合同 / 用户 / 角色 / 权限 / 菜单 数据模型
@@ -29,7 +29,7 @@
 ```bash
 pnpm install
 cp .env.example .env
-cp apps/web/.env.example apps/web/.env
+cp apps/admin/.env.example apps/admin/.env
 docker compose up -d
 pnpm db:setup
 pnpm dev
@@ -43,9 +43,9 @@ PEP 门户站单独启动：
 pnpm dev:portal
 ```
 
-打开 http://localhost:3100。门户站登录按钮进入站内 `/login`，登录成功后在 `/select-partner` 选择 partner；portal 校验归属并生成完整权限 session 后直接跳到 `WEB_APP_URL`。
+打开 http://localhost:3100。门户站登录按钮进入站内 `/login`，登录成功后在 `/select-partner` 选择 partner；portal 校验归属并生成完整权限 session 后直接跳到 `ADMIN_APP_URL`。
 
-生产环境若 portal 与 web 使用同一根域下的不同子域，需要配置 `SESSION_COOKIE_DOMAIN`，例如 `.example.com`，让两边共享 `sid` cookie。
+生产环境若 portal 与 admin 使用同一根域下的不同子域，需要配置 `SESSION_COOKIE_DOMAIN`，例如 `.example.com`，让两边共享 `sid` cookie。
 
 默认种子账号：
 
@@ -55,7 +55,7 @@ pnpm dev:portal
 ## 当前工作区
 
 - `apps/portal`
-- `apps/web`
+- `apps/admin`
 - `packages/api-kit`
 - `packages/config`
 - `packages/cache`
@@ -77,7 +77,7 @@ apps/
       (auth)/login/       # 登录页和 partner 选择
     i18n/
       messages/           # 门户站文案
-  web/                    # 后台应用
+  admin/                  # 后台应用
     app/
       (public)/           # 登录前页面（login, select-entity, locked）
       (portal)/           # 登录后页面（system/users, system/roles）
@@ -156,7 +156,7 @@ Entity ──┬── EntityContract ── ContractDefine ── Menu ── P
 
 核心实现：`packages/permissions/src/server/*`
 
-`apps/web/lib/auth.ts` 当前只保留兼容导出，内部转发到 `@cloud/permissions/server`，避免应用侧相对路径 import 一次性大面积改动。
+`apps/admin/lib/auth.ts` 当前只保留兼容导出，内部转发到 `@cloud/permissions/server`，避免应用侧相对路径 import 一次性大面积改动。
 
 - `getSession()` — 获取完整会话（含 entity、roles、permissions、menus），未登录返回 null
 - `getPartialSession()` — 获取部分会话（仅用户信息），用于 Entity 选择页和锁定页
@@ -231,7 +231,7 @@ export function UsersActions({ permissions }: { permissions: string[] }) {
 
 ### 客户端会话失效自动登出
 
-服务端守卫（`requireSession` / `requirePermissions`）在 401 时会 `redirect("/api/auth/logout")`；客户端的 API 调用也有对称行为。`@cloud/request/client` 在收到 401 时会回调应用注册的处理器，由 [apps/web/lib/session-expiry.ts](apps/web/lib/session-expiry.ts) 判断——只有「会话失效类」错误码（`"unauthenticated"` / `ERR_UNAUTHORIZED` / `ERR_AUTH_NOT_AUTHENTICATED`）才整页跳 `/api/auth/logout`（清残留 cookie → portal `/login`）。portal 登录页的凭证错误 `ERR_AUTH_INVALID_CREDENTIALS` 也是 401，但不在白名单，不会把登录失败误判为会话过期。
+服务端守卫（`requireSession` / `requirePermissions`）在 401 时会 `redirect("/api/auth/logout")`；客户端的 API 调用也有对称行为。`@cloud/request/client` 在收到 401 时会回调应用注册的处理器，由 [apps/admin/lib/session-expiry.ts](apps/admin/lib/session-expiry.ts) 判断——只有「会话失效类」错误码（`"unauthenticated"` / `ERR_UNAUTHORIZED` / `ERR_AUTH_NOT_AUTHENTICATED`）才整页跳 `/api/auth/logout`（清残留 cookie → portal `/login`）。portal 登录页的凭证错误 `ERR_AUTH_INVALID_CREDENTIALS` 也是 401，但不在白名单，不会把登录失败误判为会话过期。
 
 机制在包（`setUnauthorizedHandler`，不认识任何 app 路由），策略在 app，通过根 layout 里的 `UnauthorizedRedirect` 组件注册一次。业务组件正常 `catch` + `toastError` 即可，不需要、也不应该自己写 401 跳转。
 
@@ -309,7 +309,7 @@ await uploadFileToS3FromBrowser({
 });
 ```
 
-当前默认策略：`<= 5 MB` 的浏览器文件走服务端上传，`> 5 MB` 走浏览器直传；直传中超过 100 MB 时自动使用 multipart upload。当前 Web 演示页面位于 `/storage/s3-upload`，上传前会先计算 SHA-256 并调用 `/api/storage/uploads/duplicate` 检查同租户、同可见性下是否已有相同内容文件，命中时直接复用旧 `storage_object`。小文件会调用 `/api/storage/s3-upload-server` 并直接写入上传记录；大文件会通过 `/api/storage/s3-upload-session` 获取临时上传会话，浏览器上传完成后调用 `/api/storage/uploads/complete` 做 S3 `HeadObject` 校验并写入记录。历史记录列表来自 `/api/storage/uploads`，下载按钮调用 `/api/storage/uploads/[storageObjectId]/download` 获取 5 分钟下载链接。
+当前默认策略：`<= 5 MB` 的浏览器文件走服务端上传，`> 5 MB` 走浏览器直传；直传中超过 100 MB 时自动使用 multipart upload。当前 Admin 演示页面位于 `/storage/s3-upload`，上传前会先计算 SHA-256 并调用 `/api/storage/uploads/duplicate` 检查同租户、同可见性下是否已有相同内容文件，命中时直接复用旧 `storage_object`。小文件会调用 `/api/storage/s3-upload-server` 并直接写入上传记录；大文件会通过 `/api/storage/s3-upload-session` 获取临时上传会话，浏览器上传完成后调用 `/api/storage/uploads/complete` 做 S3 `HeadObject` 校验并写入记录。历史记录列表来自 `/api/storage/uploads`，下载按钮调用 `/api/storage/uploads/[storageObjectId]/download` 获取 5 分钟下载链接。
 
 文件业务归属不要写进 `storage_object`。`storage_object` 只保存文件本体；应用包、头像、合同附件等业务关系写入 `storage_attachment`。通用接口 `/api/storage/attachments` 支持按 `subjectType + subjectId + purpose` 查询附件，也支持把已上传完成的 `storageObjectId` 绑定到业务对象。常用约定示例：应用安装包 `APP / <appId> / PACKAGE`，用户头像 `SYS_USER / <userId> / AVATAR`，合同附件 `CONTRACT / <contractId> / ATTACHMENT`。
 
@@ -360,14 +360,14 @@ export function Example() {
 }
 ```
 
-`apps/web` 已接通 i18n，对应四件套（接入新应用时照此补齐，缺一不可）：
+`apps/admin` 已接通 i18n，对应四件套（接入新应用时照此补齐，缺一不可）：
 
-1. [next.config.ts](apps/web/next.config.ts) 用 `createNextIntlPlugin("./i18n/request.ts")` 包裹配置；
-2. [apps/web/i18n/request.ts](apps/web/i18n/request.ts) 调 `createI18nRequestConfig({ loadMessages })`，`loadMessages(locale)` 动态 import `i18n/messages/<locale>.json`；
-3. [apps/web/app/layout.tsx](apps/web/app/layout.tsx) 包一层 `NextIntlClientProvider`，且 `<html lang>` 用 cookie + `isLocale` 读实际 locale，不硬编码；
+1. [next.config.ts](apps/admin/next.config.ts) 用 `createNextIntlPlugin("./i18n/request.ts")` 包裹配置；
+2. [apps/admin/i18n/request.ts](apps/admin/i18n/request.ts) 调 `createI18nRequestConfig({ loadMessages })`，`loadMessages(locale)` 动态 import `i18n/messages/<locale>.json`；
+3. [apps/admin/app/layout.tsx](apps/admin/app/layout.tsx) 包一层 `NextIntlClientProvider`，且 `<html lang>` 用 cookie + `isLocale` 读实际 locale，不硬编码；
 4. Provider 树内挂 `TimeZoneInit`（首屏同步浏览器时区），切语言入口 `LocaleSwitcher` 放在 portal header。
 
-文案放在 [apps/web/i18n/messages/](apps/web/i18n/messages/)，`en.json` 为基底，`zh-CN.json` / `ja.json` 只写差异。当前只落了 `@cloud/ui` 日期组件需要的 `ui.datePicker.*`；新增业务文案按模块往对应 namespace 补即可。现有页面的英文硬编码尚未逐条迁移到 message（独立任务，不影响 i18n 链路本身）。
+文案放在 [apps/admin/i18n/messages/](apps/admin/i18n/messages/)，`en.json` 为基底，`zh-CN.json` / `ja.json` 只写差异。当前只落了 `@cloud/ui` 日期组件需要的 `ui.datePicker.*`；新增业务文案按模块往对应 namespace 补即可。现有页面的英文硬编码尚未逐条迁移到 message（独立任务，不影响 i18n 链路本身）。
 
 ## 用户管理
 
@@ -389,14 +389,14 @@ export function Example() {
 
 ### 页面放在哪里
 
-- 登录前页面放在 `apps/web/app/(public)`
-- 登录后的后台页面放在 `apps/web/app/(portal)`
-- API 路由放在 `apps/web/app/api`
-- 共享服务端逻辑优先放在 `apps/web/lib` 或 `packages/*`
+- 登录前页面放在 `apps/admin/app/(public)`
+- 登录后的后台页面放在 `apps/admin/app/(portal)`
+- API 路由放在 `apps/admin/app/api`
+- 共享服务端逻辑优先放在 `apps/admin/lib` 或 `packages/*`
 
 ### 怎么加一个后台页面
 
-1. 在 `apps/web/app/(portal)` 下创建新目录，例如 `reports/page.tsx`
+1. 在 `apps/admin/app/(portal)` 下创建新目录，例如 `reports/page.tsx`
 2. 页面里调用 `requireSession()` 保护登录态
 
 ```tsx
@@ -514,7 +514,7 @@ const { items, pager } = buildCursorPage({ rows, limit, query, total, idOf: (m) 
 return successResponse(items.map(toRow), pager);
 ```
 
-客户端用 `apps/web/lib/use-cursor-pagination.ts` 的 `useCursorPagination()`，**原样回传服务端给的游标 + 方向，绝不从行 id 自己拼游标，也不缓存历史游标**：
+客户端用 `apps/admin/lib/use-cursor-pagination.ts` 的 `useCursorPagination()`，**原样回传服务端给的游标 + 方向，绝不从行 id 自己拼游标，也不缓存历史游标**：
 
 ```tsx
 "use client";
@@ -590,7 +590,7 @@ if (!email) {
 }
 ```
 
-未预期异常统一交给 `apps/web/lib/api-handler.ts`（通用骨架与本栈默认错误映射在 `@cloud/api-kit`，这里只注入 config 组装出 `withApiHandler` / `handleApiError`）。默认用 `withApiHandler()` 包裹整个 handler，不要在每个文件里手写 `try / catch`：
+未预期异常统一交给 `apps/admin/lib/api-handler.ts`（通用骨架与本栈默认错误映射在 `@cloud/api-kit`，这里只注入 config 组装出 `withApiHandler` / `handleApiError`）。默认用 `withApiHandler()` 包裹整个 handler，不要在每个文件里手写 `try / catch`：
 
 ```ts
 import { withApiHandler } from "@/lib/api-handler";
@@ -646,10 +646,10 @@ export const GET = withApiHandler(
 
 App Router 页面级兜底文件：
 
-- `apps/web/app/(portal)/error.tsx`：后台页面渲染错误
-- `apps/web/app/(public)/error.tsx`：登录前页面渲染错误
-- `apps/web/app/global-error.tsx`：根布局级错误
-- `apps/web/app/not-found.tsx`：404 页面
+- `apps/admin/app/(portal)/error.tsx`：后台页面渲染错误
+- `apps/admin/app/(public)/error.tsx`：登录前页面渲染错误
+- `apps/admin/app/global-error.tsx`：根布局级错误
+- `apps/admin/app/not-found.tsx`：404 页面
 
 当前 Next.js 16 错误边界组件使用 `unstable_retry()` 触发重试；新增或调整错误边界前先看 `node_modules/next/dist/docs/` 中对应文档。
 
@@ -674,5 +674,5 @@ pnpm db:studio        # 打开 Prisma Studio
 pnpm lint             # ESLint 检查
 pnpm test             # 运行测试
 pnpm exec tsc --noEmit  # TypeScript 类型检查
-pnpm --filter web build # 构建 Web 应用
+pnpm --filter admin build # 构建 Admin 应用
 ```

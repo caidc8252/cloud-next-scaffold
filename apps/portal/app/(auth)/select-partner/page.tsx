@@ -5,7 +5,7 @@ import { getTranslations } from "@cloud/i18n/server";
 import { getPartialSession, getSession } from "@cloud/permissions/server";
 import { AuthShell } from "@/app/_components/auth-shell";
 import { AuthLead, IconBadge } from "@/app/(auth)/_components/card-bits";
-import { getWebAppUrl } from "@/lib/platform-routing";
+import { getAdminAppUrl } from "@/lib/platform-routing";
 import { listPartnerChoices } from "@/lib/partner-choices";
 import { PartnerList } from "./_components/partner-list";
 import { Building2 } from "lucide-react";
@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function SelectPartnerPage() {
   const t = await getTranslations("portal.partner");
   const session = await getSession();
-  if (session) redirect(getWebAppUrl());
+  if (session) redirect(getAdminAppUrl());
 
   const partial = await getPartialSession();
   if (!partial) redirect("/login");

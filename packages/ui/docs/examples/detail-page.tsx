@@ -6,7 +6,7 @@
 // Compilable style skeleton for the portal DETAIL page shape: one page + Tabs
 // (no per-tab sub-routes). Labels/data below are neutral placeholders; reuse
 // this shape in any module. Reference implementation:
-// apps/web/app/(portal)/manage/customers/[id]/_components/customer-detail-view.tsx
+// apps/admin/app/(portal)/manage/customers/[id]/_components/customer-detail-view.tsx
 //
 // Style-only: static data, no-op handlers, <a> stands in for next/link. In a
 // real page: page.tsx guards + fetches, mutations go modal → route handler,
@@ -67,7 +67,7 @@ export function DetailPageTemplate() {
       {/* §2.1 — white band; tab strip sits flush on the band's bottom border */}
       <div className="border-b border-line-subtle bg-surface-2">
         <div className="px-6 py-4">
-          {/* §2.3 — detail head row. Back button is MANDATORY; in apps/web it must be
+          {/* §2.3 — detail head row. Back button is MANDATORY; in apps/admin it must be
               render={<Link href="/manage/<list>" />} — never router.back(). */}
           <div className="flex flex-wrap items-center gap-4">
             <Button

@@ -1,6 +1,6 @@
 import { defineAppManifest } from "@cloud/platform-config";
 
-// web 平台的菜单 / 权限定义（COC 单一真源，替代旧 sys_menu + sys_permission）。
+// admin 平台的菜单 / 权限定义（COC 单一真源，替代旧 sys_menu + sys_permission）。
 // 三级约定：L1 目录(path:null) → L2/L3 叶子(有 path)。menuCode / permissionCode 平台内唯一。
 // contractTypes: ["*"] 表示所有契约可见；否则仅列出的契约可见。
 export const appManifest = defineAppManifest({

@@ -1,5 +1,5 @@
 packages:
-  - "apps/web"
+  - "apps/admin"
   - "apps/portal"
   - "packages/api-kit"
   - "packages/cache"

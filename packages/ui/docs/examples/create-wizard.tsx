@@ -6,7 +6,7 @@
 // Compilable style skeleton for the portal CREATE (wizard) page shape — the
 // labels/fields below are neutral placeholders; reuse this shape in any module.
 // Reference implementation:
-// apps/web/app/(portal)/manage/customers/new/_components/customer-wizard.tsx
+// apps/admin/app/(portal)/manage/customers/new/_components/customer-wizard.tsx
 //
 // Style-only: static step, no-op handlers, <a> stands in for next/link. In a
 // real page: useState for step/form, shared field components + one validation
@@ -50,7 +50,7 @@ const Dash = () => <span className="text-content-tertiary">—</span>;
 export function CreateWizardTemplate() {
   return (
     <>
-      {/* §2.2 — header band; escape action is ghost Cancel. Use <PageHeader/> (@cloud/ui/components/layout) in apps/web. */}
+      {/* §2.2 — header band; escape action is ghost Cancel. Use <PageHeader/> (@cloud/ui/components/layout) in apps/admin. */}
       <div className="border-b border-line-subtle bg-surface-2">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-6 py-4">
           <div className="min-w-0 flex-1">

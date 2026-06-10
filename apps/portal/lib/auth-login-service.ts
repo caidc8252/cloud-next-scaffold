@@ -33,7 +33,7 @@ import {
 } from "./login-token";
 import { buildSessionSnapshot } from "./session-snapshot";
 import { verifyActiveTotp } from "./mfa-service";
-import { getWebAppUrl } from "./platform-routing";
+import { getAdminAppUrl } from "./platform-routing";
 import { isPartnerSelectable } from "./partner-choice";
 import { listPartnerChoices } from "./partner-choices";
 
@@ -67,7 +67,7 @@ async function buildSessionAndRedirect(
   await createSession(snapshot);
 
   return {
-    redirectTo: snapshot.currentPartnerId !== null ? getWebAppUrl() : "/select-partner",
+    redirectTo: snapshot.currentPartnerId !== null ? getAdminAppUrl() : "/select-partner",
   };
 }
 

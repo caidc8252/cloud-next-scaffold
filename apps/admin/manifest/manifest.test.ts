@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getContractKeys, getMenus, PLATFORM_CONTRACTS } from "@/manifest";
 
-describe("web platform manifest", () => {
+describe("admin platform manifest", () => {
   it("getMenus() returns the aggregated flat menu pool", () => {
     const codes = getMenus().map((m) => m.menuCode);
     expect(codes).toContain("dashboard");

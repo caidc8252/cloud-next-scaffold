@@ -73,7 +73,7 @@ describe("messages bundles", () => {
     }
   });
 
-  it("web en overrides define every key the @cloud/ui date components need", () => {
+  it("admin en overrides define every key the @cloud/ui date components need", () => {
     const keys = new Set(flattenKeys(appBundles.en));
     for (const key of REQUIRED_DATE_PICKER_KEYS) {
       expect(keys.has(key), `en is missing required key: ${key}`).toBe(true);
@@ -87,7 +87,7 @@ describe("messages bundles", () => {
     }
   });
 
-  it("web messages do not duplicate @cloud/ui RichPagination defaults", () => {
+  it("admin messages do not duplicate @cloud/ui RichPagination defaults", () => {
     for (const locale of locales) {
       expect(
         getPath(appBundles[locale], "ui.pagination"),

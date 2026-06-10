@@ -25,7 +25,7 @@ import {
  * Step 1 — Schema + producer (server side, not this file)
  *   Add a sys_notification table (recipientUserId, partnerId, type, payload,
  *   readAt, creTime). Provide a server-side enqueue function in
- *   apps/web/lib/notifications/server.ts that all features call to write rows.
+ *   apps/admin/lib/notifications/server.ts that all features call to write rows.
  *
  * Step 2 — Route handlers (server side)
  *   GET    /api/notifications              list (paginated)

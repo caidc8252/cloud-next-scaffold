@@ -7,7 +7,7 @@ import { SID_COOKIE, sessionStore, type ActiveSession, type Session } from "./se
 
 // 会话是单一扁平形状：getSession 直接返回快照（无投影/无重命名），
 // 选定公司的会话用 ActiveSession 类型收窄（currentPartnerId 等保证非空）。
-// menus 不在 session 里，由 apps/web/lib/session-menus.ts 按 manifest 现算。
+// menus 不在 session 里，由 apps/admin/lib/session-menus.ts 按 manifest 现算。
 
 export type PartialSession = {
   userId: number;

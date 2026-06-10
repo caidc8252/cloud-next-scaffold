@@ -4,7 +4,7 @@
 // STYLE TEMPLATE · List page (spec §1.1 §2.2 §3–§5)
 //
 // Compilable style skeleton for the portal LIST page shape. Reference
-// implementation: apps/web/app/(portal)/manage/customers/_components/customer-list.tsx
+// implementation: apps/admin/app/(portal)/manage/customers/_components/customer-list.tsx
 //
 // Style-only: data is hardcoded, handlers are no-ops, <a> stands in for
 // next/link. In a real page: requirePermissions() in page.tsx, useState for
@@ -141,7 +141,7 @@ const COLUMNS: TableColumn<Row>[] = [
 export function ListPageTemplate() {
   return (
     <>
-      {/* §2.2 — full-bleed white header band. In apps/web use <PageHeader/> from @cloud/ui/components/layout. */}
+      {/* §2.2 — full-bleed white header band. In apps/admin use <PageHeader/> from @cloud/ui/components/layout. */}
       <div className="border-b border-line-subtle bg-surface-2">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-6 py-4">
           <div className="min-w-0 flex-1">

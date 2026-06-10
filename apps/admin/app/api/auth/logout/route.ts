@@ -4,7 +4,7 @@ import { withApiHandler } from "@/lib/api-handler";
 import { getPortalLoginUrl } from "@/lib/portal-routing";
 
 function redirectToLogin() {
-  // 登出发生在 web，但重新登录始终回到 portal，保证登录入口只有一套。
+  // 登出发生在 admin，但重新登录始终回到 portal，保证登录入口只有一套。
   return new NextResponse(null, {
     status: 303,
     headers: { Location: getPortalLoginUrl() },

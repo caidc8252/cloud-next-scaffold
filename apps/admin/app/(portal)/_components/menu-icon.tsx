@@ -3,8 +3,8 @@ import { Database, LayoutDashboard, Shield, Settings, UploadCloud, Users } from 
 // Maps the icon-name string stored in sys_menu.icon to a lucide React node.
 // To add a new menu icon: pick a name in packages/db/prisma/seed.ts (sys_menu.icon)
 // AND add a matching case here. Unrecognised names fall back to LayoutDashboard.
-// Used by both the sidebar (apps/web/app/(portal)/layout.tsx) and the command
-// palette (apps/web/app/(portal)/_components/portal-header.tsx).
+// Used by both the sidebar (apps/admin/app/(portal)/layout.tsx) and the command
+// palette (apps/admin/app/(portal)/_components/portal-header.tsx).
 export function getMenuIcon(icon: string, size = 14) {
   switch (icon) {
     case "database": return <Database size={size} />;

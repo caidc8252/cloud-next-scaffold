@@ -52,16 +52,16 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ### 目录约定
 
-- 登录前页面放在 `apps/web/app/(public)`
-- 登录后的后台页面放在 `apps/web/app/(portal)`
-- API 路由放在 `apps/web/app/api`
-- 业务实现（service / repository / mapper / policy / schema）放在 `apps/web/service/<domain>/`，详见下面「服务端分层」
-- 仅与具体业务无关的通用服务端工具放 `apps/web/lib`；跨业务可复用能力沉淀到 `packages/*`
+- 登录前页面放在 `apps/admin/app/(public)`
+- 登录后的后台页面放在 `apps/admin/app/(portal)`
+- API 路由放在 `apps/admin/app/api`
+- 业务实现（service / repository / mapper / policy / schema）放在 `apps/admin/service/<domain>/`，详见下面「服务端分层」
+- 仅与具体业务无关的通用服务端工具放 `apps/admin/lib`；跨业务可复用能力沉淀到 `packages/*`
 - 当前基线已经把后台壳子接在 `app/(portal)` 上，大多数业务页面默认加在这里
 
 ### 服务端分层（route / service / schema / policy / data）
 
-> 业务实现按层拆分，落在 `apps/web/service/<domain>/`。**不要再把业务逻辑堆在 route handler 里，也不要放进 route 目录下的 `_server/`**——`_server/` 是历史遗留写法（lint 会拦 route 直接 import `*.repository` / `*.mapper` / `@cloud/db`），见到顺手迁到 `service/`。
+> 业务实现按层拆分，落在 `apps/admin/service/<domain>/`。**不要再把业务逻辑堆在 route handler 里，也不要放进 route 目录下的 `_server/`**——`_server/` 是历史遗留写法（lint 会拦 route 直接 import `*.repository` / `*.mapper` / `@cloud/db`），见到顺手迁到 `service/`。
 
 - **route**（`app/api/**/route.ts`）：只做 HTTP 适配。顺序 `assertPermissions → 解析参数 / zod parse → 调 service → 返回 envelope`，整体包在 `withApiHandler` 里。route **不直接 `import @cloud/db`**，也不直接 import `*.repository` / `*.mapper`，只依赖 service（需要 mapper 的纯 helper 时由 service re-export 转出）。
 - **schema**（`service/<domain>/schemas/<domain>.schema.ts`）：client + server 共享的 zod，在 route parse、不在 service 里 parse。放在 `server/` 外面，因为客户端表单也要 import。
@@ -72,7 +72,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 跨 domain 复用的纯 helper（如解析角色 JSONB 的 `service/_shared/role-codes.ts`）放 `service/_shared/`，不要让一个 domain reach 进另一个 domain 的 `server/`。
 - 页面保持薄：`page.tsx` 只做顶层取数 + 组合，取数同样调 service（与 route 复用同一套 repository / service），不在 page 里手写 prisma 查询。
 - 两层权限：route 做粗粒度码校验（`assertPermissions(['xxx.UPD'])`），service / policy 做范围校验；按钮显隐只是体验层，不是安全边界。
-- 当前进度：`users` 域已按此结构迁好，可作样板参考（`apps/web/service/users/`）；其余域逐步迁移。
+- 当前进度：`users` 域已按此结构迁好，可作样板参考（`apps/admin/service/users/`）；其余域逐步迁移。
 
 ### 共享能力复用
 
@@ -96,7 +96,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 > 本节是踩坑沉淀的硬规则，新增/调整能力归属时回来更新，别让它过期。
 
 - **能力的两端不要拆散**：一个能力若同时有客户端和服务端实现（加解密、请求封装、权限上下文、上传直传等），**整体沉淀进同一个 `packages/*` 包**，用 `./client` / `./server` 双入口（分别加 `client-only` / `server-only` 守卫），不要把其中一端留在 `apps/*` 里平行实现。
-  - 反例（本仓真实踩坑）：RSA 登录加密——解密放了 `@cloud/security/server`，却差点把浏览器端加密写在 `apps/web`。正确做法是同包加 `@cloud/security/client` 的 `encryptRsaOaep`，与 `server` 的 `decryptRsaOaep` 成对。
+  - 反例（本仓真实踩坑）：RSA 登录加密——解密放了 `@cloud/security/server`，却差点把浏览器端加密写在 `apps/admin`。正确做法是同包加 `@cloud/security/client` 的 `encryptRsaOaep`，与 `server` 的 `decryptRsaOaep` 成对。
   - 判断「该不该进包」：跨业务可复用、职责边界清晰 → 进包双入口；仅当前页面私有逻辑 → 留业务目录，别过早抽公共层。
 - **包只做纯能力，配置由业务侧注入**：密钥、凭证、连接串、bucket、私钥/公钥等**运行期配置不在包内读 `.env`**，由业务侧（`@cloud/config` 或路由）读出后作为参数显式传入包函数（沿用 `@cloud/storage` 的 S3 配置注入范式）。
   - 包函数签名优先 `fn(input, config)`，而不是 `fn(input)` 内部偷读 env。
@@ -122,16 +122,16 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ### 页面开发
 
-- 新增后台页面时，优先在 `apps/web/app/(portal)` 下创建路由目录和 `page.tsx`
+- 新增后台页面时，优先在 `apps/admin/app/(portal)` 下创建路由目录和 `page.tsx`
 - App Router 页面组件默认使用服务端组件，除非有明确交互需求再加 `"use client"`
 - 只需要登录态的页面，调用 `requireSession()`
 - 页面本身有明确权限要求时，优先调用 `requirePermissions()`，不要只在前端做按钮显隐
 - 页面保持薄：`page.tsx` 只做鉴权 + 顶层取数 + 组合，取数调对应 domain 的 service（见「服务端分层」），不在 page 里手写 prisma 查询或业务逻辑
 - 页面级异常兜底沿用现有文件：
-  - `apps/web/app/(portal)/error.tsx`
-  - `apps/web/app/(public)/error.tsx`
-  - `apps/web/app/global-error.tsx`
-  - `apps/web/app/not-found.tsx`
+  - `apps/admin/app/(portal)/error.tsx`
+  - `apps/admin/app/(public)/error.tsx`
+  - `apps/admin/app/global-error.tsx`
+  - `apps/admin/app/not-found.tsx`
 - 调整错误边界前先阅读 `node_modules/next/dist/docs/` 中当前 Next.js 版本的错误处理约定；当前错误边界重试入口是 `unstable_retry()`
 
 ### 菜单约定
@@ -147,7 +147,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ### 鉴权与权限
 
 - 登录态与权限守卫优先直接从 `@cloud/permissions/server` 引入，不要在业务代码里继续写很深的相对路径
-- `apps/web/lib/auth.ts` 目前只保留兼容导出，默认不要作为新代码入口
+- `apps/admin/lib/auth.ts` 目前只保留兼容导出，默认不要作为新代码入口
 - `getSession()` 用于读取会话，未登录时返回 `null`
 - `requireSession()` 用于强制登录，未登录时会跳转并清理状态
 - `assertPermissions()` 用于接口 / Route Handler 的服务端权限校验
@@ -176,7 +176,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ### 接口与请求
 
 - 本项目不使用 Server Action
-  - 所有表单提交、数据 mutation 一律走 Route Handler（`apps/web/app/api/*`）
+  - 所有表单提交、数据 mutation 一律走 Route Handler（`apps/admin/app/api/*`）
   - 鉴权、登录、选择组织等公开页面的提交同样走 API，不写 `"use server"` action
   - 客户端用 `@cloud/request/client` 调接口，拿到返回后再自行用 `useRouter()` 跳转
   - 历史遗留的 Server Action 见到即顺手改成 API，不要新增
@@ -184,9 +184,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 客户端使用 `@cloud/request/client`
 - 客户端收到「会话失效类」401 会自动跳登出，机制在包、策略在 app，**不要在业务组件里手写 401 跳转**：
   - 包：`@cloud/request/client` 的 `setUnauthorizedHandler(fn)` 在 `status===401` 时回调 `fn(RequestError)`，然后照常 throw（不吞错，组件原有 `catch` / `toastError` 不变）；包不认识任何 app 路由或错误码
-  - 策略：`apps/web/lib/session-expiry.ts` 的 `handleUnauthorized` 按**白名单 code** 决定是否登出——`{ "unauthenticated", ERR_UNAUTHORIZED, ERR_AUTH_NOT_AUTHENTICATED }` 命中才 `window.location.replace("/api/auth/logout")`（与服务端 `requirePermissions` 401 出口一致：清残留 cookie → 303 `/login`）；模块级 `redirecting` 锁防并发重复跳
+  - 策略：`apps/admin/lib/session-expiry.ts` 的 `handleUnauthorized` 按**白名单 code** 决定是否登出——`{ "unauthenticated", ERR_UNAUTHORIZED, ERR_AUTH_NOT_AUTHENTICATED }` 命中才 `window.location.replace("/api/auth/logout")`（与服务端 `requirePermissions` 401 出口一致：清残留 cookie → 303 `/login`）；模块级 `redirecting` 锁防并发重复跳
   - 登录页凭证错误 `ERR_AUTH_INVALID_CREDENTIALS` 也是 401，但**刻意不在白名单**，不会误跳；新增 401 码默认不触发登出，属于「会话失效」语义才往白名单补
-  - 注册：`apps/web/app/_components/unauthorized-redirect.tsx`（tiny client 组件）在根 layout 挂一次
+  - 注册：`apps/admin/app/_components/unauthorized-redirect.tsx`（tiny client 组件）在根 layout 挂一次
 - 服务端响应优先使用 `@cloud/request/server` 提供的响应辅助函数
 - 成功 JSON 响应必须走 `successResponse()` / `createdResponse()`，body 形状为 `{ code: "OK", message: "success", data, page?, limit?, total?, totalPages?, nextCursor?, prevCursor?, hasNextPage?, hasPrevPage?, traceId }`，分页字段与 `data` 同级
 - DELETE 或其他无需 body 的接口使用 `noContentResponse()` 返回 204，response body 必须为空
@@ -195,12 +195,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - 双向游标分页统一走 `@cloud/request/server` 的 `readCursorQuery(token, direction)` + `buildCursorPage()`，配合 `CursorPager`，响应带 `nextCursor` / `prevCursor` / `hasNextPage` / `hasPrevPage`
   - 游标 token 由服务端 `encodeCursor()` 签发、只编码锚点 id、对客户端不透明；翻页方向是独立的 `direction` 参数，由客户端显式传，**不编进 token**
   - 服务端按 `query.sortOrder` 设 `orderBy`、`take: limit + 1` 多取一条探测，再交给 `buildCursorPage()` 切片、翻回升序、签发双向游标；不要在 Route Handler 里手写这套逻辑
-  - 客户端用 `apps/web/lib/use-cursor-pagination.ts` 的 `useCursorPagination()` 原样回传服务端给的游标 + 方向，**绝不从行 id 自己拼游标**，也不缓存历史游标
-- 新增接口时，优先放在 `apps/web/app/api/*`，且**只做 HTTP 适配**，业务逻辑落到 `service/<domain>/`（见「服务端分层」）
+  - 客户端用 `apps/admin/lib/use-cursor-pagination.ts` 的 `useCursorPagination()` 原样回传服务端给的游标 + 方向，**绝不从行 id 自己拼游标**，也不缓存历史游标
+- 新增接口时，优先放在 `apps/admin/app/api/*`，且**只做 HTTP 适配**，业务逻辑落到 `service/<domain>/`（见「服务端分层」）
 - Route Handler 默认做两层权限：
   - 登录态 / 粗粒度权限码：优先用 `assertPermissions()`（在 route 里做）
   - 业务归属 / 范围校验：例如 `entityId`、`roleId`、`userId` 是否属于当前租户——落在 service / policy 层
-- Route Handler 的异常兜底统一走 `apps/web/lib/api-handler.ts`（设计与示例见 `docs/exception-handling.md`）
+- Route Handler 的异常兜底统一走 `apps/admin/lib/api-handler.ts`（设计与示例见 `docs/exception-handling.md`）
   - **业务异常一律 throw 类型化异常，不再 return 错误响应**：参数校验、业务冲突、数据不存在等可预期错误用 `throw new BusinessError(code, status?, params?)`（`@cloud/request`），由 `withApiHandler` 捕获后统一出 40x `{ code, message, traceId }`
     - `code` 走 `PMMNNN` 数字码（注册表内才本地化）；`status` 限 `400|401|403|404|409|422`，默认 400；`params` 是 `{name}` 占位插值参数，渲染进文案、不进响应体
     - 中间件/基础设施故障（DB 连接、Redis、邮件等）用 `throw new MiddlewareError(ERR_MW_*)`，统一掩码成 503 通用文案（对客户不透明，开发凭 code + traceId 在日志识别）
@@ -229,7 +229,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ### 国际化 / i18n
 
 - **页面文案禁止硬编码**：所有面向用户的可见文案（页面、组件、表单、按钮、提示、空态、错误展示等）一律走 i18n，从 message 取，不在 JSX / 字符串里写死中英文字面量
-  - 客户端组件用 `useTranslations`，RSC 用 `getTranslations`，文案落到 `apps/web/i18n/messages/`，`en.json` 为基底
+  - 客户端组件用 `useTranslations`，RSC 用 `getTranslations`，文案落到 `apps/admin/i18n/messages/`，`en.json` 为基底
   - 新增文案先补 key（en 必填，其余 locale 只写差异，缺 key 自动回退英文），再在页面引用，不要先硬编码再说
   - 例外：日志、调试信息、不展示给用户的内部标识不强制
 - 国际化统一走 `@cloud/i18n`（`next-intl` 薄封装），**禁止在业务或 UI 里直接 import `next-intl`**，lint 会拦
@@ -242,7 +242,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - message 以 `en` 为基底，其余 locale 只写差异，缺 key 自动回退英文；不要把各 locale 写成全量副本
 - namespace 用点分层级、与模块对应（`auth.login.*`、`system.users.*`、`ui.datePicker.*`）；`ui.*` 命名空间归 `@cloud/ui` 占用，使用其日期组件的页面必须提供 `ui.datePicker.*`，否则开发期触发 missing message
 - 数字 / 日期格式化走 `formats` 预设（`useFormatter` + `numberFormats` / `dateTimeFormats`），不在业务里散落 `Intl.NumberFormat` 配置；新增样式改 `packages/i18n` 的 `formats.ts`
-- 切换语言 / 时区只通过 `set*Action`（`@cloud/i18n/actions`）+ `router.refresh()`，不自己写 cookie；语言切换 UI（`LocaleSwitcher`）在 `apps/web` 用 `@cloud/ui` 的 `Popover` 组合（不用 `DropdownMenu`：header 是 `sticky z-sticky`，而 `DropdownMenuContent` 钉死 `z-50` 且不暴露 Positioner className，会被 header 盖住；`Popover` 用 `z-popover` 高于 header），不放回 `@cloud/i18n`（否则与 `@cloud/ui → @cloud/i18n` 循环依赖）
+- 切换语言 / 时区只通过 `set*Action`（`@cloud/i18n/actions`）+ `router.refresh()`，不自己写 cookie；语言切换 UI（`LocaleSwitcher`）在 `apps/admin` 用 `@cloud/ui` 的 `Popover` 组合（不用 `DropdownMenu`：header 是 `sticky z-sticky`，而 `DropdownMenuContent` 钉死 `z-50` 且不暴露 Positioner className，会被 header 盖住；`Popover` 用 `z-popover` 高于 header），不放回 `@cloud/i18n`（否则与 `@cloud/ui → @cloud/i18n` 循环依赖）
 - 开发期 `missing message` 抛错是特性，补 key，不要去关 `getMessageFallback`
 - 接入新应用必须四件套齐全：`withNextIntl` 插件 → request config 调 `createI18nRequestConfig` → root layout 包 `NextIntlClientProvider` → 树内挂 `TimeZoneInit`；root layout 的 `<html lang>` 读实际 locale，不要硬编码
 

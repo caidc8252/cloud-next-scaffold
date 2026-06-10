@@ -7,7 +7,7 @@
 // wizard — a plain form with no steps. Cancel + Submit both live in a STICKY
 // header; the body is one centered column of section cards. No footer, no
 // summary rail, no done step. Reference implementation:
-// apps/web/app/(portal)/app/app-publish/new/_components/app-form.tsx
+// apps/admin/app/(portal)/app/app-publish/new/_components/app-form.tsx
 //
 // Style-only: static fields, no-op handlers. In a real page: useState for the
 // form, shared field components + one validation source (see §7), POST via
@@ -33,7 +33,7 @@ import {
 export function CreateFormTemplate() {
   return (
     <>
-      {/* §2.2 §7.1 — STICKY header band carrying both actions. In apps/web use
+      {/* §2.2 §7.1 — STICKY header band carrying both actions. In apps/admin use
           <PageHeader sticky actions={<>{cancel}{submit}</>} />. The band
           docks under the app header (the shell <main> is the scrollport) and its
           opaque bg-surface-2 masks content scrolling beneath it. */}

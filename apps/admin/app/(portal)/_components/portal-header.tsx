@@ -75,7 +75,7 @@ function buildGroups(menus: Menu[]): Group[] {
  *
  * Case B — Add server-side resource search (e.g. users by name)
  *   1. Track the current query: useState("") + <CommandInput onValueChange={setQuery} />.
- *   2. Debounce + fetch from a route handler in apps/web/app/api/... when the
+ *   2. Debounce + fetch from a route handler in apps/admin/app/api/... when the
  *      query is non-empty. Cancel in-flight requests with AbortController.
  *   3. Render results as <CommandGroup heading="Users"> mapping to <CommandItem>.
  *   4. Permission-check on the server side — never assume the palette is gated.

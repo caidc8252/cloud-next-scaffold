@@ -63,8 +63,8 @@ import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
  *   single "Workspace" crumb. Steps:
  *
  *     1. Mirror the business route inside @breadcrumbs/:
- *          business page: apps/web/app/(portal)/system/roles/[id]/page.tsx
- *          slot page:     apps/web/app/(portal)/@breadcrumbs/system/roles/[id]/page.tsx
+ *          business page: apps/admin/app/(portal)/system/roles/[id]/page.tsx
+ *          slot page:     apps/admin/app/(portal)/@breadcrumbs/system/roles/[id]/page.tsx
  *
  *     2. The slot page is a server component. `await params`, fetch the dynamic
  *        segment label (usually from DB), then render <Breadcrumbs items={...}>
@@ -88,8 +88,8 @@ import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
  *     4. If the detail slot links back to its list page, add an explicit slot
  *        page for that list route too:
  *
- *          business page: apps/web/app/(portal)/system/roles/page.tsx
- *          slot page:     apps/web/app/(portal)/@breadcrumbs/system/roles/page.tsx
+ *          business page: apps/admin/app/(portal)/system/roles/page.tsx
+ *          slot page:     apps/admin/app/(portal)/@breadcrumbs/system/roles/page.tsx
  *
  *        This list slot usually renders the same single crumb as the menu
  *        fallback (e.g. <Breadcrumbs items={[{ label: "Roles" }]} />), but it

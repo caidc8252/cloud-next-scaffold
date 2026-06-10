@@ -10,7 +10,7 @@ function getPortalAppUrl(): URL {
   return url;
 }
 
-// web 保留 /login、/select-partner 等兼容入口，真正的登录流程由 portal 承担。
+// admin 保留 /login、/select-partner 等兼容入口，真正的登录流程由 portal 承担。
 export function getPortalSelectPartnerUrl(): string {
   const url = getPortalAppUrl();
   url.pathname = "/select-partner";

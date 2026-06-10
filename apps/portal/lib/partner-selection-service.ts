@@ -8,7 +8,7 @@ import {
   ERR_AUTH_NOT_AUTHENTICATED,
   ERR_AUTH_PARTNER_REQUIRED,
 } from "./auth-error-codes";
-import { getWebAppUrl } from "./platform-routing";
+import { getAdminAppUrl } from "./platform-routing";
 import { buildSessionSnapshot } from "./session-snapshot";
 
 type PartialSession = {
@@ -16,7 +16,7 @@ type PartialSession = {
 };
 
 // portal 是统一登录入口：选择 partner 后在这里一次性把 partial session
-// 升级成完整 session，然后跳转到具体平台，web 不再需要 activate 中转页。
+// 升级成完整 session，然后跳转到具体平台，admin 不再需要 activate 中转页。
 export async function selectPartnerForPlatform(
   partial: PartialSession | null,
   body: { partnerId?: number } | null,
@@ -56,6 +56,6 @@ export async function selectPartnerForPlatform(
   await updateSession(snapshot);
 
   return {
-    redirectTo: getWebAppUrl(),
+    redirectTo: getAdminAppUrl(),
   };
 }
