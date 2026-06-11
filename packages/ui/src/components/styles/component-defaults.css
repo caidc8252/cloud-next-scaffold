@@ -89,7 +89,10 @@
     .recharts-layer:focus,
     .recharts-sector:focus,
     .recharts-rectangle:focus,
-    .recharts-dot:focus {
+    .recharts-dot:focus,
+    /* Recharts v3 wraps graphical items in a z-index <g tabindex="-1"> that
+       grabs focus (and the UA default outline) on click — kill that box too. */
+    [class*="recharts-zIndex-layer"]:focus {
       outline: none;
     }
     &:focus-visible,

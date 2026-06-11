@@ -26,15 +26,16 @@ import {
   ChartLegendContent,
   ChartSkeleton,
   ChartEmpty,
+  ChartPieCalloutLabel,
+  ChartPieCalloutLabelLine,
+  ChartBar,
   BarChart,
-  Bar,
   LineChart,
   Line,
   AreaChart,
   Area,
   PieChart,
   Pie,
-  Cell,
   RadarChart,
   Radar,
   PolarGrid,
@@ -66,6 +67,8 @@ const VENDORS = [
   { vendor: "pax", terminals: 128 },
   { vendor: "ingenico", terminals: 90 },
 ];
+// Per-slice colour in the data (Pie reads `entry.fill`) — the v3 replacement for <Cell>.
+const VENDORS_COLORED = VENDORS.map((v) => ({ ...v, fill: `var(--color-${v.vendor})` }));
 
 // ── 1 · ChartConfig — three ways to assign series colors ─────────────────────
 
@@ -100,22 +103,26 @@ export function GroupedBar() {
         <YAxis tickLine={false} axisLine={false} width={32} />
         <ChartTooltip content={<ChartTooltipContent />} />
         <ChartLegend content={<ChartLegendContent />} />
-        <Bar dataKey="card" fill="var(--color-card)" radius={[2, 2, 0, 0]} />
-        <Bar dataKey="wallet" fill="var(--color-wallet)" radius={[2, 2, 0, 0]} />
+        {/* ChartBar defaults to a 4px radius on the free end, flat against the axis. */}
+        <ChartBar dataKey="card" fill="var(--color-card)" />
+        <ChartBar dataKey="wallet" fill="var(--color-wallet)" />
       </BarChart>
     </ChartContainer>
   );
 }
 
 export function StackedBar() {
+  // Stack-aware rounding: pass `stackKeys` and only the visible top segment of
+  // each column rounds — tracking the real top per datum (zero / legend-hidden
+  // segments skipped) instead of hand-assigning corners to every segment.
   return (
     <ChartContainer config={autoConfig} className="h-72 w-full">
       <BarChart data={MONTHLY}>
         <CartesianGrid vertical={false} />
         <XAxis dataKey="month" tickLine={false} axisLine={false} />
         <ChartTooltip content={<ChartTooltipContent indicator="line" showTotal totalLabel="Total" />} />
-        <Bar dataKey="card" stackId="a" fill="var(--color-card)" radius={[0, 0, 2, 2]} />
-        <Bar dataKey="wallet" stackId="a" fill="var(--color-wallet)" radius={[2, 2, 0, 0]} />
+        <ChartBar dataKey="card" stackId="a" stackKeys={["card", "wallet"]} fill="var(--color-card)" />
+        <ChartBar dataKey="wallet" stackId="a" stackKeys={["card", "wallet"]} fill="var(--color-wallet)" />
       </BarChart>
     </ChartContainer>
   );
@@ -128,16 +135,16 @@ export function HorizontalBarWithLabels() {
         <CartesianGrid horizontal={false} />
         <XAxis type="number" hide />
         <YAxis type="category" dataKey="month" tickLine={false} axisLine={false} width={40} />
-        <Bar dataKey="card" fill="var(--color-card)" radius={2}>
+        <ChartBar dataKey="card" orientation="horizontal" fill="var(--color-card)">
           {/* inline value labels — for ≤ 8 bars */}
           <LabelList dataKey="card" position="right" className="fill-content-secondary text-2xs" />
-        </Bar>
+        </ChartBar>
       </BarChart>
     </ChartContainer>
   );
 }
 
-// Unordered categories: per-bar color via <Cell>, each taking an ordinal hue.
+// Unordered categories: per-bar color via a `fill` resolver, each an ordinal hue.
 const vendorConfig: ChartConfig = {
   newland: { label: "Newland" },
   verifone: { label: "Verifone" },
@@ -160,11 +167,11 @@ export function MixedColorBar() {
           tickFormatter={(v: string) => String(vendorConfig[v]?.label ?? v)}
         />
         <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-        <Bar dataKey="terminals" radius={2}>
-          {VENDORS.map((e) => (
-            <Cell key={e.vendor} fill={`var(--color-${e.vendor})`} />
-          ))}
-        </Bar>
+        <ChartBar
+          dataKey="terminals"
+          orientation="horizontal"
+          fill={(e) => `var(--color-${String(e.vendor)})`}
+        />
       </BarChart>
     </ChartContainer>
   );
@@ -211,13 +218,18 @@ export function StackedArea() {
 export function Donut() {
   return (
     <ChartContainer config={vendorConfig} className="mx-auto h-72 w-full max-w-md">
-      <PieChart>
+      <PieChart margin={{ top: 18, right: 64, bottom: 18, left: 64 }}>
         <ChartTooltip content={<ChartTooltipContent nameKey="vendor" hideLabel />} />
-        <Pie data={VENDORS} dataKey="terminals" nameKey="vendor" innerRadius={56} outerRadius={88} paddingAngle={2}>
-          {VENDORS.map((e) => (
-            <Cell key={e.vendor} fill={`var(--color-${e.vendor})`} />
-          ))}
-        </Pie>
+        <Pie
+          data={VENDORS_COLORED}
+          dataKey="terminals"
+          nameKey="vendor"
+          innerRadius={52}
+          outerRadius={76}
+          paddingAngle={2}
+          label={<ChartPieCalloutLabel nameKey="vendor" />}
+          labelLine={<ChartPieCalloutLabelLine />}
+        />
         <ChartLegend content={<ChartLegendContent nameKey="vendor" />} />
       </PieChart>
     </ChartContainer>
@@ -286,7 +298,7 @@ export function TooltipIndicators() {
             />
           }
         />
-        <Bar dataKey="card" fill="var(--color-card)" radius={2} />
+        <ChartBar dataKey="card" fill="var(--color-card)" />
       </BarChart>
     </ChartContainer>
   );
@@ -299,8 +311,8 @@ export function TooltipIconsAndTotal() {
       <BarChart data={MONTHLY}>
         <XAxis dataKey="month" tickLine={false} axisLine={false} />
         <ChartTooltip content={<ChartTooltipContent showTotal totalLabel="Total" />} />
-        <Bar dataKey="card" stackId="a" fill="var(--color-card)" />
-        <Bar dataKey="wallet" stackId="a" fill="var(--color-wallet)" />
+        <ChartBar dataKey="card" stackId="a" stackKeys={["card", "wallet"]} fill="var(--color-card)" />
+        <ChartBar dataKey="wallet" stackId="a" stackKeys={["card", "wallet"]} fill="var(--color-wallet)" />
       </BarChart>
     </ChartContainer>
   );
@@ -327,6 +339,7 @@ export function StaticLegend() {
 export function InteractiveLegend() {
   const [hidden, setHidden] = React.useState<Record<string, boolean>>({});
   const toggle = (key: string) => setHidden((h) => ({ ...h, [key]: !h[key] }));
+  const hiddenKeys = Object.keys(hidden).filter((key) => hidden[key]);
 
   return (
     <ChartContainer config={autoConfig} className="h-72 w-full">
@@ -335,8 +348,9 @@ export function InteractiveLegend() {
         <XAxis dataKey="month" tickLine={false} axisLine={false} />
         <ChartTooltip content={<ChartTooltipContent />} />
         <ChartLegend content={<ChartLegendContent hidden={hidden} onToggle={toggle} />} />
-        <Bar dataKey="card" hide={hidden.card} fill="var(--color-card)" radius={[2, 2, 0, 0]} />
-        <Bar dataKey="wallet" hide={hidden.wallet} fill="var(--color-wallet)" radius={[2, 2, 0, 0]} />
+        {/* Stacked + hidden-aware: hiding the top series re-rounds the new visible top. */}
+        <ChartBar dataKey="card" stackId="a" stackKeys={["card", "wallet"]} hiddenKeys={hiddenKeys} hide={hidden.card} fill="var(--color-card)" />
+        <ChartBar dataKey="wallet" stackId="a" stackKeys={["card", "wallet"]} hiddenKeys={hiddenKeys} hide={hidden.wallet} fill="var(--color-wallet)" />
       </BarChart>
     </ChartContainer>
   );

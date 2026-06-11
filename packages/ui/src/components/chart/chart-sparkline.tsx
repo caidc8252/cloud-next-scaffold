@@ -53,7 +53,10 @@ export function ChartSparkline({
       {...props}
     >
       {variant === "area" ? (
-        <RechartsPrimitive.AreaChart width={width} height={height} data={data} margin={margin}>
+        // Sparklines are decorative — no axes/tooltip — so opt out of the
+        // focusable accessibility layer (default `true`) that would otherwise
+        // make them keyboard-focusable and draw a focus box on click.
+        <RechartsPrimitive.AreaChart accessibilityLayer={false} width={width} height={height} data={data} margin={margin}>
           <RechartsPrimitive.Area
             dataKey={dataKey}
             type={curve}
@@ -66,7 +69,7 @@ export function ChartSparkline({
           />
         </RechartsPrimitive.AreaChart>
       ) : (
-        <RechartsPrimitive.LineChart width={width} height={height} data={data} margin={margin}>
+        <RechartsPrimitive.LineChart accessibilityLayer={false} width={width} height={height} data={data} margin={margin}>
           <RechartsPrimitive.Line
             dataKey={dataKey}
             type={curve}
