@@ -5,7 +5,7 @@ import { ArrowRight, Building2, Loader2 } from "lucide-react";
 import { Badge, Button } from "@cloud/ui";
 import { request, RequestError } from "@cloud/request/client";
 import { useTranslations } from "@cloud/i18n/client";
-import { isPartnerSelectable, type PartnerChoice } from "@/lib/partner-choice";
+import { isPartnerSelectable, type PartnerChoice } from "@/service/auth/partner-choice";
 
 type SelectPartnerResponse = {
   redirectTo: string;

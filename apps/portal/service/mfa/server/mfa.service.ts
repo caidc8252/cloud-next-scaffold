@@ -3,7 +3,7 @@ import "server-only";
 import { prisma } from "@cloud/db";
 import { getAuthConfig } from "@cloud/config";
 import { decryptSecret } from "@cloud/security/server";
-import { verifyTotp } from "./totp";
+import { verifyTotp } from "@/lib/totp";
 
 const MFA_TYPE = "TOTP";
 const MAX_FAIL = 10;
