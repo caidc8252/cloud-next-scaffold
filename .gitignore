@@ -59,7 +59,7 @@ apps/*/manifest/_generated/
 # AI local skills / agent artifacts
 
 skills-lock.json
-.claude
+.claude/settings.*
 .agents
 .codex
 
