@@ -8,8 +8,8 @@ import {
   isAuthorizingWindowOpen,
   isContractEffective,
   partnerToday,
-} from "./contract-validity";
-import { selectApplicableRoles } from "./role-selection";
+} from "@/service/auth/server/contract-validity";
+import { selectApplicableRoles } from "@/service/auth/server/role-selection";
 
 export type SessionSnapshotInput = Omit<Session, "loginAt" | "expireAt">;
 

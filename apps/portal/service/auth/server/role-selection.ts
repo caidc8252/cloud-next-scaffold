@@ -1,5 +1,7 @@
 import "server-only";
 
+// NORMAL 授权下的「适用角色」筛选纯函数：契约命中（含公共 '*'）+ 未被 blocklist + PRIVATE 须本 partner。
+
 export type RoleRow = {
   roleId: number;
   roleName: string;
@@ -9,7 +11,6 @@ export type RoleRow = {
   permissionCodes: unknown;
 };
 
-// NORMAL 用户的适用角色：契约命中（含公共 "*"）+ 未被 blocklist + PRIVATE 须本 partner。
 export function selectApplicableRoles(input: {
   roles: RoleRow[];
   contractTypes: string[];

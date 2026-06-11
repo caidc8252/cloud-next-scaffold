@@ -10,7 +10,7 @@ import {
 import { AuthShell } from "@/app/_components/auth-shell";
 import { AuthLead, IconBadge } from "@/app/(auth)/_components/card-bits";
 import { getAdminSessionHandoffUrl } from "@/lib/platform-routing";
-import { listPartnerChoices } from "@/lib/partner-choices";
+import { listPartnerChoices } from "@/service/auth/server/partner-choices";
 import { PartnerList } from "./_components/partner-list";
 import { Building2 } from "lucide-react";
 
