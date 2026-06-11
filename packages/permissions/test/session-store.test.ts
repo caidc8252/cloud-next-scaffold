@@ -28,15 +28,15 @@ const snapshot: Omit<Session, "loginAt" | "expireAt"> = {
   username: "alice",
   displayName: "Alice",
   email: "alice@example.com",
-  currentPartnerId: 9,
-  partnerName: "Acme",
+  currentPartyId: 9,
+  partyName: "Acme",
   contractTypes: ["ADMIN"],
   authorizingType: "ADMIN",
   roles: [{ roleId: 1, roleName: "Administrator", roleType: "GLOBAL" }],
   permissions: ["roles.VIEW", "users.VIEW"],
   partners: [
-    { partnerId: 9, partnerName: "Acme", authorizingType: "ADMIN", status: "ACTIVE", authorizingFrom: null, authorizingTo: null },
-    { partnerId: 10, partnerName: "Beta", authorizingType: "NORMAL", status: "ACTIVE", authorizingFrom: null, authorizingTo: null },
+    { partyId: 9, partyName: "Acme", authorizingType: "ADMIN", status: "ACTIVE", authorizingFrom: null, authorizingTo: null },
+    { partyId: 10, partyName: "Beta", authorizingType: "NORMAL", status: "ACTIVE", authorizingFrom: null, authorizingTo: null },
   ],
   mfaPassed: true,
 };
@@ -61,7 +61,7 @@ describe("sessionStore", () => {
     const stored = value as Session;
     expect(stored).toMatchObject({
       userId: 7,
-      currentPartnerId: 9,
+      currentPartyId: 9,
       permissions: ["roles.VIEW", "users.VIEW"],
       mfaPassed: true,
     });
@@ -86,20 +86,20 @@ describe("sessionStore", () => {
   it("update() upgrades a partial session and preserves loginAt", async () => {
     const { sid } = await sessionStore.create({
       ...snapshot,
-      currentPartnerId: null,
-      partnerName: null,
+      currentPartyId: null,
+      partyName: null,
       contractTypes: [],
       authorizingType: null,
       roles: [],
       permissions: [],
     });
     const partial = (await sessionStore.read(sid))!;
-    expect(partial.currentPartnerId).toBeNull();
+    expect(partial.currentPartyId).toBeNull();
     expect(partial.permissions).toEqual([]);
 
     await sessionStore.update(sid, { ...snapshot, loginAt: partial.loginAt });
     const full = (await sessionStore.read(sid))!;
-    expect(full.currentPartnerId).toBe(9);
+    expect(full.currentPartyId).toBe(9);
     expect(full.permissions).toEqual(["roles.VIEW", "users.VIEW"]);
     expect(full.loginAt).toBe(partial.loginAt);
   });

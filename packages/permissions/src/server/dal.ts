@@ -6,12 +6,12 @@ import { redirect } from "next/navigation";
 import { SID_COOKIE, sessionStore, type ActiveSession, type Session } from "./session-store.ts";
 
 // 会话是单一扁平形状：getSession 直接返回快照（无投影/无重命名），
-// 选定公司的会话用 ActiveSession 类型收窄（currentPartnerId 等保证非空）。
+// 选定公司的会话用 ActiveSession 类型收窄（currentPartyId 等保证非空）。
 // menus 不在 session 里，由 apps/admin/lib/session-menus.ts 按 manifest 现算。
 
 export type PartialSession = {
   userId: number;
-  username: string;
+  email: string | null;
   displayName: string | null;
 };
 
@@ -32,15 +32,15 @@ const readSnapshot = cache(async (): Promise<Session | null> => {
 
 export const getSession = cache(async (): Promise<ActiveSession | null> => {
   const session = await readSnapshot();
-  if (!session || session.currentPartnerId === null) return null;
-  // currentPartnerId 非空 ⇒ 当前公司字段已由快照构建器填充
+  if (!session || session.currentPartyId === null) return null;
+  // currentPartyId 非空 ⇒ 当前公司字段已由快照构建器填充
   return session as ActiveSession;
 });
 
 export const getPartialSession = cache(async (): Promise<PartialSession | null> => {
   const session = await readSnapshot();
   if (!session) return null;
-  return { userId: session.userId, username: session.username, displayName: session.displayName };
+  return { userId: session.userId, email: session.email, displayName: session.displayName };
 });
 
 export async function requireSession(): Promise<ActiveSession> {

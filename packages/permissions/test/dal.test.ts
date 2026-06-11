@@ -36,22 +36,22 @@ const fullSnapshot: Omit<Session, "loginAt" | "expireAt"> = {
   username: "alice",
   displayName: "Alice",
   email: "alice@example.com",
-  currentPartnerId: 2,
-  partnerName: "Acme",
+  currentPartyId: 2,
+  partyName: "Acme",
   contractTypes: ["ADMIN"],
   authorizingType: "ADMIN",
   roles: [{ roleId: 3, roleName: "Admin", roleType: "GLOBAL" }],
   permissions: ["users.VIEW", "roles.VIEW"],
   partners: [
-    { partnerId: 2, partnerName: "Acme", authorizingType: "ADMIN", status: "ACTIVE", authorizingFrom: null, authorizingTo: null },
+    { partyId: 2, partyName: "Acme", authorizingType: "ADMIN", status: "ACTIVE", authorizingFrom: null, authorizingTo: null },
   ],
   mfaPassed: true,
 };
 
 const partialSnapshot: Omit<Session, "loginAt" | "expireAt"> = {
   ...fullSnapshot,
-  currentPartnerId: null,
-  partnerName: null,
+  currentPartyId: null,
+  partyName: null,
   contractTypes: [],
   authorizingType: null,
   roles: [],
@@ -85,7 +85,7 @@ describe("getPartialSession", () => {
   it("returns identity for any live session (incl. partial)", async () => {
     await seed(partialSnapshot);
     const { getPartialSession } = await import("../src/server/dal.ts");
-    expect(await getPartialSession()).toEqual({ userId: 1, username: "alice", displayName: "Alice" });
+    expect(await getPartialSession()).toEqual({ userId: 1, email: "alice@example.com", displayName: "Alice" });
   });
 });
 
@@ -104,8 +104,8 @@ describe("getSession", () => {
       username: "alice",
       displayName: "Alice",
       email: "alice@example.com",
-      currentPartnerId: 2,
-      partnerName: "Acme",
+      currentPartyId: 2,
+      partyName: "Acme",
       contractTypes: ["ADMIN"],
       authorizingType: "ADMIN",
       roles: [{ roleId: 3, roleName: "Admin", roleType: "GLOBAL" }],
@@ -138,7 +138,7 @@ describe("requireSession", () => {
     await seed({
       ...partialSnapshot,
       partners: [
-        { partnerId: 2, partnerName: "Acme", authorizingType: "NORMAL", status: "EXPIRED", authorizingFrom: null, authorizingTo: null },
+        { partyId: 2, partyName: "Acme", authorizingType: "NORMAL", status: "EXPIRED", authorizingFrom: null, authorizingTo: null },
       ],
     });
     const { requireSession } = await import("../src/server/dal.ts");
