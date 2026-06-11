@@ -28,6 +28,29 @@ export {
   ChartSparkline,
   type ChartSparklineProps,
 } from "./chart-sparkline"
+export {
+  ChartBar,
+  createStackedBarShape,
+  getStackedBarRadius,
+  type ChartBarProps,
+  type BarCellResolver,
+  type StackedBarShapeOptions,
+  type StackedBarOrientation,
+  type StackedBarRadius,
+} from "./chart-bar"
+export {
+  ChartPieCalloutLabel,
+  ChartPieCalloutLabelLine,
+  getPieCalloutGeometry,
+  resolvePieCalloutName,
+  resolvePieCalloutLineColor,
+  formatPieCalloutValue,
+  type ChartPieCalloutGeometry,
+  type ChartPieCalloutGeometryOptions,
+  type ChartPieCalloutLabelProps,
+  type ChartPieCalloutLabelLineProps,
+  type ChartPieCalloutSectorProps,
+} from "./chart-pie-callout"
 
 // Recharts composition building blocks, re-exported so consumers compose a
 // whole chart out of `@cloud/ui/components/chart` imports and never depend on
@@ -67,4 +90,6 @@ export {
   Cell,
   Label,
   LabelList,
+  Rectangle,
 } from "recharts"
+export type { BarShapeProps } from "recharts"
