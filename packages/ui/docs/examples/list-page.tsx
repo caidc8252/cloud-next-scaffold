@@ -3,31 +3,36 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // STYLE TEMPLATE · List page (spec §1.1 §2.2 §3–§5)
 //
-// Compilable style skeleton for the portal LIST page shape. Reference
-// implementation: apps/admin/app/(portal)/manage/customers/_components/customer-list.tsx
+// Compilable style skeleton for the portal LIST page shape. The condition band,
+// chips, and draft/applied state come from the @cloud/ui list-filter family
+// (ListConditionBand / SearchInput / AppliedFilters / FilterChip) + useListFilters
+// (spec §4) — pages no longer hand-roll the sticky band or filter state.
+// Reference implementation: apps/admin/.../sales/catalog/_components/catalog-list.tsx
 //
-// Style-only: data is hardcoded, handlers are no-ops, <a> stands in for
-// next/link. In a real page: requirePermissions() in page.tsx, useState for
-// draft/applied filters, @cloud/request/client for data, router.push to open
-// rows, and @cloud/ui's PageHeader (@cloud/ui/components/layout)
-// instead of the inlined band below.
+// Style-only: data is hardcoded, <a> stands in for next/link. In a real page:
+// requirePermissions() in page.tsx, @cloud/request/client for data, router.push to
+// open rows, and @cloud/ui's PageHeader (@cloud/ui/components/layout) for the band.
 // NOT exported from @cloud/ui — never enters the bundle.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { ChevronRight, Download, Plus, Search, X } from "lucide-react";
+import { ChevronRight, Download, Plus, Search } from "lucide-react";
 import {
+  AppliedFilters,
   Badge,
   Button,
   Card,
-  Input,
+  FilterChip,
+  ListConditionBand,
   PageBody,
   RichPagination,
+  SearchInput,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   Table,
+  useListFilters,
   type TableColumn,
 } from "@cloud/ui";
 
@@ -41,30 +46,9 @@ type Row = {
 };
 
 const ROWS: Row[] = [
-  {
-    id: "1",
-    name: "Northwind Trading Co.",
-    city: "Springfield, OR",
-    status: "Active",
-    registeredAt: "Mar 12, 2024",
-    tags: ["ISV"],
-  },
-  {
-    id: "2",
-    name: "Globex Payments LLC",
-    city: "San Francisco, CA",
-    status: "Active",
-    registeredAt: "Nov 5, 2023",
-    tags: ["ISO", "Merchant"],
-  },
-  {
-    id: "3",
-    name: "Initech Systems",
-    city: "Austin, TX",
-    status: "Onboarding",
-    registeredAt: "May 20, 2026",
-    tags: [],
-  },
+  { id: "1", name: "Northwind Trading Co.", city: "Springfield, OR", status: "Active", registeredAt: "Mar 12, 2024", tags: ["ISV"] },
+  { id: "2", name: "Globex Payments LLC", city: "San Francisco, CA", status: "Active", registeredAt: "Nov 5, 2023", tags: ["ISO", "Merchant"] },
+  { id: "3", name: "Initech Systems", city: "Austin, TX", status: "Onboarding", registeredAt: "May 20, 2026", tags: [] },
 ];
 
 // §5.2 — text columns come in exactly three shapes (two-line / numeric mono / plain).
@@ -100,11 +84,7 @@ const COLUMNS: TableColumn<Row>[] = [
     title: "REGISTERED",
     sortable: true,
     // Shape 2 · single-line numeric / data value: always mono + tabular-nums
-    render: (r) => (
-      <span className="font-mono text-2xs tabular-nums text-content-secondary">
-        {r.registeredAt}
-      </span>
-    ),
+    render: (r) => <span className="font-mono text-2xs tabular-nums text-content-secondary">{r.registeredAt}</span>,
   },
   {
     key: "city",
@@ -139,15 +119,16 @@ const COLUMNS: TableColumn<Row>[] = [
 ];
 
 export function ListPageTemplate() {
+  // §4 — draft/applied state machine. apply() commits the draft; a real page resets page 1 in onApply.
+  const filters = useListFilters({ initial: { q: "", contract: "All" }, onApply: () => {} });
+
   return (
     <>
       {/* §2.2 — full-bleed white header band. In apps/admin use <PageHeader/> from @cloud/ui/components/layout. */}
       <div className="border-b border-line-subtle bg-surface-2">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-6 py-4">
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-semibold tracking-tight text-content-primary">
-              Customers
-            </h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-content-primary">Customers</h1>
             <p className="mt-1.5 max-w-3xl text-sm text-content-tertiary">
               Maintain customer companies, their contracts and operators.
             </p>
@@ -158,69 +139,48 @@ export function ListPageTemplate() {
         </div>
       </div>
 
-      {/* §3 — page body: centralizes padding and block gap */}
       <PageBody>
-        {/* §4 — sticky condition band: docks flush under the app header on scroll.
-            Full-bleed -mx-6 + canvas bg mask; -my-3 cancels py-3 so resting rhythm stays gap-6. */}
-        <div className="sticky top-0 z-10 -mx-6 -my-3 flex flex-col gap-2.5 bg-surface-1 px-6 py-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Input with prefix puts className on the inner input → width lives on a wrapper */}
-            <div className="max-w-64 flex-1">
-              <Input
-                inputSize="md"
-                prefix={<Search className="size-4" />}
+        {/* §4 — condition band: quick-bar slot + applied-chip slot. The band owns sticky / full-bleed math. */}
+        <ListConditionBand
+          toolbar={
+            <>
+              <SearchInput
+                value={filters.draft.q}
+                onChange={(v) => filters.setDraft("q", v)}
+                onSearch={filters.apply}
                 placeholder="Search by name, address, license"
               />
-            </div>
-            <Select value="All" onValueChange={() => {}}>
-              <SelectTrigger size="md" className="w-40">
-                <SelectValue>{(v) => `Contract: ${String(v)}`}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All contracts</SelectItem>
-                <SelectItem value="ISO">ISO</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              variant="primary"
-              size="md"
-              iconLeft={<Search className="size-4" />}
-              onClick={() => {}}
-            >
-              Search
-            </Button>
-          </div>
-          {/* Applied-filter feedback row: primary-tinted chips + Clear all */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-content-tertiary">Active filters:</span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-primary-500/25 bg-primary-50 py-0.5 pr-1 pl-2.5 text-xs font-medium text-primary-700">
-              Status: Active
-              <Button variant="ghost" size="icon-xs" onClick={() => {}} aria-label="Remove filter">
-                <X className="size-3" />
+              <Select value={filters.draft.contract} onValueChange={(v) => filters.setDraft("contract", String(v ?? "All"))}>
+                <SelectTrigger size="default" className="w-40">
+                  <SelectValue>{(v) => `Contract: ${String(v)}`}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All contracts</SelectItem>
+                  <SelectItem value="ISO">ISO</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="primary" size="md" iconLeft={<Search className="size-4" />} onClick={filters.apply}>
+                Search
               </Button>
-            </span>
-            <Button variant="ghost" size="xs" onClick={() => {}}>
-              Clear all
-            </Button>
-          </div>
-        </div>
+            </>
+          }
+          applied={
+            <AppliedFilters onClearAll={filters.clearAll}>
+              {filters.applied.contract !== "All" ? (
+                <FilterChip label={`Contract: ${filters.applied.contract}`} onRemove={() => filters.clearField("contract")} />
+              ) : null}
+            </AppliedFilters>
+          }
+        />
 
         {/* §5 — list card: count band + Table + pagination band (card adds no padding) */}
         <Card elevation={1} className="-mt-2">
           <div className="flex items-center justify-between gap-3 border-b border-line-subtle px-4 py-3">
             <div className="text-sm text-content-secondary">
-              <span className="font-mono font-semibold text-content-primary tabular-nums">
-                {ROWS.length}
-              </span>{" "}
-              customers
-              <span className="text-content-tertiary"> matching filters</span>
+              <span className="font-mono font-semibold text-content-primary tabular-nums">{ROWS.length}</span> customers
+              {filters.hasApplied && <span className="text-content-tertiary"> matching filters</span>}
             </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              iconLeft={<Download className="size-3.5" />}
-              onClick={() => {}}
-            >
+            <Button variant="secondary" size="sm" iconLeft={<Download className="size-3.5" />} onClick={() => {}}>
               Export
             </Button>
           </div>
@@ -230,22 +190,11 @@ export function ListPageTemplate() {
             rows={ROWS}
             rowKey={(r) => r.id}
             onRowClick={() => {}}
-            empty={
-              <div className="py-12 text-center text-sm text-content-tertiary">
-                No customers match your search.
-              </div>
-            }
+            empty={<div className="py-12 text-center text-sm text-content-tertiary">No customers match your search.</div>}
           />
 
           {/* §5.3 — RichPagination owns rows-per-page, range summary, and page buttons */}
-          <RichPagination
-            page={1}
-            pageCount={1}
-            onPageChange={() => {}}
-            total={ROWS.length}
-            pageSize={25}
-            onPageSizeChange={() => {}}
-          />
+          <RichPagination page={1} pageCount={1} onPageChange={() => {}} total={ROWS.length} pageSize={25} onPageSizeChange={() => {}} />
         </Card>
       </PageBody>
     </>
