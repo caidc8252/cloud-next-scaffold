@@ -25,6 +25,7 @@ import {
   computeFailureUpdate,
 } from "@/lib/login-checks";
 import { createMfaLoginToken, readMfaLoginToken, deleteMfaLoginToken } from "@/lib/login-token";
+import { consumeLoginNonce } from "@/lib/login-nonce";
 import { getAdminSessionHandoffUrl } from "@/lib/platform-routing";
 import { listPartyChoices } from "./partner-choices";
 import { isPartySelectable } from "@/service/auth/partner-choice";
@@ -72,7 +73,7 @@ export async function login(input: LoginInput): Promise<LoginResult> {
     throw new BusinessError(ERR_AUTH_ACCOUNT_LOCKED, 403);
   }
 
-  let payload: { password: string; timestamp: number };
+  let payload: { password: string; timestamp: number; nonce: string };
   try {
     payload = loginPayloadSchema.parse(
       JSON.parse(decryptRsaOaep(input.encryptedPassword, auth.rsaPrivateKey)),
@@ -82,6 +83,11 @@ export async function login(input: LoginInput): Promise<LoginResult> {
   }
 
   if (!isTimestampFresh(payload.timestamp, now.getTime(), auth.timestampWindowMs)) {
+    throw new BusinessError(ERR_AUTH_REQUEST_EXPIRED);
+  }
+
+  // 防重放：nonce 单次消费（由 login-challenge 下发）；取不到 = 重放或过期。
+  if (!(await consumeLoginNonce(payload.nonce))) {
     throw new BusinessError(ERR_AUTH_REQUEST_EXPIRED);
   }
 

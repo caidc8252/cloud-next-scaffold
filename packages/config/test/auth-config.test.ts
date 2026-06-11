@@ -6,8 +6,8 @@ describe("parseAuthConfig", () => {
     const cfg = parseAuthConfig({ AUTH_LOGIN_RSA_PRIVATE_KEY: "ZGVyLWtleQ==", AUTH_AES_SECRET_KEY: "mfa-key" });
     expect(cfg).toEqual({
       maxPasswordErrorTimes: 6,
-      lockDurationMinutes: 30,
-      timestampWindowMs: 60_000,
+      lockDurationMinutes: 60,
+      timestampWindowMs: 120_000,
       rsaPrivateKey: { key: Buffer.from("ZGVyLWtleQ==", "base64"), format: "der", type: "pkcs8" },
       aesSecretKey: "mfa-key",
     });

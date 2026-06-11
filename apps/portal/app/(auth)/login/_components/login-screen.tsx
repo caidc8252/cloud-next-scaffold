@@ -113,13 +113,16 @@ export function LoginScreen() {
     setFormError(null);
     setBusy(t("busy.verifying"));
     try {
-      const timestampResponse = await request.get<{ serverTimestamp: number }>("/api/auth/server-time");
+      const challenge = await request.get<{ serverTimestamp: number; nonce: string }>(
+        "/api/auth/login-challenge",
+      );
       const encryptedPassword = await encryptLoginPassword(
         password,
-        timestampResponse.data.serverTimestamp,
+        challenge.data.serverTimestamp,
+        challenge.data.nonce,
       );
       const res = await request.post<PasswordLoginResponse>("/api/auth/password", {
-        account: email,
+        email,
         encryptedPassword,
       });
       await applyPasswordResult(res.data, email);

@@ -8,10 +8,11 @@ export const loginSchema = z.object({
   encryptedPassword: z.string().min(1),
 });
 
-/** 解密后 RSA 包体结构（服务端内部校验）。 */
+/** 解密后 RSA 包体结构（服务端内部校验）。nonce 由 login-challenge 下发、登录时单次消费（防重放）。 */
 export const loginPayloadSchema = z.object({
   password: z.string().min(1),
   timestamp: z.number().int().positive(),
+  nonce: z.string().min(1),
 });
 
 /** POST /api/auth/mfa-verify —— 一次性 mfaToken + TOTP 码。 */

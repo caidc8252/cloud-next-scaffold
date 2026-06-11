@@ -2,9 +2,10 @@ import "server-only";
 
 import { authenticator } from "otplib";
 
-// TOTP 生成/校验（MFA）。step=30s、digits=6，校验时容忍 ±1 个时间步以吸收时钟漂移。
+// TOTP 生成/校验（MFA）。step=60s、digits=6，校验时容忍 ±1 个时间步以吸收时钟漂移。
+// step 同时由 keyuri 编进 otpauth period，保证认证器端与校验端一致（注：60s 非主流默认，依赖 App 读取 period）。
 // secret 为 base32；加解密（AES）走 @cloud/security 的 encryptSecret/decryptSecret，本模块只管算法。
-authenticator.options = { step: 30, digits: 6, window: 1 };
+authenticator.options = { step: 60, digits: 6, window: 1 };
 
 /** 生成新的 base32 TOTP 密钥。 */
 export function generateTotpSecret(): string {
