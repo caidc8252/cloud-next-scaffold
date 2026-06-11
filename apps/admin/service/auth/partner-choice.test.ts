@@ -1,26 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { isPartnerSelectable, type PartnerChoice } from "./partner-choice";
+import { isPartySelectable, type PartyChoice } from "./partner-choice";
 
-const base: PartnerChoice = {
-  partnerId: 1,
-  partnerName: "Acme",
+const base: PartyChoice = {
+  partyId: 1,
+  partyName: "Acme",
   partnerStatus: "ACTIVE",
   userStatus: "ACTIVE",
   authorizingType: "NORMAL",
   validContract: true,
 };
 
-describe("isPartnerSelectable", () => {
+describe("isPartySelectable", () => {
   it("is selectable when partner + user active and contract valid", () => {
-    expect(isPartnerSelectable(base)).toBe(true);
+    expect(isPartySelectable(base)).toBe(true);
   });
   it("is not selectable when partner disabled", () => {
-    expect(isPartnerSelectable({ ...base, partnerStatus: "SUSPENDED" })).toBe(false);
+    expect(isPartySelectable({ ...base, partnerStatus: "SUSPENDED" })).toBe(false);
   });
   it("is not selectable when user disabled", () => {
-    expect(isPartnerSelectable({ ...base, userStatus: "LOCKED" })).toBe(false);
+    expect(isPartySelectable({ ...base, userStatus: "LOCKED" })).toBe(false);
   });
   it("is not selectable without a valid contract", () => {
-    expect(isPartnerSelectable({ ...base, validContract: false })).toBe(false);
+    expect(isPartySelectable({ ...base, validContract: false })).toBe(false);
   });
 });

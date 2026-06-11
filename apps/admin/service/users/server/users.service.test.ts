@@ -13,12 +13,12 @@ import type { ActiveSession } from "@cloud/permissions/server";
 // ——这正是迁移前埋在 route 里、没法脱离 HTTP+DB 单测的业务逻辑。用工厂 mock 而非自动 mock:
 // 自动 mock 会先 import 真模块以读取导出形状,从而触发 @cloud/db 实例化(需要 DATABASE_URL)。
 vi.mock("./users.repository", () => ({
-  listPartnerUsers: vi.fn(),
+  listPartyUsers: vi.fn(),
   listPendingInvites: vi.fn(),
   resolveUsernames: vi.fn(),
   findUserLink: vi.fn(),
   getUserWithLink: vi.fn(),
-  updatePartnerUser: vi.fn(),
+  updatePartyUser: vi.fn(),
   findPendingInviteByEmail: vi.fn(),
   findInvite: vi.fn(),
   findPendingInvite: vi.fn(),
@@ -43,8 +43,8 @@ import {
 
 const session = {
   userId: 1,
-  username: "admin",
-  currentPartnerId: 100,
+  displayName: "admin",
+  currentPartyId: 100,
   permissions: ["users.UPD"],
 } as unknown as ActiveSession;
 
@@ -62,7 +62,7 @@ function userRow(overrides: Record<string, unknown> = {}) {
     passwordErrorLockExpiredTimestamp: null,
     creTime: new Date("2026-01-01T00:00:00.000Z"),
     updTime: new Date("2026-01-02T00:00:00.000Z"),
-    partnerUsers: [{ authorizingType: "NORMAL", status: "ACTIVE", roles: [{ roleId: 5 }], remark: "" }],
+    partyUsers: [{ authorizingType: "NORMAL", status: "ACTIVE", roles: [{ roleId: 5 }], remark: "" }],
     ...overrides,
   };
 }
@@ -76,7 +76,7 @@ function inviteRow(overrides: Record<string, unknown> = {}) {
     resendCount: 0,
     creTime: new Date("2026-01-10T00:00:00.000Z"),
     inviterUserId: 1,
-    roles: [],
+    intendedRole: [],
     ...overrides,
   };
 }
@@ -87,7 +87,7 @@ beforeEach(() => {
 
 describe("listUsersAndInvites", () => {
   it("returns mapped users followed by pending invites with resolved inviter names", async () => {
-    vi.mocked(repo.listPartnerUsers).mockResolvedValue([userRow()] as never);
+    vi.mocked(repo.listPartyUsers).mockResolvedValue([userRow()] as never);
     vi.mocked(repo.listPendingInvites).mockResolvedValue([inviteRow({ inviterUserId: 42 })] as never);
     vi.mocked(repo.resolveUsernames).mockResolvedValue(new Map([[42, "carol"]]));
 
@@ -112,13 +112,13 @@ describe("createInvite", () => {
 
   it("creates the invite and stores the selected roles", async () => {
     vi.mocked(repo.findPendingInviteByEmail).mockResolvedValue(null as never);
-    vi.mocked(repo.createInvite).mockResolvedValue(inviteRow({ roles: [{ roleId: 3 }] }) as never);
+    vi.mocked(repo.createInvite).mockResolvedValue(inviteRow({ intendedRole: [{ roleId: 3 }] }) as never);
 
     const invite = await createInvite(session, { email: "new@example.com", roleIds: ["3", "3"] });
 
     expect(invite.inviteEmail).toBe("new@example.com");
     expect(invite.invitedBy).toBe("admin");
-    expect(vi.mocked(repo.createInvite).mock.calls[0][0]).toMatchObject({ roles: [{ roleId: 3 }] });
+    expect(vi.mocked(repo.createInvite).mock.calls[0][0]).toMatchObject({ intendedRole: [{ roleId: 3 }] });
   });
 });
 
@@ -147,7 +147,7 @@ describe("updateUser", () => {
     await expect(updateUser(session, 2, { roleIds: ["5", "6"] })).rejects.toMatchObject({
       status: 403,
     });
-    expect(repo.updatePartnerUser).not.toHaveBeenCalled();
+    expect(repo.updatePartyUser).not.toHaveBeenCalled();
   });
 
   it("allows an unchanged role set through without CHANGE_ROLE", async () => {
@@ -155,12 +155,12 @@ describe("updateUser", () => {
       authorizingType: "NORMAL",
       roles: [{ roleId: 5 }],
     } as never);
-    vi.mocked(repo.updatePartnerUser).mockResolvedValue({} as never);
+    vi.mocked(repo.updatePartyUser).mockResolvedValue({} as never);
     vi.mocked(repo.getUserWithLink).mockResolvedValue(userRow() as never);
 
     await updateUser(session, 2, { roleIds: ["5"], remark: "  trimmed  " });
 
-    expect(vi.mocked(repo.updatePartnerUser).mock.calls[0][2]).toMatchObject({ remark: "trimmed" });
+    expect(vi.mocked(repo.updatePartyUser).mock.calls[0][2]).toMatchObject({ remark: "trimmed" });
   });
 });
 
@@ -178,12 +178,12 @@ describe("toggleUserLock", () => {
 
   it("toggles ACTIVE → LOCKED", async () => {
     vi.mocked(repo.findUserLink).mockResolvedValue({ authorizingType: "NORMAL", status: "ACTIVE" } as never);
-    vi.mocked(repo.updatePartnerUser).mockResolvedValue({} as never);
+    vi.mocked(repo.updatePartyUser).mockResolvedValue({} as never);
     vi.mocked(repo.getUserWithLink).mockResolvedValue(userRow() as never);
 
     await toggleUserLock(session, 2);
 
-    expect(vi.mocked(repo.updatePartnerUser).mock.calls[0][2]).toMatchObject({ status: "LOCKED" });
+    expect(vi.mocked(repo.updatePartyUser).mock.calls[0][2]).toMatchObject({ status: "LOCKED" });
   });
 });
 
@@ -244,7 +244,7 @@ describe("setInviteRoles", () => {
     const result = await setInviteRoles(session, 9, { roleIds: ["2", "1", "2"] });
 
     expect(vi.mocked(repo.updateInvite).mock.calls[0][1]).toMatchObject({
-      roles: [{ roleId: 1 }, { roleId: 2 }],
+      intendedRole: [{ roleId: 1 }, { roleId: 2 }],
     });
     // inviter is the session user → name comes from session, no repo lookup
     expect(result.invitedBy).toBe("admin");

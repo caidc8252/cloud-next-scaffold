@@ -26,8 +26,8 @@ import {
 } from "@/lib/login-checks";
 import { createMfaLoginToken, readMfaLoginToken, deleteMfaLoginToken } from "@/lib/login-token";
 import { getAdminSessionHandoffUrl } from "@/lib/platform-routing";
-import { listPartnerChoices } from "./partner-choices";
-import { isPartnerSelectable } from "@/service/auth/partner-choice";
+import { listPartyChoices } from "./partner-choices";
+import { isPartySelectable } from "@/service/auth/partner-choice";
 import * as mfa from "@/service/mfa/server/mfa.service";
 import { loginPayloadSchema, type LoginInput, type MfaVerifyInput } from "@/service/auth/schemas/auth.schema";
 import * as authRepository from "./auth.repository";
@@ -40,18 +40,18 @@ export type LoginResult = { mfaRequired: true; mfaToken: string } | { redirectTo
 
 /** 登录完成的公共收尾：按「可选 partner 数」聚合 → 建会话 → 决定落地路由。 */
 async function buildSessionAndRedirect(userId: number, snapshotFailCode: string): Promise<{ redirectTo: string }> {
-  const choices = await listPartnerChoices(userId);
-  const selectable = choices.filter(isPartnerSelectable);
-  const currentPartnerId = selectable.length === 1 ? selectable[0].partnerId : null;
+  const choices = await listPartyChoices(userId);
+  const selectable = choices.filter(isPartySelectable);
+  const currentPartyId = selectable.length === 1 ? selectable[0].partyId : null;
 
-  const snapshot = await buildSessionSnapshot(userId, currentPartnerId);
+  const snapshot = await buildSessionSnapshot(userId, currentPartyId);
   if (!snapshot) throw new BusinessError(snapshotFailCode, 401);
 
   const sid = await createSession(snapshot);
   // 直达 admin 前先签发交接 token，让 admin 在自己的 host 下写 sid cookie；
-  // currentPartnerId 落不下来（多选/零选/授权窗口失效）→ 去选择页，不签 token。
+  // currentPartyId 落不下来（多选/零选/授权窗口失效）→ 去选择页，不签 token。
   const handoffToken =
-    snapshot.currentPartnerId !== null ? await createSessionHandoffToken(sid) : null;
+    snapshot.currentPartyId !== null ? await createSessionHandoffToken(sid) : null;
 
   return {
     redirectTo: handoffToken ? getAdminSessionHandoffUrl(handoffToken) : "/select-partner",
@@ -62,7 +62,7 @@ export async function login(input: LoginInput): Promise<LoginResult> {
   const auth = getAuthConfig();
   const now = new Date();
 
-  const user = await authRepository.findUserByUsername(input.account);
+  const user = await authRepository.findUserByEmail(input.email);
   if (!user) throw new BusinessError(ERR_AUTH_INVALID_CREDENTIALS, 401);
 
   // 账号状态正常性（status 只管账号级；刷错锁不再写 status）
@@ -128,14 +128,14 @@ export async function verifyMfa(input: MfaVerifyInput): Promise<{ redirectTo: st
 }
 
 /** 选择登录 partner：校验归属有效 → 重建带 partner 的会话快照 → 更新会话 → 跨 host 交接到 admin。 */
-export async function selectPartner(userId: number, partnerId: number): Promise<{ redirectTo: string }> {
-  const membership = await authRepository.findPartnerMembership(partnerId, userId);
+export async function selectPartner(userId: number, partyId: number): Promise<{ redirectTo: string }> {
+  const membership = await authRepository.findPartyMembership(partyId, userId);
   if (!membership || membership.status !== "ACTIVE" || membership.partner.status !== "ACTIVE") {
     throw new BusinessError(ERR_AUTH_INVALID_PARTNER);
   }
 
-  const snapshot = await buildSessionSnapshot(userId, partnerId);
-  if (!snapshot || snapshot.currentPartnerId === null) {
+  const snapshot = await buildSessionSnapshot(userId, partyId);
+  if (!snapshot || snapshot.currentPartyId === null) {
     throw new BusinessError(ERR_AUTH_INVALID_PARTNER);
   }
 

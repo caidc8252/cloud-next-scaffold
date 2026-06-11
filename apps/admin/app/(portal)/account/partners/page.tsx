@@ -7,7 +7,7 @@ import { PartnersPageClient } from "@/app/(portal)/account/_components/partners-
 // the user menu. Switching reuses POST /api/auth/select-partner.
 export default async function PartnersPage() {
   const session = await requireSession();
-  const partners = await listPartners(session.userId, session.currentPartnerId);
+  const partners = await listPartners(session.userId, session.currentPartyId);
   return (
     <PageBody>
       <PartnersPageClient initialPartners={partners} />

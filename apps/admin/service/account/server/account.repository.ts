@@ -11,14 +11,6 @@ export function getUser(userId: number) {
   return prisma.sysUser.findUniqueOrThrow({ where: { userId } });
 }
 
-/** 同名用户（大小写不敏感 citext），排除自己——用户名唯一性校验。 */
-export function findUserByUsername(username: string, excludeUserId: number) {
-  return prisma.sysUser.findFirst({
-    where: { username, NOT: { userId: excludeUserId } },
-    select: { userId: true },
-  });
-}
-
 /** 同邮箱用户（citext），排除自己——邮箱唯一性校验。 */
 export function findUserByEmail(email: string, excludeUserId: number) {
   return prisma.sysUser.findFirst({
@@ -32,18 +24,19 @@ export function updateUser(userId: number, data: UpdateUserData) {
 }
 
 /** 用户归属的全部 partner（含 LOCKED）+ partner 名称，供「切换公司」列表。 */
-export function listPartnerMemberships(userId: number) {
-  return prisma.sysPartnerUser.findMany({
+export function listPartyMemberships(userId: number) {
+  return prisma.sysPartyUser.findMany({
     where: { userId },
-    include: { partner: { select: { partnerId: true, partnerName: true } } },
+    include: { partner: { select: { partyId: true, partyName: true } } },
     orderBy: { authorizingTimestamp: "desc" },
   });
 }
 
-/** 给定 partner 集合的非终止契约类型（供派生 contractTypes）。 */
-export function listActiveContractTypes(partnerIds: number[]) {
-  return prisma.sysPartnerContract.findMany({
-    where: { authorizedPartnerId: { in: partnerIds }, status: { not: "TERMINATED" } },
-    select: { authorizedPartnerId: true, authorizedContractType: true },
+/** 给定 party 集合的「生效中」契约类型（供派生 contractTypes）。
+ *  只取 status=ACTIVE：SUSPENDED（挂起）/ TERMINATED（终止）均视为非生效，不计入 live 契约类型。 */
+export function listActiveContractTypes(partyIds: number[]) {
+  return prisma.sysPartyContract.findMany({
+    where: { authorizedPartyId: { in: partyIds }, status: "ACTIVE" },
+    select: { authorizedPartyId: true, authorizedContractType: true },
   });
 }

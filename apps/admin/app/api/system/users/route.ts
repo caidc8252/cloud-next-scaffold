@@ -12,7 +12,7 @@ import { withApiHandler } from "@/lib/api-handler";
  */
 export const GET = withApiHandler(async () => {
   const session = await assertPermissions({ all: ["users.VIEW"] });
-  return successResponse(await listUsersAndInvites(session.currentPartnerId));
+  return successResponse(await listUsersAndInvites(session.currentPartyId));
 });
 
 /**

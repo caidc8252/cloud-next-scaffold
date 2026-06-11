@@ -107,8 +107,8 @@ export default async function PortalLayout({
             sections={buildSidebarSections(menus)}
             footer={
               <UserMenu
-                account={session.username}
-                name={session.displayName ?? session.username}
+                account={session.email ?? ""}
+                name={session.displayName ?? session.email ?? ""}
                 email={session.email ?? ""}
               />
             }

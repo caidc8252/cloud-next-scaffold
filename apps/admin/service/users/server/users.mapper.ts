@@ -3,11 +3,11 @@ import "server-only";
 import { extractRoleIds } from "@/service/_shared/role-codes";
 import type { User } from "@/app/(portal)/system/_shared/types";
 
-// Entity → VO 映射。角色绑定走 sys_partner_user.roles JSONB（List<{roleId}>）；邀请走
+// Entity → VO 映射。角色绑定走 sys_party_user.roles JSONB（List<{roleId}>）；邀请走
 // sys_operator_invite（无占位用户）。密码历史走 sys_user.password_history JSONB；重置请求改
 // Redis，不再有可列出的历史。
 
-type PartnerUserLink = {
+type PartyUserLink = {
   authorizingType: string;
   status: string;
   roles: unknown;
@@ -16,7 +16,6 @@ type PartnerUserLink = {
 
 export type UserRow = {
   userId: number;
-  username: string;
   nickName: string;
   email: string;
   country: string | null;
@@ -27,7 +26,7 @@ export type UserRow = {
   passwordErrorLockExpiredTimestamp: Date | null;
   creTime: Date;
   updTime: Date;
-  partnerUsers: PartnerUserLink[];
+  partyUsers: PartyUserLink[];
 };
 
 export type InviteRow = {
@@ -38,17 +37,17 @@ export type InviteRow = {
   resendCount: number;
   creTime: Date;
   inviterUserId: number;
-  roles: unknown;
+  intendedRole: unknown;
 };
 
 export function toClientUser(row: UserRow): User {
-  const link = row.partnerUsers[0];
+  const link = row.partyUsers[0];
   const partnerStatus = link?.status ?? row.status;
   const status: User["status"] = partnerStatus === "ACTIVE" ? "ACTIVE" : "INACTIVE";
 
   return {
     id: String(row.userId),
-    loginName: row.username,
+    loginName: row.email,
     displayName: row.nickName,
     email: row.email,
     country: row.country ?? "",
@@ -82,7 +81,7 @@ export function toClientInvite(row: InviteRow, inviterName: string): User {
     createdAt: row.creTime.toISOString(),
     updatedAt: row.creTime.toISOString(),
     authorizingType: "NORMAL",
-    roleIds: extractRoleIds(row.roles),
+    roleIds: extractRoleIds(row.intendedRole),
     invitedAt: row.creTime.toISOString(),
     invitedBy: inviterName,
     inviteExpiresAt: row.expiresAt.toISOString(),

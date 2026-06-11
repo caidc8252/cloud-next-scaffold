@@ -35,16 +35,16 @@ const INVITE_TOKEN_BYTES = 24;
 
 /** 邀请人 id → 显示用户名（本人走 session，其余查库，查不到回退 system）。 */
 async function resolveInviterName(session: ActiveSession, inviterUserId: number): Promise<string> {
-  if (inviterUserId === session.userId) return session.username;
+  if (inviterUserId === session.userId) return session.displayName ?? "system";
   const names = await usersRepository.resolveUsernames([inviterUserId]);
   return names.get(inviterUserId) ?? "system";
 }
 
 /** 列表 = 在册用户 + 待消费邀请（合成 PENDING 伪条目）。route 与 page RSC 共用。 */
-export async function listUsersAndInvites(partnerId: number): Promise<User[]> {
+export async function listUsersAndInvites(partyId: number): Promise<User[]> {
   const [userRows, invites] = await Promise.all([
-    usersRepository.listPartnerUsers(partnerId),
-    usersRepository.listPendingInvites(partnerId),
+    usersRepository.listPartyUsers(partyId),
+    usersRepository.listPendingInvites(partyId),
   ]);
   const inviterNames = await usersRepository.resolveUsernames(
     invites.map((invite) => invite.inviterUserId),
@@ -58,21 +58,22 @@ export async function listUsersAndInvites(partnerId: number): Promise<User[]> {
 }
 
 export async function createInvite(session: ActiveSession, input: CreateInviteInput): Promise<User> {
-  const partnerId = session.currentPartnerId;
-  const existing = await usersRepository.findPendingInviteByEmail(partnerId, input.email);
+  const partyId = session.currentPartyId;
+  const existing = await usersRepository.findPendingInviteByEmail(partyId, input.email);
   if (existing) throw new BusinessError(ERR_USER_EMAIL_TAKEN);
 
   const roleIds = parseRoleIds(input.roleIds);
   const invite = await usersRepository.createInvite({
-    partnerId,
+    partyId,
+    inviterPartyId: partyId,
     inviterUserId: session.userId,
     inviteEmail: input.email,
-    roles: roleIds.map((roleId) => ({ roleId })),
+    intendedRole: roleIds.map((roleId) => ({ roleId })),
     token: randomBytes(INVITE_TOKEN_BYTES).toString("base64url"),
     expiresAt: new Date(Date.now() + INVITE_TTL_MS),
     creUserId: session.userId,
   });
-  return toClientInvite(invite, session.username);
+  return toClientInvite(invite, session.displayName ?? "system");
 }
 
 export async function updateUser(
@@ -80,8 +81,8 @@ export async function updateUser(
   userId: number,
   input: UpdateUserInput,
 ): Promise<User> {
-  const partnerId = session.currentPartnerId;
-  const link = await usersRepository.findUserLink(partnerId, userId);
+  const partyId = session.currentPartyId;
+  const link = await usersRepository.findUserLink(partyId, userId);
   if (!link) throw new BusinessError(ERR_USER_NOT_FOUND, 404);
 
   // 受保护用户（本人 / ADMIN）只能改 remark，不能改角色。
@@ -97,47 +98,47 @@ export async function updateUser(
     }
   }
 
-  await usersRepository.updatePartnerUser(partnerId, userId, {
+  await usersRepository.updatePartyUser(partyId, userId, {
     updUserId: session.userId,
     ...(input.remark !== undefined ? { remark: input.remark.trim() || null } : {}),
     ...(requestedRoleIds !== null
       ? { roles: requestedRoleIds.map((roleId) => ({ roleId })) }
       : {}),
   });
-  return toClientUser(await usersRepository.getUserWithLink(partnerId, userId));
+  return toClientUser(await usersRepository.getUserWithLink(partyId, userId));
 }
 
 /** 锁定 / 解锁（partner-user 维度：ACTIVE ↔ LOCKED）。 */
 export async function toggleUserLock(session: ActiveSession, userId: number): Promise<User> {
   if (isSelf(userId, session.userId)) throw new BusinessError(ERR_USER_CANNOT_DISABLE_SELF);
 
-  const partnerId = session.currentPartnerId;
-  const link = await usersRepository.findUserLink(partnerId, userId);
+  const partyId = session.currentPartyId;
+  const link = await usersRepository.findUserLink(partyId, userId);
   if (!link) throw new BusinessError(ERR_USER_NOT_FOUND, 404);
   if (link.authorizingType === "ADMIN") throw new BusinessError(ERR_USER_PROTECTED);
 
-  await usersRepository.updatePartnerUser(partnerId, userId, {
+  await usersRepository.updatePartyUser(partyId, userId, {
     status: link.status === "ACTIVE" ? "LOCKED" : "ACTIVE",
     updUserId: session.userId,
   });
-  return toClientUser(await usersRepository.getUserWithLink(partnerId, userId));
+  return toClientUser(await usersRepository.getUserWithLink(partyId, userId));
 }
 
 /** 签发重置 token（存 Redis，72h TTL）；消费端后续补。 */
 export async function resetUserPassword(session: ActiveSession, userId: number): Promise<User> {
-  const partnerId = session.currentPartnerId;
-  const link = await usersRepository.findUserLink(partnerId, userId);
+  const partyId = session.currentPartyId;
+  const link = await usersRepository.findUserLink(partyId, userId);
   if (!link || link.status !== "ACTIVE") throw new BusinessError(ERR_USER_NOT_FOUND, 404);
   if (isProtectedUser(userId, session.userId, link.authorizingType)) {
     throw new BusinessError(ERR_USER_PROTECTED);
   }
 
   await createPasswordResetToken(userId);
-  return toClientUser(await usersRepository.getUserWithLink(partnerId, userId));
+  return toClientUser(await usersRepository.getUserWithLink(partyId, userId));
 }
 
 export async function cancelInvite(session: ActiveSession, inviteId: number): Promise<void> {
-  const invite = await usersRepository.findInvite(session.currentPartnerId, inviteId);
+  const invite = await usersRepository.findInvite(session.currentPartyId, inviteId);
   if (!invite || invite.status !== "PENDING") {
     throw new BusinessError(ERR_USER_CANCEL_NOT_PENDING);
   }
@@ -145,7 +146,7 @@ export async function cancelInvite(session: ActiveSession, inviteId: number): Pr
 }
 
 export async function resendInvite(session: ActiveSession, inviteId: number): Promise<User> {
-  const invite = await usersRepository.findPendingInvite(session.currentPartnerId, inviteId);
+  const invite = await usersRepository.findPendingInvite(session.currentPartyId, inviteId);
   if (!invite) throw new BusinessError(ERR_USER_NO_PENDING_INVITE, 404);
 
   const updated = await usersRepository.updateInvite(invite.operatorInviteId, {
@@ -161,12 +162,12 @@ export async function setInviteRoles(
   inviteId: number,
   input: SetInviteRolesInput,
 ): Promise<User> {
-  const invite = await usersRepository.findPendingInvite(session.currentPartnerId, inviteId);
+  const invite = await usersRepository.findPendingInvite(session.currentPartyId, inviteId);
   if (!invite) throw new BusinessError(ERR_USER_NO_PENDING_INVITE, 404);
 
   const roleIds = parseRoleIds(input.roleIds);
   const updated = await usersRepository.updateInvite(invite.operatorInviteId, {
-    roles: roleIds.map((roleId) => ({ roleId })),
+    intendedRole: roleIds.map((roleId) => ({ roleId })),
     updUserId: session.userId,
   });
   return toClientInvite(updated, await resolveInviterName(session, updated.inviterUserId));

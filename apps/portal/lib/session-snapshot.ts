@@ -1,8 +1,8 @@
 import "server-only";
 
 import { prisma } from "@cloud/db";
-import type { Session, SessionPartnerRef, SessionRole } from "@cloud/permissions/server";
-import { getMenus } from "@/manifest";
+import type { Session, SessionPartyRef, SessionRole } from "@cloud/permissions/server";
+import { getMenus, getRoles, resolveRolePermissions } from "@/manifest";
 import { resolveEffectivePermissions } from "@/manifest/select";
 import {
   isAuthorizingWindowOpen,
@@ -14,7 +14,7 @@ import { selectApplicableRoles } from "@/service/auth/server/role-selection";
 export type SessionSnapshotInput = Omit<Session, "loginAt" | "expireAt">;
 
 type CurrentContext = {
-  partnerName: string;
+  partyName: string;
   contractTypes: string[];
   authorizingType: "ADMIN" | "NORMAL";
   roles: SessionRole[];
@@ -27,14 +27,14 @@ type ContractRow = {
   effectiveToDate: Date | null;
 };
 
-type PartnerUserRow = {
-  partnerId: number;
+type PartyUserRow = {
+  partyId: number;
   status: string;
   authorizingType: string;
   authorizingFrom: Date | null;
   authorizingTo: Date | null;
   roles: unknown;
-  partner: { partnerId: number; partnerName: string; status: string; timezone: string };
+  partner: { partyId: number; partyName: string; status: string; timezone: string };
 };
 
 function normalizeAuthorizingType(value: string): "ADMIN" | "NORMAL" {
@@ -56,61 +56,60 @@ function extractPermissionCodes(codes: unknown): string[] {
   return codes.filter((code): code is string => typeof code === "string");
 }
 
-function toPartnerRef(partnerUser: PartnerUserRow): SessionPartnerRef {
+function toPartyRef(partyUser: PartyUserRow): SessionPartyRef {
   return {
-    partnerId: partnerUser.partnerId,
-    partnerName: partnerUser.partner.partnerName,
-    authorizingType: normalizeAuthorizingType(partnerUser.authorizingType),
-    status: partnerUser.status,
-    authorizingFrom: partnerUser.authorizingFrom?.toISOString() ?? null,
-    authorizingTo: partnerUser.authorizingTo?.toISOString() ?? null,
+    partyId: partyUser.partyId,
+    partyName: partyUser.partner.partyName,
+    authorizingType: normalizeAuthorizingType(partyUser.authorizingType),
+    status: partyUser.status,
+    authorizingFrom: partyUser.authorizingFrom?.toISOString() ?? null,
+    authorizingTo: partyUser.authorizingTo?.toISOString() ?? null,
   };
 }
 
 async function buildCurrentContext(
-  partnerUser: PartnerUserRow,
+  partyUser: PartyUserRow,
   validContracts: ContractRow[],
+  now: Date,
 ): Promise<CurrentContext> {
-  const partnerId = partnerUser.partnerId;
+  const partyId = partyUser.partyId;
   const contractTypes = [...new Set(validContracts.map((contract) => contract.authorizedContractType))];
-  const authorizingType = normalizeAuthorizingType(partnerUser.authorizingType);
+  const authorizingType = normalizeAuthorizingType(partyUser.authorizingType);
 
-  const roleIds = extractRoleIds(partnerUser.roles);
-  const userRoles = roleIds.length
-    ? await prisma.sysRole.findMany({ where: { roleId: { in: roleIds } } })
+  const roleIds = extractRoleIds(partyUser.roles);
+  // 角色解析分流：≤300 死写 GLOBAL（代码注册表）；≥1001 动态 PRIVATE（DB）。
+  const codeRoleIds = roleIds.filter((id) => id <= 300);
+  const dbRoleIds = roleIds.filter((id) => id >= 1001);
+  const codeRoles = getRoles().filter((r) => codeRoleIds.includes(r.roleId));
+  const dbRoles = dbRoleIds.length
+    ? await prisma.sysRole.findMany({ where: { roleId: { in: dbRoleIds } } })
     : [];
 
   let roles: SessionRole[];
   let grantedRoleCodes: string[] = [];
 
   if (authorizingType === "ADMIN") {
-    roles = userRoles.map((role) => ({
-      roleId: role.roleId,
-      roleName: role.roleName,
-      roleType: role.roleType,
-    }));
+    // 代码角色 roleType 视为 GLOBAL。
+    roles = [
+      ...codeRoles.map((r) => ({ roleId: r.roleId, roleName: r.roleName, roleType: "GLOBAL" })),
+      ...dbRoles.map((r) => ({ roleId: r.roleId, roleName: r.roleName, roleType: r.roleType })),
+    ];
   } else {
-    const blacklist = await prisma.sysPartnerRoleBlocklist.findMany({
-      where: { partnerId, contractType: { in: contractTypes } },
-      select: { roleId: true },
-    });
-    const blockedRoleIds = new Set(blacklist.map((item) => item.roleId));
+    // PRIVATE（DB）角色须属本 partner + 授权窗（start/end，按 party 时区今天）内有效；GLOBAL 代码角色全局可用、无窗。
+    const today = partnerToday(partyUser.partner.timezone, now);
+    const windowedDbRoles = dbRoles.filter((r) => isContractEffective(r.startDate, r.endDate, today));
+    const applicableDb = selectApplicableRoles({ roles: windowedDbRoles, partyId });
 
-    const applicable = selectApplicableRoles({
-      roles: userRoles,
-      contractTypes,
-      blockedRoleIds,
-      partnerId,
-    });
-
-    roles = applicable.map((role) => ({
-      roleId: role.roleId,
-      roleName: role.roleName,
-      roleType: role.roleType,
-    }));
+    roles = [
+      ...codeRoles.map((r) => ({ roleId: r.roleId, roleName: r.roleName, roleType: "GLOBAL" })),
+      ...applicableDb.map((r) => ({ roleId: r.roleId, roleName: r.roleName, roleType: r.roleType })),
+    ];
 
     const codes = new Set<string>();
-    for (const role of applicable) {
+    for (const r of codeRoles) {
+      for (const code of resolveRolePermissions(r.roleId) ?? []) codes.add(code);
+    }
+    for (const role of applicableDb) {
       for (const code of extractPermissionCodes(role.permissionCodes)) codes.add(code);
     }
     grantedRoleCodes = [...codes];
@@ -120,7 +119,7 @@ async function buildCurrentContext(
   const permissions = resolveEffectivePermissions({ menus, authorizingType, grantedRoleCodes });
 
   return {
-    partnerName: partnerUser.partner.partnerName,
+    partyName: partyUser.partner.partyName,
     contractTypes,
     authorizingType,
     roles,
@@ -130,76 +129,75 @@ async function buildCurrentContext(
 
 export async function buildSessionSnapshot(
   userId: number,
-  currentPartnerId: number | null = null,
+  currentPartyId: number | null = null,
   now: Date = new Date(),
 ): Promise<SessionSnapshotInput | null> {
   const user = await prisma.sysUser.findUnique({ where: { userId } });
   if (!user || user.status !== "ACTIVE") return null;
 
-  const partnerUsers = (await prisma.sysPartnerUser.findMany({
+  const partyUsers = (await prisma.sysPartyUser.findMany({
     where: { userId },
     include: {
       partner: {
-        select: { partnerId: true, partnerName: true, status: true, timezone: true },
+        select: { partyId: true, partyName: true, status: true, timezone: true },
       },
     },
-  })) as PartnerUserRow[];
+  })) as PartyUserRow[];
 
-  const activePartnerUsers = partnerUsers.filter(
-    (partnerUser) =>
-      partnerUser.status === "ACTIVE" && partnerUser.partner.status === "ACTIVE",
+  const activePartyUsers = partyUsers.filter(
+    (partyUser) =>
+      partyUser.status === "ACTIVE" && partyUser.partner.status === "ACTIVE",
   );
-  const activeIds = activePartnerUsers.map((partnerUser) => partnerUser.partnerId);
+  const activeIds = activePartyUsers.map((partyUser) => partyUser.partyId);
 
   const contracts = activeIds.length
-    ? ((await prisma.sysPartnerContract.findMany({
-        where: { authorizedPartnerId: { in: activeIds }, status: "ACTIVE" },
+    ? ((await prisma.sysPartyContract.findMany({
+        where: { authorizedPartyId: { in: activeIds }, status: "ACTIVE" },
         select: {
-          authorizedPartnerId: true,
+          authorizedPartyId: true,
           authorizedContractType: true,
           effectiveFromDate: true,
           effectiveToDate: true,
         },
-      })) as (ContractRow & { authorizedPartnerId: number })[])
+      })) as (ContractRow & { authorizedPartyId: number })[])
     : [];
 
   const validByPartner = new Map<number, ContractRow[]>();
-  for (const partnerUser of activePartnerUsers) {
-    const today = partnerToday(partnerUser.partner.timezone, now);
+  for (const partyUser of activePartyUsers) {
+    const today = partnerToday(partyUser.partner.timezone, now);
     validByPartner.set(
-      partnerUser.partnerId,
+      partyUser.partyId,
       contracts.filter(
         (contract) =>
-          contract.authorizedPartnerId === partnerUser.partnerId &&
+          contract.authorizedPartyId === partyUser.partyId &&
           isContractEffective(contract.effectiveFromDate, contract.effectiveToDate, today),
       ),
     );
   }
 
-  const partners = activePartnerUsers
-    .filter((partnerUser) => (validByPartner.get(partnerUser.partnerId)?.length ?? 0) > 0)
-    .map(toPartnerRef);
+  const partners = activePartyUsers
+    .filter((partyUser) => (validByPartner.get(partyUser.partyId)?.length ?? 0) > 0)
+    .map(toPartyRef);
 
   let current: CurrentContext | null = null;
-  if (currentPartnerId !== null) {
-    const target = activePartnerUsers.find((partnerUser) => partnerUser.partnerId === currentPartnerId);
-    const validContracts = target ? (validByPartner.get(currentPartnerId) ?? []) : [];
+  if (currentPartyId !== null) {
+    const target = activePartyUsers.find((partyUser) => partyUser.partyId === currentPartyId);
+    const validContracts = target ? (validByPartner.get(currentPartyId) ?? []) : [];
     if (
       target &&
       validContracts.length > 0 &&
       isAuthorizingWindowOpen(target.authorizingFrom, target.authorizingTo, now)
     ) {
-      current = await buildCurrentContext(target, validContracts);
+      current = await buildCurrentContext(target, validContracts, now);
     }
   }
 
   return {
     userId: user.userId,
-    username: user.username,
     displayName: user.nickName,
     email: user.email,
-    currentPartnerId: current ? currentPartnerId : null,
-    partnerName: current?.partnerName ?? null,
+    currentPartyId: current ? currentPartyId : null,
+    partyName: current?.partyName ?? null,
     contractTypes: current?.contractTypes ?? [],
     authorizingType: current?.authorizingType ?? null,
     roles: current?.roles ?? [],

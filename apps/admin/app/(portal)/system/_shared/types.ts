@@ -16,7 +16,6 @@ export type Role = {
   description: string;
   builtin: boolean;
   operatorCount: number;
-  contractType: string;
   permissions: string[];
   updatedAt: string;
   updatedBy: string;

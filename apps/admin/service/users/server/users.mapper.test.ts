@@ -15,7 +15,7 @@ function baseRow(overrides: Record<string, unknown> = {}) {
     passwordErrorLockExpiredTimestamp: null,
     creTime: new Date("2026-01-01T00:00:00.000Z"),
     updTime: new Date("2026-01-02T00:00:00.000Z"),
-    partnerUsers: [
+    partyUsers: [
       { authorizingType: "NORMAL", status: "ACTIVE", roles: [{ roleId: 7 }], remark: "EMEA ops" },
     ],
     ...overrides,
@@ -29,7 +29,7 @@ describe("toClientUser remark source", () => {
 
   it("falls back to empty string when the relationship has no remark", () => {
     const row = baseRow({
-      partnerUsers: [{ authorizingType: "NORMAL", status: "ACTIVE", roles: [], remark: null }],
+      partyUsers: [{ authorizingType: "NORMAL", status: "ACTIVE", roles: [], remark: null }],
     });
     expect(toClientUser(row).remark).toBe("");
   });

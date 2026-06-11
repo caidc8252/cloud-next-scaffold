@@ -16,9 +16,9 @@ describe("extractPermissionCodes", () => {
 
 function baseRow(overrides: Record<string, unknown> = {}) {
   return {
-    roleId: 3,
+    roleId: 1003, // ≥1001 → 动态 PRIVATE，非内置
     roleName: "Ops",
-    roleType: "GLOBAL",
+    roleType: "PRIVATE",
     contractType: "ADMIN",
     remark: "ops team",
     updTime: new Date("2026-01-02T00:00:00.000Z"),
@@ -32,7 +32,7 @@ describe("toClientRole", () => {
   it("maps a role row to the client VO with operator count and updater name", () => {
     const role = toClientRole(baseRow(), "admin", 4);
     expect(role).toMatchObject({
-      id: "3",
+      id: "1003",
       name: "Ops",
       description: "ops team",
       builtin: false,
@@ -42,8 +42,8 @@ describe("toClientRole", () => {
     });
   });
 
-  it("flags BUILTIN roles and empty description", () => {
-    const role = toClientRole(baseRow({ roleType: "BUILTIN", remark: null }), "system", 0);
+  it("flags builtin roles (roleId ≤ 300) and empty description", () => {
+    const role = toClientRole(baseRow({ roleId: 1, remark: null }), "system", 0);
     expect(role.builtin).toBe(true);
     expect(role.description).toBe("");
   });

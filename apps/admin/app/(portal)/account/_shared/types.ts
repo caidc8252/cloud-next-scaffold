@@ -6,7 +6,6 @@
 
 export type AccountProfile = {
   userId: number;
-  username: string; // SysUser.username
   nickName: string; // SysUser.nickName
   email: string; // SysUser.email
   country: string | null; // SysUser.country
@@ -23,15 +22,15 @@ export type AccountSecurity = {
 };
 
 export type AccountPartner = {
-  partnerUserId: number; // SysPartnerUser.partnerUserId
-  partnerId: number;
-  partnerName: string; // SysPartner.partnerName
-  authorizingType: "ADMIN" | "NORMAL"; // SysPartnerUser.authorizingType
+  partyUserId: number; // SysPartyUser.partyUserId
+  partyId: number;
+  partyName: string; // SysParty.partyName
+  authorizingType: "ADMIN" | "NORMAL"; // SysPartyUser.authorizingType
   authorizingTimestamp: string | null; // ISO
-  status: string; // SysPartnerUser.status (ACTIVE | LOCKED | ...)
+  status: string; // SysPartyUser.status (ACTIVE | LOCKED | ...)
   locked: boolean; // derived: status !== "ACTIVE"
-  contractTypes: string[]; // SysPartnerContract.authorizedContractType[]
-  isCurrent: boolean; // partnerId === session.currentPartnerId
+  contractTypes: string[]; // SysPartyContract.authorizedContractType[]
+  isCurrent: boolean; // partyId === session.currentPartyId
 };
 
 export type Country = {

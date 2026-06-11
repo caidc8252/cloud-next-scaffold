@@ -5,32 +5,32 @@ import { ArrowRight, Building2, Loader2 } from "lucide-react";
 import { Badge, Button } from "@cloud/ui";
 import { request, RequestError } from "@cloud/request/client";
 import { useTranslations } from "@cloud/i18n/client";
-import { isPartnerSelectable, type PartnerChoice } from "@/service/auth/partner-choice";
+import { isPartySelectable, type PartyChoice } from "@/service/auth/partner-choice";
 
 type SelectPartnerResponse = {
   redirectTo: string;
 };
 
-export function PartnerList({ choices }: { choices: PartnerChoice[] }) {
+export function PartnerList({ choices }: { choices: PartyChoice[] }) {
   const t = useTranslations("portal.partner");
   const [pendingId, setPendingId] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  function reasonFor(choice: PartnerChoice): string | null {
+  function reasonFor(choice: PartyChoice): string | null {
     if (choice.partnerStatus !== "ACTIVE") return t("reason.partnerDisabled");
     if (choice.userStatus !== "ACTIVE") return t("reason.userDisabled");
     if (!choice.validContract) return t("reason.noContract");
     return null;
   }
 
-  async function selectPartner(partnerId: number) {
+  async function selectPartner(partyId: number) {
     if (pendingId !== null) return;
 
-    setPendingId(partnerId);
+    setPendingId(partyId);
     setMessage(null);
     try {
       const response = await request.post<SelectPartnerResponse>("/api/auth/select-partner", {
-        partnerId,
+        partyId,
       });
       window.location.assign(response.data.redirectTo);
     } catch (error) {
@@ -51,19 +51,19 @@ export function PartnerList({ choices }: { choices: PartnerChoice[] }) {
         </div>
       ) : null}
       {choices.map((choice) => {
-        const selectable = isPartnerSelectable(choice);
+        const selectable = isPartySelectable(choice);
         const reason = reasonFor(choice);
-        const isPending = pendingId === choice.partnerId;
+        const isPending = pendingId === choice.partyId;
 
         return (
           <Button
-            key={choice.partnerId}
+            key={choice.partyId}
             type="button"
             size="auto"
             variant="outline"
             block
             disabled={!selectable || pendingId !== null}
-            onClick={() => void selectPartner(choice.partnerId)}
+            onClick={() => void selectPartner(choice.partyId)}
             className="justify-start gap-3 p-3 font-normal"
           >
             <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-3 text-content-secondary">
@@ -71,7 +71,7 @@ export function PartnerList({ choices }: { choices: PartnerChoice[] }) {
             </span>
             <span className="min-w-0 flex-1 text-left">
               <span className="block truncate text-sm font-semibold text-content-primary">
-                {choice.partnerName}
+                {choice.partyName}
               </span>
               {reason ? (
                 <span className="mt-0.5 block text-xs text-content-tertiary">{reason}</span>

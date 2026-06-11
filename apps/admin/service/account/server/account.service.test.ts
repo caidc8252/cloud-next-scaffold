@@ -6,8 +6,6 @@ import {
   ERR_ACCOUNT_MFA_NOT_ENABLED,
   ERR_ACCOUNT_MFA_PENDING_MISSING,
   ERR_ACCOUNT_MFA_STEPUP_INVALID,
-  ERR_ACCOUNT_USERNAME_SAME,
-  ERR_ACCOUNT_USERNAME_TAKEN,
   ERR_ACCOUNT_VERIFY_CODE_INVALID,
 } from "@/lib/account-error-codes";
 import type { ActiveSession } from "@cloud/permissions/server";
@@ -15,10 +13,9 @@ import type { ActiveSession } from "@cloud/permissions/server";
 // 全 I/O 边界工厂 mock,隔离出 service 的编排 / 分支。
 vi.mock("./account.repository", () => ({
   getUser: vi.fn(),
-  findUserByUsername: vi.fn(),
   findUserByEmail: vi.fn(),
   updateUser: vi.fn(),
-  listPartnerMemberships: vi.fn(),
+  listPartyMemberships: vi.fn(),
   listActiveContractTypes: vi.fn(),
 }));
 vi.mock("@/service/mfa/server/mfa.service", () => ({
@@ -43,62 +40,14 @@ import { readVerifyCode, consumeVerifyCode } from "@/lib/account-verify-code";
 import {
   activateMfa,
   changeEmail,
-  changeUsername,
   disableAccountMfa,
   listPartners,
 } from "./account.service";
 
-const session = { userId: 1, currentPartnerId: 100 } as unknown as ActiveSession;
+const session = { userId: 1, currentPartyId: 100 } as unknown as ActiveSession;
 
 beforeEach(() => {
   vi.resetAllMocks();
-});
-
-describe("changeUsername", () => {
-  it("rejects a wrong / missing verify code", async () => {
-    vi.mocked(repo.getUser).mockResolvedValue({ username: "alice" } as never);
-    vi.mocked(readVerifyCode).mockResolvedValue(null as never);
-    await expect(changeUsername(session, { newUsername: "bob", currentCode: "000000" })).rejects.toMatchObject({
-      code: ERR_ACCOUNT_VERIFY_CODE_INVALID,
-    });
-  });
-
-  it("rejects an unchanged username (case-insensitive)", async () => {
-    vi.mocked(repo.getUser).mockResolvedValue({ username: "Alice" } as never);
-    vi.mocked(readVerifyCode).mockResolvedValue({ code: "123456" } as never);
-    await expect(changeUsername(session, { newUsername: "alice", currentCode: "123456" })).rejects.toMatchObject({
-      code: ERR_ACCOUNT_USERNAME_SAME,
-    });
-  });
-
-  it("rejects a taken username with 409", async () => {
-    vi.mocked(repo.getUser).mockResolvedValue({ username: "alice" } as never);
-    vi.mocked(readVerifyCode).mockResolvedValue({ code: "123456" } as never);
-    vi.mocked(repo.findUserByUsername).mockResolvedValue({ userId: 2 } as never);
-    await expect(changeUsername(session, { newUsername: "bob", currentCode: "123456" })).rejects.toMatchObject({
-      code: ERR_ACCOUNT_USERNAME_TAKEN,
-      status: 409,
-    });
-  });
-
-  it("updates and consumes the code on success", async () => {
-    vi.mocked(repo.getUser).mockResolvedValue({ username: "alice" } as never);
-    vi.mocked(readVerifyCode).mockResolvedValue({ code: "123456" } as never);
-    vi.mocked(repo.findUserByUsername).mockResolvedValue(null as never);
-    vi.mocked(repo.updateUser).mockResolvedValue({
-      userId: 1,
-      username: "bob",
-      nickName: "Bob",
-      email: "b@x.com",
-      country: null,
-      passwordChangedTimestamp: null,
-    } as never);
-
-    const profile = await changeUsername(session, { newUsername: "bob", currentCode: "123456" });
-
-    expect(profile.username).toBe("bob");
-    expect(consumeVerifyCode).toHaveBeenCalledWith(1, "USERNAME_CURRENT");
-  });
 });
 
 describe("changeEmail", () => {
@@ -194,18 +143,18 @@ describe("disableAccountMfa", () => {
 
 describe("listPartners", () => {
   it("derives contract types and sorts current → active → locked", async () => {
-    vi.mocked(repo.listPartnerMemberships).mockResolvedValue([
-      { partnerUserId: 1, partnerId: 100, partner: { partnerName: "A" }, authorizingType: "NORMAL", authorizingTimestamp: null, status: "ACTIVE" },
-      { partnerUserId: 2, partnerId: 200, partner: { partnerName: "B" }, authorizingType: "ADMIN", authorizingTimestamp: null, status: "LOCKED" },
+    vi.mocked(repo.listPartyMemberships).mockResolvedValue([
+      { partyUserId: 1, partyId: 100, partner: { partyName: "A" }, authorizingType: "NORMAL", authorizingTimestamp: null, status: "ACTIVE" },
+      { partyUserId: 2, partyId: 200, partner: { partyName: "B" }, authorizingType: "ADMIN", authorizingTimestamp: null, status: "LOCKED" },
     ] as never);
     vi.mocked(repo.listActiveContractTypes).mockResolvedValue([
-      { authorizedPartnerId: 100, authorizedContractType: "ISO" },
-      { authorizedPartnerId: 100, authorizedContractType: "ISO" },
+      { authorizedPartyId: 100, authorizedContractType: "ISO" },
+      { authorizedPartyId: 100, authorizedContractType: "ISO" },
     ] as never);
 
     const partners = await listPartners(1, 100);
 
-    expect(partners[0].partnerId).toBe(100);
+    expect(partners[0].partyId).toBe(100);
     expect(partners[0].isCurrent).toBe(true);
     expect(partners[0].contractTypes).toEqual(["ISO"]);
     expect(partners[1].locked).toBe(true);

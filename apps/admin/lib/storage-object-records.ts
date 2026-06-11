@@ -24,7 +24,6 @@ type StorageObjectRow = {
   status: string;
   creTime: Date;
   uploader?: {
-    username: string | null;
     nickName: string | null;
   };
 };
@@ -36,7 +35,7 @@ function toNumberSize(value: bigint | number): number {
 }
 
 function toUploaderName(row: StorageObjectRow): string {
-  return row.uploader?.nickName || row.uploader?.username || "Unknown";
+  return row.uploader?.nickName || "Unknown";
 }
 
 export function toStorageObjectRecord(row: StorageObjectRow): StorageObjectRecord {
@@ -65,7 +64,7 @@ export function toStorageObjectRecord(row: StorageObjectRow): StorageObjectRecor
 export async function listStorageObjectRecords(session: ActiveSession) {
   const rows = await prisma.storageObject.findMany({
     where: {
-      partnerId: session.currentPartnerId,
+      partyId: session.currentPartyId,
       status: ACTIVE_STATUS,
     },
     orderBy: { creTime: "desc" },
@@ -73,7 +72,6 @@ export async function listStorageObjectRecords(session: ActiveSession) {
     include: {
       uploader: {
         select: {
-          username: true,
           nickName: true,
         },
       },
@@ -98,7 +96,7 @@ async function upsertStorageObjectRecord(
 ) {
   const existing = await prisma.storageObject.findFirst({
     where: {
-      partnerId: session.currentPartnerId,
+      partyId: session.currentPartyId,
       bucket: storedObject.bucket,
       objectKey: storedObject.objectKey,
     },
@@ -128,7 +126,6 @@ async function upsertStorageObjectRecord(
         include: {
           uploader: {
             select: {
-              username: true,
               nickName: true,
             },
           },
@@ -137,7 +134,7 @@ async function upsertStorageObjectRecord(
     : await prisma.storageObject.create({
         data: {
           ...data,
-          partnerId: session.currentPartnerId,
+          partyId: session.currentPartyId,
           bucket: storedObject.bucket,
           objectKey: storedObject.objectKey,
           creUserId: session.userId,
@@ -145,7 +142,6 @@ async function upsertStorageObjectRecord(
         include: {
           uploader: {
             select: {
-              username: true,
               nickName: true,
             },
           },
@@ -197,7 +193,7 @@ export async function findStorageObjectForDownload(
   const row = await prisma.storageObject.findFirst({
     where: {
       storageObjectId,
-      partnerId: session.currentPartnerId,
+      partyId: session.currentPartyId,
       status: ACTIVE_STATUS,
     },
   });
@@ -215,7 +211,7 @@ export async function findDuplicateStorageObjectRecord(
 ) {
   const row = await prisma.storageObject.findFirst({
     where: {
-      partnerId: session.currentPartnerId,
+      partyId: session.currentPartyId,
       contentHash: input.contentHash,
       sizeBytes: BigInt(input.sizeBytes),
       visibility: input.visibility,
@@ -225,7 +221,6 @@ export async function findDuplicateStorageObjectRecord(
     include: {
       uploader: {
         select: {
-          username: true,
           nickName: true,
         },
       },

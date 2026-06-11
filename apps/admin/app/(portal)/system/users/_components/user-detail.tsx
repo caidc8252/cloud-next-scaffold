@@ -39,7 +39,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
   const pwAgeDays = draft.passwordChangedTimestamp ? Math.floor((now - draft.passwordChangedTimestamp) / 86_400_000) : null;
   const pwExpired = pwAgeDays !== null && pwAgeDays >= PASSWORD_POLICY.expiryDays;
 
-  const adminRoles = roles.filter((r) => r.contractType === "ADMIN");
+  const adminRoles = roles; // 可分配角色已由 listAssignableRoles 算好（平台区间预置 + party PRIVATE）
   const assignedRoles = adminRoles.filter((r) => (draft.roleIds ?? []).includes(r.id));
 
   function toggleRole(roleId: string) {

@@ -2,9 +2,9 @@ import { z } from "zod";
 
 // auth 域共享入参校验。登录 / MFA 二次校验 / 选择公司。
 
-/** POST /api/auth/login —— 账号 + RSA 密文密码。 */
+/** POST /api/auth/password —— email + RSA 密文密码。 */
 export const loginSchema = z.object({
-  account: z.string().trim().min(1),
+  email: z.string().trim().email(),
   encryptedPassword: z.string().min(1),
 });
 
@@ -22,7 +22,7 @@ export const mfaVerifySchema = z.object({
 
 /** POST /api/auth/select-partner —— 选择登录公司。 */
 export const selectPartnerSchema = z.object({
-  partnerId: z.number().int().positive(),
+  partyId: z.number().int().positive(),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;

@@ -20,7 +20,7 @@ export default async function DashboardPage() {
             <Card>
               <CardHeader>
                 <CardDescription>{t("currentAccount")}</CardDescription>
-                <CardTitle>{session.username}</CardTitle>
+                <CardTitle>{session.displayName ?? session.email}</CardTitle>
               </CardHeader>
             </Card>
           </div>
@@ -28,7 +28,7 @@ export default async function DashboardPage() {
             <Card>
               <CardHeader>
                 <CardDescription>{t("partner")}</CardDescription>
-                <CardTitle>{session.partnerName}</CardTitle>
+                <CardTitle>{session.partyName}</CardTitle>
                 <Badge tone="info">{session.contractTypes.join(", ")}</Badge>
               </CardHeader>
             </Card>

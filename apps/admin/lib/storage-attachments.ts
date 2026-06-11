@@ -73,7 +73,7 @@ export async function listStorageAttachments(
 
   const rows = await prisma.storageAttachment.findMany({
     where: {
-      partnerId: session.currentPartnerId,
+      partyId: session.currentPartyId,
       subjectType,
       subjectId,
       purpose: purpose ?? undefined,
@@ -87,7 +87,6 @@ export async function listStorageAttachments(
         include: {
           uploader: {
             select: {
-              username: true,
               nickName: true,
             },
           },
@@ -107,7 +106,7 @@ export async function bindStorageAttachment(
   const storageObject = await prisma.storageObject.findFirst({
     where: {
       storageObjectId: input.storageObjectId,
-      partnerId: session.currentPartnerId,
+      partyId: session.currentPartyId,
       status: ACTIVE_STATUS,
     },
     select: {
@@ -127,7 +126,7 @@ export async function bindStorageAttachment(
     if (input.isPrimary) {
       await tx.storageAttachment.updateMany({
         where: {
-          partnerId: session.currentPartnerId,
+          partyId: session.currentPartyId,
           subjectType: input.subjectType,
           subjectId: input.subjectId,
           purpose: input.purpose,
@@ -145,8 +144,8 @@ export async function bindStorageAttachment(
 
     return tx.storageAttachment.upsert({
       where: {
-        partnerId_storageObjectId_subjectType_subjectId_purpose: {
-          partnerId: session.currentPartnerId,
+        partyId_storageObjectId_subjectType_subjectId_purpose: {
+          partyId: session.currentPartyId,
           storageObjectId: input.storageObjectId,
           subjectType: input.subjectType,
           subjectId: input.subjectId,
@@ -154,7 +153,7 @@ export async function bindStorageAttachment(
         },
       },
       create: {
-        partnerId: session.currentPartnerId,
+        partyId: session.currentPartyId,
         storageObjectId: input.storageObjectId,
         subjectType: input.subjectType,
         subjectId: input.subjectId,
@@ -179,7 +178,6 @@ export async function bindStorageAttachment(
           include: {
             uploader: {
               select: {
-                username: true,
                 nickName: true,
               },
             },
