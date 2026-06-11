@@ -15,21 +15,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 不要过度防御，不要为了兜底而兜底，马奇诺防线没有意义
 - 约定大于配置，代码大于文档
 
-## 文档
-
-- 只保留必要文档；内容精准、及时更新；重要信息精简、避免冗余
-- 开始工作前先了解相关文档；随时清理 `TODO.md` 和 `WIP.md`
-- 及时维护 `README.md`，保证照着它能无卡点配置、启动项目并了解结构
-- 常规文档：`README.md`（项目描述和使用指南）
-
-## 开发流程
-
-- 拿到任务先做计划，分解 todo 写入 `WIP.md`
-- 针对目标编写测试用例，逐项完成并确保测试通过
-- 如有需要记录文档备查
-- 验收完成后清理文档，将重要事项并入常规文档
-- 涉及项目配置的部分，需确认在 windows / linux 下都能正常工作
-
 ## 目录地图
 
 先判断代码归属，再决定目录：产品业务优先落 `apps/*`；跨应用、跨业务可复用能力才沉淀 `packages/*`；不要在业务目录混放测试/脚本/配置。
@@ -70,10 +55,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 命名：变量/函数 camelCase；类/接口 PascalCase；常量 UPPER_SNAKE_CASE；文件/目录 kebab-case；避免非通用缩写；函数用动词/动宾、类用名词、bool 用 is/has/can 开头
 - 单组件/库/脚本不超过 400 行，尽量 300 行附近
 - 适量注释；新增/迁移代码优先解释业务意图、架构边界、兼容壳、迁移原因和安全取舍，不写复述代码表面的注释
-
-## 安全
-
-- 需要读 `.env` 才能做的操作（如从数据库同步参考数据），写成脚本由我运行。
 
 ## 数据库
 
