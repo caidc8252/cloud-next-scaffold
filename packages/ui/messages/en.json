@@ -30,6 +30,18 @@
       "prev": "Previous page",
       "next": "Next page",
       "last": "Last page"
+    },
+    "listFilter": {
+      "search": "Search",
+      "advanced": "Advanced",
+      "advancedTitle": "Advanced filters",
+      "advancedHint": "All conditions AND · Apply & Search commits · closing keeps the draft",
+      "reset": "Reset",
+      "applySearch": "Apply & Search",
+      "activeFilters": "Active filters:",
+      "clearAll": "Clear all",
+      "close": "Close",
+      "removeFilter": "Remove filter"
     }
   }
 }

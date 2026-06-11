@@ -2,7 +2,7 @@
 
 > 后台业务页面三种基本页型（列表 → 新增 → 详情）的**默认模式与设计约束**。本文不是像素级复刻清单：先判断页面任务，再选择合适模式；与本文底线约束冲突的旧页面逐步收敛。English version: [portal-page-style-spec.en.md](./portal-page-style-spec.en.md)。
 >
-> **可编译样板**（纯样式骨架，不进打包，可直接对照/拷贝）：[examples/list-page.tsx](./examples/list-page.tsx) · [examples/create-form.tsx](./examples/create-form.tsx) · [examples/create-wizard.tsx](./examples/create-wizard.tsx) · [examples/detail-page.tsx](./examples/detail-page.tsx)。
+> **可编译样板**（纯样式骨架，不进打包，可直接对照/拷贝）：[examples/list-page.tsx](./examples/list-page.tsx) · [examples/list-page-advanced-filter.tsx](./examples/list-page-advanced-filter.tsx) · [examples/create-form.tsx](./examples/create-form.tsx) · [examples/create-wizard.tsx](./examples/create-wizard.tsx) · [examples/detail-page.tsx](./examples/detail-page.tsx)。
 >
 > 通用前提：只用 `@cloud/ui` 原语 + 语义 token（`surface/content/line/success/warning/error/info` + 类目色 `teal/violet`），不写十六进制、不写任意值字号 / 间距 / 宽高 / 圆角；可点击元素必须 `cursor-pointer`。
 >
@@ -239,6 +239,8 @@ Tab 上的计数 chip：`ml-1 h-4 min-w-4 rounded-full bg-surface-3 px-1 text-xs
 
 ## 4. 搜索栏与已应用筛选
 
+> **首选共享组件家族。** 新列表页用 `@cloud/ui` 的 `ListConditionBand` + `SearchInput` + `AppliedFilters` + `FilterChip` 配 `useListFilters`（draft/applied 状态机）组合，而不是手写条件带和状态；分页配 `RichPagination`（偏移）或 `useCursorPagination`（游标）。壳文案走 `ui.listFilter` i18n namespace。下面的规则是**这些组件实现时遵循的样式 + 行为契约**——自定义条件带或需要偏离时照此执行。
+
 列表使用显式 Search 按钮时，搜索输入框里的 Enter 必须触发同一个搜索动作。成本很低的本地筛选可以即时反馈；昂贵的远程查询不要每次输入都触发请求。
 
 长管理列表应让条件区（工具栏 + 筛选反馈）在滚动时仍可触达。实现要集中：以 [examples/list-page.tsx](./examples/list-page.tsx) 为样式 recipe，或在 app 侧封装 list-toolbar 组件。不要每个页面各自调 sticky offset、负边距或 z-index。
@@ -247,7 +249,7 @@ Tab 上的计数 chip：`ml-1 h-4 min-w-4 rounded-full bg-surface-3 px-1 text-xs
 
 - 行容器：`flex flex-wrap items-center gap-2`；所有控件统一 `md`（36px 高）
 - 搜索输入：`inputSize="md"` + `prefix={<Search className="size-4"/>}`，外包 `max-w-64 flex-1`
-- 下拉筛选：`SelectTrigger size="md"` 使用接近所需范围的刻度宽度（如 `w-40` / `w-44` / `w-48`，约 150–200px）；`SelectValue` 用 render-prop 显示标签（base-ui 默认显示原始 value）。不要为了复刻原型写 `w-[150px]`、`w-[180px]` 或其他页面局部任意宽度。
+- 下拉筛选：`SelectTrigger size="default"`（其 `default` 高度即 `h-control-md`，与其余 md 控件同为 36px；trigger 的 `size` 仅提供 `sm` / `default`）使用接近所需范围的刻度宽度（如 `w-40` / `w-44` / `w-48`，约 150–200px）；`SelectValue` 用 render-prop 显示标签（base-ui 默认显示原始 value）。不要为了复刻原型写 `w-[150px]`、`w-[180px]` 或其他页面局部任意宽度。
 - 提交按钮：`variant="primary" size="md"` + Search 图标
 
 **筛选反馈行**：
@@ -255,6 +257,39 @@ Tab 上的计数 chip：`ml-1 h-4 min-w-4 rounded-full bg-surface-3 px-1 text-xs
 - 无筛选：一句 `text-xs text-content-tertiary` 的操作提示
 - 有筛选：本地化的已应用筛选标签 + 若干 FilterChip + 清除全部动作（ghost xs）
 - FilterChip：`rounded-full border border-primary-500/25 bg-primary-50 py-0.5 pr-1 pl-2.5 text-xs font-medium text-primary-700`，尾部 `Button size="icon-xs" variant="ghost"` 的 X 可单独移除
+
+### 4.1 Advanced Filter Sheet（高级筛选抽屉）
+
+> **首选共享组件家族。** 用 `@cloud/ui` 的 `AdvancedFilterButton` + `AdvancedFilterSheet`（配 `AdvancedFilterGroup` / `AdvancedFilterField`）+ `useListFilters`；页面只提供字段。下面的规则是这些组件实现时遵循的契约。
+
+当原型在工具栏旁给出 **Advanced** 入口时，额外的筛选条件收进一个右侧 **Sheet**，而不是塞满工具栏。本小节只锁定这个入口的**样式与交互引发的视觉状态**；列表*是否*需要高级筛选、*放哪些*字段，由产品 / 原型决定，不在本节范围。具体样式 recipe：[examples/list-page-advanced-filter.tsx](./examples/list-page-advanced-filter.tsx)。
+
+**触发按钮 —— 三态（MUST）。** 一个 `Button variant="secondary"`，含 funnel 图标、"Advanced" 文案、尾部 chevron：
+
+- **常态** —— 中性 secondary 按钮。
+- **有已生效高级条件** —— 按钮上挂一个数量 `Badge`，**只统计抽屉内的条件**（工具栏筛选不计入），这样即便抽屉收起，操作者也能看出有隐藏条件在收窄列表。
+- **打开态** —— 按钮变 primary 高亮（`bg-primary-50 border-primary-500 text-primary-700`），chevron 旋转 180°。
+
+**容器（MUST）。** 面板用 `@cloud/ui` 的 `Sheet` + `SheetContent side="right"`，宽度 `w-full sm:max-w-xl`（吸附到刻度——绝不写 `max-w-[560px]`）。遮罩、`z-modal`、`shadow-4`、角上关闭按钮、滑入过渡都由原语自带；不要手搓 `position:fixed` 抽屉，也不要用 `Modal` / `Popover` 承载高级筛选。
+
+**主体布局骨架（SHOULD）。** 自上而下三段：
+
+- `SheetHeader` —— 左侧一个 funnel 图标 + 一列垂直居中的文本（`flex-row items-center`，覆盖原语默认的 `flex-col`）：`SheetTitle`（"Advanced filters"）在上、一行 `SheetDescription`（所有条件 AND · *Apply & Search* 才生效 · 关闭保留草稿）在下——标题与描述同处图标右侧的这一列。纯 `surface` 头部，不用渐变（遵循 §0.4）。设 `showCloseButton={false}`，把关闭按钮作为这一行末尾的 `SheetClose` 放进同一 flex 行——原语内置的关闭是 `absolute` 定位，无法与两行头部垂直居中。
+- 可滚动主体 —— `flex-1 overflow-y-auto`；条件按组排布，每组一个 overline 小标题 + 一个 `grid grid-cols-1 sm:grid-cols-2` 字段网格（用法定 gap）。本规范只锁定**分组两列布局**——不枚举字段或控件。字段由产品定义，控件沿用既有表单原语（`Select` / `Input` / `ToggleGroup`+`Toggle`），状态遵循 §3.4 的可选表面规则。
+- `SheetFooter` —— 把原语默认的 `flex-col` 覆盖成居中横排：`Reset`（ghost，左）+ primary `Apply & Search`（右）。不带结果数预估。
+
+**交互 → 视觉状态（MUST）。** 高级筛选是延迟生效，所以大多数编辑在提交前**不产生**任何可见变化：
+
+- **打开** → 按钮亮起高亮态、chevron 旋转、Sheet 从遮罩上滑入。
+- **在 Sheet 内改任何控件** → 只暂存**草稿**；列表与已生效 chip 行**还不变**。
+- **`Apply & Search`**（或 Enter、或工具栏 Search）→ 草稿提交为 applied、Sheet 关闭、已生效 chip 行出现 / 更新、触发按钮 Badge 更新、列表翻回第 1 页。
+- **关闭** Sheet（遮罩 / 关闭按钮 / Esc）→ **保留草稿**——既不生效也不还原；视图不变。
+- **删除单个已生效 chip** → 该 chip 消失、Badge 减一；**Clear all** → chip 行与 Badge 一起消失。两者都让草稿与 applied 同步。
+- **`Reset`** 在没有任何已暂存高级条件时为 `disabled`（置灰）。
+
+**已生效 chip（沿用 §4 的 chip 行，不重新设计样式）。** chip 行展示**全部** applied 条件（工具栏 + 高级）；触发按钮 Badge 只数高级条件。
+
+**AVOID** —— 用 `Modal` / `Popover` 承载高级筛选；手搓 `position:fixed` 抽屉；每次输入就发昂贵远程查询（应在提交时才查）；`max-w-[560px]` 这类任意宽度。
 
 ---
 
@@ -377,6 +412,7 @@ Portal 排版遵循 `@cloud/ui` 类型刻度；标题 / 正文只用 Geist，数
 详情 tabs         多个同级区块时使用；重型区块可用子路由并记录理由
 控件（条件区）    一律 size md           搜索框 max-w-64 flex-1
 条件区吸顶        使用共享 recipe/example；不要每页调 offset
+高级筛选          Sheet side=right（w-full sm:max-w-xl）；draft/applied，Apply&Search/Enter 提交→关闭→翻第1页；badge 只数抽屉内；关闭保留草稿；AND
 单步表单          头部操作 + 居中区块卡片列
 向导              只用于有意义阶段；具体 chrome 放 example
 弹窗 size prop    sm360 md480 lg640 xl880  小型 mutation 用 modal，复杂流程用页面/向导

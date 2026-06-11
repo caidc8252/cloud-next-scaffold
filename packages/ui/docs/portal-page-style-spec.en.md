@@ -2,7 +2,7 @@
 
 > The **default patterns and design constraints** for the three basic portal page shapes (list → create → detail). This is not a pixel-copy checklist: read the page task first, then choose the right pattern. Older pages that conflict with these baseline constraints should converge over time. 中文版：[portal-page-style-spec.zh-CN.md](./portal-page-style-spec.zh-CN.md).
 >
-> **Compilable templates** (style-only skeletons, excluded from the bundle, ready to read or copy): [examples/list-page.tsx](./examples/list-page.tsx) · [examples/create-form.tsx](./examples/create-form.tsx) · [examples/create-wizard.tsx](./examples/create-wizard.tsx) · [examples/detail-page.tsx](./examples/detail-page.tsx).
+> **Compilable templates** (style-only skeletons, excluded from the bundle, ready to read or copy): [examples/list-page.tsx](./examples/list-page.tsx) · [examples/list-page-advanced-filter.tsx](./examples/list-page-advanced-filter.tsx) · [examples/create-form.tsx](./examples/create-form.tsx) · [examples/create-wizard.tsx](./examples/create-wizard.tsx) · [examples/detail-page.tsx](./examples/detail-page.tsx).
 >
 > Baseline rules: `@cloud/ui` primitives + semantic tokens only (`surface/content/line/success/warning/error/info` plus the `teal/violet` category hues). No hex colors, no arbitrary font sizes, no arbitrary spacing, no arbitrary width / height, and no arbitrary radius values; every clickable element gets `cursor-pointer`.
 >
@@ -281,6 +281,8 @@ Hard rule: **selected ≠ hover.** A selected surface must not carry uncondition
 
 ## 4. Toolbar & Applied Filters
 
+> **Prefer the shared family.** New list pages compose `@cloud/ui`'s `ListConditionBand` + `SearchInput` + `AppliedFilters` + `FilterChip` with the `useListFilters` hook (draft/applied state machine) instead of hand-rolling the band and state; pair with `RichPagination` (offset) or `useCursorPagination` (cursor). Shared shell copy is the `ui.listFilter` i18n namespace. The rules below are the **style + behavior contract those components implement** — follow them when building a custom band or deviating.
+
 When a list uses an explicit Search button, pressing Enter in a search field must trigger the same search. Lists with cheap local filtering may update immediately; expensive remote queries should avoid firing on every keystroke.
 
 Long management lists should keep the condition band (toolbar + filter feedback) reachable while scrolling. Keep the implementation centralized: use [examples/list-page.tsx](./examples/list-page.tsx) as the style recipe or wrap it in an app-level list-toolbar component. Do not hand-tune sticky offsets, negative margins, or z-index values page by page.
@@ -289,7 +291,7 @@ Short lists, embedded lists, and pages where filters are secondary may keep the 
 
 - Row container: `flex flex-wrap items-center gap-2`; every control at `md` (36px tall).
 - Search input: `inputSize="md"` + `prefix={<Search className="size-4"/>}`, wrapped in `max-w-64 flex-1`.
-- Select filters: `SelectTrigger size="md"` at fixed scale widths near the needed range (`w-40` / `w-44` / `w-48`, roughly 150–200px); use the `SelectValue` render prop to show labels. Never write `w-[150px]`, `w-[180px]`, or another page-local arbitrary width just to mirror a prototype.
+- Select filters: `SelectTrigger size="default"` (its `default` height is `h-control-md` — same 36px as other md controls; the trigger's `size` only offers `sm` / `default`) at fixed scale widths near the needed range (`w-40` / `w-44` / `w-48`, roughly 150–200px); use the `SelectValue` render prop to show labels. Never write `w-[150px]`, `w-[180px]`, or another page-local arbitrary width just to mirror a prototype.
 - Submit: `variant="primary" size="md"` with the Search icon.
 
 **Filter feedback row**:
@@ -297,6 +299,39 @@ Short lists, embedded lists, and pages where filters are secondary may keep the 
 - No filters: one-line hint in `text-xs text-content-tertiary`.
 - With filters: localized active-filter label + FilterChips + clear-all action (`ghost xs`).
 - FilterChip: `rounded-full border border-primary-500/25 bg-primary-50 py-0.5 pr-1 pl-2.5 text-xs font-medium text-primary-700`, trailing `Button size="icon-xs" variant="ghost"` X for individual removal.
+
+### 4.1 Advanced Filter Sheet
+
+> **Prefer the shared family.** Use `@cloud/ui`'s `AdvancedFilterButton` + `AdvancedFilterSheet` (with `AdvancedFilterGroup` / `AdvancedFilterField`) driven by `useListFilters`; the page supplies only the fields. The rules below are the contract those components implement.
+
+When a prototype surfaces an **Advanced** affordance next to the toolbar, the extra conditions live in a right-side **Sheet** rather than being crammed into the toolbar. This subsection fixes only the **style and the interaction-driven visual states** of that affordance; *whether* a list needs advanced filtering, and *which* fields it holds, are product / prototype decisions and are out of scope here. Concrete style recipe: [examples/list-page-advanced-filter.tsx](./examples/list-page-advanced-filter.tsx).
+
+**Trigger button — three states (MUST).** A single `Button variant="secondary"` carrying a funnel icon, the "Advanced" label, and a trailing chevron:
+
+- **Rest** — neutral secondary button.
+- **Has applied advanced conditions** — a count `Badge` rides the button, counting **sheet-resident conditions only** (toolbar filters are not counted), so the operator can tell hidden conditions are narrowing the list even with the Sheet closed.
+- **Open** — the button takes the primary-tinted active state (`bg-primary-50 border-primary-500 text-primary-700`) and the chevron rotates 180°.
+
+**Container (MUST).** The panel is `@cloud/ui`'s `Sheet` + `SheetContent side="right"`, width `w-full sm:max-w-xl` (snap to scale — never `max-w-[560px]`). The primitive already owns the overlay, `z-modal`, `shadow-4`, the corner close button, and the slide transition; do not hand-roll a `position:fixed` drawer, and do not put advanced filtering in a `Modal` or `Popover`.
+
+**Body layout skeleton (SHOULD).** Three regions, top to bottom:
+
+- `SheetHeader` — a leading funnel icon + a vertically-centered text column (`flex-row items-center`, overriding the primitive's default `flex-col`): `SheetTitle` ("Advanced filters") over a one-line `SheetDescription` stating the behavior (all conditions AND · *Apply & Search* commits · closing keeps the draft) — title and description share the one column beside the icon. Plain `surface` header, no gradient (per §0.4). Set `showCloseButton={false}` and render the close as a trailing `SheetClose` in this same flex row — the primitive's built-in close is `absolute`-positioned and won't vertically center against a two-line header.
+- Scrollable body — `flex-1 overflow-y-auto`; conditions are grouped, each group an overline label over a `grid grid-cols-1 sm:grid-cols-2` field grid at a sanctioned gap. This spec fixes only the **grouped two-column layout** — it does not enumerate fields or controls. Fields are product-defined and use existing form primitives (`Select` / `Input` / `ToggleGroup`+`Toggle`) following the selectable-surface states in §3.4.
+- `SheetFooter` — override the primitive's default `flex-col` to a centered row: `Reset` (ghost, left) and the primary `Apply & Search` (right). No result-count estimate.
+
+**Interaction → visual state (MUST).** Advanced filtering is deferred-apply, so most edits produce *no* visible change until committed:
+
+- **Open** → the button lights to its active state, the chevron rotates, the Sheet slides in over the overlay.
+- **Editing any control** inside the Sheet stages a **draft** only; the list and the applied-chip row do **not** change yet.
+- **`Apply & Search`** (or Enter, or the toolbar Search) → the draft promotes to applied, the Sheet closes, the applied-chip row appears / updates, the trigger Badge updates, and the list resets to page 1.
+- **Closing** the Sheet (overlay / close button / Esc) **keeps the draft** — it neither applies nor reverts; the view is unchanged.
+- **Removing one applied chip** drops that chip and decrements the Badge; **Clear all** removes the chip row and the Badge together. Both keep draft and applied in sync.
+- **`Reset`** is `disabled` (greyed) when no advanced condition is staged.
+
+**Applied chips (reuse §4's chip row, do not restyle).** The chip row shows **all** applied conditions (toolbar + advanced); the trigger Badge counts only the advanced ones.
+
+**AVOID** — a `Modal` / `Popover` as the advanced-filter container; a hand-rolled `position:fixed` drawer; firing an expensive remote query on every keystroke instead of on commit; arbitrary widths like `max-w-[560px]`.
 
 ---
 
@@ -430,6 +465,7 @@ in-card bands         px-4 py-3             wizard card head px-5 py-3.5 (14·20
 detail tabs           peer sections use tabs; heavy sections may use sub-routes with reason
 condition controls    always size md        search input max-w-64 flex-1
 sticky condition band use shared recipe/example; do not tune offsets per page
+advanced filter       Sheet side=right (w-full sm:max-w-xl); draft/applied, Apply&Search/Enter commits→close→page 1; badge counts sheet-only; closing keeps draft; AND
 single-step form      header actions + centered section-card column
 wizard                only for meaningful stages; concrete chrome lives in example
 modal size prop       sm360 md480 lg640 xl880; small mutations modal, complex flows page/wizard
