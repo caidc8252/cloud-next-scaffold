@@ -15,13 +15,23 @@ describe("admin platform manifest", () => {
   });
 
   it("hides ADMIN-only menus from a non-ADMIN contract", () => {
-    const codes = getMenus("ISO").map((m) => m.menuCode);
+    const codes = getMenus("US-ISO").map((m) => m.menuCode);
     expect(codes).not.toContain("roles");
     expect(codes).toContain("dashboard");
   });
 
-  it("exposes the platform's bound contracts", () => {
-    expect(PLATFORM_CONTRACTS).toEqual(["ADMIN", "ISO", "ISV", "MERCHANT"]);
-    expect(getContractKeys()).toEqual(["ADMIN", "ISO", "ISV", "MERCHANT"]);
+  it("exposes the global contract union (across all apps)", () => {
+    // CONTRACT_KEYS 是各 app 声明 contractKeys 的全局并集（admin + customer）。
+    const expected = [
+      "ADMIN",
+      "MERCHANT",
+      "PLATFORM-CUSTOM",
+      "US-ISO",
+      "US-ISO-PILOT",
+      "US-ISV",
+      "US-ISV-PILOT",
+    ];
+    expect(PLATFORM_CONTRACTS).toEqual(expected);
+    expect(getContractKeys()).toEqual(expected);
   });
 });

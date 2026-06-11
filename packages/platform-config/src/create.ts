@@ -1,5 +1,5 @@
-import type { MenuEntry } from "./types.ts";
-import { validateMenus, type ValidateOptions } from "./validate.ts";
+import type { MenuEntry, RoleDef } from "./types.ts";
+import { validateMenus, validateRoles, type ValidateOptions } from "./validate.ts";
 
 const WILDCARD = "*";
 
@@ -8,6 +8,8 @@ export type CreatePlatformConfigOptions = {
   contractTypes: readonly string[];
   /** 图标名校验器，透传给 validateMenus。 */
   resolveIcon?: ValidateOptions["resolveIcon"];
+  /** 死写角色注册表（多 app 聚合并集）。构造期校验区间 / 唯一性 / 权限码存在性。 */
+  roles?: readonly RoleDef[];
 };
 
 export type PlatformConfig = {
@@ -16,6 +18,10 @@ export type PlatformConfig = {
     (contract: string | string[]): MenuEntry[];
   };
   getContractKeys: () => string[];
+  /** 全部死写角色（GLOBAL）。 */
+  getRoles: () => RoleDef[];
+  /** 解析死写角色的权限码；非死写 roleId（如 ≥1001 的 DB 动态角色）返回 undefined。 */
+  resolveRolePermissions: (roleId: number) => string[] | undefined;
 };
 
 /** 菜单是否命中给定契约：菜单声明 `*` 即对所有契约可见，否则与请求契约有交集才命中。 */
@@ -38,6 +44,12 @@ export function createPlatformConfig(
   validateMenus(all, { contractTypes: opts.contractTypes, resolveIcon: opts.resolveIcon });
   const contractKeys = [...opts.contractTypes];
 
+  // 死写角色：校验后建 roleId → 权限码 索引。权限码池 = 全部菜单声明过的 permissionCode。
+  const roles = [...(opts.roles ?? [])];
+  const menuPermissionCodes = all.flatMap((m) => (m.permissions ?? []).map((p) => p.code));
+  validateRoles(roles, { menuPermissionCodes });
+  const roleById = new Map(roles.map((r) => [r.roleId, r]));
+
   // 不传 → 全部；传单个契约或契约数组 → 命中该契约的菜单。
   function getMenus(): MenuEntry[];
   function getMenus(contract: string | string[]): MenuEntry[];
@@ -50,5 +62,10 @@ export function createPlatformConfig(
   return {
     getMenus,
     getContractKeys: () => [...contractKeys],
+    getRoles: () => roles.map((r) => ({ ...r, permissionCodes: [...r.permissionCodes] })),
+    resolveRolePermissions: (roleId: number) => {
+      const role = roleById.get(roleId);
+      return role ? [...role.permissionCodes] : undefined;
+    },
   };
 }

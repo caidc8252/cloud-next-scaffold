@@ -24,3 +24,12 @@ export const appManifestSchema = z.object({
   contractKeys: z.array(z.string().min(1)).min(1),
   menus: z.array(menuEntrySchema),
 });
+
+// 死写角色（GLOBAL）的 shape 校验；区间 / 唯一性 / 权限码存在性等语义校验见 validate.ts。
+const roleDefSchema = z.object({
+  roleId: z.number().int().positive(),
+  roleName: z.string().min(1),
+  permissionCodes: z.array(z.string().min(1)),
+});
+
+export const appRolesSchema = z.array(roleDefSchema);

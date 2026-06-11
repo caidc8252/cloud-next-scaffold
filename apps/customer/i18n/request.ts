@@ -1,0 +1,11 @@
+import { createI18nRequestConfig } from "@cloud/i18n/server";
+import type { Locale } from "@cloud/i18n";
+
+// next-intl 的 request config 入口。createI18nRequestConfig 读 locale/tz cookie，
+// 先加载 en 作为基底，再 deepMerge 当前 locale；缺 key 自动回退英文。
+export default createI18nRequestConfig({
+  loadMessages: async (locale: Locale) => {
+    const messages = (await import(`./messages/${locale}.json`)).default;
+    return messages;
+  },
+});

@@ -1,8 +1,13 @@
-export { defineAppManifest } from "./define.ts";
-export { validateMenus, type ValidateOptions } from "./validate.ts";
+export { defineAppManifest, defineAppRoles } from "./define.ts";
+export {
+  validateMenus,
+  validateRoles,
+  type ValidateOptions,
+  type ValidateRolesOptions,
+} from "./validate.ts";
 export {
   createPlatformConfig,
   type CreatePlatformConfigOptions,
   type PlatformConfig,
 } from "./create.ts";
-export type { AppManifest, MenuEntry, MenuPermission } from "./types.ts";
+export type { AppManifest, MenuEntry, MenuPermission, RoleDef, RoleType } from "./types.ts";

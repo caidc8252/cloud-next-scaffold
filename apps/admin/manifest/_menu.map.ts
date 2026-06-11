@@ -5,7 +5,8 @@ import { defineAppManifest } from "@cloud/platform-config";
 // contractTypes: ["*"] 表示所有契约可见；否则仅列出的契约可见。
 export const appManifest = defineAppManifest({
   // 本平台声明的契约类型；gen:manifest 跨 app 取并集 → 全局契约枚举（替代旧 _contracts.ts）。
-  contractKeys: ["ADMIN", "ISO", "ISV", "MERCHANT"],
+  // 对齐目标 schema 的 ContractType（ISO/ISV → US-ISO/US-ISV）。
+  contractKeys: ["ADMIN", "US-ISO", "US-ISV", "MERCHANT"],
   menus: [
     // ── Home ──────────────────────────────────────────────
     { menuCode: "home", menuTitle: "Home", parentMenuCode: null, path: null, contractTypes: ["*"], order: 1 },

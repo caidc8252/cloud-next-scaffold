@@ -7,6 +7,5 @@ const config = createPlatformConfig(MENUS, { contractTypes: CONTRACT_KEYS, roles
 
 export const getMenus = config.getMenus;
 export const getContractKeys = config.getContractKeys;
-// 死写角色（GLOBAL，roleId ≤ 300）：会话角色解析（≤300）用 resolveRolePermissions 取权限码。
 export const getRoles = config.getRoles;
 export const resolveRolePermissions = config.resolveRolePermissions;

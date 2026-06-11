@@ -1,5 +1,5 @@
-import { appManifestSchema } from "./schema.ts";
-import type { AppManifest } from "./types.ts";
+import { appManifestSchema, appRolesSchema } from "./schema.ts";
+import type { AppManifest, RoleDef } from "./types.ts";
 
 /**
  * 编写 app 平台 manifest 的入口。
@@ -9,4 +9,12 @@ import type { AppManifest } from "./types.ts";
 export function defineAppManifest(manifest: AppManifest): AppManifest {
   const parsed = appManifestSchema.parse(manifest) as AppManifest;
   return Object.freeze(parsed);
+}
+
+/**
+ * 编写 app 死写角色（GLOBAL）的入口。区间 / 唯一性 / 权限码存在性在 createPlatformConfig 构造期统一校验。
+ */
+export function defineAppRoles(roles: RoleDef[]): RoleDef[] {
+  const parsed = appRolesSchema.parse(roles) as RoleDef[];
+  return Object.freeze(parsed) as RoleDef[];
 }
