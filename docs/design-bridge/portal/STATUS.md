@@ -37,11 +37,11 @@
 
 ## 4. 未完成 / 待办清单
 
-### A. 🅱️ 会话架构（方案已定 B，待实现）
-- **会话架构 `portalUrl` + 跨 host 落 cookie**(最大架构项)。设计/决策完成,代码未实现。
-  - 已定:portalUrl 来源 = 契约类型推 portal 组(MERCHANT/Customer/Admin)+ 禁止跨组重叠 + 共用 `contractGroup` + 兜底 `ADMIN>CUSTOMER>MERCHANT` + per-group env。
-  - **已定(2026-06-12):方案 B(泛化 handoff)** —— 一次性 token 走 URL、目标后端写 host-only cookie;cookie 暂沿用 `sid`;实现收口到单一 `entryUrlForParty`+配置开关,将来可快切 A。详见 `session-architecture.md` §9。
-  - 待实现:§8 delta(`contractGroup` 真源 + per-group URL + 填 `session.party.portalUrl` + handoff 泛化 + customer/merchant handoff 端点)。现仍写死跳 admin。
+### A. ✅ 会话架构（方案 B 已实现）
+- **会话架构 `portalUrl` + 跨 host 落 cookie** —— 方案 B 已落地(提交 4f3d588,469/469)。
+  - `contractGroup` 单一真源(契约类型→组,角色区间 + 路由共用)+ per-group URL + 唯一入口 `entryUrlForParty`(注释标了切 A 单点)+ 登录/selectPartner/select-partner 页按组路由 + customer `/api/auth/session-handoff`。
+  - cookie 暂沿用 `sid`;将来快切 A 局部化在 `entryUrlForParty` + cookie options。
+  - **待部署/后续**:`CUSTOMER_APP_URL`/`MERCHANT_APP_URL` 实际取值;merchant app 未建;E2E 登录引导对接;(可选)cookie→`pep-token`。
 
 ### B. ✅ 目标登录行为（本轮已实现,提交 `2d3473d`)
 - ✅ **TOTP `step` 30→60**(admin+portal;keyuri 编 period=60,gen/verify/URI 一致)。⚠️ 60s 非主流默认,依赖 App 读 otpauth period。
