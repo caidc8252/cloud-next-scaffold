@@ -3,6 +3,9 @@ import "server-only";
 import { getRedis } from "@cloud/cache";
 import { BusinessError } from "@cloud/request";
 import { ERR_TOO_MANY_REQUESTS } from "@cloud/request/error-codes";
+import { createLogger, maskEmail } from "@cloud/log";
+
+const log = createLogger("mail");
 
 // 防止同一收件人被刷：按 (收件人, 用途) 双层节流。背压（队列深度）保护系统，但拦不住
 // 单点轰炸，故对用户可触发的邮件（验证码 / 重置密码）在入队前调用本函数。
@@ -35,10 +38,26 @@ export async function assertRecipientQuota(
 
   // 冷却：SET NX EX —— 已存在表示仍在最小间隔内。
   const acquired = await redis.set(cooldownKey, "1", "EX", policy.cooldownSeconds, "NX");
-  if (acquired === null) throw new BusinessError(ERR_TOO_MANY_REQUESTS, 429);
+  if (acquired === null) {
+    log.warn("recipient throttled (cooldown)", {
+      purpose,
+      email: maskEmail(email),
+      cooldownSeconds: policy.cooldownSeconds,
+    });
+    throw new BusinessError(ERR_TOO_MANY_REQUESTS, 429);
+  }
 
   // 滚动配额：首次 INCR 设窗口过期；超上限即拒。
   const count = await redis.incr(quotaKey);
   if (count === 1) await redis.expire(quotaKey, policy.windowSeconds);
-  if (count > policy.maxPerWindow) throw new BusinessError(ERR_TOO_MANY_REQUESTS, 429);
+  if (count > policy.maxPerWindow) {
+    log.warn("recipient throttled (window cap)", {
+      purpose,
+      email: maskEmail(email),
+      count,
+      maxPerWindow: policy.maxPerWindow,
+    });
+    throw new BusinessError(ERR_TOO_MANY_REQUESTS, 429);
+  }
+  log.debug("recipient quota ok", { purpose, email: maskEmail(email), count });
 }

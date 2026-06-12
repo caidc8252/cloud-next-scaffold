@@ -13,3 +13,4 @@
 - **收件人节流**：用户可触发的邮件（验证码/重置密码）必须先 `assertRecipientQuota(email, purpose, policy)`——按 (收件人, 用途) 冷却 60s + 每小时 5 封（`DEFAULT_RECIPIENT_THROTTLE`），超限抛 `BusinessError(ERR_TOO_MANY_REQUESTS=100008, 429)`；admin 触发的邀请等已有登录态/权限，可只挂轻量冷却或仅靠背压
 - 投递是 fire-and-forget：入队即消费一次节流额度，发失败无回执信号，靠验证码 TTL + 重发兜
 - 新增一种邮件 = 加 `lib/email/<kind>.ts` + 三语补 `email.<kind>`；改文案只动 i18n json；改协议只动 `@cloud/mail/queue.ts`（两边协同）
+- **日志**：走全局 `@cloud/log`（`createLogger("mail")`，详见 `.claude/docs/logging.md`）——入队成功 `info`、背压/节流拒绝 `warn`、细节（载荷/队列深度）`debug`。排查"发了没收到"先按 `scope:"mail"` 看日志确认是否真入队（外部平台是否消费/发信不在本仓日志范围）；也可 `redis-cli LLEN mail:queue` 直接验队列
