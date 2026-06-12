@@ -159,7 +159,8 @@ export function ListPageTemplate() {
                   <SelectItem value="ISO">ISO</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="primary" size="md" iconLeft={<Search className="size-4" />} onClick={filters.apply}>
+              {/* Secondary — the screen's single primary CTA is "New customer" (§3.2). */}
+              <Button variant="secondary" size="md" iconLeft={<Search className="size-4" />} onClick={filters.apply}>
                 Search
               </Button>
             </>

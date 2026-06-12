@@ -250,7 +250,7 @@ Tab 上的计数 chip：`ml-1 h-4 min-w-4 rounded-full bg-surface-3 px-1 text-xs
 - 行容器：`flex flex-wrap items-center gap-2`；所有控件统一 `md`（36px 高）
 - 搜索输入：`inputSize="md"` + `prefix={<Search className="size-4"/>}`，外包 `max-w-64 flex-1`
 - 下拉筛选：`SelectTrigger size="default"`（其 `default` 高度即 `h-control-md`，与其余 md 控件同为 36px；trigger 的 `size` 仅提供 `sm` / `default`）使用接近所需范围的刻度宽度（如 `w-40` / `w-44` / `w-48`，约 150–200px）；`SelectValue` 用 render-prop 显示标签（base-ui 默认显示原始 value）。不要为了复刻原型写 `w-[150px]`、`w-[180px]` 或其他页面局部任意宽度。
-- 提交按钮：`variant="primary" size="md"` + Search 图标
+- 提交按钮（Search）：`variant="secondary" size="md"` + Search 图标 —— 它**不是**页面主 CTA。一页只有一个 primary CTA（§3.2），列表页那个 primary 是标题栏的"新增…"操作；把工具栏 Search 提成 primary 会让一页出现两个实心 CTA。（Advanced Filter Sheet 页脚的 "Apply & Search" 仍是 `primary` —— 那是该 Sheet 自身 surface 的主操作，§4.1。）
 
 **筛选反馈行**：
 

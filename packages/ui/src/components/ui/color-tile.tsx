@@ -29,13 +29,16 @@ const TONE = [
   "bg-cat-6 text-cat-6-fg",
 ] as const
 
-// Square sizes — width only; `aspect-square` (in the base classes) derives the
-// height, so callers can also pass `className="w-full"` to get a responsive
-// square that fills its container (e.g. a sticky summary preview).
+// Square sizes — width + radius only; `aspect-square` (in the base classes)
+// derives the height, so callers can also pass `className="w-full"` to get a
+// responsive square that fills its container (e.g. a sticky summary preview or a
+// small logo-size preview). Font is NOT set here — it scales fluidly with the
+// tile's own width (see the inner span), so a multi-char label stays whole at
+// any size, including the responsive `w-full` case below the sm preset.
 const SIZE = {
-  sm: "w-10 rounded-lg text-xs",
-  md: "w-14 rounded-lg text-sm",
-  lg: "w-20 rounded-xl text-base",
+  sm: "w-10 rounded-lg",
+  md: "w-14 rounded-lg",
+  lg: "w-20 rounded-xl",
 } as const
 
 interface ColorTileProps {
@@ -53,14 +56,20 @@ function ColorTile({ label, colorSeed, size = "md", className }: ColorTileProps)
     <span
       aria-hidden
       className={cn(
-        "grid aspect-square shrink-0 place-items-center overflow-hidden border border-cat-line p-1",
-        "text-center leading-tight font-semibold break-words whitespace-normal",
+        // `@container` makes the tile a size-query context so the label's cqw
+        // font references the tile's own width.
+        "@container grid aspect-square shrink-0 place-items-center overflow-hidden border border-cat-line p-1",
         SIZE[size],
         TONE[categoricalColorIndex(colorSeed ?? label)],
         className,
       )}
     >
-      {label}
+      {/* Fluid font: ~28% of the tile width, clamped 8px–32px, so the label fits
+          a tiny (35px) logo-size tile and grows on large tiles — generalizes the
+          old fixed text-xs/sm/base presets that clipped below the sm size. */}
+      <span className="text-center leading-tight font-semibold break-words whitespace-normal text-[clamp(0.5rem,28cqw,2rem)]">
+        {label}
+      </span>
     </span>
   )
 }

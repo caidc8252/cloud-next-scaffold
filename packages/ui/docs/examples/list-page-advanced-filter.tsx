@@ -85,7 +85,8 @@ export function ListPageAdvancedFilterTemplate() {
                 onSearch={filters.apply}
                 placeholder="Search by name or id"
               />
-              <Button variant="primary" size="md" iconLeft={<Search className="size-4" />} onClick={filters.apply}>
+              {/* Secondary — the screen's single primary CTA is the page-header "New …" action (§3.2). */}
+              <Button variant="secondary" size="md" iconLeft={<Search className="size-4" />} onClick={filters.apply}>
                 Search
               </Button>
               <AdvancedFilterButton open={advancedOpen} onToggle={() => setAdvancedOpen((v) => !v)} count={advCount} />

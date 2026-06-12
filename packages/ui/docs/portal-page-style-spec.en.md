@@ -292,7 +292,7 @@ Short lists, embedded lists, and pages where filters are secondary may keep the 
 - Row container: `flex flex-wrap items-center gap-2`; every control at `md` (36px tall).
 - Search input: `inputSize="md"` + `prefix={<Search className="size-4"/>}`, wrapped in `max-w-64 flex-1`.
 - Select filters: `SelectTrigger size="default"` (its `default` height is `h-control-md` — same 36px as other md controls; the trigger's `size` only offers `sm` / `default`) at fixed scale widths near the needed range (`w-40` / `w-44` / `w-48`, roughly 150–200px); use the `SelectValue` render prop to show labels. Never write `w-[150px]`, `w-[180px]`, or another page-local arbitrary width just to mirror a prototype.
-- Submit: `variant="primary" size="md"` with the Search icon.
+- Submit (Search): `variant="secondary" size="md"` with the Search icon — it is **not** the page's primary CTA. A screen has one primary CTA (§3.2), and on a list that is the page-header "New …" action; promoting the toolbar Search to primary would put two filled CTAs on one screen. (The Advanced Filter Sheet's footer "Apply & Search" stays `primary` — it is that sheet surface's own primary action, §4.1.)
 
 **Filter feedback row**:
 
