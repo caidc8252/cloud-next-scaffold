@@ -1,24 +1,25 @@
-import { successResponse } from "@cloud/request/server";
-import { onboardingAcceptSchema } from "@/lib/schemas";
-import { getCompanies, getInvitation } from "@/lib/mock/store";
-import { setSession } from "@/lib/mock/session";
-import { MockHttpError, readJson, withApiHandler } from "@/lib/api-handler";
-import { INVITE_NOT_FOUND } from "@/lib/error-codes";
+import "@/lib/onboarding-error-messages";
 
-/**
- * Onboarding final step: the invitee authorizes joining the partner. Records
- * the membership (mock: maps to the inviting company), issues the session, and
- * sends them into the console.
- *
- * @e2e-cell feature=onboarding kind=auth-boundary
- */
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
+import { ERR_INVALID_JSON } from "@cloud/request/error-codes";
+import { getPartialSession } from "@cloud/permissions/server";
+import { acceptInputSchema } from "@/service/onboarding/schemas/onboarding.schema";
+import { accept } from "@/service/onboarding/server/onboarding.service";
+import { withApiHandler } from "@/lib/api-handler";
+
+// 接受邀请：绑定 + 消费 + 激活 + 建会话。mode=existing 用当前 portal 会话用户。
 export const POST = withApiHandler(async (req: Request) => {
-  const { token, email, name } = await readJson(req, onboardingAcceptSchema);
-  const invitation = getInvitation(token);
-  if (!invitation) {
-    throw new MockHttpError(INVITE_NOT_FOUND, "Invitation not found.", 404);
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    throw new BusinessError(ERR_INVALID_JSON);
   }
-  const company = getCompanies().find((c) => c.name === invitation.partner) ?? getCompanies()[0];
-  await setSession({ name, email, company });
-  return successResponse({ status: "ok", redirectTo: "/select-partner" });
+
+  const parsed = acceptInputSchema.safeParse(body);
+  if (!parsed.success) throw new BusinessError(ERR_INVALID_JSON);
+
+  const session = await getPartialSession();
+  return successResponse(await accept(parsed.data, session?.userId ?? null));
 });
