@@ -34,6 +34,7 @@ export {
   type StatTrendDirection,
 } from './stat-card'
 export { InitialsTile, type InitialsTileProps } from './initials-tile'
+export { ColorTile, type ColorTileProps } from './color-tile'
 export { ThemeToggle } from './theme-toggle'
 export {
   ToggleCheckbox, ToggleRadioGroup, ToggleRadio, ToggleSwitch,

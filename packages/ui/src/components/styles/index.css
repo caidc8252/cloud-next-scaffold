@@ -233,6 +233,19 @@
   --color-chart-tooltip-fg:  oklch(99% 0 0);
   --color-chart-zoom-fill:   color-mix(in oklch, var(--color-primary-700) 8%, transparent);
   --color-chart-zoom-stroke: color-mix(in oklch, var(--color-primary-700) 60%, transparent);
+
+  /* Categorical soft — low-chroma tinted bg + readable same-hue ink, 6 hues.
+     For per-label identity tiles/labels (<ColorTile>), picked by hashing the
+     content. Distinct from chart-1..8 (saturated data-viz fills): these are
+     pale surfaces meant to sit behind text. Dark overrides in the
+     [data-theme="dark"] block; shared hairline via --color-cat-line. */
+  --color-cat-1: oklch(96% 0.03 206);  --color-cat-1-fg: oklch(38% 0.08 206);  /* blue */
+  --color-cat-2: oklch(96% 0.03  32);  --color-cat-2-fg: oklch(38% 0.08  32);  /* orange */
+  --color-cat-3: oklch(96% 0.03 125);  --color-cat-3-fg: oklch(38% 0.08 125);  /* green */
+  --color-cat-4: oklch(96% 0.03 218);  --color-cat-4-fg: oklch(38% 0.08 218);  /* azure */
+  --color-cat-5: oklch(96% 0.03  84);  --color-cat-5-fg: oklch(38% 0.08  84);  /* lime */
+  --color-cat-6: oklch(96% 0.03   0);  --color-cat-6-fg: oklch(38% 0.08   0);  /* red */
+  --color-cat-line: oklch(93% 0.005 90);
 }
 
 /* ───────────────────────────────────────────────────────
@@ -419,6 +432,15 @@
   --color-chart-div-pos: oklch(70% 0.16 262);
   --color-chart-tooltip-bg: oklch(26% 0.006 260);
   --color-chart-tooltip-fg: oklch(94% 0.003 260);
+
+  /* Categorical soft · dark — deeper tinted surface, lifted same-hue ink. */
+  --color-cat-1: oklch(30% 0.035 206); --color-cat-1-fg: oklch(80% 0.06 206);
+  --color-cat-2: oklch(30% 0.035  32); --color-cat-2-fg: oklch(80% 0.06  32);
+  --color-cat-3: oklch(30% 0.035 125); --color-cat-3-fg: oklch(80% 0.06 125);
+  --color-cat-4: oklch(30% 0.035 218); --color-cat-4-fg: oklch(80% 0.06 218);
+  --color-cat-5: oklch(30% 0.035  84); --color-cat-5-fg: oklch(80% 0.06  84);
+  --color-cat-6: oklch(30% 0.035   0); --color-cat-6-fg: oklch(80% 0.06   0);
+  --color-cat-line: oklch(20% 0.004 260);
 }
 
 @layer base {
