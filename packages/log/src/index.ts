@@ -60,11 +60,46 @@ export function getTraceId(): string | undefined {
   return traceStore.getStore()?.traceId;
 }
 
-function serializeValue(value: unknown): unknown {
+function serializeValue(value: unknown, seen: WeakSet<object>): unknown {
+  if (typeof value === "bigint") return value.toString();
+  if (typeof value === "symbol") return String(value);
+  if (typeof value === "function") return `[Function${value.name ? `: ${value.name}` : ""}]`;
   if (value instanceof Error) {
     return { name: value.name, message: value.message, stack: value.stack };
   }
+  if (Array.isArray(value)) {
+    if (seen.has(value)) return "[Circular]";
+    seen.add(value);
+    return value.map((item) => serializeValue(item, seen));
+  }
+  if (typeof value === "object" && value !== null) {
+    if (seen.has(value)) return "[Circular]";
+    seen.add(value);
+    const out: Record<string, unknown> = {};
+    for (const key of Object.keys(value)) {
+      try {
+        out[key] = serializeValue((value as Record<string, unknown>)[key], seen);
+      } catch {
+        out[key] = "[Unserializable]";
+      }
+    }
+    return out;
+  }
   return value;
+}
+
+function safeStringify(line: Record<string, unknown>): string {
+  try {
+    return JSON.stringify(serializeValue(line, new WeakSet<object>()));
+  } catch (error) {
+    return JSON.stringify({
+      time: new Date().toISOString(),
+      level: "error",
+      scope: "log",
+      msg: "failed to serialize log line",
+      err: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 function emit(scope: string, level: LogLevel, message: string, context?: Record<string, unknown>): void {
@@ -82,13 +117,17 @@ function emit(scope: string, level: LogLevel, message: string, context?: Record<
     ...(ctx?.partyId !== undefined ? { partyId: ctx.partyId } : {}),
   };
   if (context) {
-    for (const [k, v] of Object.entries(context)) line[k] = serializeValue(v);
+    for (const [k, v] of Object.entries(context)) line[k] = v;
   }
-  const json = JSON.stringify(line);
-  if (level === "warn") console.warn(json);
-  else if (level === "error") console.error(json);
-  else if (level === "debug") console.debug(json);
-  else console.info(json);
+  const json = safeStringify(line);
+  try {
+    if (level === "warn") console.warn(json);
+    else if (level === "error") console.error(json);
+    else if (level === "debug") console.debug(json);
+    else console.info(json);
+  } catch {
+    // Logging is best-effort; it must never fail the request being handled.
+  }
 }
 
 export type Logger = {
