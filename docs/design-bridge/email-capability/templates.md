@@ -69,7 +69,7 @@ email.passwordReset.expiry  = "This link expires in {hours} hours."
 ```
 
 ## 落地就绪度（实现排序建议）
-1. **#2 邀请(admin)** —— fully ready:模板 + i18n + `createInvite`/`resendInvite` 接 `sendInviteEmail` + `@cloud/mail`/`@cloud/log` 入 admin tsconfig/依赖 + `PORTAL_APP_URL` env。是 invite-user 收尾、第一条可端到端验证的真实发信链路。
+1. **#2 邀请(admin)** —— ✅ **已落地**:`apps/admin/lib/email/{layout,invite,index}.ts` + i18n `email.invite`/`email.common`(三语)+ `createInvite`/`resendInvite` 接 `sendInviteEmail`;`@cloud/mail` 入 admin deps;`acceptUrl={PORTAL_APP_URL}/onboarding?token=`(dev 默认 3100);`purpose=invite` 仅冷却 60s。第一条可端到端验证的真实发信链路。
 2. **#1 改邮箱验证码(admin)** —— 替换 `deliverVerifyCode` 桩为 `verify-code` 模板发送 + 收件人节流;清理 `USERNAME_CURRENT`。
 3. **#4 忘记密码(portal)** —— 需 forgot-password 三路由真实化(send-code 发码 + verify + reset 真改密),再接 verify-code 模板。
 4. **#3 重置密码(admin)** —— 需 portal 重置页(消费端);模板先备。

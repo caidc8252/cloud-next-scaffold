@@ -1,4 +1,15 @@
 {
+  "email": {
+    "common": {
+      "footerIgnore": "心当たりがない場合は、このメールを無視してください。"
+    },
+    "invite": {
+      "subject": "{partyName} への招待",
+      "intro": "{inviterName} さんがあなたを {partyName} に招待しました。",
+      "button": "招待を受ける",
+      "expiry": "この招待は {date} に期限切れになります。"
+    }
+  },
   "ui": {
     "datePicker": {
       "clear": "クリア",
