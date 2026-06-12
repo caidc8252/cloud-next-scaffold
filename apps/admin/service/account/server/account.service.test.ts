@@ -29,19 +29,21 @@ vi.mock("@/lib/account-verify-code", () => ({
   readVerifyCode: vi.fn(),
   consumeVerifyCode: vi.fn(),
   issueVerifyCode: vi.fn(),
-  deliverVerifyCode: vi.fn(),
 }));
+vi.mock("@/lib/email", () => ({ sendVerifyCodeEmail: vi.fn() }));
 vi.mock("@/lib/session-snapshot", () => ({ buildSessionSnapshot: vi.fn().mockResolvedValue(null) }));
 vi.mock("@cloud/permissions/server", () => ({ updateSession: vi.fn() }));
 
 import * as repo from "./account.repository";
 import * as mfa from "@/service/mfa/server/mfa.service";
-import { readVerifyCode, consumeVerifyCode } from "@/lib/account-verify-code";
+import { readVerifyCode, consumeVerifyCode, issueVerifyCode } from "@/lib/account-verify-code";
+import { sendVerifyCodeEmail } from "@/lib/email";
 import {
   activateMfa,
   changeEmail,
   disableAccountMfa,
   listPartners,
+  requestVerifyCode,
 } from "./account.service";
 
 const session = { userId: 1, currentPartyId: 100 } as unknown as ActiveSession;
@@ -80,6 +82,27 @@ describe("changeEmail", () => {
     await expect(
       changeEmail(session, { newEmail: "new@x.com", currentCode: "111111", newCode: "222222" }),
     ).rejects.toMatchObject({ code: ERR_ACCOUNT_EMAIL_TAKEN, status: 409 });
+  });
+});
+
+describe("requestVerifyCode", () => {
+  it("issues a code and emails it to the new address for EMAIL_NEW", async () => {
+    vi.mocked(repo.getUser).mockResolvedValue({ email: "old@x.com" } as never);
+    vi.mocked(issueVerifyCode).mockResolvedValue("123456");
+
+    const res = await requestVerifyCode(session, { purpose: "EMAIL_NEW", newEmail: "new@x.com" });
+
+    expect(res).toEqual({ sent: true });
+    expect(sendVerifyCodeEmail).toHaveBeenCalledWith({ to: "new@x.com", code: "123456", intent: "emailChange" });
+  });
+
+  it("emails the current address for EMAIL_CURRENT", async () => {
+    vi.mocked(repo.getUser).mockResolvedValue({ email: "old@x.com" } as never);
+    vi.mocked(issueVerifyCode).mockResolvedValue("999999");
+
+    await requestVerifyCode(session, { purpose: "EMAIL_CURRENT" });
+
+    expect(sendVerifyCodeEmail).toHaveBeenCalledWith({ to: "old@x.com", code: "999999", intent: "emailChange" });
   });
 });
 

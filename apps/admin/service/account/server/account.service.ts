@@ -31,8 +31,8 @@ import {
   readVerifyCode,
   consumeVerifyCode,
   issueVerifyCode,
-  deliverVerifyCode,
 } from "@/lib/account-verify-code";
+import { sendVerifyCodeEmail } from "@/lib/email";
 import * as mfa from "@/service/mfa/server/mfa.service";
 import type {
   AccountProfile,
@@ -184,7 +184,8 @@ export async function requestVerifyCode(
     input.purpose,
     input.purpose === "EMAIL_NEW" ? { newEmail: input.newEmail } : undefined,
   );
-  deliverVerifyCode(address, input.purpose, code);
+  // EMAIL_CURRENT / EMAIL_NEW 都属"改邮箱"场景 → emailChange 文案。
+  await sendVerifyCodeEmail({ to: address, code, intent: "emailChange" });
   return { sent: true };
 }
 

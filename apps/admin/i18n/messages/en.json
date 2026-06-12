@@ -8,6 +8,13 @@
       "intro": "{inviterName} invited you to join {partyName}.",
       "button": "Accept invitation",
       "expiry": "This invitation expires on {date}."
+    },
+    "verifyCode": {
+      "subject": "Your verification code",
+      "expiry": "This code expires in {minutes} minutes.",
+      "intro": {
+        "emailChange": "Use the code below to confirm your email change."
+      }
     }
   },
   "ui": {
