@@ -1,7 +1,8 @@
 {
   "email": {
     "common": {
-      "footerIgnore": "如果这不是你发起的操作，可以忽略此邮件。"
+      "footerIgnore": "如果这不是你发起的操作，可以忽略此邮件。",
+      "footerContactAdmin": "如果这不是你预期的操作，请联系你的管理员。"
     },
     "invite": {
       "subject": "你被邀请加入 {partyName}",
@@ -15,6 +16,12 @@
       "intro": {
         "emailChange": "请使用下方验证码确认你的邮箱变更。"
       }
+    },
+    "passwordReset": {
+      "subject": "重置你的密码",
+      "intro": "管理员为你的账号发起了密码重置。",
+      "button": "重置密码",
+      "expiry": "该链接将在 {duration} 后过期。"
     }
   },
   "ui": {

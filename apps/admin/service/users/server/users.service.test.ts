@@ -27,11 +27,11 @@ vi.mock("./users.repository", () => ({
   deleteInvite: vi.fn(),
 }));
 vi.mock("@/lib/password-reset-token", () => ({ createPasswordResetToken: vi.fn() }));
-vi.mock("@/lib/email", () => ({ sendInviteEmail: vi.fn() }));
+vi.mock("@/lib/email", () => ({ sendInviteEmail: vi.fn(), sendResetLinkEmail: vi.fn() }));
 
 import * as repo from "./users.repository";
 import { createPasswordResetToken } from "@/lib/password-reset-token";
-import { sendInviteEmail } from "@/lib/email";
+import { sendInviteEmail, sendResetLinkEmail } from "@/lib/email";
 import {
   cancelInvite,
   createInvite,
@@ -200,13 +200,17 @@ describe("resetUserPassword", () => {
     expect(createPasswordResetToken).not.toHaveBeenCalled();
   });
 
-  it("issues a reset token for an eligible user", async () => {
+  it("issues a reset token and emails the reset link for an eligible user", async () => {
     vi.mocked(repo.findUserLink).mockResolvedValue({ authorizingType: "NORMAL", status: "ACTIVE" } as never);
     vi.mocked(repo.getUserWithLink).mockResolvedValue(userRow() as never);
+    vi.mocked(createPasswordResetToken).mockResolvedValue("rtok");
 
     await resetUserPassword(session, 2);
 
     expect(createPasswordResetToken).toHaveBeenCalledWith(2);
+    expect(sendResetLinkEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "bob@example.com", token: "rtok" }),
+    );
   });
 });
 

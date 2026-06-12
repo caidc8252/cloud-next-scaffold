@@ -40,5 +40,5 @@
 
 ## 现状 delta（进度）
 - ✅ **#4 自助找回已返工为 link-based**：`recovery-code`→`lib/password-reset-token`(token,自助 TTL 60m)；删 `verify-code`；`send-code`→`send-link`(发 `password-reset` 链接邮件)；消费端迁到 `POST /api/reset-password`(收 `{token,encryptedPassword}`)+ `GET /api/reset-password/validate`；设密核在 `forgot.service.resetPassword`（portal 消费端单点，无需跨 app 抽取）。
-- ⏳ **#3 管理员重置（仅 token 签发桩）待补**：admin 侧 `createPasswordResetToken` 加 `source`+可变 TTL（72h）；`resetUserPassword` 之后真发 `password-reset` 链接邮件（admin `lib/email`）。链接同样落 portal `/reset-password?token=`，**复用已就绪的消费端**。
+- ✅ **#3 管理员重置后端已落地**：`createPasswordResetToken` 写 `{userId, source:"admin"}`（72h）；`resetUserPassword` 后经 admin `lib/email.sendResetLinkEmail` 真发 `password-reset` 链接邮件（落 portal `/reset-password?token=`，复用 ② 的消费端）。
 - ⏳ **前端待补**：`forgot-screen` 改「提交邮箱→提示查邮件」；新建 portal `/reset-password?token=` 重置页（取 challenge + RSA 加密 + 调 validate/reset）。

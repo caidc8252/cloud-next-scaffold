@@ -1,7 +1,8 @@
 {
   "email": {
     "common": {
-      "footerIgnore": "If you didn't request this, you can safely ignore this email."
+      "footerIgnore": "If you didn't request this, you can safely ignore this email.",
+      "footerContactAdmin": "If you didn't request this, please contact your administrator."
     },
     "invite": {
       "subject": "You're invited to join {partyName}",
@@ -15,6 +16,12 @@
       "intro": {
         "emailChange": "Use the code below to confirm your email change."
       }
+    },
+    "passwordReset": {
+      "subject": "Reset your password",
+      "intro": "An administrator has requested a password reset for your account.",
+      "button": "Reset password",
+      "expiry": "This link expires in {duration}."
     }
   },
   "ui": {
