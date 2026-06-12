@@ -77,22 +77,23 @@ export async function assertRecipientQuota(email: string, purpose: string, polic
 - 阈值（policy）由 **app 侧注入**（包给机制、配置业务注入）。
 - 超限抛错 → 调用方 catch 映射成 429/"操作过于频繁,请稍后再试"。
 
-### 3.4 渲染机制（`render.ts`）
+### 3.4 渲染机制（`render.ts`）—— 实现版
 ```ts
-export type EmailTemplate<V> = (vars: V, t: Translator) => { title: string; content: string };
+// 译者由 app 注入（app 用 @cloud/i18n 按收件人 locale 建 t；包不直接依赖 i18n，更解耦）。
+export type EmailTranslate = (key: string, values?: Record<string, string | number>) => string;
+export type EmailTemplate<V> = (vars: V, t: EmailTranslate) => { title: string; content: string };
 export async function renderAndEnqueue<V>(opts: {
   template: EmailTemplate<V>;
   vars: V;                 // 类型化变量对象（编译期校验，漏传报错）
-  locale: Locale;          // 显式收件人语言（不依赖 cookie）
-  messages: Messages;      // app 注入的该 locale messages
+  t: EmailTranslate;       // app 注入的译者（显式收件人 locale，不依赖 cookie）
   receivers: string[];
-  purpose?: string;        // 传则跑 assertRecipientQuota
+  purpose?: string;        // 传则对每个收件人跑 assertRecipientQuota
   throttle?: RecipientThrottlePolicy;
 }): Promise<void>;
 ```
-- 用 **显式 locale + 注入 messages** 建 `createTranslator`（**不能用 cookie 版 `getTranslations`**——收件人语言可能 ≠ 当前请求语言）。
-- **对所有字符串变量先 `escapeHtml` 再交给模板**（content 是 HTML）；`Date` 等先格式化再转义。
-- 流程：(可选)节流 → 渲染 → `enqueueEmailJob`（内含 500 背压）。
+- 译者 `t` 由 **app 注入**（app 侧用 `@cloud/i18n` 按收件人 locale 构建；包不 import i18n，保持解耦）。**不能用 cookie 版 `getTranslations`**——收件人语言可能 ≠ 当前请求语言。
+- **转义责任在模板**：包提供 `escapeHtml`，模板在拼 content（HTML）时对注入变量显式调用；**title 是纯文本主题，不转义**（否则 "Smith & Co" → "&amp;"）。套件不自动转义，正因 title/content 转义策略不同。
+- 流程：(可选)逐收件人节流 → 跑模板 → `enqueueEmailJob`（内含 500 背压）。
 
 ## 4. 各 app 模板层（`apps/{app}/lib/email/`）
 
