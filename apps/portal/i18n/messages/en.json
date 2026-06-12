@@ -223,17 +223,46 @@
         "returning": "Returning from {provider}…"
       }
     },
+    "resetPassword": {
+      "invalid": {
+        "title": "Reset link invalid",
+        "sub": "This password reset link is invalid or has expired. Request a new one to continue.",
+        "requestNew": "Request a new link"
+      },
+      "form": {
+        "eyebrow": "Reset password",
+        "title": "Set a new password",
+        "sub": "Choose a strong password you don't use anywhere else.",
+        "newLabel": "New password",
+        "newPlaceholder": "At least {min} characters",
+        "confirmLabel": "Confirm password",
+        "confirmPlaceholder": "Repeat password",
+        "mismatch": "Passwords don't match.",
+        "submit": "Update password",
+        "submitting": "Updating…"
+      },
+      "done": {
+        "title": "Password updated",
+        "sub": "Your password has been changed. Sign in with your new password.",
+        "signIn": "Go to sign in"
+      },
+      "error": "Couldn't reset your password. Please try again."
+    },
     "forgot": {
       "back": "Back to sign in",
       "changeEmail": "Change email",
       "email": {
         "eyebrow": "Account recovery",
         "title": "Reset your password",
-        "sub": "Enter the email on your account and we'll send a 6-digit verification code.",
+        "sub": "Enter your account email and we'll send you a link to reset your password.",
         "label": "Work email",
-        "send": "Send verification code",
-        "sending": "Sending code…",
+        "send": "Send reset link",
+        "sending": "Sending link…",
         "err": "Enter a valid email address."
+      },
+      "sent": {
+        "title": "Check your email",
+        "sub": "If an account exists for {email}, we've sent a link to reset your password."
       },
       "code": {
         "eyebrow": "Step 2 of 3",
