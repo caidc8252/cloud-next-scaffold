@@ -7,6 +7,7 @@ import {
   ERR_INTERNAL,
   ERR_INVALID_JSON,
   ERR_INVALID_ID,
+  ERR_TOO_MANY_REQUESTS,
   ERR_USER_EMAIL_INVALID,
   ERR_USER_EMAIL_TAKEN,
   ERR_USER_NOT_FOUND,
@@ -38,6 +39,7 @@ export const en: ErrorMessages = {
   [ERR_INTERNAL]: "Internal server error.",
   [ERR_INVALID_JSON]: "The request body is not valid JSON.",
   [ERR_INVALID_ID]: "The provided identifier is invalid.",
+  [ERR_TOO_MANY_REQUESTS]: "Too many requests. Please try again later.",
   // Users
   [ERR_USER_EMAIL_INVALID]: "A valid email address is required.",
   [ERR_USER_EMAIL_TAKEN]: "This email address is already in use.",

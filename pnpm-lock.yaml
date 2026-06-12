@@ -428,6 +428,21 @@ importers:
         specifier: 'catalog:'
         version: 0.0.1
 
+  packages/mail:
+    dependencies:
+      '@cloud/cache':
+        specifier: workspace:*
+        version: link:../cache
+      '@cloud/request':
+        specifier: workspace:*
+        version: link:../request
+      server-only:
+        specifier: 'catalog:'
+        version: 0.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+
   packages/permissions:
     dependencies:
       '@cloud/cache':

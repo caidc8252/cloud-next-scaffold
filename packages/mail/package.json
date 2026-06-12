@@ -1,0 +1,15 @@
+{
+  "name": "@cloud/mail",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@cloud/cache": "workspace:*",
+    "@cloud/request": "workspace:*",
+    "server-only": "catalog:",
+    "zod": "catalog:"
+  }
+}

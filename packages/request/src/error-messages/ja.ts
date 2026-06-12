@@ -7,6 +7,7 @@ import {
   ERR_INTERNAL,
   ERR_INVALID_JSON,
   ERR_INVALID_ID,
+  ERR_TOO_MANY_REQUESTS,
   ERR_USER_EMAIL_INVALID,
   ERR_USER_EMAIL_TAKEN,
   ERR_USER_NOT_FOUND,
@@ -37,6 +38,7 @@ export const ja: ErrorMessages = {
   [ERR_INTERNAL]: "サーバー内部エラーが発生しました。",
   [ERR_INVALID_JSON]: "リクエスト本文が正しい JSON ではありません。",
   [ERR_INVALID_ID]: "指定された ID が無効です。",
+  [ERR_TOO_MANY_REQUESTS]: "リクエストが多すぎます。しばらくしてから再試行してください。",
   // ユーザー
   [ERR_USER_EMAIL_INVALID]: "有効なメールアドレスを入力してください。",
   [ERR_USER_EMAIL_TAKEN]: "このメールアドレスは既に使用されています。",
