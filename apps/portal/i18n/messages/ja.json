@@ -153,10 +153,17 @@
         "returning": "{provider} から戻っています…"
       }
     },
+    "resetPassword": {
+      "invalid": { "title": "リセットリンクが無効", "sub": "このパスワードリセットリンクは無効か期限切れです。新しいリンクを申請してください。", "requestNew": "新しいリンクを申請" },
+      "form": { "eyebrow": "パスワードをリセット", "title": "新しいパスワードを設定", "sub": "他で使っていない強力なパスワードを選んでください。", "newLabel": "新しいパスワード", "newPlaceholder": "{min} 文字以上", "confirmLabel": "パスワードの確認", "confirmPlaceholder": "もう一度入力", "mismatch": "パスワードが一致しません。", "submit": "パスワードを更新", "submitting": "更新中…" },
+      "done": { "title": "パスワードを更新しました", "sub": "パスワードが変更されました。新しいパスワードでサインインしてください。", "signIn": "サインインへ" },
+      "error": "パスワードをリセットできませんでした。もう一度お試しください。"
+    },
     "forgot": {
       "back": "サインインに戻る",
       "changeEmail": "メールを変更",
-      "email": { "eyebrow": "アカウント回復", "title": "パスワードをリセット", "label": "業務用メール", "send": "確認コードを送信", "sending": "送信中…", "err": "有効なメールアドレスを入力してください。" },
+      "email": { "eyebrow": "アカウント回復", "title": "パスワードをリセット", "sub": "アカウントのメールアドレスを入力してください。パスワード再設定用のリンクをお送りします。", "label": "業務用メール", "send": "リセットリンクを送信", "sending": "送信中…", "err": "有効なメールアドレスを入力してください。" },
+      "sent": { "title": "メールをご確認ください", "sub": "{email} のアカウントが存在する場合、パスワード再設定用のリンクを送信しました。" },
       "code": { "eyebrow": "ステップ 2 / 3", "title": "コードを入力", "label": "確認コード", "verify": "確認して続行", "verifying": "確認中…", "resend": "コードを再送", "resendIn": "{seconds} 秒後に再送", "err": "6 桁のコードを入力してください。" },
       "reset": { "eyebrow": "ステップ 3 / 3", "title": "新しいパスワードを設定", "newLabel": "新しいパスワード", "newPlaceholder": "{min} 文字以上", "confirmLabel": "パスワードの確認", "confirmPlaceholder": "もう一度入力", "mismatch": "パスワードが一致しません。", "update": "パスワードを更新", "updating": "更新中…" },
       "rules": { "length": "{min} 文字以上", "upper": "大文字 (A-Z)", "lower": "小文字 (a-z)", "digit": "数字 (0-9)", "symbol": "記号 (@ # $)" },
