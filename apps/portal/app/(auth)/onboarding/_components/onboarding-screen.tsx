@@ -1,121 +1,71 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { Button, Spinner } from "@cloud/ui";
 import { request } from "@cloud/request/client";
 import { useTranslations } from "@cloud/i18n/client";
-import type { Account, Invitation } from "@/lib/mock/types";
 import { PepLogo } from "@/app/_components/brand";
-import { ObInvalid, ObWelcome } from "./ob-terminal";
+import type { CurrentUser, InvitePublic } from "./types";
+import { ObInvalid } from "./ob-terminal";
 import { ObLanding } from "./ob-landing";
-import { ObSignin } from "./ob-signin";
 import { ObRegister } from "./ob-register";
-import { ObConfirm } from "./ob-confirm";
 
-type Step = "loading" | "invalid" | "landing" | "signin" | "register" | "confirm" | "welcome";
+type Step = "loading" | "invalid" | "landing" | "register";
 
-export function OnboardingScreen({
-  token,
-  currentUser,
-}: {
-  token: string;
-  currentUser: Account | null;
-}) {
+// 入驻：验票 → 落地（已登录用当前账号加入 / 换账号 / 新建账号）。token 即授权。
+// 既有用户走真登录（/login?returnTo 回跳本页）；接受邀请成功后跳后端给的 redirectTo（按组 handoff 进 console）。
+export function OnboardingScreen({ token, currentUser }: { token: string; currentUser: CurrentUser | null }) {
   const tob = useTranslations("portal.onboarding");
   const tb = useTranslations("portal.brand");
-  const router = useRouter();
   const [step, setStep] = useState<Step>("loading");
-  const [invitation, setInvitation] = useState<Invitation | null>(null);
-  const [signedOut, setSignedOut] = useState(false);
-  const [pending, setPending] = useState<{ viaExisting: boolean; account: { name: string; email: string } } | null>(null);
-  const [acceptBusy, setAcceptBusy] = useState(false);
+  const [invite, setInvite] = useState<InvitePublic | null>(null);
 
   useEffect(() => {
     request
-      .get<{ invitation: Invitation }>(`/api/onboarding/invite?token=${encodeURIComponent(token)}`)
+      .get<{ invitation: InvitePublic }>(`/api/onboarding/invite?token=${encodeURIComponent(token)}`)
       .then((res) => {
-        setInvitation(res.data.invitation);
+        setInvite(res.data.invitation);
         setStep("landing");
       })
       .catch(() => setStep("invalid"));
   }, [token]);
 
-  const activeUser = signedOut ? null : currentUser;
+  const returnTo = `/onboarding?token=${encodeURIComponent(token)}`;
 
-  function goLanding() {
-    setSignedOut(false);
-    setStep("landing");
+  async function joinAsCurrent() {
+    const res = await request.post<{ redirectTo: string }>("/api/onboarding/accept", { mode: "existing", token });
+    window.location.assign(res.data.redirectTo);
   }
-  function goConfirm(viaExisting: boolean, account: { name: string; email: string }) {
-    setPending({ viaExisting, account });
-    setStep("confirm");
+  function goLogin() {
+    window.location.assign(`/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
-  async function authorize() {
-    if (!invitation || !pending) return;
-    setAcceptBusy(true);
-    try {
-      await request.post("/api/onboarding/accept", {
-        token: invitation.token,
-        email: pending.account.email,
-        name: pending.account.name,
-        viaExisting: pending.viaExisting,
-      });
-      setStep("welcome");
-    } finally {
-      setAcceptBusy(false);
-    }
+  async function switchAccount() {
+    await request.post("/api/auth/logout").catch(() => {});
+    goLogin();
   }
 
   let body;
   if (step === "loading") {
     body = <Spinner size="xl" />;
   } else if (step === "invalid") {
-    body = <ObInvalid token={token} onHome={() => router.push("/")} />;
-  } else if (step === "landing" && invitation) {
+    body = <ObInvalid token={token} onHome={() => window.location.assign("/login")} />;
+  } else if (step === "landing" && invite) {
     body = (
       <ObLanding
-        invitation={invitation}
-        currentUser={activeUser}
-        onUseCurrent={() => activeUser && goConfirm(true, activeUser)}
-        onSignInOther={() => {
-          setSignedOut(true);
-          setStep("signin");
-        }}
-        onSignIn={() => setStep("signin")}
+        invite={invite}
+        currentUser={currentUser}
+        onJoinCurrent={joinAsCurrent}
+        onLogin={goLogin}
+        onSwitch={switchAccount}
         onRegister={() => setStep("register")}
       />
     );
-  } else if (step === "signin" && invitation) {
-    body = <ObSignin invitation={invitation} onBack={goLanding} onSignedIn={(a) => goConfirm(true, a)} />;
-  } else if (step === "register" && invitation) {
-    body = <ObRegister invitation={invitation} onBack={goLanding} onDone={(a) => goConfirm(false, a)} />;
-  } else if (step === "confirm" && invitation && pending) {
-    body = (
-      <ObConfirm
-        invitation={invitation}
-        account={pending.account}
-        viaExisting={pending.viaExisting}
-        onBack={goLanding}
-        onAuthorize={authorize}
-        busy={acceptBusy}
-      />
-    );
-  } else if (step === "welcome" && invitation && pending) {
-    body = (
-      <ObWelcome
-        name={pending.account.name}
-        partner={invitation.partner}
-        onEnter={() => {
-          router.replace("/select-partner");
-          router.refresh();
-        }}
-      />
-    );
+  } else if (step === "register" && invite) {
+    body = <ObRegister invite={invite} token={token} onBack={() => setStep("landing")} />;
   }
 
-  const showExit = step !== "welcome" && step !== "invalid" && step !== "loading";
+  const showExit = step === "landing" || step === "register";
 
   return (
     <div className="pep-fade flex min-h-screen flex-col bg-surface-3">
@@ -123,7 +73,7 @@ export function OnboardingScreen({
         <PepLogo size={26} sub={tb("newland")} />
         <div className="flex-1" />
         {showExit ? (
-          <Button variant="ghost" size="sm" iconLeft={<X size={14} />} onClick={() => router.push("/")}>
+          <Button variant="ghost" size="sm" iconLeft={<X size={14} />} onClick={() => window.location.assign("/login")}>
             {tob("exit")}
           </Button>
         ) : null}
