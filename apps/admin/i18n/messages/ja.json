@@ -1,7 +1,8 @@
 {
   "email": {
     "common": {
-      "footerIgnore": "心当たりがない場合は、このメールを無視してください。"
+      "footerIgnore": "心当たりがない場合は、このメールを無視してください。",
+      "footerContactAdmin": "心当たりがない場合は、管理者にお問い合わせください。"
     },
     "invite": {
       "subject": "{partyName} への招待",
@@ -15,6 +16,12 @@
       "intro": {
         "emailChange": "以下のコードを使用してメールアドレスの変更を確認してください。"
       }
+    },
+    "passwordReset": {
+      "subject": "パスワードをリセット",
+      "intro": "管理者があなたのアカウントのパスワードリセットをリクエストしました。",
+      "button": "パスワードをリセット",
+      "expiry": "このリンクは {duration} 後に期限切れになります。"
     }
   },
   "ui": {

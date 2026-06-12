@@ -14,7 +14,7 @@ import {
 import { extractRoleIds, parseRoleIds } from "@/service/_shared/role-codes";
 import type { User } from "@/app/(portal)/system/_shared/types";
 import { createPasswordResetToken } from "@/lib/password-reset-token";
-import { sendInviteEmail } from "@/lib/email";
+import { sendInviteEmail, sendResetLinkEmail } from "@/lib/email";
 import type {
   CreateInviteInput,
   SetInviteRolesInput,
@@ -145,8 +145,11 @@ export async function resetUserPassword(session: ActiveSession, userId: number):
     throw new BusinessError(ERR_USER_PROTECTED);
   }
 
-  await createPasswordResetToken(userId);
-  return toClientUser(await usersRepository.getUserWithLink(partyId, userId));
+  const token = await createPasswordResetToken(userId);
+  const user = toClientUser(await usersRepository.getUserWithLink(partyId, userId));
+  // 发重置链接（落 portal /reset-password?token=，复用其消费端）。token 72h。
+  await sendResetLinkEmail({ to: user.email, token, expiresText: "72 hours" });
+  return user;
 }
 
 export async function cancelInvite(session: ActiveSession, inviteId: number): Promise<void> {
