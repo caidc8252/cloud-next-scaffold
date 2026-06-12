@@ -9,6 +9,12 @@
       "intro": {
         "passwordRecovery": "请使用下方验证码重置你的密码。"
       }
+    },
+    "passwordReset": {
+      "subject": "重置你的密码",
+      "intro": "有人为你的账号发起了密码重置。",
+      "button": "重置密码",
+      "expiry": "该链接将在 {duration} 后过期。"
     }
   },
   "portal": {

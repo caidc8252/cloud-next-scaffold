@@ -9,6 +9,12 @@
       "intro": {
         "passwordRecovery": "Use the code below to reset your password."
       }
+    },
+    "passwordReset": {
+      "subject": "Reset your password",
+      "intro": "A password reset was requested for your account.",
+      "button": "Reset password",
+      "expiry": "This link expires in {duration}."
     }
   },
   "portal": {
