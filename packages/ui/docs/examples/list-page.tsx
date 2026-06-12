@@ -21,6 +21,7 @@ import {
   Badge,
   Button,
   Card,
+  Empty,
   FilterChip,
   ListConditionBand,
   PageBody,
@@ -177,9 +178,12 @@ export function ListPageTemplate() {
         {/* §5 — list card: count band + Table + pagination band (card adds no padding) */}
         <Card elevation={1} className="-mt-2">
           <div className="flex items-center justify-between gap-3 border-b border-line-subtle px-4 py-3">
-            <div className="text-sm text-content-secondary">
-              <span className="font-mono font-semibold text-content-primary tabular-nums">{ROWS.length}</span> customers
-              {filters.hasApplied && <span className="text-content-tertiary"> matching filters</span>}
+            <div className="flex items-baseline gap-1 text-sm text-content-secondary">
+              <span className="font-mono font-semibold text-content-primary tabular-nums">{ROWS.length}</span>
+              <span>
+                customers
+                {filters.hasApplied && <span className="text-content-tertiary"> matching filters</span>}
+              </span>
             </div>
             <Button variant="secondary" size="sm" iconLeft={<Download className="size-3.5" />} onClick={() => {}}>
               Export
@@ -191,7 +195,7 @@ export function ListPageTemplate() {
             rows={ROWS}
             rowKey={(r) => r.id}
             onRowClick={() => {}}
-            empty={<div className="py-12 text-center text-sm text-content-tertiary">No customers match your search.</div>}
+            empty={<Empty title="No customers match your search." />}
           />
 
           {/* §5.3 — RichPagination owns rows-per-page, range summary, and page buttons */}

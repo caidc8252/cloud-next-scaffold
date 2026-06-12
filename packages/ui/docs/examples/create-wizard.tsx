@@ -83,7 +83,7 @@ export function CreateWizardTemplate() {
               {/* Step card: flush head px-5 py-4 + text-md title; content keeps slot padding */}
               <Card>
                 <CardHeader flush className="px-5 py-4">
-                  <CardTitle className="text-md">Primary information</CardTitle>
+                  <CardTitle>Primary information</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-4.5">
