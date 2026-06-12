@@ -3,8 +3,8 @@
 > 归属：`@cloud/mail`（推 Redis `mail:queue`，外部平台消费发信）、各 app `lib/email/` 模板、i18n `email.*` 文案。**发任何邮件前必读。** 完整设计/决策见 `docs/design-bridge/email-capability/`。
 
 - 发邮件统一走 `@cloud/mail`：本仓只把"要发的邮件"推进 Redis `mail:queue`，由**外部平台**消费后原样发出。不要在业务里直接发信、直接连 SMTP/SES，也不要直接 `lpush` 队列
-- 队列协议 `{ receivers: email[], title=subject, content=极简HTML正文 }` 是 `@cloud/mail` 的**单一真源**（`emailJobInputSchema`），也是与外部发信平台的契约；改它需两边协同，不要在别处另立邮件 job 形状
-- `content` 是**极简 email-safe HTML**（内联样式 + `<a>` 按钮、文字为主，不用 table 布局/媒体查询/外链 CSS/图片），外部平台原样发；`title` 是纯文本主题
+- 队列协议 `{ receivers, cc?, title=subject, content_type, content, images? }` 是 `@cloud/mail` 的**单一真源**（`emailJobInputSchema`，字段名=wire 原样，对齐外部平台契约）；改它需两边协同，不要在别处另立邮件 job 形状
+- `content_type` 固定 `"text/html"`（默认值）；`content` 是**完整 HTML 文档**（`<!DOCTYPE html>`+`<meta charset=utf-8>`，极简 email-safe HTML：内联样式 + `<a>` 按钮、文字为主，不用 table/媒体查询/图片），外部平台原样发；`title` 是纯文本主题；`cc`/`images` 暂不填
 - **转义**：拼 `content` 时对注入的变量调 `escapeHtml`（用户可控的名字/邮箱可能含 `<`、`&`）；`title` 不转义（否则 "Smith & Co" → "&amp;"）
 - 业务邮件模板落各 app `lib/email/<kind>.ts`（类型化 `EmailTemplate<V>`，平台独立）；**文案走 i18n `email.*`**（三语对齐、`en` 基底，禁硬编码）；用 `renderAndEnqueue({ template, vars, t, receivers, purpose, throttle })` 收口
 - 译者 `t` 由 app 侧用 `@cloud/i18n` 按**收件人 locale** 构建后注入（`@cloud/mail` 不依赖 i18n）；**不能用 cookie 版 `getTranslations`**（收件人语言 ≠ 当前请求语言）。当前一律传 `en`，locale 参数与三语 key 结构先就位

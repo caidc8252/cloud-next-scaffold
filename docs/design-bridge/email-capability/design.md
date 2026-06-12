@@ -16,12 +16,13 @@
 
 外部发信平台「不做任何处理、原样发出」⇒ 所有**变量替换、本地化、转义**都在我们这边做完，入队的就是成品。
 
-## 2. 内容格式（已定）
+## 2. 内容格式（已定，已对齐对方真实契约）
 
-- `content` = **极简 email-safe HTML**：内联样式 + 一个 `<a>` 按钮，**以文字为主**，不用 table 布局 / 媒体查询 / 外部 CSS / 图片，绕开 Outlook 等客户端兼容性坑。
-- 对方原样发 ⇒ HTML 完全由我们负责 ⇒ **渲染套件必须对注入的变量做 HTML 转义**（`displayName`/party 名/邮箱可能含 `<`、`&`）。
+- `content` = **完整 HTML 文档**（`<!DOCTYPE html>` + `<head><meta charset="utf-8">` + body），极简 email-safe HTML（内联样式 + 一个 `<a>` 按钮、以文字为主，不用 table 布局 / 媒体查询 / 图片）。完整文档 + charset 保证中文/日文不乱码、跨客户端更稳。
+- **`content_type` 固定 `"text/html"`**（job 字段，默认值）：显式告知对方按 HTML 渲染——**缺它可能被按纯文本发出**（收到 HTML 源码标签）。
+- 对方原样发 ⇒ HTML 由我们负责 ⇒ 模板拼 content 时对注入变量 `escapeHtml`（`displayName`/party 名/邮箱可能含 `<`、`&`）。
 - `href` 用我们自己拼的可信 URL（token 经 `encodeURIComponent`），不当作文本转义。
-- `title` = 邮件主题（subject）。
+- `title` = 邮件主题（subject，纯文本不转义）。
 
 ## 3. 包 `@cloud/mail`（server-only；依赖 `@cloud/cache`）
 
@@ -35,17 +36,20 @@ packages/mail/src/
   index.ts
 ```
 
-### 3.1 队列协议（`queue.ts`）—— 跨平台契约，单一真源
+### 3.1 队列协议（`queue.ts`）—— 跨平台契约，单一真源（字段名 = wire 原样）
 ```ts
 export const EMAIL_QUEUE_KEY = "mail:queue";
 export const emailJobInputSchema = z.object({
-  receivers: z.array(z.string().trim().email().transform(s => s.trim())).min(1),
-  title: z.string().trim().min(1),     // = subject
-  content: z.string().trim().min(1),   // = 极简 HTML 正文（对方原样发）
+  receivers: z.array(email).min(1),          // = To
+  cc: z.array(email).optional(),
+  title: z.string().trim().min(1),           // = subject（纯文本）
+  content_type: z.string().default("text/html"),
+  content: z.string().trim().min(1),         // 完整 HTML 文档（含 <meta charset>）
+  images: z.array(inlineImageSchema).optional(), // CID 内联图（content_id/content_type/data base64），本仓暂不用
 });
-export type EmailJobInput = z.infer<typeof emailJobInputSchema>;
+export type EmailJobInput = z.input<typeof emailJobInputSchema>; // content_type/cc/images 可省
 ```
-> 这是与外部发信平台约定的形状，**只此一份**；改它需两边同步。**暂不预留 `version`/`from`/`html` 等字段**，需要时再一起加（注释写清"跨平台契约，改动需协同"）。
+> 字段集**对齐对方真实契约**（receivers/cc/title/content_type/content/images）。**只此一份**；改它需两边同步。`content_type` 默认 `text/html`；`cc`/`images` 本仓暂不填（发送器只传 receivers/title/content，default 补 content_type）。
 
 ### 3.2 入队 + 背压（`enqueue.ts`）
 ```ts
@@ -152,7 +156,7 @@ service(业务)
 - 收件人节流：`(收件人,用途)` 冷却 **60s** + 每小时 **5 封**（用户可触发邮件必挂）。✅
 
 ## 9. 仍待确认（多为跨团队，非本仓代码决策）
-1. **与外部发信平台核对契约语义**：它读 `content` 是否**原样当 HTML 发**、`title` 是否当 subject、`receivers` 是否为 To；**发件人 `from` 由它固定**（我们不传）。本设计按此假设，需对方确认。
+1. ✅ **契约已对齐**（据对方真实样例 2026-06-12）：字段 receivers/cc/title/content_type/content/images；我们固定发 `content_type:"text/html"` + 完整 HTML 文档。仅剩一问：**缺 `content_type` 时对方默认按什么发**（我们已显式带上，无论默认如何都正确）；`from` 仍由对方固定（我们不传）。
 2. **一封多收件人**：`receivers` 多个 = 同一封 To 多人（互相可见）。验证码/重置/邀请均**单收件人**，按 `[email]` 发，避免泄露 + 配合 per-recipient 节流。
 3. **错误码落位**：背压复用 `ERR_MW_MAIL=190003`；收件人超限用一个 429 语义码（编号在现有方案里择段，实现时定）。
 

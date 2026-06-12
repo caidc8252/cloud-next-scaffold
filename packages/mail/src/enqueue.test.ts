@@ -17,14 +17,22 @@ beforeEach(() => {
 });
 
 describe("enqueueEmailJob", () => {
-  it("lpushes a validated job when below the backpressure threshold", async () => {
+  it("lpushes a validated job and defaults content_type to text/html", async () => {
     redis.llen.mockResolvedValue(0);
     const res = await enqueueEmailJob(job);
     expect(res.queueKey).toBe(EMAIL_QUEUE_KEY);
     expect(redis.lpush).toHaveBeenCalledOnce();
     const [key, payload] = redis.lpush.mock.calls[0];
     expect(key).toBe(EMAIL_QUEUE_KEY);
-    expect(JSON.parse(payload as string)).toEqual(job);
+    expect(JSON.parse(payload as string)).toEqual({ ...job, content_type: "text/html" });
+  });
+
+  it("passes through cc and an explicit content_type", async () => {
+    redis.llen.mockResolvedValue(0);
+    await enqueueEmailJob({ ...job, cc: ["c@x.com"], content_type: "text/plain" });
+    const parsed = JSON.parse(redis.lpush.mock.calls[0][1] as string);
+    expect(parsed.cc).toEqual(["c@x.com"]);
+    expect(parsed.content_type).toBe("text/plain");
   });
 
   it("rejects with ERR_MW_MAIL at/above the threshold and does not enqueue", async () => {
