@@ -37,10 +37,11 @@
 
 ## 4. 未完成 / 待办清单
 
-### A. ⏸ 已搁置(待你决策后开)
-- **会话架构 `pep-token` + `portalUrl`**(最大架构项)。
-  - 已定:portalUrl 来源 = 契约类型推 portal 组(MERCHANT/Customer/Admin)+ 禁止跨组重叠(代码不变量)+ 共用 `contractGroup` 映射 + 跨组脏数据兜底 `ADMIN>CUSTOMER>MERCHANT` + URL 走 per-group env。
-  - **待定**:跨 host 落 cookie 走 **A 共享父域直跳** 还是 **B 泛化现有 handoff**(推荐 B)。
+### A. 🅱️ 会话架构（方案已定 B，待实现）
+- **会话架构 `portalUrl` + 跨 host 落 cookie**(最大架构项)。设计/决策完成,代码未实现。
+  - 已定:portalUrl 来源 = 契约类型推 portal 组(MERCHANT/Customer/Admin)+ 禁止跨组重叠 + 共用 `contractGroup` + 兜底 `ADMIN>CUSTOMER>MERCHANT` + per-group env。
+  - **已定(2026-06-12):方案 B(泛化 handoff)** —— 一次性 token 走 URL、目标后端写 host-only cookie;cookie 暂沿用 `sid`;实现收口到单一 `entryUrlForParty`+配置开关,将来可快切 A。详见 `session-architecture.md` §9。
+  - 待实现:§8 delta(`contractGroup` 真源 + per-group URL + 填 `session.party.portalUrl` + handoff 泛化 + customer/merchant handoff 端点)。现仍写死跳 admin。
 
 ### B. ✅ 目标登录行为（本轮已实现,提交 `2d3473d`)
 - ✅ **TOTP `step` 30→60**(admin+portal;keyuri 编 period=60,gen/verify/URI 一致)。⚠️ 60s 非主流默认,依赖 App 读 otpauth period。
