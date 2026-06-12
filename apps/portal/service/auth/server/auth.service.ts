@@ -40,8 +40,9 @@ import * as authRepository from "./auth.repository";
 
 export type LoginResult = { mfaRequired: true; mfaToken: string } | { redirectTo: string };
 
-/** 登录完成的公共收尾：按「可选 partner 数」聚合 → 建会话 → 决定落地路由。 */
-async function buildSessionAndRedirect(userId: number, snapshotFailCode: string): Promise<{ redirectTo: string }> {
+/** 登录完成的公共收尾：按「可选 partner 数」聚合 → 建会话 → 决定落地路由。
+ *  onboarding 接受邀请后也复用它（新用户恰好 1 party→直达 console）。 */
+export async function buildSessionAndRedirect(userId: number, snapshotFailCode: string): Promise<{ redirectTo: string }> {
   const choices = await listPartyChoices(userId);
   const selectable = choices.filter(isPartySelectable);
   const currentPartyId = selectable.length === 1 ? selectable[0].partyId : null;
@@ -58,6 +59,19 @@ async function buildSessionAndRedirect(userId: number, snapshotFailCode: string)
   return {
     redirectTo: handoffToken && group ? entryUrlForParty(group, handoffToken) : "/select-partner",
   };
+}
+
+/** 带 returnTo 的登录收尾（onboarding 用）：只建 portal 会话（不跨 host handoff），跳回站内 returnTo。
+ *  回到邀请页后该会话即「已登录」，可走 accept(mode=existing)。 */
+async function establishSessionForReturn(
+  userId: number,
+  returnTo: string,
+  snapshotFailCode: string,
+): Promise<{ redirectTo: string }> {
+  const snapshot = await buildSessionSnapshot(userId, null);
+  if (!snapshot) throw new BusinessError(snapshotFailCode, 401);
+  await createSession(snapshot);
+  return { redirectTo: returnTo };
 }
 
 export async function login(input: LoginInput): Promise<LoginResult> {
@@ -106,18 +120,22 @@ export async function login(input: LoginInput): Promise<LoginResult> {
   // 成功是唯一清零点
   await authRepository.recordLoginSuccess(user.userId, now);
 
-  // MFA 分岔：开通则发临时 token、不建正式 session
+  // MFA 分岔：开通则发临时 token、不建正式 session（returnTo 随票据透传，MFA 通过后再用）
   if (user.mfaEnable) {
-    const mfaToken = await createMfaLoginToken(user.userId);
+    const mfaToken = await createMfaLoginToken(user.userId, input.returnTo);
     return { mfaRequired: true, mfaToken };
   }
 
+  if (input.returnTo) {
+    return establishSessionForReturn(user.userId, input.returnTo, ERR_AUTH_INVALID_CREDENTIALS);
+  }
   return buildSessionAndRedirect(user.userId, ERR_AUTH_INVALID_CREDENTIALS);
 }
 
 export async function verifyMfa(input: MfaVerifyInput): Promise<{ redirectTo: string }> {
-  const userId = await readMfaLoginToken(input.mfaToken);
-  if (userId === null) throw new BusinessError(ERR_AUTH_MFA_TOKEN_INVALID, 401);
+  const entry = await readMfaLoginToken(input.mfaToken);
+  if (entry === null) throw new BusinessError(ERR_AUTH_MFA_TOKEN_INVALID, 401);
+  const { userId, returnTo } = entry;
 
   const user = await authRepository.findUserById(userId);
   if (!user || user.status !== "ACTIVE" || !user.mfaEnable) {
@@ -131,6 +149,7 @@ export async function verifyMfa(input: MfaVerifyInput): Promise<{ redirectTo: st
 
   // mfaToken 是一次性票据，TOTP 通过后立即删除，避免同一二段登录票据复用
   await deleteMfaLoginToken(input.mfaToken);
+  if (returnTo) return establishSessionForReturn(userId, returnTo, ERR_AUTH_MFA_TOKEN_INVALID);
   return buildSessionAndRedirect(userId, ERR_AUTH_MFA_TOKEN_INVALID);
 }
 

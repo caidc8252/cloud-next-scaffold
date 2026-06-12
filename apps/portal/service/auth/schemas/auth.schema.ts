@@ -6,6 +6,8 @@ import { z } from "zod";
 export const loginSchema = z.object({
   email: z.string().trim().email(),
   encryptedPassword: z.string().min(1),
+  // 仅 onboarding 用：认证成功后建 portal 会话并跳回此站内路径（限 /onboarding 前缀，防开放重定向）。
+  returnTo: z.string().regex(/^\/onboarding(\/|\?|$)/).optional(),
 });
 
 /** 解密后 RSA 包体结构（服务端内部校验）。nonce 由 login-challenge 下发、登录时单次消费（防重放）。 */
