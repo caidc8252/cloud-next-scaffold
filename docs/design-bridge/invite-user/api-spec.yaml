@@ -1,0 +1,199 @@
+openapi: 3.1.0
+info:
+  title: 邀请入驻（invite-user / onboarding）API
+  version: 1.0.0-target
+  description: >
+    目标规格。onboarding 自有两个接口（验票 / 接受）；既有用户登录复用 /api/auth/*。
+    所有响应走统一信封：成功 successResponse({...})，错误 { code, message }，code 为 6 位字符串。
+    错误码是协议、message 仅展示。
+
+servers:
+  - url: https://portal.example.com
+    description: portal（统一登录入口，host 持有 sid 会话 cookie）
+
+paths:
+  /api/onboarding/invite:
+    get:
+      summary: 验票 — 解析邀请链接
+      description: 公开（无需会话）。按 token 查邀请，必须 PENDING 且未过期。
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema: { type: string, minLength: 1 }
+      responses:
+        "200":
+          description: 邀请有效
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/InvitePublic"
+        "404":
+          description: 不存在 / 过期 / 已消费
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                notFound: { value: { code: "104001", message: "Invitation not found." } }
+                expired:  { value: { code: "104002", message: "Invitation expired." } }
+                consumed: { value: { code: "104003", message: "Invitation already used." } }
+
+  /api/onboarding/accept:
+    post:
+      summary: 接受邀请 — 绑定 + 消费 + 激活 + 建会话
+      description: >
+        两模式。existing：用当前会话用户绑定（需 sid 会话）。register：用被邀邮箱新建账号并绑定。
+        全程单事务；成功返回前端应跳转的 redirectTo（对应 console 的 handoff URL，或 /select-partner）。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/AcceptExisting"
+                - $ref: "#/components/schemas/AcceptRegister"
+              discriminator: { propertyName: mode }
+      responses:
+        "200":
+          description: 接受成功（含「已是成员」幂等成功）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      redirectTo: { type: string, description: console handoff URL 或 /select-partner }
+                      alreadyMember: { type: boolean, description: 该账号此前已是该 party 成员 }
+        "400":
+          description: 密码不合规 / 加密无效 / 请求过期
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "401":
+          description: mode=existing 但无有效会话
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples: { notAuth: { value: { code: "104006", message: "Not authenticated." } } }
+        "404":
+          description: 邀请不存在 / 过期 / 已消费
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "409":
+          description: 被邀邮箱已注册（mode=register）→ 引导登录
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples: { taken: { value: { code: "104004", message: "Email already registered; sign in to join." } } }
+
+  # ── 复用的既有登录接口（onboarding 既有用户路径）。完整定义见 portal/api-spec。──
+  /api/auth/login-challenge:
+    get:
+      summary: （复用）发 serverTimestamp + nonce
+      description: register 加密新密码、既有用户登录共用。
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      serverTimestamp: { type: integer }
+                      nonce: { type: string }
+
+  /api/auth/password:
+    post:
+      summary: （复用）既有用户登录，支持 returnTo
+      description: >
+        带 returnTo 时（限站内 /onboarding 前缀）：认证成功后只建 portal 会话、返回 { redirectTo: returnTo }，
+        不触发跨 host handoff。MFA 场景 returnTo 经 mfaToken 透传。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, encryptedPassword]
+              properties:
+                email: { type: string, format: email }
+                encryptedPassword: { type: string, description: RSA-OAEP({password,timestamp,nonce}) }
+                returnTo: { type: string, description: 站内相对路径，必须以 /onboarding 开头 }
+      responses:
+        "200":
+          description: 需 MFA 或已得 redirectTo
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties: { data: { type: object, properties: { mfaRequired: { const: true }, mfaToken: { type: string } } } }
+                  - type: object
+                    properties: { data: { type: object, properties: { redirectTo: { type: string } } } }
+
+  /api/auth/mfa:
+    post:
+      summary: （复用）MFA 二段校验
+      description: returnTo 由 mfaToken 透传；成功后若带 returnTo → 建 portal 会话 + 跳 returnTo。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mfaToken, code]
+              properties:
+                mfaToken: { type: string }
+                code: { type: string, pattern: "^[0-9]{6}$" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { type: object, properties: { redirectTo: { type: string } } } } }
+
+components:
+  schemas:
+    InvitePublic:
+      type: object
+      description: 验票返回（不含 token 以外的敏感字段）
+      properties:
+        partyName: { type: string }
+        inviteEmail: { type: string, format: email, description: 仅作预填提示 }
+        intendedRole:
+          type: array
+          items: { type: object, properties: { roleId: { type: integer } } }
+        expiresAt: { type: string, format: date-time }
+      required: [partyName, inviteEmail, intendedRole, expiresAt]
+
+    AcceptExisting:
+      type: object
+      required: [mode, token]
+      properties:
+        mode: { const: existing }
+        token: { type: string, minLength: 1 }
+
+    AcceptRegister:
+      type: object
+      required: [mode, token, encryptedPassword, displayName, country]
+      properties:
+        mode: { const: register }
+        token: { type: string, minLength: 1 }
+        encryptedPassword:
+          type: string
+          description: RSA-OAEP({password,timestamp,nonce})；服务端解密 + 二次过 isPasswordValid
+        displayName: { type: string, minLength: 1 }
+        country: { type: string, minLength: 2 }
+      # email 不在入参：恒取 invite.inviteEmail
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, description: 6 位错误码，协议字段 }
+        message: { type: string, description: 仅展示 }
