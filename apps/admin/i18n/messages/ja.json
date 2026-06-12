@@ -8,6 +8,13 @@
       "intro": "{inviterName} さんがあなたを {partyName} に招待しました。",
       "button": "招待を受ける",
       "expiry": "この招待は {date} に期限切れになります。"
+    },
+    "verifyCode": {
+      "subject": "確認コード",
+      "expiry": "このコードは {minutes} 分後に期限切れになります。",
+      "intro": {
+        "emailChange": "以下のコードを使用してメールアドレスの変更を確認してください。"
+      }
     }
   },
   "ui": {
