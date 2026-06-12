@@ -1,0 +1,117 @@
+openapi: 3.1.0
+info:
+  title: 消息通知（notice-message）API
+  version: 1.0.0
+  description: >
+    用户消息通知的读取面：列表 / 未读数（角标）/ 标记已读。均按当前用户 + 当前 party 作用域
+    （belongToPartyId = 当前 party 或 NULL）。写入（createNotice）是服务端内部能力，不在此对外暴露。
+    响应统一信封 { code, message, data, traceId }。x-authorize: authenticated = 仅需登录、无特定权限码。
+
+servers:
+  - url: https://admin.example.com
+    description: 通知铃铛挂在 admin 门户头部（任一登录态 app 同理）
+
+paths:
+  /api/notifications:
+    get:
+      operationId: listNotifications
+      summary: 当前用户的通知列表（当前 party 作用域，最新在前）
+      x-authorize: authenticated
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          schema: { type: integer, default: 30, maximum: 100 }
+      responses:
+        "200":
+          description: 通知列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Notice" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/notifications/unread-count:
+    get:
+      operationId: notificationsUnreadCount
+      summary: 当前用户未读数（给铃铛角标，廉价）
+      x-authorize: authenticated
+      responses:
+        "200":
+          description: 未读数
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { count: { type: integer } } }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/notifications/read:
+    post:
+      operationId: markNotificationsRead
+      summary: 标记已读（按 id 列表，或全部）
+      x-authorize: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  required: [ids]
+                  properties: { ids: { type: array, items: { type: string }, minItems: 1 } }
+                - type: object
+                  required: [all]
+                  properties: { all: { const: true } }
+      responses:
+        "200":
+          description: 已标记（幂等;仅 UNREAD→READ;仅本人 + 当前作用域）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { updated: { type: integer } } }
+        "400":
+          description: 请求体非法（既未给 ids 也未给 all）
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+components:
+  responses:
+    Unauthorized:
+      description: 未登录
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    Notice:
+      type: object
+      properties:
+        id: { type: string, description: noticeId(uuid) }
+        type: { type: string, nullable: true, description: noticeType（开放集） }
+        title: { type: string, nullable: true }
+        payload: { type: object, description: 按 type 分型;必含 content;可含 link }
+        status: { type: string, enum: [UNREAD, READ] }
+        createdAt: { type: string, format: date-time }
+      required: [id, status, createdAt]
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        traceId: { type: string }
