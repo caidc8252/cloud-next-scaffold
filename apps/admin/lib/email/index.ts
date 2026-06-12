@@ -2,13 +2,13 @@ import "server-only";
 
 import { getTranslations } from "@cloud/i18n/server";
 import { renderAndEnqueue, type EmailTranslate } from "@cloud/mail";
+import { getPortalOnboardingUrl } from "@/lib/portal-routing";
 import { inviteTemplate, type InviteEmailVars } from "./invite.ts";
 import { verifyCodeTemplate, type VerifyCodeEmailVars, type VerifyCodeIntent } from "./verify-code.ts";
 import { passwordResetTemplate, type PasswordResetEmailVars } from "./password-reset.ts";
 
 // 业务侧薄发送器：拼 URL、定 locale、选 purpose/节流，再交 @cloud/mail 渲染入队。
-// onboarding 落在门户（唯一入口）；PORTAL_APP_URL 为部署 env，dev 默认 3100。
-const PORTAL_APP_URL = process.env.PORTAL_APP_URL ?? "http://localhost:3100";
+// onboarding 落在门户（唯一入口）；PORTAL_APP_URL 解析收口在 portal-routing。
 
 // 邮件渲染语言现统一 en（与 @cloud/log / email-capability 决策一致）；将来切换只改此处。
 const EMAIL_LOCALE = "en";
@@ -29,13 +29,12 @@ export async function sendInviteEmail(input: {
   token: string;
   expiresAt: Date;
 }): Promise<void> {
-  const acceptUrl = `${PORTAL_APP_URL}/onboarding?token=${encodeURIComponent(input.token)}`;
   await renderAndEnqueue<InviteEmailVars>({
     template: inviteTemplate,
     vars: {
       partyName: input.partyName,
       inviterName: input.inviterName,
-      acceptUrl,
+      acceptUrl: getPortalOnboardingUrl(input.token),
       expiresAtText: input.expiresAt.toISOString().slice(0, 10),
     },
     t: await emailTranslate(),
