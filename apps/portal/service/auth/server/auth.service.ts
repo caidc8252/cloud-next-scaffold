@@ -26,7 +26,8 @@ import {
 } from "@/lib/login-checks";
 import { createMfaLoginToken, readMfaLoginToken, deleteMfaLoginToken } from "@/lib/login-token";
 import { consumeLoginNonce } from "@/lib/login-nonce";
-import { getAdminSessionHandoffUrl } from "@/lib/platform-routing";
+import { resolvePortalGroup } from "@cloud/platform-config";
+import { entryUrlForParty } from "@/lib/platform-routing";
 import { listPartyChoices } from "./partner-choices";
 import { isPartySelectable } from "@/service/auth/partner-choice";
 import * as mfa from "@/service/mfa/server/mfa.service";
@@ -49,13 +50,13 @@ async function buildSessionAndRedirect(userId: number, snapshotFailCode: string)
   if (!snapshot) throw new BusinessError(snapshotFailCode, 401);
 
   const sid = await createSession(snapshot);
-  // 直达 admin 前先签发交接 token，让 admin 在自己的 host 下写 sid cookie；
+  // 直达目标 console 前先签发交接 token，让目标 host 自己写 sid cookie（方案 B）；
   // currentPartyId 落不下来（多选/零选/授权窗口失效）→ 去选择页，不签 token。
-  const handoffToken =
-    snapshot.currentPartyId !== null ? await createSessionHandoffToken(sid) : null;
+  const group = snapshot.currentPartyId !== null ? resolvePortalGroup(snapshot.contractTypes) : null;
+  const handoffToken = group ? await createSessionHandoffToken(sid) : null;
 
   return {
-    redirectTo: handoffToken ? getAdminSessionHandoffUrl(handoffToken) : "/select-partner",
+    redirectTo: handoffToken && group ? entryUrlForParty(group, handoffToken) : "/select-partner",
   };
 }
 
@@ -146,9 +147,11 @@ export async function selectPartner(userId: number, partyId: number): Promise<{ 
   }
 
   await updateSession(snapshot);
-  // partner 选择完成后仍从 portal 跳 admin，需要用一次性 token 完成跨 host 会话交接
+  // 选定后按 party 的 portal 组跳对应 console；一次性 token 完成跨 host 会话交接（方案 B）。
+  const group = resolvePortalGroup(snapshot.contractTypes);
+  if (!group) throw new BusinessError(ERR_AUTH_INVALID_PARTNER);
   const handoffToken = await createSessionHandoffToken();
   if (!handoffToken) throw new BusinessError(ERR_AUTH_NOT_AUTHENTICATED, 401);
 
-  return { redirectTo: getAdminSessionHandoffUrl(handoffToken) };
+  return { redirectTo: entryUrlForParty(group, handoffToken) };
 }

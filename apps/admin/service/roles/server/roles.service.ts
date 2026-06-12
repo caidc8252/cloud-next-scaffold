@@ -7,6 +7,7 @@ import {
   ERR_ROLE_DELETE_BUILTIN,
   ERR_ROLE_NOT_FOUND,
 } from "@cloud/request/error-codes";
+import { contractTypeGroup, roleIdInGroupRange } from "@cloud/platform-config";
 import { getRoles } from "@/manifest";
 import { extractRoleIds } from "@/service/_shared/role-codes";
 import type { Role } from "@/app/(portal)/system/_shared/types";
@@ -15,22 +16,11 @@ import { toClientRole, toClientCodeRole } from "./roles.mapper";
 import { isBuiltinRole, roleBelongsToPartner } from "./roles.policy";
 import * as rolesRepository from "./roles.repository";
 
-// 死写 GLOBAL 角色按 roleId 区间归属平台：1–100 admin / 101–200 customer / 201–300 merchant。
-// party 属哪个平台由其 contractTypes 推（role 与 contract 解耦后，这是「可选预置角色」的依据）。
-const CONTRACT_TYPE_RANGES: Record<string, [number, number]> = {
-  ADMIN: [1, 100],
-  "US-ISO": [101, 200],
-  "US-ISV": [101, 200],
-  "US-ISO-PILOT": [101, 200],
-  "US-ISV-PILOT": [101, 200],
-  "PLATFORM-CUSTOM": [101, 200],
-  MERCHANT: [201, 300],
-};
-
+// 死写 GLOBAL 角色按 roleId 区间归属平台（contractType→组→区间）；与 portalUrl 路由共用 @cloud/platform-config 的单一真源。
 function codeRoleIdInScope(roleId: number, contractTypes: string[]): boolean {
   return contractTypes.some((ct) => {
-    const range = CONTRACT_TYPE_RANGES[ct];
-    return range !== undefined && roleId >= range[0] && roleId <= range[1];
+    const group = contractTypeGroup(ct);
+    return group !== null && roleIdInGroupRange(roleId, group);
   });
 }
 
