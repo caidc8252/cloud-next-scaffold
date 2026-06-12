@@ -14,10 +14,10 @@
 - 文件:`apps/<app>/lib/email/<kind>.ts`(类型化 `EmailTemplate<V>`)+ `lib/email/layout.ts`(品牌头 + 内联样式按钮 + 页脚)+ `lib/email/index.ts`(薄发送器,拼 URL/定 locale/选 purpose)。
 - 文案:i18n `email.*`(en 先写,三语 key 对齐;现一律渲染 `en`)。
 - 安全:content 文本变量 `escapeHtml`;`subject` 纯文本不转义;按钮 `href` 用 app 自拼可信 URL(token `encodeURIComponent`)。日期等先在 app 侧格式化成字符串再作 `{date}` 传入(渲染套件不做本地化格式化)。
-- 发送:`@cloud/mail.renderAndEnqueue({ template, vars, t, receivers, purpose, throttle })`。
+- 发送:`@cloud/mail.renderAndEnqueue({ template, vars, t, receivers, purpose, throttle })`;wire 上 `content_type` 默认 `text/html`(对齐对方契约,缺它可能被按纯文本发)。
 
-### layout（每 app 一份，极简 email-safe HTML）
-`renderEmail({ bodyHtml, button?, footer })` → 包一层:品牌名(`APP_NAME`)+ `bodyHtml` + 可选按钮(`<a>` 内联样式)+ 灰色小字页脚。仅内联样式,无 table/媒体查询/图片。
+### layout（每 app 一份，完整 HTML 文档 + charset）
+`renderEmail({ bodyHtml, button?, footer })` → 包成**完整 HTML 文档**(`<!DOCTYPE html>` + `<meta charset="utf-8">` + body):品牌名(`APP_NAME`)+ `bodyHtml` + 可选按钮(`<a>` 内联样式)+ 灰色小字页脚。仅内联样式,无 table/媒体查询/图片;charset 保证中文/日文不乱码。
 
 ## 模板 1 · 验证码 `verify-code`
 - **app**:admin(改邮箱)、portal(忘记密码;onboarding 换邮箱 deferred),各一份同形。

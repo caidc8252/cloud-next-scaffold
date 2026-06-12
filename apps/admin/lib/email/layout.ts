@@ -12,12 +12,18 @@ export function renderEmail(opts: { bodyHtml: string; button?: EmailButton; foot
   const button = opts.button
     ? `<p style="margin:24px 0"><a href="${opts.button.url}" style="display:inline-block;padding:10px 20px;background:#0b5cff;color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600">${escapeHtml(opts.button.label)}</a></p>`
     : "";
-  return [
-    `<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;color:#1f2328;line-height:1.5">`,
+  const inner = [
     `<p style="font-size:16px;font-weight:700;margin:0 0 16px">${escapeHtml(APP_NAME)}</p>`,
     opts.bodyHtml,
     button,
     `<p style="color:#8a8f98;font-size:12px;margin-top:24px">${escapeHtml(opts.footer)}</p>`,
-    `</div>`,
+  ].join("");
+  // 完整 HTML 文档 + <meta charset>：对齐对方契约示例，保证中文/日文不乱码、跨客户端更稳。
+  return [
+    `<!DOCTYPE html>`,
+    `<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>`,
+    `<body style="margin:0;padding:24px;background:#f6f7f9;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1f2328;line-height:1.5">`,
+    `<div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:8px;padding:24px">${inner}</div>`,
+    `</body></html>`,
   ].join("");
 }
