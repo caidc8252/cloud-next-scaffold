@@ -83,6 +83,21 @@ describe("level gating + shape", () => {
     const line = lastJson(spy) as { err: { stack: string } };
     expect(line.err.stack).toContain("boom-marker");
   });
+
+  it("does not throw when context contains BigInt", () => {
+    const spy = vi.spyOn(console, "info").mockImplementation(() => {});
+    expect(() => log.info("big", { amount: 10n })).not.toThrow();
+    expect(lastJson(spy)).toMatchObject({ amount: "10" });
+  });
+
+  it("does not throw when context contains circular objects", () => {
+    const spy = vi.spyOn(console, "info").mockImplementation(() => {});
+    const obj: Record<string, unknown> = { name: "root" };
+    obj.self = obj;
+
+    expect(() => log.info("circular", { obj })).not.toThrow();
+    expect(lastJson(spy)).toMatchObject({ obj: { name: "root", self: "[Circular]" } });
+  });
 });
 
 describe("maskEmail", () => {
