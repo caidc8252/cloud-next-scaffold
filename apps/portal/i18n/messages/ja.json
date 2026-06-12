@@ -1,4 +1,16 @@
 {
+  "email": {
+    "common": {
+      "footerIgnore": "心当たりがない場合は、このメールを無視してください。"
+    },
+    "verifyCode": {
+      "subject": "確認コード",
+      "expiry": "このコードは {minutes} 分後に期限切れになります。",
+      "intro": {
+        "passwordRecovery": "以下のコードを使用してパスワードをリセットしてください。"
+      }
+    }
+  },
   "portal": {
     "brand": {
       "console": "コンソール",

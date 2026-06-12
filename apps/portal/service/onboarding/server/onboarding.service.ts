@@ -1,14 +1,9 @@
 import "server-only";
 
-import { getAuthConfig } from "@cloud/config";
-import { decryptRsaOaep, hashPassword } from "@cloud/security/server";
+import { hashPassword } from "@cloud/security/server";
 import { BusinessError } from "@cloud/request";
-import { loginPayloadSchema } from "@/service/auth/schemas/auth.schema";
-import { isTimestampFresh } from "@/lib/login-checks";
-import { consumeLoginNonce } from "@/lib/login-nonce";
-import { isPasswordValid } from "@/lib/password-rules";
+import { decryptAndValidatePassword } from "@/lib/password-input";
 import { buildSessionAndRedirect } from "@/service/auth/server/auth.service";
-import { ERR_AUTH_ENCRYPTION_INVALID, ERR_AUTH_REQUEST_EXPIRED } from "@/lib/auth-error-codes";
 import {
   ERR_OB_EMAIL_TAKEN,
   ERR_OB_INVITE_CONSUMED,
@@ -53,25 +48,6 @@ export async function getInvite(token: string): Promise<InvitePublic> {
   };
 }
 
-/** 解密 + 校验新账号密码（复用登录的 RSA + 时间戳窗 + nonce 单次消费 + 复杂度策略）。 */
-async function resolveNewPasswordHash(encryptedPassword: string, now: Date): Promise<string> {
-  const auth = getAuthConfig();
-  let payload: { password: string; timestamp: number; nonce: string };
-  try {
-    payload = loginPayloadSchema.parse(JSON.parse(decryptRsaOaep(encryptedPassword, auth.rsaPrivateKey)));
-  } catch {
-    throw new BusinessError(ERR_AUTH_ENCRYPTION_INVALID);
-  }
-  if (!isTimestampFresh(payload.timestamp, now.getTime(), auth.timestampWindowMs)) {
-    throw new BusinessError(ERR_AUTH_REQUEST_EXPIRED);
-  }
-  if (!(await consumeLoginNonce(payload.nonce))) {
-    throw new BusinessError(ERR_AUTH_REQUEST_EXPIRED);
-  }
-  if (!isPasswordValid(payload.password)) throw new BusinessError(ERR_OB_PASSWORD_WEAK);
-  return hashPassword(payload.password);
-}
-
 /** 接受邀请：绑定 + 消费 + 激活 + 建会话。sessionUserId 来自当前 portal 会话（mode=existing 必需）。 */
 export async function accept(input: AcceptInput, sessionUserId: number | null): Promise<AcceptResult> {
   const now = new Date();
@@ -89,9 +65,10 @@ export async function accept(input: AcceptInput, sessionUserId: number | null): 
       throw new BusinessError(ERR_OB_EMAIL_TAKEN, 409);
     }
     userId = null;
+    const newPassword = await decryptAndValidatePassword(input.encryptedPassword, now, ERR_OB_PASSWORD_WEAK);
     newUser = {
       email: invite.inviteEmail,
-      passwordHash: await resolveNewPasswordHash(input.encryptedPassword, now),
+      passwordHash: await hashPassword(newPassword),
       nickName: input.displayName,
       country: input.country,
     };

@@ -1,15 +1,21 @@
-import { successResponse } from "@cloud/request/server";
-import { emailOnlySchema } from "@/lib/schemas";
-import { readJson, withApiHandler } from "@/lib/api-handler";
+import "@/lib/forgot-error-messages";
 
-/**
- * Account recovery, step 1: send a 6-digit verification code to the account
- * email. Mock always "sends" (no enumeration signal) and starts a resend
- * cooldown on the client.
- *
- * @e2e-cell feature=auth kind=route
- */
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
+import { ERR_INVALID_JSON } from "@cloud/request/error-codes";
+import { sendCodeSchema } from "@/service/forgot-password/schemas/forgot.schema";
+import { sendRecoveryCode } from "@/service/forgot-password/server/forgot.service";
+import { withApiHandler } from "@/lib/api-handler";
+
+// 找回第 1 步：给账号邮箱发验证码。防枚举：无论邮箱是否存在都返回 ok。
 export const POST = withApiHandler(async (req: Request) => {
-  await readJson(req, emailOnlySchema);
-  return successResponse({ ok: true, cooldownSeconds: 30 });
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    throw new BusinessError(ERR_INVALID_JSON);
+  }
+  const parsed = sendCodeSchema.safeParse(body);
+  if (!parsed.success) throw new BusinessError(ERR_INVALID_JSON);
+  return successResponse(await sendRecoveryCode(parsed.data));
 });
