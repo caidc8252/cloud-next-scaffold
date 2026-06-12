@@ -1,0 +1,176 @@
+openapi: 3.1.0
+info:
+  title: Reset Password（重置密码）API — 统一 token 链接，双触发
+  version: 2.0.0
+  description: >
+    目标设计。一套机制：触发 → 签发一次性 reset token → 发"重置链接"邮件 →
+    用户点链接落 /reset-password?token= → 校验 → 设新密码 → 消费 token。
+    两个触发：自助找回（公开）+ 管理员重置他人（需 users.RESETPW）。设密端点与重置页共用。
+    响应统一信封 { code, message, data, traceId }；错误码是协议、message 仅展示。
+    设密的新密码走 RSA 密文（需先取 /api/auth/login-challenge 的 nonce）。
+
+servers:
+  - url: https://portal.example.com
+    description: portal（自助触发 + 重置页 + 设密消费端）
+  - url: https://admin.example.com
+    description: admin（管理员触发）
+
+paths:
+  # ───────── 触发 A：自助找回（portal，公开，防枚举）─────────
+  /api/forgot-password/send-link:
+    post:
+      operationId: forgotSendResetLink
+      summary: 自助触发 — 给账号邮箱发重置链接
+      x-authorize: public
+      description: 防枚举：无论邮箱是否存在都返回 ok；仅 ACTIVE 用户真签发 token(source=self-service, TTL 60m)+发链接。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "200":
+          description: 已受理（不泄露邮箱是否存在）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok: { const: true }
+                      cooldownSeconds: { type: integer, description: 客户端重发冷却（60） }
+        "400":
+          $ref: "#/components/responses/InvalidJson"
+
+  # ───────── 触发 B：管理员重置他人（admin，需权限）─────────
+  /api/system/users/{userId}/reset-password:
+    post:
+      operationId: adminSendResetLink
+      summary: 管理员触发 — 给目标用户发重置链接
+      x-authorize: users.RESETPW
+      description: 目标须 ACTIVE 且非受保护（非本人 / 非 ADMIN 归属）。签发 token(source=admin, TTL 72h)+发链接。非防枚举。
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: 已签发并发信；返回用户（沿用 admin 用户视图）
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { type: object } } }
+        "403":
+          description: 无权限 / 受保护用户
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                protected: { value: { code: "101008", message: "This account is protected." } }
+        "404":
+          description: 目标用户不存在或非 ACTIVE
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                notFound: { value: { code: "101003", message: "User not found." } }
+
+  # ───────── 公共消费端（portal，公开；两触发的链接都落这里）─────────
+  /api/reset-password/validate:
+    get:
+      operationId: validateResetToken
+      summary: 重置页加载时校验 token（非破坏性，决定显示表单或"已失效"）
+      x-authorize: public
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: 校验结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { valid: { type: boolean } } }
+
+  /api/reset-password:
+    post:
+      operationId: resetPassword
+      summary: 设新密码（消费 token；自助/管理员两触发共用）
+      x-authorize: public
+      description: token 解出 userId；RSA 密文新密码 + 复杂度 + 历史去重；成功后消费 token、清刷错锁。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, encryptedPassword]
+              properties:
+                token: { type: string }
+                encryptedPassword:
+                  type: string
+                  description: RSA-OAEP({ password, timestamp, nonce })；nonce 取自 /api/auth/login-challenge
+      responses:
+        "200":
+          description: 改密成功（token 消费、刷错锁清零）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { ok: { const: true } } }
+        "400":
+          description: token 无效/过期 / 新密码不合规 / 与近期重复 / 加密无效 / 请求过期
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                tokenInvalid:   { value: { code: "105001", message: "The reset link is invalid or has expired." } }
+                passwordWeak:   { value: { code: "105002", message: "Password does not meet the requirements." } }
+                passwordReused: { value: { code: "105003", message: "Please choose a password you haven't used recently." } }
+                encryptionBad:  { value: { code: "103010", message: "Request could not be processed. Please try again." } }
+                requestExpired: { value: { code: "103011", message: "Request expired. Please try again." } }
+
+  # ───────── 复用依赖：客户端在设密前取 nonce 加密新密码 ─────────
+  /api/auth/login-challenge:
+    get:
+      operationId: authLoginChallenge
+      summary: （复用）下发 serverTimestamp + nonce，供设密加密
+      x-authorize: public
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { serverTimestamp: { type: integer }, nonce: { type: string } } }
+
+components:
+  responses:
+    InvalidJson:
+      description: 请求体非法
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            invalid: { value: { code: "100006", message: "The request body is not valid JSON." } }
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, description: 6 位错误码（协议字段） }
+        message: { type: string, description: 仅展示 }
+        traceId: { type: string }
