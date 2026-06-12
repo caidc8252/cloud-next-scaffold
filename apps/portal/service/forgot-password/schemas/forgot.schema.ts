@@ -1,21 +1,15 @@
 import { z } from "zod";
 
-// 忘记密码三步入参。reset 的新密码走 RSA 密文（与登录/注册同姿态，不传明文）。
-export const sendCodeSchema = z.object({
+// 自助找回（触发）+ 重置消费端入参。统一 token 链接机制：触发发链接、消费用 token。
+export const sendLinkSchema = z.object({
   email: z.string().trim().email(),
 });
 
-export const verifyCodeSchema = z.object({
-  email: z.string().trim().email(),
-  code: z.string().regex(/^\d{6}$/),
-});
-
+// 设新密码（自助/管理员链接共用消费端）。新密码走 RSA 密文（与登录/注册同姿态）。
 export const resetSchema = z.object({
-  email: z.string().trim().email(),
-  code: z.string().regex(/^\d{6}$/),
+  token: z.string().min(1),
   encryptedPassword: z.string().min(1),
 });
 
-export type SendCodeInput = z.infer<typeof sendCodeSchema>;
-export type VerifyCodeInput = z.infer<typeof verifyCodeSchema>;
+export type SendLinkInput = z.infer<typeof sendLinkSchema>;
 export type ResetInput = z.infer<typeof resetSchema>;

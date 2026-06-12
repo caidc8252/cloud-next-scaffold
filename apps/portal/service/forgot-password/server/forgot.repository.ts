@@ -8,6 +8,10 @@ export function findUserByEmail(email: string) {
   return prisma.sysUser.findUnique({ where: { email } });
 }
 
+export function findUserById(userId: number) {
+  return prisma.sysUser.findUnique({ where: { userId } });
+}
+
 type PasswordUpdate = {
   passwordHash: string;
   passwordHistory: string[];

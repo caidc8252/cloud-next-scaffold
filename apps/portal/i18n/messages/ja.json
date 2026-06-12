@@ -9,6 +9,12 @@
       "intro": {
         "passwordRecovery": "以下のコードを使用してパスワードをリセットしてください。"
       }
+    },
+    "passwordReset": {
+      "subject": "パスワードをリセット",
+      "intro": "アカウントのパスワードリセットがリクエストされました。",
+      "button": "パスワードをリセット",
+      "expiry": "このリンクは {duration} 後に期限切れになります。"
     }
   },
   "portal": {

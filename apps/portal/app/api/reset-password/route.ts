@@ -8,7 +8,7 @@ import { resetSchema } from "@/service/forgot-password/schemas/forgot.schema";
 import { resetPassword } from "@/service/forgot-password/server/forgot.service";
 import { withApiHandler } from "@/lib/api-handler";
 
-// 找回第 3 步：设新密码（RSA 密文 + 验证码 + 策略 + 历史去重）。
+// 公共消费端（自助/管理员链接都落这里）：token + RSA 密文新密码 → 设密 + 消费 token。
 export const POST = withApiHandler(async (req: Request) => {
   let body: unknown;
   try {

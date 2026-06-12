@@ -3,11 +3,11 @@ import "@/lib/forgot-error-messages";
 import { BusinessError } from "@cloud/request";
 import { successResponse } from "@cloud/request/server";
 import { ERR_INVALID_JSON } from "@cloud/request/error-codes";
-import { verifyCodeSchema } from "@/service/forgot-password/schemas/forgot.schema";
-import { verifyRecoveryCode } from "@/service/forgot-password/server/forgot.service";
+import { sendLinkSchema } from "@/service/forgot-password/schemas/forgot.schema";
+import { sendResetLink } from "@/service/forgot-password/server/forgot.service";
 import { withApiHandler } from "@/lib/api-handler";
 
-// 找回第 2 步：校验验证码（UX 预检，不消费）。
+// 自助找回触发：给账号邮箱发重置链接。防枚举：无论邮箱是否存在都返回 ok。
 export const POST = withApiHandler(async (req: Request) => {
   let body: unknown;
   try {
@@ -15,7 +15,7 @@ export const POST = withApiHandler(async (req: Request) => {
   } catch {
     throw new BusinessError(ERR_INVALID_JSON);
   }
-  const parsed = verifyCodeSchema.safeParse(body);
+  const parsed = sendLinkSchema.safeParse(body);
   if (!parsed.success) throw new BusinessError(ERR_INVALID_JSON);
-  return successResponse(await verifyRecoveryCode(parsed.data));
+  return successResponse(await sendResetLink(parsed.data));
 });

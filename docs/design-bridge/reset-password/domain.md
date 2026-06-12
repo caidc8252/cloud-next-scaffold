@@ -38,7 +38,7 @@
 5. **管理员触发非防枚举**：需登录 + `users.RESETPW`；目标须 ACTIVE 且**非受保护**（非本人、非 ADMIN 归属），否则明确报错（`users.*`）。
 6. 重置页/设密端点公开(pre-auth)——token 本身即授权凭证。
 
-## 现状 delta（代码需返工 → 目标）
-- **#4 自助找回（已实现，code-based）需改为 link-based**：`recovery-code`(6 位码) → `password-reset-token`(token)；**删 `verify-code` 步/路由**；`send-code` → `send-link`(发 `password-reset` 链接邮件,非 `verify-code` 验证码邮件)；`reset` 入参 `{email,code,encryptedPassword}` → `{token,encryptedPassword}`；前端三步 → 「提交邮箱→提示查邮件」+ 独立 `/reset-password?token=` 重置页。
-- **#3 管理员重置（仅 token 签发桩）需补全**：`createPasswordResetToken` 加 `source`+可变 TTL；`resetUserPassword` 之后真发 `password-reset` 链接邮件；新建共享设密核 + 重置页/消费端（portal）。
-- **共享核 `applyNewPassword`**：把 forgot 现有的"解密+历史去重+更新+清锁"抽成供两触发复用（`lib/password-input` 已共用解密那半）。
+## 现状 delta（进度）
+- ✅ **#4 自助找回已返工为 link-based**：`recovery-code`→`lib/password-reset-token`(token,自助 TTL 60m)；删 `verify-code`；`send-code`→`send-link`(发 `password-reset` 链接邮件)；消费端迁到 `POST /api/reset-password`(收 `{token,encryptedPassword}`)+ `GET /api/reset-password/validate`；设密核在 `forgot.service.resetPassword`（portal 消费端单点，无需跨 app 抽取）。
+- ⏳ **#3 管理员重置（仅 token 签发桩）待补**：admin 侧 `createPasswordResetToken` 加 `source`+可变 TTL（72h）；`resetUserPassword` 之后真发 `password-reset` 链接邮件（admin `lib/email`）。链接同样落 portal `/reset-password?token=`，**复用已就绪的消费端**。
+- ⏳ **前端待补**：`forgot-screen` 改「提交邮箱→提示查邮件」；新建 portal `/reset-password?token=` 重置页（取 challenge + RSA 加密 + 调 validate/reset）。
