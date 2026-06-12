@@ -7,6 +7,7 @@ packages:
   - "packages/config"
   - "packages/db"
   - "packages/i18n"
+  - "packages/mail"
   - "packages/permissions"
   - "packages/platform-config"
   - "packages/request"

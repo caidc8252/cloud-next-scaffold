@@ -6,6 +6,7 @@ export const ERR_NOT_FOUND = "100004";
 export const ERR_INTERNAL = "100005";
 export const ERR_INVALID_JSON = "100006";
 export const ERR_INVALID_ID = "100007";
+export const ERR_TOO_MANY_REQUESTS = "100008"; // 操作过于频繁（429 语义；如收件人邮件节流）
 
 // Platform 1, Module 01 = Users
 export const ERR_USER_EMAIL_INVALID = "101001";
