@@ -1,4 +1,16 @@
 {
+  "email": {
+    "common": {
+      "footerIgnore": "If you didn't request this, you can safely ignore this email."
+    },
+    "verifyCode": {
+      "subject": "Your verification code",
+      "expiry": "This code expires in {minutes} minutes.",
+      "intro": {
+        "passwordRecovery": "Use the code below to reset your password."
+      }
+    }
+  },
   "portal": {
     "brand": {
       "name": "PEP",

@@ -71,6 +71,6 @@ email.passwordReset.expiry  = "This link expires in {hours} hours."
 ## 落地就绪度（实现排序建议）
 1. **#2 邀请(admin)** —— ✅ **已落地**:`apps/admin/lib/email/{layout,invite,index}.ts` + i18n `email.invite`/`email.common`(三语)+ `createInvite`/`resendInvite` 接 `sendInviteEmail`;`@cloud/mail` 入 admin deps;`acceptUrl={PORTAL_APP_URL}/onboarding?token=`(dev 默认 3100);`purpose=invite` 仅冷却 60s。第一条可端到端验证的真实发信链路。
 2. **#1 改邮箱验证码(admin)** —— ✅ **已落地**:`lib/email/verify-code.ts`(intent=`emailChange`)+ i18n `email.verifyCode` 三语;`requestVerifyCode` 改调 `sendVerifyCodeEmail`(`purpose=verify-code`,默认节流 60s+5/h);删 `deliverVerifyCode` 桩 + `USERNAME_CURRENT` 死代码。
-3. **#4 忘记密码(portal)** —— 需 forgot-password 三路由真实化(send-code 发码 + verify + reset 真改密),再接 verify-code 模板。
+3. **#4 忘记密码(portal)** —— ✅ **后端已落地**:三路由真实化（send-code 发码+`verify-code` 邮件 / verify 真校验 / reset 真改密）+ `lib/recovery-code`（按 email 存码）+ portal `lib/email`（intent=passwordRecovery）+ `lib/password-input`（解密校验，与 onboarding 共用）+ 密码历史去重 + `105xxx` 码；防枚举（发码恒 ok、码错归一）。**前端 forgot-screen 重写 + 客户端 RSA 加密待补**（下一步）。
 4. **#3 重置密码(admin)** —— 需 portal 重置页(消费端);模板先备。
 5. **#5 onboarding 换邮箱** —— deferred。

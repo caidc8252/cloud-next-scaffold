@@ -1,4 +1,16 @@
 {
+  "email": {
+    "common": {
+      "footerIgnore": "如果这不是你发起的操作，可以忽略此邮件。"
+    },
+    "verifyCode": {
+      "subject": "你的验证码",
+      "expiry": "该验证码将在 {minutes} 分钟后过期。",
+      "intro": {
+        "passwordRecovery": "请使用下方验证码重置你的密码。"
+      }
+    }
+  },
   "portal": {
     "brand": {
       "console": "控制台",

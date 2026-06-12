@@ -1,13 +1,21 @@
-import { successResponse } from "@cloud/request/server";
-import { verifyCodeSchema } from "@/lib/schemas";
-import { readJson, withApiHandler } from "@/lib/api-handler";
+import "@/lib/forgot-error-messages";
 
-/**
- * Account recovery, step 2: verify the emailed code. Demo accepts any 6 digits.
- *
- * @e2e-cell feature=auth kind=route
- */
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
+import { ERR_INVALID_JSON } from "@cloud/request/error-codes";
+import { verifyCodeSchema } from "@/service/forgot-password/schemas/forgot.schema";
+import { verifyRecoveryCode } from "@/service/forgot-password/server/forgot.service";
+import { withApiHandler } from "@/lib/api-handler";
+
+// 找回第 2 步：校验验证码（UX 预检，不消费）。
 export const POST = withApiHandler(async (req: Request) => {
-  await readJson(req, verifyCodeSchema);
-  return successResponse({ ok: true });
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    throw new BusinessError(ERR_INVALID_JSON);
+  }
+  const parsed = verifyCodeSchema.safeParse(body);
+  if (!parsed.success) throw new BusinessError(ERR_INVALID_JSON);
+  return successResponse(await verifyRecoveryCode(parsed.data));
 });
