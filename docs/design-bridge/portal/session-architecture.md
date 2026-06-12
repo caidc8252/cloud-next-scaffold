@@ -119,7 +119,10 @@
 
 **可演进(hybrid,非现在做)**:若将来生产确定同私有父域,可在 B 基础上加 A 作 fast-path —— 同父域时直跳(省一次 handoff),异 host 时回落 handoff。先 B,后按需叠加。
 
-## 8. 选 B 后的实现 delta（落地清单,待 §9 拍板后做）
+## 8. 实现 delta（✅ 已实现 2026-06-12，提交 4f3d588）
+
+> 已落地:`@cloud/platform-config` 的 `contractGroup` 单一真源(被角色区间 + portalUrl 路由共用);portal `platform-routing` 的 per-group URL + 唯一入口 `entryUrlForParty`(方案 B,注释标了切 A 的单点);登录收尾 / `selectPartner` / select-partner 页按 `snapshot.contractTypes` 推组路由(不再写死跳 admin);customer 加 `/api/auth/session-handoff`。tsc(admin/portal/customer)干净 + 全仓 469/469。**待部署/后续**:`CUSTOMER_APP_URL`/`MERCHANT_APP_URL` 实际取值、merchant app 未建、E2E 登录引导对接、(可选)cookie 改 `pep-token`。
+原始清单(备查):
 
 1. `contractGroup(contractType)` 代码单一真源(与角色区间共用)。
 2. `platform-routing`:per-group URL env + `getSessionHandoffUrl(group, token)`。
