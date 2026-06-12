@@ -190,6 +190,11 @@
       },
       "signin": { "step": "ステップ 1 / 2", "title": "アカウントにサインイン", "emailLabel": "メール", "passwordLabel": "パスワード", "passwordHint": "デモ：6 文字以上の任意。", "signingIn": "サインイン中…", "signIn": "サインイン" },
       "register": {
+        "title": "アカウントを作成",
+        "emailNote": "{email} で参加します",
+        "submit": "アカウントを作成して参加",
+        "submitting": "作成中…",
+        "error": "問題が発生しました。もう一度お試しください。",
         "stepLabel": "登録 · ステップ {current} / {total}",
         "steps": { "email": "メール", "newEmail": "新しいメール", "verify": "確認", "login": "ログイン名", "password": "パスワード", "country": "国", "name": "名前" },
         "joining": "{partner} に参加",
