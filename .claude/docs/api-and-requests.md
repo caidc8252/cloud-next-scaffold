@@ -1,0 +1,54 @@
+# 接口与请求
+
+> 归属：Route Handler / `@cloud/request` 响应协议 / 分页 / 游标 / 错误码 i18n。**写任何 API、改请求或响应前必读。** 异常处理细节另见 `docs/exception-handling.md`。
+
+- 本项目不使用 Server Action
+  - 所有表单提交、数据 mutation 一律走 Route Handler（`apps/admin/app/api/*`）
+  - 鉴权、登录、选择组织等公开页面的提交同样走 API，不写 `"use server"` action
+  - 客户端用 `@cloud/request/client` 调接口，拿到返回后再自行用 `useRouter()` 跳转
+  - 历史遗留的 Server Action 见到即顺手改成 API，不要新增
+- 统一通过 `packages/request` 发起请求
+- 客户端使用 `@cloud/request/client`
+- 客户端收到「会话失效类」401 会自动跳登出，机制在包、策略在 app，**不要在业务组件里手写 401 跳转**：
+  - 包：`@cloud/request/client` 的 `setUnauthorizedHandler(fn)` 在 `status===401` 时回调 `fn(RequestError)`，然后照常 throw（不吞错，组件原有 `catch` / `toastError` 不变）；包不认识任何 app 路由或错误码
+  - 策略：`apps/admin/lib/session-expiry.ts` 的 `handleUnauthorized` 按**白名单 code** 决定是否登出——`{ "unauthenticated", ERR_UNAUTHORIZED, ERR_AUTH_NOT_AUTHENTICATED }` 命中才 `window.location.replace("/api/auth/logout")`（与服务端 `requirePermissions` 401 出口一致：清残留 cookie → 303 `/login`）；模块级 `redirecting` 锁防并发重复跳
+  - 登录页凭证错误 `ERR_AUTH_INVALID_CREDENTIALS` 也是 401，但**刻意不在白名单**，不会误跳；新增 401 码默认不触发登出，属于「会话失效」语义才往白名单补
+  - 注册：`apps/admin/app/_components/unauthorized-redirect.tsx`（tiny client 组件）在根 layout 挂一次
+- 服务端响应优先使用 `@cloud/request/server` 提供的响应辅助函数
+- 成功 JSON 响应必须走 `successResponse()` / `createdResponse()`，body 形状为 `{ code: "OK", message: "success", data, page?, limit?, total?, totalPages?, nextCursor?, prevCursor?, hasNextPage?, hasPrevPage?, traceId }`，分页字段与 `data` 同级
+- DELETE 或其他无需 body 的接口使用 `noContentResponse()` 返回 204，response body 必须为空
+- 分页分两种，按需选用，不要混用：
+  - 偏移分页用 `Pager`（`page` / `limit` / `total` / `totalPages`），适合需要页码、总页数的场景
+  - 双向游标分页统一走 `@cloud/request/server` 的 `readCursorQuery(token, direction)` + `buildCursorPage()`，配合 `CursorPager`，响应带 `nextCursor` / `prevCursor` / `hasNextPage` / `hasPrevPage`
+  - 游标 token 由服务端 `encodeCursor()` 签发、只编码锚点 id、对客户端不透明；翻页方向是独立的 `direction` 参数，由客户端显式传，**不编进 token**
+  - 服务端按 `query.sortOrder` 设 `orderBy`、`take: limit + 1` 多取一条探测，再交给 `buildCursorPage()` 切片、翻回升序、签发双向游标；不要在 Route Handler 里手写这套逻辑
+  - 客户端用 `apps/admin/lib/use-cursor-pagination.ts` 的 `useCursorPagination()` 原样回传服务端给的游标 + 方向，**绝不从行 id 自己拼游标**，也不缓存历史游标
+- 新增接口时，优先放在 `apps/admin/app/api/*`，且**只做 HTTP 适配**，业务逻辑落到 `service/<domain>/`（见「服务端分层」）
+- Route Handler 默认做两层权限：
+  - 登录态 / 粗粒度权限码：优先用 `assertPermissions()`（在 route 里做）
+  - 业务归属 / 范围校验：例如 `entityId`、`roleId`、`userId` 是否属于当前租户——落在 service / policy 层
+- Route Handler 的异常兜底统一走 `apps/admin/lib/api-handler.ts`（设计与示例见 `docs/exception-handling.md`）
+  - **业务异常一律 throw 类型化异常，不再 return 错误响应**：参数校验、业务冲突、数据不存在等可预期错误用 `throw new BusinessError(code, status?, params?)`（`@cloud/request`），由 `withApiHandler` 捕获后统一出 40x `{ code, message, traceId }`
+    - `code` 走 `PMMNNN` 数字码（注册表内才本地化）；`status` 限 `400|401|403|404|409|422`，默认 400；`params` 是 `{name}` 占位插值参数，渲染进文案、不进响应体
+    - 中间件/基础设施故障（DB 连接、Redis、邮件等）用 `throw new MiddlewareError(ERR_MW_*)`，统一掩码成 503 通用文案（对客户不透明，开发凭 code + traceId 在日志识别）
+    - 开发者诊断信息自己 `console.error` 打（`BusinessError` 不带 devMessage）；所有被捕获的异常都会连堆栈进日志
+  - **仍然禁止 `throw new Error("文本字符串")`** 表达业务错误——要带稳定 `code`，用 `BusinessError` / `MiddlewareError`，不要裸 `Error`
+  - `badRequestResponse()` / `notFoundResponse()` / `errorResponse()` 降级为「mapper 内部构造 Response 用」，业务代码不再直接调用；rsc 页面级预期错误仍走 `notFound()` / `redirect("/403")`
+  - 默认用 `withApiHandler()` 包裹整个 handler，不要在每个文件里手写 `try { ... } catch (error) { return handleApiError(error) }`
+    - 写法：`export const POST = withApiHandler(async (req) => { ... })`
+    - 带动态路由参数时第二个参数照常透传：`withApiHandler(async (req, { params }) => { ... })`
+    - S3 / 存储接口把 `onError` 作为 `withApiHandler()` 的第二个参数：`withApiHandler(async () => { ... }, { onError: s3ErrorResponse })`
+    - handler 内部解析 JSON / formData 的局部 `try / catch` 不受影响，照常保留
+  - `withApiHandler()` 内部捕获异常后调用 `handleApiError()`；确需手动兜底时仍可直接 `return handleApiError(error)` / `return handleApiError(error, { onError: s3ErrorResponse })`
+  - `handleApiError()` 已统一处理 `AuthzError`、常见 Prisma 错误和未知异常；不要在每个 API 文件里重复写 `AuthzError` 分支
+  - Next 控制流异常（redirect / notFound）必须继续抛出，不能被自定义 catch 吞掉
+- 错误码是接口协议，message 是展示文案
+  - 前端逻辑、测试、监控优先依赖稳定 `code`
+  - `message` 可以调整和国际化，不应作为业务判断依据
+  - 成功和失败 JSON 响应都带 `traceId`；204 无 body 响应不带 `traceId`
+  - 错误文案由服务端按当前 locale 本地化，**code 为准**：`@cloud/request/error-messages` 注册表里有该 `code` 就按 locale 出文案，`errorResponse()` 的 `message` 参数只是「注册表外 code」（如 `storage.*` / `database.*` / permissions 的 `forbidden`）的兜底
+    - `handleApiError` 把 `AuthzError` 401 统一映射成注册表内的 `ERR_UNAUTHORIZED`（包内置三语、始终在场，全路由可本地化）；403 暂仍用 `forbidden` + 英文兜底
+    - 注册表内的 code 走 `@cloud/request` 的错误码（`ERR_*`），新增错误码时同步在 `error-messages/{en,zh-CN,ja}.ts` 补三语，少补会编译报错
+    - locale 由 `withApiHandler()` 在进 handler 前读 `LOCALE_COOKIE` 解析、用 `runWithLocale()` 注入请求级上下文；`errorResponse()` 等响应辅助保持同步，不在里面读 cookie
+    - 没走 `withApiHandler()`（或非请求上下文）时 locale 回退英文
+- 不要把"前端看不到入口"当作接口安全前提

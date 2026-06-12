@@ -1,28 +1,17 @@
 import "server-only";
 
-// NORMAL 授权下的「适用角色」筛选纯函数：契约命中（含公共 '*'）+ 未被 blocklist + PRIVATE 须本 partner。
+// 「适用角色」筛选纯函数：PRIVATE 角色须属本 partner；GLOBAL（含代码注册表角色）全局可用。
+// role 与 contract 解耦——契约门控只在菜单层，此处不再按 contractType / blocklist 过滤。
 
 export type RoleRow = {
   roleId: number;
   roleName: string;
   roleType: string;
-  contractType: string;
-  partnerId: number | null;
+  partyId: number | null;
   permissionCodes: unknown;
 };
 
-export function selectApplicableRoles(input: {
-  roles: RoleRow[];
-  contractTypes: string[];
-  blockedRoleIds: Set<number>;
-  partnerId: number;
-}): RoleRow[] {
-  const { roles, contractTypes, blockedRoleIds, partnerId } = input;
-  return roles.filter((role) => {
-    const contractMatch = contractTypes.includes(role.contractType) || role.contractType === "*";
-    if (!contractMatch) return false;
-    if (blockedRoleIds.has(role.roleId)) return false;
-    if (role.roleType === "PRIVATE" && role.partnerId !== partnerId) return false;
-    return true;
-  });
+export function selectApplicableRoles(input: { roles: RoleRow[]; partyId: number }): RoleRow[] {
+  const { roles, partyId } = input;
+  return roles.filter((role) => !(role.roleType === "PRIVATE" && role.partyId !== partyId));
 }

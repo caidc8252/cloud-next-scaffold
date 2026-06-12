@@ -10,11 +10,11 @@ const DEFAULT_PASSWORD_HASH =
 
 async function main() {
   // 1. Platform partner (ID=1)
-  const platformPartner = await prisma.sysPartner.upsert({
-    where: { partnerId: 1 },
-    update: { partnerName: "Platform" },
+  const platformPartner = await prisma.sysParty.upsert({
+    where: { partyId: 1 },
+    update: { partyName: "Platform" },
     create: {
-      partnerName: "Platform",
+      partyName: "Platform",
       country: "CN",
       timezone: "Asia/Shanghai",
       status: "ACTIVE",
@@ -22,16 +22,16 @@ async function main() {
   });
 
   // 2. Partner-Contract: platform holds ADMIN contract（内联契约类型，无 FK）
-  const existingContract = await prisma.sysPartnerContract.findFirst({
+  const existingContract = await prisma.sysPartyContract.findFirst({
     where: {
-      authorizedPartnerId: platformPartner.partnerId,
+      authorizedPartyId: platformPartner.partyId,
       authorizedContractType: "ADMIN",
     },
   });
   if (!existingContract) {
-    await prisma.sysPartnerContract.create({
+    await prisma.sysPartyContract.create({
       data: {
-        authorizedPartnerId: platformPartner.partnerId,
+        authorizedPartyId: platformPartner.partyId,
         authorizedContractType: "ADMIN",
         status: "ACTIVE",
         authorizedTimestamp: new Date(),
@@ -39,16 +39,14 @@ async function main() {
     });
   }
 
-  // 4. Admin user（username / nickName / email 均 NOT NULL）
+  // 4. Admin user（email 为登录标识、唯一；nickName / email 均 NOT NULL）
   const adminUser = await prisma.sysUser.upsert({
-    where: { username: "admin" },
+    where: { email: "admin@newlandnpt.com" },
     update: {
       nickName: "PEP Admin",
-      email: "admin@newlandnpt.com",
       passwordHash: DEFAULT_PASSWORD_HASH,
     },
     create: {
-      username: "admin",
       nickName: "PEP Admin",
       email: "admin@newlandnpt.com",
       passwordHash: DEFAULT_PASSWORD_HASH,
@@ -58,10 +56,10 @@ async function main() {
   });
 
   // 5. Bind user to platform partner（ADMIN type → 运行时全量权限；roles JSONB 含 admin 角色供展示）
-  await prisma.sysPartnerUser.upsert({
+  await prisma.sysPartyUser.upsert({
     where: {
-      partnerId_userId: {
-        partnerId: platformPartner.partnerId,
+      partyId_userId: {
+        partyId: platformPartner.partyId,
         userId: adminUser.userId,
       },
     },
@@ -70,7 +68,7 @@ async function main() {
       status: "ACTIVE"
     },
     create: {
-      partnerId: platformPartner.partnerId,
+      partyId: platformPartner.partyId,
       userId: adminUser.userId,
       authorizingType: "ADMIN",
       status: "ACTIVE",
@@ -78,8 +76,15 @@ async function main() {
     },
   });
 
-  console.log(`seeded platform partner (id=${platformPartner.partnerId})`);
+  // sys_role 动态角色（PRIVATE）的 roleId 从 1001 起，避开死写 GLOBAL 角色预留的 1–300。
+  // 兼容 SERIAL / IDENTITY：用 pg_get_serial_sequence 取序列名后 setval。
+  await prisma.$queryRawUnsafe(
+    `SELECT setval(pg_get_serial_sequence('sys_role', 'role_id'), 1000, true)`,
+  );
+
+  console.log(`seeded platform partner (id=${platformPartner.partyId})`);
   console.log(`seeded admin user: admin (password=${DEFAULT_PASSWORD})`);
+  console.log(`sys_role sequence set to start at 1001 (dynamic PRIVATE roles)`);
 }
 
 main()

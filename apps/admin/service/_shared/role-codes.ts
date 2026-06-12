@@ -1,4 +1,4 @@
-// 角色 id 的跨域共享 helper。角色绑定走 JSONB（sys_partner_user.roles / sys_operator_invite.roles
+// 角色 id 的跨域共享 helper。角色绑定走 JSONB（sys_party_user.roles / sys_operator_invite.roles
 // 为 List<{roleId}>，sys_role.permission_codes 为 List<string>）。users / roles 两域都要解析这套
 // 形状，放在 service/_shared 避免一个域 reach 进另一个域的 server 目录。
 

@@ -7,13 +7,12 @@ import { toastError } from "@cloud/request/error-toast";
 import { useTranslations } from "@cloud/i18n/client";
 import type { AccountProfile } from "@/app/(portal)/account/_shared/types";
 
-// Verified email / username change against the real endpoints. Codes are sent
-// server-side (delivered via a logged stub for now) and verified at apply time.
-//   email:    verify-old → new → verify-new → PATCH /api/account/email
-//   username: verify-old → new → PATCH /api/account/username
+// Verified email change against the real endpoint. Codes are sent server-side
+// (delivered via a logged stub for now) and verified at apply time.
+//   email: verify-old → new → verify-new → PATCH /api/account/email
 
 type Step = "verify-old" | "new" | "verify-new";
-type Purpose = "EMAIL_CURRENT" | "EMAIL_NEW" | "USERNAME_CURRENT";
+type Purpose = "EMAIL_CURRENT" | "EMAIL_NEW";
 
 export function IdentityChangeFlow({
   mode,
@@ -21,7 +20,7 @@ export function IdentityChangeFlow({
   onClose,
   onApplied,
 }: {
-  mode: "email" | "username";
+  mode: "email";
   profile: AccountProfile;
   onClose: () => void;
   onApplied: (next: AccountProfile) => void;
@@ -53,32 +52,15 @@ export function IdentityChangeFlow({
   useEffect(() => {
     if (sentInitial.current) return;
     sentInitial.current = true;
-    void requestCode(isEmail ? "EMAIL_CURRENT" : "USERNAME_CURRENT");
+    void requestCode("EMAIL_CURRENT");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function continueFromNew() {
-    if (isEmail) {
-      const email = newValue.trim();
-      if (!email) return;
-      await requestCode("EMAIL_NEW", email);
-      setStep("verify-new");
-      return;
-    }
-    // username: apply directly with the current-email code
-    setBusy(true);
-    try {
-      const res = await request.patch<AccountProfile>("/api/account/username", {
-        newUsername: newValue.trim(),
-        currentCode: currentCode.trim(),
-      });
-      toast.success(t("identity.doneUsername", { username: res.data.username }));
-      onApplied(res.data);
-    } catch (err) {
-      toastError(err);
-    } finally {
-      setBusy(false);
-    }
+    const email = newValue.trim();
+    if (!email) return;
+    await requestCode("EMAIL_NEW", email);
+    setStep("verify-new");
   }
 
   async function applyEmail() {
@@ -124,7 +106,7 @@ export function IdentityChangeFlow({
         <button
           type="button"
           className="cursor-pointer self-start text-xs text-primary hover:underline"
-          onClick={() => requestCode(isEmail ? "EMAIL_CURRENT" : "USERNAME_CURRENT")}
+          onClick={() => requestCode("EMAIL_CURRENT")}
         >
           {t("identity.resend")}
         </button>

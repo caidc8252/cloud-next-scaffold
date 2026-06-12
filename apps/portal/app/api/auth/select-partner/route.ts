@@ -23,5 +23,5 @@ export const POST = withApiHandler(async (req: Request) => {
   const parsed = selectPartnerSchema.safeParse(body);
   if (!parsed.success) throw new BusinessError(ERR_AUTH_PARTNER_REQUIRED);
 
-  return successResponse(await selectPartner(partial.userId, parsed.data.partnerId));
+  return successResponse(await selectPartner(partial.userId, parsed.data.partyId));
 });

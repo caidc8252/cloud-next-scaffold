@@ -8,8 +8,8 @@ import { kv } from "@cloud/cache";
 // 快照本体存 Redis，滑动 TTL，过期即失效。cookie 写入由 actions.ts 负责。
 //
 // 快照是单一扁平形状（storage == consumption）：身份 + 当前公司字段平铺在顶层
-// （partnerName / contractTypes / roles / permissions）+ 可切换列表 partners[]。
-// 未选公司（partial）时 currentPartnerId 为 null、当前公司字段为空。
+// （partyName / contractTypes / roles / permissions）+ 可切换列表 partners[]。
+// 未选公司（partial）时 currentPartyId 为 null、当前公司字段为空。
 
 export const SID_COOKIE = "sid";
 /** Redis 会话存活时长（秒），命中后滑动续期。 */
@@ -24,9 +24,9 @@ export type SessionRole = {
 };
 
 /** 公司切换列表里的轻量条目（用户可访问的每个公司）。 */
-export type SessionPartnerRef = {
-  partnerId: number;
-  partnerName: string;
+export type SessionPartyRef = {
+  partyId: number;
+  partyName: string;
   authorizingType: "ADMIN" | "NORMAL";
   status: string;
   authorizingFrom: string | null;
@@ -35,19 +35,18 @@ export type SessionPartnerRef = {
 
 export type Session = {
   userId: number;
-  // 身份（UI / 顶栏需要）
-  username: string;
+  // 身份（UI / 顶栏需要）；登录改 email 后不再有 username，身份显示用 displayName / email
   displayName: string | null;
   email: string | null;
-  // 当前公司上下文（平铺；未选公司时 currentPartnerId=null、其余为空）
-  currentPartnerId: number | null;
-  partnerName: string | null;
+  // 当前公司上下文（平铺；未选公司时 currentPartyId=null、其余为空）
+  currentPartyId: number | null;
+  partyName: string | null;
   contractTypes: string[];
   authorizingType: "ADMIN" | "NORMAL" | null;
   roles: SessionRole[];
   permissions: string[]; // 切公司时按契约 + 角色/ADMIN 重算
   // 可切换的公司列表
-  partners: SessionPartnerRef[];
+  partners: SessionPartyRef[];
   // 会话元信息
   loginAt: number;
   expireAt: number; // 近似值；Redis TTL 才是真正的过期权威
@@ -56,8 +55,8 @@ export type Session = {
 
 /** 已选定公司的会话：仅类型收窄，字段同 Session，不重命名/不重构。 */
 export type ActiveSession = Session & {
-  currentPartnerId: number;
-  partnerName: string;
+  currentPartyId: number;
+  partyName: string;
   authorizingType: "ADMIN" | "NORMAL";
 };
 

@@ -9,8 +9,8 @@ type FailureUpdate = {
   passwordErrorLockExpiredTimestamp: Date | null;
 };
 
-export function findUserByUsername(username: string) {
-  return prisma.sysUser.findUnique({ where: { username } });
+export function findUserByEmail(email: string) {
+  return prisma.sysUser.findUnique({ where: { email } });
 }
 
 export function findUserById(userId: number) {
@@ -41,30 +41,30 @@ export function recordLoginSuccess(userId: number, loginAt: Date) {
 }
 
 /** 用户的全部 partner 归属（含 partner 本体，用于过滤 ACTIVE+ACTIVE）。 */
-export function listPartnerMemberships(userId: number) {
-  return prisma.sysPartnerUser.findMany({
+export function listPartyMemberships(userId: number) {
+  return prisma.sysPartyUser.findMany({
     where: { userId },
     include: { partner: true },
   });
 }
 
 /** 某用户在指定 partner 的归属（含 partner 本体），用于选择公司校验。 */
-export function findPartnerMembership(partnerId: number, userId: number) {
-  return prisma.sysPartnerUser.findUnique({
-    where: { partnerId_userId: { partnerId, userId } },
+export function findPartyMembership(partyId: number, userId: number) {
+  return prisma.sysPartyUser.findUnique({
+    where: { partyId_userId: { partyId, userId } },
     include: { partner: true },
   });
 }
 
 /** 用户全部 partner 归属 + partner 本体 + 各 partner 的 ACTIVE 合同（供选择页/登录路由判定可选性）。 */
-export function listPartnerMembershipsWithContracts(userId: number) {
-  return prisma.sysPartnerUser.findMany({
+export function listPartyMembershipsWithContracts(userId: number) {
+  return prisma.sysPartyUser.findMany({
     where: { userId },
     include: {
       partner: {
         select: {
-          partnerId: true,
-          partnerName: true,
+          partyId: true,
+          partyName: true,
           status: true,
           timezone: true,
           contracts: {

@@ -3,8 +3,8 @@ import { z } from "zod";
 // 默认值需与 password-policy.ts 的 PASSWORD_POLICY 展示值保持一致
 const authConfigSchema = z.object({
   AUTH_PASSWORD_MAX_ERROR_TIMES: z.coerce.number().int().positive().default(6),
-  AUTH_PASSWORD_LOCK_MINUTES: z.coerce.number().int().positive().default(30),
-  AUTH_LOGIN_TIMESTAMP_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
+  AUTH_PASSWORD_LOCK_MINUTES: z.coerce.number().int().positive().default(60),
+  AUTH_LOGIN_TIMESTAMP_WINDOW_SECONDS: z.coerce.number().int().positive().default(120),
   // base64 编码的 PKCS#8 裸 DER 私钥（与前端 NEXT_PUBLIC_AUTH_LOGIN_RSA_PUBLIC_KEY 成对）。
   AUTH_LOGIN_RSA_PRIVATE_KEY: z.string().min(1),
   // 32 字节、base64 编码的 AES 密钥，用于加密 SysMfaInfo.secretEncrypted（TOTP 密钥）。

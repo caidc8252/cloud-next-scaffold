@@ -17,8 +17,6 @@ import {
   ERR_ACCOUNT_PASSWORD_CURRENT_WRONG,
   ERR_ACCOUNT_PASSWORD_POLICY,
   ERR_ACCOUNT_PASSWORD_REUSED,
-  ERR_ACCOUNT_USERNAME_SAME,
-  ERR_ACCOUNT_USERNAME_TAKEN,
   ERR_ACCOUNT_VERIFY_CODE_INVALID,
 } from "@/lib/account-error-codes";
 import { ERR_AUTH_ENCRYPTION_INVALID, ERR_AUTH_REQUEST_EXPIRED } from "@/lib/auth-error-codes";
@@ -45,7 +43,6 @@ import type {
   ActivateMfaInput,
   ChangeEmailInput,
   ChangePasswordInput,
-  ChangeUsernameInput,
   DisableMfaInput,
   RequestCodeInput,
   UpdateProfileInput,
@@ -59,7 +56,7 @@ import * as accountRepository from "./account.repository";
 
 /** 改身份后重建会话快照,让顶栏 / 用户卡无需重登即反映新昵称 / 用户名。 */
 async function refreshSession(session: ActiveSession): Promise<void> {
-  const snapshot = await buildSessionSnapshot(session.userId, session.currentPartnerId);
+  const snapshot = await buildSessionSnapshot(session.userId, session.currentPartyId);
   if (snapshot) await updateSession(snapshot);
 }
 
@@ -78,29 +75,6 @@ export async function updateProfile(
   const user = await accountRepository.updateUser(session.userId, data);
   await refreshSession(session);
   return toAccountProfile(user);
-}
-
-export async function changeUsername(
-  session: ActiveSession,
-  input: ChangeUsernameInput,
-): Promise<AccountProfile> {
-  const user = await accountRepository.getUser(session.userId);
-
-  const current = await readVerifyCode(session.userId, "USERNAME_CURRENT");
-  if (!current || current.code !== input.currentCode) {
-    throw new BusinessError(ERR_ACCOUNT_VERIFY_CODE_INVALID);
-  }
-  if (input.newUsername.toLowerCase() === user.username.toLowerCase()) {
-    throw new BusinessError(ERR_ACCOUNT_USERNAME_SAME);
-  }
-
-  const taken = await accountRepository.findUserByUsername(input.newUsername, session.userId);
-  if (taken) throw new BusinessError(ERR_ACCOUNT_USERNAME_TAKEN, 409);
-
-  const updated = await accountRepository.updateUser(session.userId, { username: input.newUsername });
-  await consumeVerifyCode(session.userId, "USERNAME_CURRENT");
-  await refreshSession(session);
-  return toAccountProfile(updated);
 }
 
 export async function changeEmail(
@@ -217,31 +191,31 @@ export async function requestVerifyCode(
 /** 用户归属的全部 partner（含 LOCKED）+ 各自非终止契约类型。排序：当前优先、其次 ACTIVE、LOCKED 最后。 */
 export async function listPartners(
   userId: number,
-  currentPartnerId: number | null,
+  currentPartyId: number | null,
 ): Promise<AccountPartner[]> {
-  const rows = await accountRepository.listPartnerMemberships(userId);
-  const partnerIds = rows.map((row) => row.partnerId);
-  const contracts = partnerIds.length
-    ? await accountRepository.listActiveContractTypes(partnerIds)
+  const rows = await accountRepository.listPartyMemberships(userId);
+  const partyIds = rows.map((row) => row.partyId);
+  const contracts = partyIds.length
+    ? await accountRepository.listActiveContractTypes(partyIds)
     : [];
 
   const typesByPartner = new Map<number, string[]>();
   for (const contract of contracts) {
-    const list = typesByPartner.get(contract.authorizedPartnerId) ?? [];
+    const list = typesByPartner.get(contract.authorizedPartyId) ?? [];
     if (!list.includes(contract.authorizedContractType)) list.push(contract.authorizedContractType);
-    typesByPartner.set(contract.authorizedPartnerId, list);
+    typesByPartner.set(contract.authorizedPartyId, list);
   }
 
   const data: AccountPartner[] = rows.map((row) => ({
-    partnerUserId: row.partnerUserId,
-    partnerId: row.partnerId,
-    partnerName: row.partner.partnerName,
+    partyUserId: row.partyUserId,
+    partyId: row.partyId,
+    partyName: row.partner.partyName,
     authorizingType: row.authorizingType === "ADMIN" ? "ADMIN" : "NORMAL",
     authorizingTimestamp: row.authorizingTimestamp?.toISOString() ?? null,
     status: row.status,
     locked: row.status !== "ACTIVE",
-    contractTypes: typesByPartner.get(row.partnerId) ?? [],
-    isCurrent: row.partnerId === currentPartnerId,
+    contractTypes: typesByPartner.get(row.partyId) ?? [],
+    isCurrent: row.partyId === currentPartyId,
   }));
 
   data.sort((a, b) => {

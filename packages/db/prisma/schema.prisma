@@ -10,16 +10,16 @@ datasource db {
 }
 
 // 说明（对齐系统 DB 脚本 Partner/Contract/Role/User/MFA/Invite）：
-// - 角色/权限关联用 JSONB 数组（sys_partner_user.roles / sys_role.permission_codes），
+// - 角色/权限关联用 JSONB 数组（sys_party_user.roles / sys_role.permission_codes），
 //   是 DB 约定「关联走关联表」的已批准例外，理由是反查频率低、读多写少，详见 CLAUDE.md。
 // - 契约类型为内联字符串枚举（应用层 zod 校验），不再有 sys_contract_define 表。
 // - CHECK / partial unique index / 触发器等 Prisma 表达不了的硬约束，统一由应用层（zod +
 //   service 事务）保证；upd_time 走 @updatedAt。详见 DEV_NOTE。
 
-// ─── sys_partner ─────────────────────────────────────────
-model SysPartner {
-  partnerId        Int      @id @default(autoincrement()) @map("partner_id")
-  partnerName      String   @unique @map("partner_name") @db.VarChar(200)
+// ─── sys_party ─────────────────────────────────────────
+model SysParty {
+  partyId        Int      @id @default(autoincrement()) @map("party_id")
+  partyName      String   @unique @map("party_name") @db.VarChar(200)
   country          String   @db.VarChar(8)
   address          String?  @db.VarChar(500)
   contactName      String?  @map("contact_name") @db.VarChar(100)
@@ -35,32 +35,33 @@ model SysPartner {
   updTime          DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
   updUserId        Int      @default(0) @map("upd_user_id")
 
-  contracts            SysPartnerContract[] @relation("authorized")
-  grantedContracts     SysPartnerContract[] @relation("authorizing")
-  terminatedContracts  SysPartnerContract[] @relation("terminatedBy")
-  partnerUsers         SysPartnerUser[]
+  contracts            SysPartyContract[] @relation("authorized")
+  grantedContracts     SysPartyContract[] @relation("authorizing")
+  terminatedContracts  SysPartyContract[] @relation("terminatedBy")
+  partyUsers         SysPartyUser[]
   roles                SysRole[]
-  roleBlocklists       SysPartnerRoleBlocklist[]
-  operatorInvites      SysOperatorInvite[]
+  operatorInvites      SysOperatorInvite[] @relation("invitedParty")
+  invitesSentFromParty SysOperatorInvite[] @relation("inviterParty")
   storageObjects       StorageObject[]
   storageAttachments   StorageAttachment[]
+  notices              SysNotice[]
 
-  @@index([country], map: "idx_sys_partner_country")
-  @@index([status], map: "idx_sys_partner_status")
-  @@map("sys_partner")
+  @@index([country], map: "idx_sys_party_country")
+  @@index([status], map: "idx_sys_party_status")
+  @@map("sys_party")
 }
 
-// ─── sys_partner_contract ────────────────────────────────
-model SysPartnerContract {
-  partnerContractId              Int       @id @default(autoincrement()) @map("partner_contract_id")
-  authorizedPartnerId            Int       @map("authorized_partner_id")
+// ─── sys_party_contract ────────────────────────────────
+model SysPartyContract {
+  partyContractId              Int       @id @default(autoincrement()) @map("party_contract_id")
+  authorizedPartyId            Int       @map("authorized_party_id")
   authorizedContractType         String    @map("authorized_contract_type") @db.VarChar(20)
   authorizedTimestamp            DateTime? @map("authorized_timestamp") @db.Timestamp(3)
-  authorizingPartnerId           Int?      @map("authorizing_partner_id")
-  authorizingPartnerContractType String?   @map("authorizing_partner_contract_type") @db.VarChar(20)
+  authorizingPartyId           Int?      @map("authorizing_party_id")
+  authorizingPartyContractType String?   @map("authorizing_party_contract_type") @db.VarChar(20)
   effectiveFromDate              DateTime? @map("effective_from_date") @db.Date
   effectiveToDate                DateTime? @map("effective_to_date") @db.Date
-  terminatedByPartnerId          Int?      @map("terminated_by_partner_id")
+  terminatedByPartyId          Int?      @map("terminated_by_party_id")
   terminatedAt                   DateTime? @map("terminated_at") @db.Timestamp(3)
   status                         String    @default("ACTIVE") @db.VarChar(20)
   entitlements                   Json?
@@ -70,34 +71,37 @@ model SysPartnerContract {
   updTime                        DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
   updUserId                      Int       @default(0) @map("upd_user_id")
 
-  authorizedPartner  SysPartner  @relation("authorized", fields: [authorizedPartnerId], references: [partnerId])
-  authorizingPartner SysPartner? @relation("authorizing", fields: [authorizingPartnerId], references: [partnerId])
-  terminatedByPartner SysPartner? @relation("terminatedBy", fields: [terminatedByPartnerId], references: [partnerId])
-  events             SysPartnerContractEvent[]
+  authorizedPartner  SysParty  @relation("authorized", fields: [authorizedPartyId], references: [partyId])
+  authorizingPartner SysParty? @relation("authorizing", fields: [authorizingPartyId], references: [partyId])
+  terminatedByPartner SysParty? @relation("terminatedBy", fields: [terminatedByPartyId], references: [partyId])
+  events             SysPartyContractEvent[]
 
-  @@index([authorizedPartnerId])
+  @@index([authorizedPartyId])
   @@index([authorizedContractType])
-  @@index([authorizingPartnerId])
-  @@index([authorizedPartnerId, status])
-  @@map("sys_partner_contract")
+  @@index([authorizingPartyId])
+  @@index([authorizedPartyId, status])
+  @@map("sys_party_contract")
 }
 
-// ─── sys_partner_contract_event（契约事件流水，UUID 主键）──
-model SysPartnerContractEvent {
-  partnerContractEventId String   @id @default(uuid()) @map("partner_contract_event_id")
-  partnerContractId      Int      @map("partner_contract_id")
+// ─── sys_party_contract_event（契约事件流水，UUID 主键）──
+model SysPartyContractEvent {
+  partyContractEventId String   @id @default(uuid()) @map("party_contract_event_id")
+  partyContractId      Int      @map("party_contract_id")
+  // eventType 取值（闭集，写入点用 zod 约束；Prisma 不表达 CHECK，DDL 层 CHECK 见 pep-schema）：
+  // CREATE_CONTRACT / EDIT_CONTRACT / RENEW / SUSPEND / RESUME / TERMINATE / PILOT_CONVERT_ACTIVE
   eventType              String   @map("event_type") @db.VarChar(40)
-  eventInfo              Json?    @map("event_info")
+  // payload 按 eventType 分型（详见 domain-model.md「Event payload」）；尚无写入点。
+  payload                Json?    @map("payload")
   eventTimestamp         DateTime @default(now()) @map("event_timestamp") @db.Timestamp(3)
   operatorUserId         Int?     @map("operator_user_id")
   operatorUserName       String?  @map("operator_user_name") @db.VarChar(100)
   creTime                DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
 
-  partnerContract SysPartnerContract @relation(fields: [partnerContractId], references: [partnerContractId], onDelete: Cascade)
+  partyContract SysPartyContract @relation(fields: [partyContractId], references: [partyContractId], onDelete: Cascade)
 
-  @@index([partnerContractId, eventTimestamp(sort: Desc)])
+  @@index([partyContractId, eventTimestamp(sort: Desc)])
   @@index([eventType])
-  @@map("sys_partner_contract_event")
+  @@map("sys_party_contract_event")
 }
 
 // ─── sys_role ───────────────────────────────────────────
@@ -105,8 +109,10 @@ model SysRole {
   roleId          Int      @id @default(autoincrement()) @map("role_id")
   roleName        String   @map("role_name") @db.VarChar(100)
   roleType        String   @map("role_type") @db.VarChar(20)
-  contractType    String   @map("contract_type") @db.VarChar(20)
-  partnerId       Int?     @map("partner_id")
+  partyId       Int?     @map("party_id")
+  // 角色授权窗（DATE，按 party.timezone 解读为该日 0 秒 / 最后一秒）；NULL = 无界。仅 PRIVATE 角色用。
+  startDate       DateTime? @map("start_date") @db.Date
+  endDate         DateTime? @map("end_date") @db.Date
   permissionCodes Json     @default("[]") @map("permission_codes")
   remark          String?  @db.VarChar(500)
   creTime         DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
@@ -114,43 +120,22 @@ model SysRole {
   updTime         DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
   updUserId       Int      @default(0) @map("upd_user_id")
 
-  partner        SysPartner?               @relation(fields: [partnerId], references: [partnerId])
-  roleBlocklists SysPartnerRoleBlocklist[]
+  partner        SysParty?               @relation(fields: [partyId], references: [partyId])
 
-  @@index([partnerId])
-  @@index([contractType])
+  @@index([partyId])
   @@index([roleName])
   @@map("sys_role")
-}
-
-// ─── sys_partner_role_blocklist（角色黑名单）─────────────
-model SysPartnerRoleBlocklist {
-  partnerRoleBlocklistId Int      @id @default(autoincrement()) @map("partner_role_blocklist_id")
-  partnerId              Int      @map("partner_id")
-  contractType           String   @map("contract_type") @db.VarChar(20)
-  roleId                 Int      @map("role_id")
-  creTime                DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
-  creUserId              Int      @default(0) @map("cre_user_id")
-
-  partner SysPartner @relation(fields: [partnerId], references: [partnerId])
-  role    SysRole    @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
-
-  @@unique([partnerId, contractType, roleId], map: "uk_sys_partner_role_blocklist")
-  @@index([roleId])
-  @@index([contractType])
-  @@map("sys_partner_role_blocklist")
 }
 
 // ─── sys_user ───────────────────────────────────────────
 model SysUser {
   userId                            Int       @id @default(autoincrement()) @map("user_id")
-  username                          String    @unique @db.Citext
   passwordHash                      String    @map("password_hash") @db.VarChar(255)
   passwordChangedTimestamp          DateTime? @map("password_changed_timestamp") @db.Timestamp(3)
   passwordErrorTimes                Int       @default(0) @map("password_error_times")
   passwordErrorLockExpiredTimestamp DateTime? @map("password_error_lock_expired_timestamp") @db.Timestamp(3)
   nickName                          String    @map("nick_name") @db.VarChar(100)
-  email                             String    @db.Citext
+  email                             String    @unique @db.Citext
   country                           String?   @db.VarChar(8)
   mfaEnable                         Boolean   @default(false) @map("mfa_enable")
   status                            String    @default("ACTIVE") @db.VarChar(20)
@@ -161,10 +146,11 @@ model SysUser {
   updTime                           DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
   updUserId                         Int       @default(0) @map("upd_user_id")
 
-  partnerUsers           SysPartnerUser[]
+  partyUsers           SysPartyUser[]
   mfaInfos               SysMfaInfo[]
   sentInvites            SysOperatorInvite[]
   uploadedStorageObjects StorageObject[]
+  notices                SysNotice[]
 
   @@index([email])
   @@index([status])
@@ -195,10 +181,10 @@ model SysMfaInfo {
   @@map("sys_mfa_info")
 }
 
-// ─── sys_partner_user（用户与主体的归属/授权关系）────────
-model SysPartnerUser {
-  partnerUserId        Int       @id @default(autoincrement()) @map("partner_user_id")
-  partnerId            Int       @map("partner_id")
+// ─── sys_party_user（用户与主体的归属/授权关系）────────
+model SysPartyUser {
+  partyUserId        Int       @id @default(autoincrement()) @map("party_user_id")
+  partyId            Int       @map("party_id")
   userId               Int       @map("user_id")
   roles                Json      @default("[]")
   authorizingType      String    @default("NORMAL") @map("authorizing_type") @db.VarChar(20)
@@ -214,22 +200,23 @@ model SysPartnerUser {
   updTime              DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
   updUserId            Int       @default(0) @map("upd_user_id")
 
-  partner SysPartner @relation(fields: [partnerId], references: [partnerId])
+  partner SysParty @relation(fields: [partyId], references: [partyId])
   user    SysUser    @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
-  @@unique([partnerId, userId], map: "uk_sys_partner_user")
+  @@unique([partyId, userId], map: "uk_sys_party_user")
   @@index([userId])
-  @@index([partnerId, status])
-  @@map("sys_partner_user")
+  @@index([partyId, status])
+  @@map("sys_party_user")
 }
 
 // ─── sys_operator_invite（操作员邀请入驻）────────────────
 model SysOperatorInvite {
   operatorInviteId Int       @id @default(autoincrement()) @map("operator_invite_id")
-  partnerId        Int       @map("partner_id")
+  partyId        Int       @map("party_id")
+  inviterPartyId   Int       @map("inviter_party_id")
   inviterUserId    Int       @map("inviter_user_id")
   inviteEmail      String    @map("invite_email") @db.Citext
-  roles            Json      @default("[]")
+  intendedRole     Json      @default("[]") @map("intended_role")
   token            String    @unique @db.VarChar(128)
   expiresAt        DateTime  @map("expires_at") @db.Timestamp(3)
   consumedAt       DateTime? @map("consumed_at") @db.Timestamp(3)
@@ -240,10 +227,14 @@ model SysOperatorInvite {
   updTime          DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
   updUserId        Int       @default(0) @map("upd_user_id")
 
-  partner SysPartner @relation(fields: [partnerId], references: [partnerId], onDelete: Cascade)
-  inviter SysUser    @relation(fields: [inviterUserId], references: [userId])
+  // 被邀请入驻的主体（party 删除则级联清理其邀请）。
+  partner      SysParty @relation("invitedParty", fields: [partyId], references: [partyId], onDelete: Cascade)
+  // 邀请者所属主体（仅引用，不级联）。
+  inviterParty SysParty @relation("inviterParty", fields: [inviterPartyId], references: [partyId])
+  inviter      SysUser  @relation(fields: [inviterUserId], references: [userId])
 
-  @@index([partnerId])
+  @@index([partyId])
+  @@index([inviterPartyId])
   @@index([inviteEmail])
   @@map("sys_operator_invite")
 }
@@ -253,7 +244,7 @@ model SysOperatorInvite {
 // ─── storage_object ─────────────────────────────────────
 model StorageObject {
   storageObjectId  String    @id @default(uuid()) @map("storage_object_id")
-  partnerId         Int       @map("partner_id")
+  partyId         Int       @map("party_id")
   uploaderUserId   Int       @map("uploader_user_id")
   bucket           String    @db.VarChar(255)
   regionId         String    @map("region_id") @db.VarChar(64)
@@ -272,13 +263,13 @@ model StorageObject {
   updUserId        Int       @default(0) @map("upd_user_id")
   deletedAt        DateTime? @map("deleted_at") @db.Timestamp(3)
 
-  partner      SysPartner           @relation(fields: [partnerId], references: [partnerId])
+  partner      SysParty           @relation(fields: [partyId], references: [partyId])
   uploader    SysUser             @relation(fields: [uploaderUserId], references: [userId])
   attachments StorageAttachment[]
 
-  @@unique([partnerId, bucket, objectKey], map: "uk_storage_object_partner_bucket_key")
-  @@index([partnerId, contentHash, sizeBytes, status], map: "idx_storage_object_partner_hash_size_status")
-  @@index([partnerId, status, creTime(sort: Desc)], map: "idx_storage_object_partner_status_time")
+  @@unique([partyId, bucket, objectKey], map: "uk_storage_object_partner_bucket_key")
+  @@index([partyId, contentHash, sizeBytes, status], map: "idx_storage_object_partner_hash_size_status")
+  @@index([partyId, status, creTime(sort: Desc)], map: "idx_storage_object_partner_status_time")
   @@index([uploaderUserId], map: "idx_storage_object_uploader")
   @@map("storage_object")
 }
@@ -286,7 +277,7 @@ model StorageObject {
 // ─── storage_attachment ─────────────────────────────────
 model StorageAttachment {
   storageAttachmentId String    @id @default(uuid()) @map("storage_attachment_id")
-  partnerId            Int       @map("partner_id")
+  partyId            Int       @map("party_id")
   storageObjectId     String    @map("storage_object_id")
   subjectType         String    @map("subject_type") @db.VarChar(64)
   subjectId           String    @map("subject_id") @db.VarChar(128)
@@ -301,12 +292,55 @@ model StorageAttachment {
   updUserId           Int       @default(0) @map("upd_user_id")
   deletedAt           DateTime? @map("deleted_at") @db.Timestamp(3)
 
-  partner        SysPartner     @relation(fields: [partnerId], references: [partnerId])
+  partner        SysParty     @relation(fields: [partyId], references: [partyId])
   storageObject StorageObject @relation(fields: [storageObjectId], references: [storageObjectId], onDelete: Cascade)
 
-  @@unique([partnerId, storageObjectId, subjectType, subjectId, purpose], map: "uk_storage_attachment_object_subject")
-  @@index([partnerId, subjectType, subjectId, purpose, status, sortNo], map: "idx_storage_attachment_subject")
+  @@unique([partyId, storageObjectId, subjectType, subjectId, purpose], map: "uk_storage_attachment_object_subject")
+  @@index([partyId, subjectType, subjectId, purpose, status, sortNo], map: "idx_storage_attachment_subject")
   @@index([storageObjectId], map: "idx_storage_attachment_object")
-  @@index([partnerId, status, creTime(sort: Desc)], map: "idx_storage_attachment_partner_status_time")
+  @@index([partyId, status, creTime(sort: Desc)], map: "idx_storage_attachment_partner_status_time")
   @@map("storage_attachment")
+}
+
+// ─── sys_operation_log（操作日志，UUID 主键，只写不改）─────────────
+// 无 FK：append-only 审计，party_id / operator_user_id 仅冗余存值，不约束。
+// result 取值 SUCCESS / FAILURE 由应用层保证（Prisma 不表达 CHECK）。
+model SysOperationLog {
+  operationLogId   String   @id @default(uuid()) @map("operation_log_id")
+  traceId          String   @map("trace_id") @db.VarChar(64)
+  operatorUserId   Int?     @map("operator_user_id")
+  operatorNickName String   @map("operator_nick_name") @db.VarChar(100)
+  operatorIp       String?  @map("operator_ip") @db.VarChar(64)
+  partyId          Int      @map("party_id")
+  action           String   @db.VarChar(100)
+  title            String   @db.VarChar(200)
+  detail           Json     @default("{}")
+  result           String   @db.VarChar(20)
+  failureReason    String?  @map("failure_reason") @db.VarChar(500)
+  creTime          DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
+
+  @@index([traceId], map: "idx_sys_operation_log_trace")
+  @@index([partyId, creTime(sort: Desc)], map: "idx_sys_operation_log_party_time")
+  @@map("sys_operation_log")
+}
+
+// ─── sys_notice（站内消息，UUID 主键）─────────────
+// payload 按 notice_type 不同载荷不同，必含 content；status 取值 UNREAD / READ 由应用层保证。
+model SysNotice {
+  noticeId        String   @id @default(uuid()) @map("notice_id")
+  userId          Int      @map("user_id")
+  belongToPartyId Int?     @map("belong_to_party_id")
+  noticeType      String?  @map("notice_type") @db.VarChar(40)
+  title           String?  @db.VarChar(200)
+  payload         Json     @default("{}")
+  status          String   @default("UNREAD") @db.VarChar(20)
+  creTime         DateTime @default(now()) @map("cre_time") @db.Timestamp(3)
+  updTime         DateTime @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
+
+  user          SysUser   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  belongToParty SysParty? @relation(fields: [belongToPartyId], references: [partyId])
+
+  @@index([userId, status], map: "idx_sys_notice_user")
+  @@index([belongToPartyId], map: "idx_sys_notice_party")
+  @@map("sys_notice")
 }

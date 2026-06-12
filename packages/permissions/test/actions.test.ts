@@ -50,16 +50,16 @@ const snapshot: Omit<Session, "loginAt" | "expireAt"> = {
   username: "alice",
   displayName: "Alice",
   email: "alice@example.com",
-  currentPartnerId: 9,
-  partnerName: "Acme",
+  currentPartyId: 9,
+  partyName: "Acme",
   contractTypes: ["ADMIN"],
   authorizingType: "ADMIN",
   roles: [],
   permissions: ["roles.VIEW"],
   partners: [
     {
-      partnerId: 9,
-      partnerName: "Acme",
+      partyId: 9,
+      partyName: "Acme",
       authorizingType: "ADMIN",
       status: "ACTIVE",
       authorizingFrom: null,
@@ -97,7 +97,7 @@ describe("session actions", () => {
     expect(options).toMatchObject({ httpOnly: true, maxAge: 43_200, path: "/", sameSite: "lax" });
 
     const stored = await sessionStore.read(value as string);
-    expect(stored).toMatchObject({ userId: 7, currentPartnerId: 9 });
+    expect(stored).toMatchObject({ userId: 7, currentPartyId: 9 });
   });
 
   it("shares the sid cookie with sibling subdomains when configured", async () => {
@@ -152,8 +152,8 @@ describe("session actions", () => {
   it("updateSession overwrites the current sid and preserves loginAt", async () => {
     await createSession({
       ...snapshot,
-      currentPartnerId: null,
-      partnerName: null,
+      currentPartyId: null,
+      partyName: null,
       contractTypes: [],
       authorizingType: null,
       roles: [],
@@ -165,7 +165,7 @@ describe("session actions", () => {
     await updateSession(snapshot);
 
     const after = await sessionStore.read(sid);
-    expect(after?.currentPartnerId).toBe(9);
+    expect(after?.currentPartyId).toBe(9);
     expect(after?.permissions).toEqual(["roles.VIEW"]);
     expect(after?.loginAt).toBe(before?.loginAt);
   });

@@ -152,15 +152,15 @@ const aesSecretKey = requireEnv("AUTH_AES_SECRET_KEY");
 const { prisma } = await import("../src/index.ts");
 
 async function upsertPartner(seed: PartnerSeed) {
-  return prisma.sysPartner.upsert({
-    where: { partnerName: seed.name },
+  return prisma.sysParty.upsert({
+    where: { partyName: seed.name },
     update: {
       country: seed.country,
       timezone: seed.timezone,
       status: "ACTIVE",
     },
     create: {
-      partnerName: seed.name,
+      partyName: seed.name,
       country: seed.country,
       timezone: seed.timezone,
       status: "ACTIVE",
@@ -168,10 +168,10 @@ async function upsertPartner(seed: PartnerSeed) {
   });
 }
 
-async function ensureActiveContract(partnerId: number) {
-  const existing = await prisma.sysPartnerContract.findFirst({
+async function ensureActiveContract(partyId: number) {
+  const existing = await prisma.sysPartyContract.findFirst({
     where: {
-      authorizedPartnerId: partnerId,
+      authorizedPartyId: partyId,
       authorizedContractType: "MERCHANT",
     },
   });
@@ -184,16 +184,16 @@ async function ensureActiveContract(partnerId: number) {
   };
 
   if (existing) {
-    await prisma.sysPartnerContract.update({
-      where: { partnerContractId: existing.partnerContractId },
+    await prisma.sysPartyContract.update({
+      where: { partyContractId: existing.partyContractId },
       data,
     });
     return;
   }
 
-  await prisma.sysPartnerContract.create({
+  await prisma.sysPartyContract.create({
     data: {
-      authorizedPartnerId: partnerId,
+      authorizedPartyId: partyId,
       authorizedContractType: "MERCHANT",
       ...data,
     },
@@ -202,7 +202,8 @@ async function ensureActiveContract(partnerId: number) {
 
 async function upsertUser(seed: UserSeed) {
   return prisma.sysUser.upsert({
-    where: { username: seed.username },
+    // seed.username 实际是邮箱（登录标识）；email 现为唯一键。
+    where: { email: seed.username },
     update: {
       nickName: seed.nickName,
       email: seed.username,
@@ -213,7 +214,6 @@ async function upsertUser(seed: UserSeed) {
       mfaEnable: seed.mfaEnable,
     },
     create: {
-      username: seed.username,
       nickName: seed.nickName,
       email: seed.username,
       passwordHash: TEST_PASSWORD_HASH,
@@ -225,13 +225,13 @@ async function upsertUser(seed: UserSeed) {
   });
 }
 
-async function resetUserPartners(userId: number, partnerIds: number[]) {
-  await prisma.sysPartnerUser.deleteMany({ where: { userId } });
+async function resetUserPartners(userId: number, partyIds: number[]) {
+  await prisma.sysPartyUser.deleteMany({ where: { userId } });
 
-  for (const partnerId of partnerIds) {
-    await prisma.sysPartnerUser.create({
+  for (const partyId of partyIds) {
+    await prisma.sysPartyUser.create({
       data: {
-        partnerId,
+        partyId,
         userId,
         roles: [],
         authorizingType: "ADMIN",
@@ -262,18 +262,18 @@ async function main() {
   const partners = new Map<PartnerSeed["key"], number>();
   for (const seed of PARTNERS) {
     const partner = await upsertPartner(seed);
-    await ensureActiveContract(partner.partnerId);
-    partners.set(seed.key, partner.partnerId);
+    await ensureActiveContract(partner.partyId);
+    partners.set(seed.key, partner.partyId);
   }
 
   for (const seed of USERS) {
     const user = await upsertUser(seed);
-    const partnerIds = seed.partners.map((key) => {
-      const partnerId = partners.get(key);
-      if (!partnerId) throw new Error(`Missing partner for key: ${key}`);
-      return partnerId;
+    const partyIds = seed.partners.map((key) => {
+      const partyId = partners.get(key);
+      if (!partyId) throw new Error(`Missing partner for key: ${key}`);
+      return partyId;
     });
-    await resetUserPartners(user.userId, partnerIds);
+    await resetUserPartners(user.userId, partyIds);
     await resetTotp(user.userId, seed.mfaEnable);
   }
 

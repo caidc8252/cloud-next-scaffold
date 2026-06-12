@@ -17,7 +17,7 @@ export function NewUserModal({ open, onClose, onCreate, users, roles }: NewUserM
   const [email, setEmail] = useState("");
   const [roleIds, setRoleIds] = useState<Set<string>>(new Set());
 
-  const adminRoles = roles.filter((r) => r.contractType === "ADMIN");
+  const adminRoles = roles; // 可分配角色已由 listAssignableRoles 算好（平台区间预置 + party PRIVATE）
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const emailOk = emailRegex.test(email.trim());

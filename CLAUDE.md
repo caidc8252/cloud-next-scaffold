@@ -1,2 +1,1 @@
 @AGENTS.md
-@DEV_NOTE.md

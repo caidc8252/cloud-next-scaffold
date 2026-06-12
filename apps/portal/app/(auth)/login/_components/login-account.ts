@@ -1,24 +1,18 @@
-const ADMIN_ACCOUNT = "admin";
-
+// 登录账号 = email（username→email 迁移后）。仅校验邮箱格式；不再有 "admin" 用户名特例。
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export type LoginAccountValidationResult =
   | { ok: true; account: string }
   | { ok: false; reason: "required" | "invalidEmail" };
 
-export function isAdminAccount(account: string): boolean {
-  return account.trim().toLowerCase() === ADMIN_ACCOUNT;
-}
-
+/** 去空白；email 走 citext（大小写不敏感），保留原大小写即可。 */
 export function normalizeLoginAccount(account: string): string {
-  return isAdminAccount(account) ? ADMIN_ACCOUNT : account.trim();
+  return account.trim();
 }
 
 export function validateLoginAccount(account: string): LoginAccountValidationResult {
   const normalized = normalizeLoginAccount(account);
   if (!normalized) return { ok: false, reason: "required" };
-  if (isAdminAccount(normalized) || EMAIL_PATTERN.test(normalized)) {
-    return { ok: true, account: normalized };
-  }
+  if (EMAIL_PATTERN.test(normalized)) return { ok: true, account: normalized };
   return { ok: false, reason: "invalidEmail" };
 }

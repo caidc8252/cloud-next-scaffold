@@ -10,13 +10,6 @@ export const updateProfileSchema = z
   })
   .partial();
 
-const USERNAME_RX = /^[A-Za-z0-9._-]{3,32}$/;
-
-/** PATCH /api/account/username —— 改用户名（需当前邮箱验证码）。 */
-export const changeUsernameSchema = z.object({
-  newUsername: z.string().trim().regex(USERNAME_RX),
-  currentCode: z.string().trim().length(6),
-});
 
 /** PATCH /api/account/email —— 改邮箱（需旧邮箱 + 新邮箱双验证码）。 */
 export const changeEmailSchema = z.object({
@@ -49,12 +42,11 @@ export const disableMfaSchema = z.object({ code: z.string().trim().length(6) });
 
 /** POST /api/account/identity/request-code —— 申请身份变更验证码。 */
 export const requestCodeSchema = z.object({
-  purpose: z.enum(["EMAIL_CURRENT", "EMAIL_NEW", "USERNAME_CURRENT"]),
+  purpose: z.enum(["EMAIL_CURRENT", "EMAIL_NEW"]),
   newEmail: z.email().optional(),
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
-export type ChangeUsernameInput = z.infer<typeof changeUsernameSchema>;
 export type ChangeEmailInput = z.infer<typeof changeEmailSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type ActivateMfaInput = z.infer<typeof activateMfaSchema>;

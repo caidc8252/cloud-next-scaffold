@@ -25,7 +25,7 @@ import { createRole, deleteRole, listRoles, updateRole } from "./roles.service";
 const session = {
   userId: 1,
   username: "admin",
-  currentPartnerId: 100,
+  currentPartyId: 100,
 } as unknown as ActiveSession;
 
 function roleRow(overrides: Record<string, unknown> = {}) {
@@ -38,7 +38,7 @@ function roleRow(overrides: Record<string, unknown> = {}) {
     updTime: new Date("2026-01-02T00:00:00.000Z"),
     updUserId: 1,
     permissionCodes: [],
-    partnerId: 100,
+    partyId: 100,
     ...overrides,
   };
 }
@@ -72,7 +72,7 @@ describe("createRole", () => {
     expect(role.operatorCount).toBe(0);
     expect(vi.mocked(repo.createRole).mock.calls[0][0]).toMatchObject({
       roleName: "Ops",
-      partnerId: 100,
+      partyId: 100,
       permissionCodes: ["users.VIEW"],
     });
   });
@@ -80,7 +80,7 @@ describe("createRole", () => {
 
 describe("updateRole", () => {
   it("throws NOT_FOUND for a role owned by another partner", async () => {
-    vi.mocked(repo.findRole).mockResolvedValue(roleRow({ partnerId: 200 }) as never);
+    vi.mocked(repo.findRole).mockResolvedValue(roleRow({ partyId: 200 }) as never);
     await expect(updateRole(session, 3, { name: "x" })).rejects.toMatchObject({
       code: ERR_ROLE_NOT_FOUND,
       status: 404,
@@ -88,8 +88,8 @@ describe("updateRole", () => {
   });
 
   it("ignores name/description on a BUILTIN role but still applies permissions", async () => {
-    vi.mocked(repo.findRole).mockResolvedValue(roleRow({ roleType: "BUILTIN" }) as never);
-    vi.mocked(repo.updateRole).mockResolvedValue(roleRow({ roleType: "BUILTIN" }) as never);
+    vi.mocked(repo.findRole).mockResolvedValue(roleRow({ roleId: 1 }) as never);
+    vi.mocked(repo.updateRole).mockResolvedValue(roleRow({ roleId: 1 }) as never);
     vi.mocked(repo.countRoleOperatorsInPartner).mockResolvedValue(0 as never);
 
     await updateRole(session, 3, { name: "hacked", description: "x", permissions: ["roles.ADD"] });
@@ -101,7 +101,7 @@ describe("updateRole", () => {
   });
 
   it("applies name/description on a non-builtin role", async () => {
-    vi.mocked(repo.findRole).mockResolvedValue(roleRow({ roleType: "GLOBAL" }) as never);
+    vi.mocked(repo.findRole).mockResolvedValue(roleRow({ roleId: 1001 }) as never);
     vi.mocked(repo.updateRole).mockResolvedValue(roleRow() as never);
     vi.mocked(repo.countRoleOperatorsInPartner).mockResolvedValue(2 as never);
 
@@ -116,13 +116,13 @@ describe("updateRole", () => {
 
 describe("deleteRole", () => {
   it("refuses to delete a BUILTIN role", async () => {
-    vi.mocked(repo.findRole).mockResolvedValue(roleRow({ roleType: "BUILTIN" }) as never);
+    vi.mocked(repo.findRole).mockResolvedValue(roleRow({ roleId: 1 }) as never);
     await expect(deleteRole(session, 3)).rejects.toMatchObject({ code: ERR_ROLE_DELETE_BUILTIN });
     expect(repo.deleteRole).not.toHaveBeenCalled();
   });
 
   it("refuses to delete a role still assigned to operators (any partner)", async () => {
-    vi.mocked(repo.findRole).mockResolvedValue(roleRow({ roleType: "GLOBAL" }) as never);
+    vi.mocked(repo.findRole).mockResolvedValue(roleRow({ roleId: 1001 }) as never);
     vi.mocked(repo.countRoleAssignmentsAnyPartner).mockResolvedValue(1 as never);
     await expect(deleteRole(session, 3)).rejects.toMatchObject({
       code: ERR_ROLE_DELETE_ASSIGNED,
@@ -131,7 +131,7 @@ describe("deleteRole", () => {
   });
 
   it("deletes an unassigned, non-builtin, owned role", async () => {
-    vi.mocked(repo.findRole).mockResolvedValue(roleRow({ roleType: "GLOBAL" }) as never);
+    vi.mocked(repo.findRole).mockResolvedValue(roleRow({ roleId: 1001 }) as never);
     vi.mocked(repo.countRoleAssignmentsAnyPartner).mockResolvedValue(0 as never);
     vi.mocked(repo.deleteRole).mockResolvedValue({} as never);
 

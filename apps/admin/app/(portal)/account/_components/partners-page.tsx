@@ -23,8 +23,8 @@ export function PartnersPageClient({ initialPartners }: { initialPartners: Accou
   const initialOf = (name: string) => (name.trim().charAt(0) || "?").toUpperCase();
 
   function onSelect(p: AccountPartner) {
-    if (p.locked) return void toast.error(t("partners.toast.locked", { name: p.partnerName }));
-    if (p.isCurrent) return void toast(t("partners.toast.current", { name: p.partnerName }));
+    if (p.locked) return void toast.error(t("partners.toast.locked", { name: p.partyName }));
+    if (p.isCurrent) return void toast(t("partners.toast.current", { name: p.partyName }));
     setPending(p);
   }
 
@@ -32,7 +32,7 @@ export function PartnersPageClient({ initialPartners }: { initialPartners: Accou
     if (!pending) return;
     setBusy(true);
     try {
-      await request.post("/api/auth/select-partner", { partnerId: pending.partnerId });
+      await request.post("/api/auth/select-partner", { partyId: pending.partyId });
       router.replace("/");
       router.refresh();
     } catch (err) {
@@ -53,7 +53,7 @@ export function PartnersPageClient({ initialPartners }: { initialPartners: Accou
       <div className="flex flex-col gap-2.5">
         {initialPartners.map((p) => (
           <button
-            key={p.partnerUserId}
+            key={p.partyUserId}
             type="button"
             onClick={() => onSelect(p)}
             className={cn(
@@ -63,11 +63,11 @@ export function PartnersPageClient({ initialPartners }: { initialPartners: Accou
             )}
           >
             <div className="flex size-10 flex-none items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">
-              {initialOf(p.partnerName)}
+              {initialOf(p.partyName)}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="truncate text-sm font-semibold text-content-primary">{p.partnerName}</span>
+                <span className="truncate text-sm font-semibold text-content-primary">{p.partyName}</span>
                 <span className="flex flex-wrap gap-1">
                   {p.contractTypes.length === 0 ? (
                     <span className="rounded border border-line-subtle bg-surface-3 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-content-tertiary">
@@ -117,7 +117,7 @@ export function PartnersPageClient({ initialPartners }: { initialPartners: Accou
         open={!!pending}
         onClose={() => !busy && setPending(null)}
         size="sm"
-        title={pending ? t("partners.confirm.title", { name: pending.partnerName }) : ""}
+        title={pending ? t("partners.confirm.title", { name: pending.partyName }) : ""}
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setPending(null)} disabled={busy}>
@@ -130,7 +130,7 @@ export function PartnersPageClient({ initialPartners }: { initialPartners: Accou
         }
       >
         <p className="text-sm leading-relaxed text-content-secondary">
-          {pending ? t("partners.confirm.body", { name: pending.partnerName }) : ""}
+          {pending ? t("partners.confirm.body", { name: pending.partyName }) : ""}
         </p>
       </Modal>
     </div>

@@ -9,5 +9,5 @@ import { withApiHandler } from "@/lib/api-handler";
  */
 export const GET = withApiHandler(async () => {
   const session = await assertPermissions({ all: [] });
-  return successResponse(await listPartners(session.userId, session.currentPartnerId));
+  return successResponse(await listPartners(session.userId, session.currentPartyId));
 });

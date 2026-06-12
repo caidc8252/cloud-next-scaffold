@@ -10,7 +10,7 @@ import {
 import { AuthShell } from "@/app/_components/auth-shell";
 import { AuthLead, IconBadge } from "@/app/(auth)/_components/card-bits";
 import { getAdminSessionHandoffUrl } from "@/lib/platform-routing";
-import { listPartnerChoices } from "@/service/auth/server/partner-choices";
+import { listPartyChoices } from "@/service/auth/server/partner-choices";
 import { PartnerList } from "./_components/partner-list";
 import { Building2 } from "lucide-react";
 
@@ -34,7 +34,7 @@ export default async function SelectPartnerPage() {
   const partial = await getPartialSession();
   if (!partial) redirect("/login");
 
-  const choices = await listPartnerChoices(partial.userId);
+  const choices = await listPartyChoices(partial.userId);
 
   return (
     <AuthShell showBrand>
@@ -48,7 +48,7 @@ export default async function SelectPartnerPage() {
             }
             eyebrow={t("eyebrow")}
             title={t("title")}
-            sub={t("description", { name: partial.displayName ?? partial.username })}
+            sub={t("description", { name: partial.displayName ?? partial.email ?? "" })}
           />
           {choices.length ? (
             <PartnerList choices={choices} />

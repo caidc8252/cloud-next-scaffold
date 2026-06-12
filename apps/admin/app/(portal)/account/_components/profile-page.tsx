@@ -68,7 +68,7 @@ export function ProfilePageClient({
     nickName: initialProfile.nickName,
     country: initialProfile.country,
   });
-  const [flow, setFlow] = useState<"email" | "username" | null>(null);
+  const [flow, setFlow] = useState<"email" | null>(null);
   const [busy, setBusy] = useState(false);
 
   const dirty = draft.nickName !== saved.nickName || draft.country !== saved.country;
@@ -112,7 +112,7 @@ export function ProfilePageClient({
           </div>
           <div className="min-w-0">
             <div className="text-lg font-semibold text-content-primary">{draft.nickName || "—"}</div>
-            <div className="font-mono text-xs text-content-tertiary">@{saved.username}</div>
+            <div className="font-mono text-xs text-content-tertiary">{saved.email}</div>
           </div>
         </div>
 
@@ -155,17 +155,6 @@ export function ProfilePageClient({
 
         <div className="pb-2">
           <SectionTitle>{t("profile.signin")}</SectionTitle>
-          <FRow
-            label={t("profile.username")}
-            value={saved.username}
-            control={
-              <div className="flex justify-end">
-                <Button variant="secondary" size="sm" onClick={() => setFlow("username")}>
-                  {t("profile.change")}
-                </Button>
-              </div>
-            }
-          />
           <FRow
             label={t("profile.email")}
             value={saved.email}

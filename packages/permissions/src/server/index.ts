@@ -18,5 +18,5 @@ export {
   type Session,
   type ActiveSession,
   type SessionRole,
-  type SessionPartnerRef,
+  type SessionPartyRef,
 } from "./session-store.ts";

@@ -34,7 +34,7 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
   const inviteUrl = buildInviteUrl(user.inviteToken ?? user.id);
   const isExpired = !!user.inviteExpiresAt && new Date(user.inviteExpiresAt).getTime() < now;
 
-  const adminRoles = roles.filter((r) => r.contractType === "ADMIN");
+  const adminRoles = roles; // 可分配角色已由 listAssignableRoles 算好（平台区间预置 + party PRIVATE）
   const invitedRoles = (user.roleIds ?? []).map((id) => roles.find((r) => r.id === id)).filter(Boolean) as Role[];
 
   const [editingRoles, setEditingRoles] = useState(false);

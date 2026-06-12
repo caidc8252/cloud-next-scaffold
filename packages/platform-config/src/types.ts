@@ -34,3 +34,18 @@ export type AppManifest = {
   contractKeys: string[];
   menus: MenuEntry[];
 };
+
+/** 角色类型：GLOBAL（通用，死写代码、不入库）/ PRIVATE（指定，DB 动态创建）。代码注册表里的角色恒为 GLOBAL。 */
+export type RoleType = "GLOBAL" | "PRIVATE";
+
+/**
+ * 死写在代码的角色定义（GLOBAL）。与菜单同管线由 gen:manifest 收集。
+ * roleId 区间约定：1–100 admin / 101–200 customer / 201–300 merchant 预留；≥1001 属 DB 动态 PRIVATE，不得写死。
+ * `permissionCodes` 必须是菜单池里出现过的 permissionCode；全权限角色（各平台 Administrator）留空，
+ * 由 AuthorizingType=ADMIN 运行时取当前契约作用域全量。
+ */
+export type RoleDef = {
+  roleId: number;
+  roleName: string;
+  permissionCodes: string[];
+};

@@ -24,8 +24,8 @@ import {
   computeFailureUpdate,
 } from "@/lib/login-checks";
 import { createMfaLoginToken, readMfaLoginToken, deleteMfaLoginToken } from "@/lib/login-token";
-import { listPartnerChoices } from "./partner-choices";
-import { isPartnerSelectable } from "@/service/auth/partner-choice";
+import { listPartyChoices } from "./partner-choices";
+import { isPartySelectable } from "@/service/auth/partner-choice";
 import * as mfa from "@/service/mfa/server/mfa.service";
 import { loginPayloadSchema, type LoginInput, type MfaVerifyInput } from "@/service/auth/schemas/auth.schema";
 import * as authRepository from "./auth.repository";
@@ -37,23 +37,23 @@ export type LoginResult = { mfaRequired: true; mfaToken: string } | { redirectTo
 
 /** 登录完成的公共收尾：按「可选 partner 数」聚合 → 建会话 → 决定落地路由。 */
 async function buildSessionAndRedirect(userId: number, snapshotFailCode: string): Promise<{ redirectTo: string }> {
-  const choices = await listPartnerChoices(userId);
-  const selectable = choices.filter(isPartnerSelectable);
-  const currentPartnerId = selectable.length === 1 ? selectable[0].partnerId : null;
+  const choices = await listPartyChoices(userId);
+  const selectable = choices.filter(isPartySelectable);
+  const currentPartyId = selectable.length === 1 ? selectable[0].partyId : null;
 
-  const snapshot = await buildSessionSnapshot(userId, currentPartnerId);
+  const snapshot = await buildSessionSnapshot(userId, currentPartyId);
   if (!snapshot) throw new BusinessError(snapshotFailCode, 401);
   await createSession(snapshot);
   console.log(snapshot)
-  // currentPartnerId 落不下来（多选/零选/授权窗口失效）→ 去选择页
-  return { redirectTo: snapshot.currentPartnerId !== null ? "/" : "/select-partner" };
+  // currentPartyId 落不下来（多选/零选/授权窗口失效）→ 去选择页
+  return { redirectTo: snapshot.currentPartyId !== null ? "/" : "/select-partner" };
 }
 
 export async function login(input: LoginInput): Promise<LoginResult> {
   const auth = getAuthConfig();
   const now = new Date();
 
-  const user = await authRepository.findUserByUsername(input.account);
+  const user = await authRepository.findUserByEmail(input.email);
   if (!user) throw new BusinessError(ERR_AUTH_INVALID_CREDENTIALS, 401);
 
   // 账号状态正常性（status 只管账号级；刷错锁不再写 status）
@@ -119,14 +119,14 @@ export async function verifyMfa(input: MfaVerifyInput): Promise<{ redirectTo: st
 }
 
 /** 选择登录公司：校验归属有效 → 重建带 partner 的会话快照 → 更新会话。 */
-export async function selectPartner(userId: number, partnerId: number): Promise<{ redirectTo: string }> {
-  const membership = await authRepository.findPartnerMembership(partnerId, userId);
+export async function selectPartner(userId: number, partyId: number): Promise<{ redirectTo: string }> {
+  const membership = await authRepository.findPartyMembership(partyId, userId);
   if (!membership || membership.status !== "ACTIVE" || membership.partner.status !== "ACTIVE") {
     throw new BusinessError(ERR_AUTH_INVALID_PARTNER);
   }
 
-  const snapshot = await buildSessionSnapshot(userId, partnerId);
-  if (!snapshot || snapshot.currentPartnerId === null) {
+  const snapshot = await buildSessionSnapshot(userId, partyId);
+  if (!snapshot || snapshot.currentPartyId === null) {
     throw new BusinessError(ERR_AUTH_INVALID_PARTNER);
   }
 

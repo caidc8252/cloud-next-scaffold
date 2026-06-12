@@ -2,11 +2,6 @@ import { describe, expect, it } from "vitest";
 import { normalizeLoginAccount, validateLoginAccount } from "./login-account";
 
 describe("login account validation", () => {
-  it("accepts admin as the only non-email account", () => {
-    expect(validateLoginAccount("admin")).toEqual({ ok: true, account: "admin" });
-    expect(validateLoginAccount(" Admin ")).toEqual({ ok: true, account: "admin" });
-  });
-
   it("accepts email accounts", () => {
     expect(validateLoginAccount("operator@example.com")).toEqual({
       ok: true,
@@ -18,7 +13,8 @@ describe("login account validation", () => {
     expect(validateLoginAccount("  ")).toEqual({ ok: false, reason: "required" });
   });
 
-  it("rejects non-admin non-email accounts", () => {
+  it("rejects non-email accounts (含旧用户名 admin)", () => {
+    expect(validateLoginAccount("admin")).toEqual({ ok: false, reason: "invalidEmail" });
     expect(validateLoginAccount("operator")).toEqual({ ok: false, reason: "invalidEmail" });
     expect(validateLoginAccount("operator@example")).toEqual({ ok: false, reason: "invalidEmail" });
   });

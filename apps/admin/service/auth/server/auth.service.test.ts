@@ -11,12 +11,12 @@ import {
 } from "@/lib/auth-error-codes";
 
 vi.mock("./auth.repository", () => ({
-  findUserByUsername: vi.fn(),
+  findUserByEmail: vi.fn(),
   findUserById: vi.fn(),
   recordLoginFailure: vi.fn(),
   recordLoginSuccess: vi.fn(),
-  listPartnerMemberships: vi.fn(),
-  findPartnerMembership: vi.fn(),
+  listPartyMemberships: vi.fn(),
+  findPartyMembership: vi.fn(),
 }));
 vi.mock("@/service/mfa/server/mfa.service", () => ({ verifyActiveTotp: vi.fn() }));
 vi.mock("@/lib/session-snapshot", () => ({ buildSessionSnapshot: vi.fn() }));
@@ -41,10 +41,10 @@ vi.mock("@cloud/config", () => ({
   })),
 }));
 vi.mock("@cloud/permissions/server", () => ({ createSession: vi.fn(), updateSession: vi.fn() }));
-vi.mock("./partner-choices", () => ({ listPartnerChoices: vi.fn() }));
+vi.mock("./partner-choices", () => ({ listPartyChoices: vi.fn() }));
 
 import * as repo from "./auth.repository";
-import { listPartnerChoices } from "./partner-choices";
+import { listPartyChoices } from "./partner-choices";
 import * as mfa from "@/service/mfa/server/mfa.service";
 import { buildSessionSnapshot } from "@/lib/session-snapshot";
 import { isAccountActive, isLockActive, isTimestampFresh } from "@/lib/login-checks";
@@ -61,7 +61,7 @@ const ACTIVE_USER = {
   passwordErrorTimes: 0,
   mfaEnable: false,
 };
-const goodInput = { account: "alice", encryptedPassword: "enc" };
+const goodInput = { email: "alice@x.io", encryptedPassword: "enc" };
 
 function armDecryptSuccess() {
   vi.mocked(decryptRsaOaep).mockReturnValue(JSON.stringify({ password: "pw", timestamp: 1 }));
@@ -76,24 +76,24 @@ beforeEach(() => {
 
 describe("login", () => {
   it("rejects an unknown account", async () => {
-    vi.mocked(repo.findUserByUsername).mockResolvedValue(null as never);
+    vi.mocked(repo.findUserByEmail).mockResolvedValue(null as never);
     await expect(login(goodInput)).rejects.toMatchObject({ code: ERR_AUTH_INVALID_CREDENTIALS, status: 401 });
   });
 
   it("rejects a disabled account", async () => {
-    vi.mocked(repo.findUserByUsername).mockResolvedValue(ACTIVE_USER as never);
+    vi.mocked(repo.findUserByEmail).mockResolvedValue(ACTIVE_USER as never);
     vi.mocked(isAccountActive).mockReturnValue(false);
     await expect(login(goodInput)).rejects.toMatchObject({ code: ERR_AUTH_ACCOUNT_DISABLED, status: 403 });
   });
 
   it("rejects a locked account", async () => {
-    vi.mocked(repo.findUserByUsername).mockResolvedValue(ACTIVE_USER as never);
+    vi.mocked(repo.findUserByEmail).mockResolvedValue(ACTIVE_USER as never);
     vi.mocked(isLockActive).mockReturnValue(true);
     await expect(login(goodInput)).rejects.toMatchObject({ code: ERR_AUTH_ACCOUNT_LOCKED, status: 403 });
   });
 
   it("rejects an undecryptable payload", async () => {
-    vi.mocked(repo.findUserByUsername).mockResolvedValue(ACTIVE_USER as never);
+    vi.mocked(repo.findUserByEmail).mockResolvedValue(ACTIVE_USER as never);
     vi.mocked(decryptRsaOaep).mockImplementation(() => {
       throw new Error("bad");
     });
@@ -101,14 +101,14 @@ describe("login", () => {
   });
 
   it("rejects a stale timestamp", async () => {
-    vi.mocked(repo.findUserByUsername).mockResolvedValue(ACTIVE_USER as never);
+    vi.mocked(repo.findUserByEmail).mockResolvedValue(ACTIVE_USER as never);
     vi.mocked(decryptRsaOaep).mockReturnValue(JSON.stringify({ password: "pw", timestamp: 1 }));
     vi.mocked(isTimestampFresh).mockReturnValue(false);
     await expect(login(goodInput)).rejects.toMatchObject({ code: ERR_AUTH_REQUEST_EXPIRED });
   });
 
   it("records a failure and rejects a wrong password", async () => {
-    vi.mocked(repo.findUserByUsername).mockResolvedValue(ACTIVE_USER as never);
+    vi.mocked(repo.findUserByEmail).mockResolvedValue(ACTIVE_USER as never);
     armDecryptSuccess();
     vi.mocked(verifyPassword).mockResolvedValue(false);
     await expect(login(goodInput)).rejects.toMatchObject({ code: ERR_AUTH_INVALID_CREDENTIALS, status: 401 });
@@ -116,7 +116,7 @@ describe("login", () => {
   });
 
   it("returns an MFA token (no session) when MFA is enabled", async () => {
-    vi.mocked(repo.findUserByUsername).mockResolvedValue({ ...ACTIVE_USER, mfaEnable: true } as never);
+    vi.mocked(repo.findUserByEmail).mockResolvedValue({ ...ACTIVE_USER, mfaEnable: true } as never);
     armDecryptSuccess();
     vi.mocked(verifyPassword).mockResolvedValue(true);
     vi.mocked(createMfaLoginToken).mockResolvedValue("mfatok");
@@ -128,13 +128,13 @@ describe("login", () => {
   });
 
   it("redirects to / when exactly one partner is selectable", async () => {
-    vi.mocked(repo.findUserByUsername).mockResolvedValue(ACTIVE_USER as never);
+    vi.mocked(repo.findUserByEmail).mockResolvedValue(ACTIVE_USER as never);
     armDecryptSuccess();
     vi.mocked(verifyPassword).mockResolvedValue(true);
-    vi.mocked(listPartnerChoices).mockResolvedValue([
-      { partnerId: 100, partnerName: "A", partnerStatus: "ACTIVE", userStatus: "ACTIVE", authorizingType: "NORMAL", validContract: true },
+    vi.mocked(listPartyChoices).mockResolvedValue([
+      { partyId: 100, partyName: "A", partnerStatus: "ACTIVE", userStatus: "ACTIVE", authorizingType: "NORMAL", validContract: true },
     ] as never);
-    vi.mocked(buildSessionSnapshot).mockResolvedValue({ currentPartnerId: 100 } as never);
+    vi.mocked(buildSessionSnapshot).mockResolvedValue({ currentPartyId: 100 } as never);
 
     const result = await login(goodInput);
 
@@ -144,14 +144,14 @@ describe("login", () => {
   });
 
   it("redirects to /select-partner when multiple partners are selectable", async () => {
-    vi.mocked(repo.findUserByUsername).mockResolvedValue(ACTIVE_USER as never);
+    vi.mocked(repo.findUserByEmail).mockResolvedValue(ACTIVE_USER as never);
     armDecryptSuccess();
     vi.mocked(verifyPassword).mockResolvedValue(true);
-    vi.mocked(listPartnerChoices).mockResolvedValue([
-      { partnerId: 1, partnerName: "A", partnerStatus: "ACTIVE", userStatus: "ACTIVE", authorizingType: "NORMAL", validContract: true },
-      { partnerId: 2, partnerName: "B", partnerStatus: "ACTIVE", userStatus: "ACTIVE", authorizingType: "NORMAL", validContract: true },
+    vi.mocked(listPartyChoices).mockResolvedValue([
+      { partyId: 1, partyName: "A", partnerStatus: "ACTIVE", userStatus: "ACTIVE", authorizingType: "NORMAL", validContract: true },
+      { partyId: 2, partyName: "B", partnerStatus: "ACTIVE", userStatus: "ACTIVE", authorizingType: "NORMAL", validContract: true },
     ] as never);
-    vi.mocked(buildSessionSnapshot).mockResolvedValue({ currentPartnerId: null } as never);
+    vi.mocked(buildSessionSnapshot).mockResolvedValue({ currentPartyId: null } as never);
 
     const result = await login(goodInput);
 
@@ -160,13 +160,13 @@ describe("login", () => {
   });
 
   it("redirects to /select-partner when no partner is selectable", async () => {
-    vi.mocked(repo.findUserByUsername).mockResolvedValue(ACTIVE_USER as never);
+    vi.mocked(repo.findUserByEmail).mockResolvedValue(ACTIVE_USER as never);
     armDecryptSuccess();
     vi.mocked(verifyPassword).mockResolvedValue(true);
-    vi.mocked(listPartnerChoices).mockResolvedValue([
-      { partnerId: 1, partnerName: "A", partnerStatus: "ACTIVE", userStatus: "ACTIVE", authorizingType: "NORMAL", validContract: false },
+    vi.mocked(listPartyChoices).mockResolvedValue([
+      { partyId: 1, partyName: "A", partnerStatus: "ACTIVE", userStatus: "ACTIVE", authorizingType: "NORMAL", validContract: false },
     ] as never);
-    vi.mocked(buildSessionSnapshot).mockResolvedValue({ currentPartnerId: null } as never);
+    vi.mocked(buildSessionSnapshot).mockResolvedValue({ currentPartyId: null } as never);
 
     const result = await login(goodInput);
 
@@ -197,8 +197,8 @@ describe("verifyMfa", () => {
     vi.mocked(readMfaLoginToken).mockResolvedValue(1);
     vi.mocked(repo.findUserById).mockResolvedValue({ status: "ACTIVE", mfaEnable: true } as never);
     vi.mocked(mfa.verifyActiveTotp).mockResolvedValue("ok");
-    vi.mocked(listPartnerChoices).mockResolvedValue([] as never);
-    vi.mocked(buildSessionSnapshot).mockResolvedValue({ currentPartnerId: null } as never);
+    vi.mocked(listPartyChoices).mockResolvedValue([] as never);
+    vi.mocked(buildSessionSnapshot).mockResolvedValue({ currentPartyId: null } as never);
 
     const result = await verifyMfa({ mfaToken: "x", code: "123456" });
 
@@ -209,16 +209,16 @@ describe("verifyMfa", () => {
 
 describe("selectPartner", () => {
   it("rejects an inactive / foreign membership", async () => {
-    vi.mocked(repo.findPartnerMembership).mockResolvedValue(null as never);
+    vi.mocked(repo.findPartyMembership).mockResolvedValue(null as never);
     await expect(selectPartner(1, 100)).rejects.toMatchObject({ code: ERR_AUTH_INVALID_PARTNER });
   });
 
   it("updates the session and redirects on success", async () => {
-    vi.mocked(repo.findPartnerMembership).mockResolvedValue({
+    vi.mocked(repo.findPartyMembership).mockResolvedValue({
       status: "ACTIVE",
       partner: { status: "ACTIVE" },
     } as never);
-    vi.mocked(buildSessionSnapshot).mockResolvedValue({ currentPartnerId: 100 } as never);
+    vi.mocked(buildSessionSnapshot).mockResolvedValue({ currentPartyId: 100 } as never);
 
     const result = await selectPartner(1, 100);
     expect(result).toEqual({ redirectTo: "/" });
