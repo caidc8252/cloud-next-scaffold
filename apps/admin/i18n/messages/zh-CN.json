@@ -1,4 +1,15 @@
 {
+  "email": {
+    "common": {
+      "footerIgnore": "如果这不是你发起的操作，可以忽略此邮件。"
+    },
+    "invite": {
+      "subject": "你被邀请加入 {partyName}",
+      "intro": "{inviterName} 邀请你加入 {partyName}。",
+      "button": "接受邀请",
+      "expiry": "该邀请将于 {date} 过期。"
+    }
+  },
   "ui": {
     "datePicker": {
       "clear": "清除",

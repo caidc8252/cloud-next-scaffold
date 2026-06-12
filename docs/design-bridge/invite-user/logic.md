@@ -117,7 +117,7 @@ onboarding 自有 **2 个**真实接口，既有用户登录复用 `/auth/*`：
 
 发信能力已落地为共享包 `@cloud/mail`（推 job 到 Redis `mail:queue`，外部平台消费发信；设计见 `docs/design-bridge/email-capability/`）。由此：
 
-- **现已可做（建议本期纳入）**：admin `createInvite`/`resendInvite` 真正把**邀请链接邮件**发到 `inviteEmail`（`apps/admin/lib/email.sendInviteEmail`，`purpose="invite"`，挂冷却 60s）。这让"邀请落库 + 真正寄出"闭环。
+- ✅ **已落地**：admin `createInvite`/`resendInvite` 经 `apps/admin/lib/email.sendInviteEmail`（`purpose="invite"`，冷却 60s）真正把**邀请链接邮件**（`{PORTAL_APP_URL}/onboarding?token=`）发到 `inviteEmail` —— "邀请落库 + 真正寄出"已闭环。
 - **可选后续（默认仍推迟）**：register 的「换任意邮箱 + 验证码」分支（`verify-code` 用途，节流 60s + 5/时）。不做则 register 仍仅限被邀邮箱（§1，token 即收件证明、免验证）。
 - **不在本期**：投递回执/退信处理（fire-and-forget）；邮件的创建/重发/取消 UI（admin 侧已真实，见 `apps/admin/service/users`）。
 

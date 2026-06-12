@@ -1,4 +1,15 @@
 {
+  "email": {
+    "common": {
+      "footerIgnore": "If you didn't request this, you can safely ignore this email."
+    },
+    "invite": {
+      "subject": "You're invited to join {partyName}",
+      "intro": "{inviterName} invited you to join {partyName}.",
+      "button": "Accept invitation",
+      "expiry": "This invitation expires on {date}."
+    }
+  },
   "ui": {
     "datePicker": {
       "clear": "Clear",
