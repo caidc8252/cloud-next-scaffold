@@ -59,6 +59,8 @@
     "packages/i18n/src/**/*.ts",
     "packages/i18n/src/**/*.tsx",
     "packages/i18n/test/**/*.ts",
+    "packages/log/src/**/*.ts",
+    "packages/mail/src/**/*.ts",
     "packages/permissions/**/*.ts",
     "packages/permissions/**/*.tsx",
     "packages/platform-config/src/**/*.ts",
