@@ -59,7 +59,7 @@ export function AdvancedFilterSheet({
 
         <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-5">{children}</div>
 
-        <SheetFooter className="flex-row items-center gap-2 border-t border-line-subtle">
+        <SheetFooter className="flex-row justify-end items-center gap-2 border-t border-line-subtle">
           <Button
             variant="ghost"
             size="md"
@@ -69,7 +69,6 @@ export function AdvancedFilterSheet({
           >
             {t("reset")}
           </Button>
-          <div className="flex-1" />
           <Button
             variant="primary"
             size="md"
