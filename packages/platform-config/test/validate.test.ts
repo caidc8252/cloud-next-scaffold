@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { validateMenus, type MenuEntry } from "../src/index.ts";
+import { validateMenus, validateRoles } from "../src/index.ts";
 
 describe("validateMenus", () => {
   it("passes for a well-formed menu pool", () => {
     expect(() =>
       validateMenus(
         [
-          { menuCode: "system", menuTitle: "System", parentMenuCode: null, path: null, contractTypes: ["*"] },
+          { menuCode: "system", menuTitle: "System", parentMenuCode: null, path: null, contractTypes: [] },
           { menuCode: "users", menuTitle: "Users", parentMenuCode: "system", path: "/system/users", contractTypes: ["ADMIN"], permissions: [{ code: "users.VIEW" }] },
         ],
         { contractTypes: ["ADMIN", "ISO"] },
@@ -17,8 +17,8 @@ describe("validateMenus", () => {
   it("rejects duplicate menuCode", () => {
     expect(() =>
       validateMenus([
-        { menuCode: "a", menuTitle: "A", parentMenuCode: null, path: "/a", contractTypes: ["*"] },
-        { menuCode: "a", menuTitle: "A2", parentMenuCode: null, path: "/a2", contractTypes: ["*"] },
+        { menuCode: "a", menuTitle: "A", parentMenuCode: null, path: "/a", contractTypes: [] },
+        { menuCode: "a", menuTitle: "A2", parentMenuCode: null, path: "/a2", contractTypes: [] },
       ]),
     ).toThrow(/duplicate menuCode "a"/);
   });
@@ -26,8 +26,8 @@ describe("validateMenus", () => {
   it("rejects duplicate permissionCode (even across different menus)", () => {
     expect(() =>
       validateMenus([
-        { menuCode: "a", menuTitle: "A", parentMenuCode: null, path: "/a", contractTypes: ["*"], permissions: [{ code: "x.VIEW" }] },
-        { menuCode: "b", menuTitle: "B", parentMenuCode: null, path: "/b", contractTypes: ["*"], permissions: [{ code: "x.VIEW" }] },
+        { menuCode: "a", menuTitle: "A", parentMenuCode: null, path: "/a", contractTypes: ["ADMIN"], permissions: [{ code: "x.VIEW" }] },
+        { menuCode: "b", menuTitle: "B", parentMenuCode: null, path: "/b", contractTypes: ["ADMIN"], permissions: [{ code: "x.VIEW" }] },
       ]),
     ).toThrow(/duplicate permissionCode "x.VIEW"/);
   });
@@ -35,7 +35,7 @@ describe("validateMenus", () => {
   it("rejects a missing parent reference", () => {
     expect(() =>
       validateMenus([
-        { menuCode: "child", menuTitle: "Child", parentMenuCode: "ghost", path: "/c", contractTypes: ["*"] },
+        { menuCode: "child", menuTitle: "Child", parentMenuCode: "ghost", path: "/c", contractTypes: [] },
       ]),
     ).toThrow(/missing parent "ghost"/);
   });
@@ -43,8 +43,8 @@ describe("validateMenus", () => {
   it("rejects a parent cycle", () => {
     expect(() =>
       validateMenus([
-        { menuCode: "a", menuTitle: "A", parentMenuCode: "b", path: null, contractTypes: ["*"] },
-        { menuCode: "b", menuTitle: "B", parentMenuCode: "a", path: null, contractTypes: ["*"] },
+        { menuCode: "a", menuTitle: "A", parentMenuCode: "b", path: null, contractTypes: [] },
+        { menuCode: "b", menuTitle: "B", parentMenuCode: "a", path: null, contractTypes: [] },
       ]),
     ).toThrow(/parent cycle/);
   });
@@ -61,7 +61,7 @@ describe("validateMenus", () => {
   it("rejects a group (no path) with no children", () => {
     expect(() =>
       validateMenus([
-        { menuCode: "empty", menuTitle: "Empty", parentMenuCode: null, path: null, contractTypes: ["*"] },
+        { menuCode: "empty", menuTitle: "Empty", parentMenuCode: null, path: null, contractTypes: [] },
       ]),
     ).toThrow(/group menu "empty" \(no path\) has no children/);
   });
@@ -69,9 +69,49 @@ describe("validateMenus", () => {
   it("rejects an unknown icon when a resolver is provided", () => {
     expect(() =>
       validateMenus(
-        [{ menuCode: "a", menuTitle: "A", parentMenuCode: null, path: "/a", icon: "made-up", contractTypes: ["*"] }],
+        [{ menuCode: "a", menuTitle: "A", parentMenuCode: null, path: "/a", icon: "made-up", contractTypes: [] }],
         { resolveIcon: (name) => name === "users" },
       ),
     ).toThrow(/unknown icon "made-up"/);
+  });
+
+  it("rejects a literal \"*\" contract type (no wildcard support; use [] for universal)", () => {
+    expect(() =>
+      validateMenus(
+        [{ menuCode: "a", menuTitle: "A", parentMenuCode: null, path: "/a", contractTypes: ["*"] }],
+        { contractTypes: ["ADMIN"] },
+      ),
+    ).toThrow(/unknown contractType "\*"/);
+  });
+
+  it("allows permissions on a universal ([]) menu (universal codes enter every party's scope by design)", () => {
+    expect(() =>
+      validateMenus([
+        {
+          menuCode: "a",
+          menuTitle: "A",
+          parentMenuCode: null,
+          path: "/a",
+          contractTypes: [],
+          permissions: [{ code: "a.VIEW" }],
+        },
+      ]),
+    ).not.toThrow();
+  });
+});
+
+describe("validateRoles", () => {
+  it("rejects a roleId outside the hardcoded 1–300 range (≥1001 is DB-only)", () => {
+    expect(() =>
+      validateRoles([{ roleId: 1001, roleName: "Dyn", permissionCodes: [] }], { menuPermissionCodes: [] }),
+    ).toThrow(/out of hardcoded range/);
+  });
+
+  it("rejects a role referencing an unknown permissionCode", () => {
+    expect(() =>
+      validateRoles([{ roleId: 2, roleName: "Ops", permissionCodes: ["ghost.X"] }], {
+        menuPermissionCodes: ["users.VIEW"],
+      }),
+    ).toThrow(/unknown permissionCode "ghost.X"/);
   });
 });

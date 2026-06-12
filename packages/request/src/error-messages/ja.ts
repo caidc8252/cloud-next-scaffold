@@ -20,6 +20,7 @@ import {
   ERR_ROLE_NAME_SHORT,
   ERR_ROLE_DELETE_BUILTIN,
   ERR_ROLE_DELETE_ASSIGNED,
+  ERR_ROLE_UPDATE_BUILTIN,
   ERR_MW_DB,
   ERR_MW_CACHE,
   ERR_MW_MAIL,
@@ -53,6 +54,7 @@ export const ja: ErrorMessages = {
   [ERR_ROLE_NAME_SHORT]: "ロール名が短すぎます。",
   [ERR_ROLE_DELETE_BUILTIN]: "組み込みロールは削除できません。",
   [ERR_ROLE_DELETE_ASSIGNED]: "ユーザーが割り当てられているロールは削除できません。",
+  [ERR_ROLE_UPDATE_BUILTIN]: "組み込みロールは変更できません。",
   // ミドルウェア / インフラ（顧客向けは統一文言、開発は code で区別）
   [ERR_MW_DB]: MW_UNAVAILABLE,
   [ERR_MW_CACHE]: MW_UNAVAILABLE,

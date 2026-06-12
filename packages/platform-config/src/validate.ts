@@ -1,7 +1,5 @@
 import type { MenuEntry, RoleDef } from "./types.ts";
 
-const WILDCARD = "*";
-
 // 死写角色的 roleId 区间：1–300（1–100 admin / 101–200 customer / 201–300 merchant）。
 // ≥1001 属 DB 动态 PRIVATE，不得出现在代码注册表。
 const CODE_ROLE_MIN = 1;
@@ -38,13 +36,12 @@ function detectCycle(menus: MenuEntry[]): void {
  * - menuCode / permissionCode 全局唯一
  * - parentMenuCode 必须存在、parent 链不成环
  * - 目录（path 为 null）必须有子级
- * - contractTypes 非空且都在合法清单内（若提供）
+ * - contractTypes 都在合法清单内（若提供）；空数组 `[]` = 通用（对所有契约可见，取代旧 `*`）；
+ *   通用菜单可声明 permissions，其权限码会进入每个 party 的 scope（跨控制台共享页，由业务自负）
  * - icon 合法（若提供校验器）
  */
 export function validateMenus(menus: MenuEntry[], opts: ValidateOptions = {}): void {
-  const allowedContracts = opts.contractTypes
-    ? new Set<string>([...opts.contractTypes, WILDCARD])
-    : null;
+  const allowedContracts = opts.contractTypes ? new Set<string>(opts.contractTypes) : null;
 
   const menuCodes = new Set<string>();
   const permissionCodes = new Set<string>();

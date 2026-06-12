@@ -15,6 +15,7 @@ export {
   type PortalGroup,
   GROUP_ROLE_ID_RANGE,
   contractTypeGroup,
+  isPresetAdminRole,
   resolvePortalGroup,
   roleIdInGroupRange,
 } from "./contract-group.ts";

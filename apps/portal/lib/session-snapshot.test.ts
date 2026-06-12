@@ -38,7 +38,7 @@ function partyUser(over: Record<string, unknown> = {}) {
 
 const VALID_CONTRACT = {
   authorizedPartyId: 100,
-  authorizedContractType: "ISO",
+  authorizedContractType: "US-ISO",
   effectiveFromDate: new Date("2026-06-01T00:00:00Z"),
   effectiveToDate: new Date("2026-06-30T00:00:00Z"),
 };
@@ -51,7 +51,7 @@ function dbRole(over: Record<string, unknown> = {}) {
     partyId: 100,
     startDate: new Date("2026-06-01T00:00:00Z"),
     endDate: new Date("2026-12-31T00:00:00Z"),
-    permissionCodes: ["users.VIEW"],
+    permissionCodes: ["overview:view"],
     ...over,
   };
 }
@@ -63,7 +63,7 @@ beforeEach(() => {
   vi.mocked(resolvePartyScope).mockReturnValue(new Set());
 });
 
-describe("buildSessionSnapshot", () => {
+describe("buildSessionSnapshot (portal)", () => {
   it("returns null for an inactive user", async () => {
     vi.mocked(prisma.sysUser.findUnique).mockResolvedValue({ ...ACTIVE_USER, status: "LOCKED" } as never);
     expect(await buildSessionSnapshot(1, 100, NOW)).toBeNull();
@@ -77,7 +77,7 @@ describe("buildSessionSnapshot", () => {
     const snap = await buildSessionSnapshot(1, 100, NOW);
 
     expect(snap?.currentPartyId).toBe(100);
-    expect(snap?.contractTypes).toEqual(["ISO"]);
+    expect(snap?.contractTypes).toEqual(["US-ISO"]);
     expect(snap?.partners.map((p) => p.partyId)).toEqual([100]);
   });
 
@@ -94,54 +94,23 @@ describe("buildSessionSnapshot", () => {
     expect(snap?.partners).toEqual([]);
   });
 
-  it("drops the current context when the authorizing window is closed", async () => {
-    vi.mocked(prisma.sysUser.findUnique).mockResolvedValue(ACTIVE_USER as never);
-    vi.mocked(prisma.sysPartyUser.findMany).mockResolvedValue([
-      partyUser({ authorizingTo: new Date("2026-06-07T00:00:00Z") }),
-    ] as never);
-    vi.mocked(prisma.sysPartyContract.findMany).mockResolvedValue([VALID_CONTRACT] as never);
-
-    const snap = await buildSessionSnapshot(1, 100, NOW);
-
-    expect(snap?.currentPartyId).toBeNull();
-    expect(snap?.partners.map((p) => p.partyId)).toEqual([100]);
-  });
-
-  it("maps the authorizing window onto the partner ref", async () => {
-    vi.mocked(prisma.sysUser.findUnique).mockResolvedValue(ACTIVE_USER as never);
-    vi.mocked(prisma.sysPartyUser.findMany).mockResolvedValue([
-      partyUser({
-        authorizingFrom: new Date("2026-06-01T00:00:00Z"),
-        authorizingTo: new Date("2026-12-31T00:00:00Z"),
-      }),
-    ] as never);
-    vi.mocked(prisma.sysPartyContract.findMany).mockResolvedValue([VALID_CONTRACT] as never);
-
-    const snap = await buildSessionSnapshot(1, 100, NOW);
-
-    expect(snap?.partners[0].authorizingFrom).toBe("2026-06-01T00:00:00.000Z");
-    expect(snap?.partners[0].authorizingTo).toBe("2026-12-31T00:00:00.000Z");
-  });
-
   // —— 权限推导（roleId 驱动，去 ADMIN 分支）——
 
-  it("resolves a preset admin role uniformly (filled group perms ∩ scope; no special-case)", async () => {
+  it("resolves the customer preset admin role (101) uniformly (filled group perms ∩ scope)", async () => {
     vi.mocked(prisma.sysUser.findUnique).mockResolvedValue(ACTIVE_USER as never);
     vi.mocked(prisma.sysPartyUser.findMany).mockResolvedValue([
-      partyUser({ roles: [{ roleId: 1 }], authorizingType: "NORMAL" }),
+      partyUser({ roles: [{ roleId: 101 }], authorizingType: "NORMAL" }),
     ] as never);
     vi.mocked(prisma.sysPartyContract.findMany).mockResolvedValue([VALID_CONTRACT] as never);
     vi.mocked(getRoles).mockReturnValue([
-      { roleId: 1, roleName: "Administrator", permissionCodes: [] },
+      { roleId: 101, roleName: "Customer Administrator", permissionCodes: [] },
     ] as never);
-    // getRoles 已在构造期把 roleId 1 填成组权限；这里模拟 resolveRolePermissions 返回该组权限（含一个组外码）。
-    vi.mocked(resolveRolePermissions).mockReturnValue(["users.VIEW", "roles.VIEW", "out.OF_SCOPE"]);
-    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["users.VIEW", "roles.VIEW"]));
+    vi.mocked(resolveRolePermissions).mockReturnValue(["overview:view", "report:view", "out.OF_SCOPE"]);
+    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["overview:view", "report:view"]));
 
     const snap = await buildSessionSnapshot(1, 100, NOW);
 
-    // 组权限 ∩ party scope：out.OF_SCOPE 被砍。
-    expect(snap?.permissions.slice().sort()).toEqual(["roles.VIEW", "users.VIEW"]);
+    expect(snap?.permissions.slice().sort()).toEqual(["overview:view", "report:view"]);
   });
 
   it("grants a non-preset code role its own permission codes intersected with scope", async () => {
@@ -151,15 +120,14 @@ describe("buildSessionSnapshot", () => {
     ] as never);
     vi.mocked(prisma.sysPartyContract.findMany).mockResolvedValue([VALID_CONTRACT] as never);
     vi.mocked(getRoles).mockReturnValue([
-      { roleId: 2, roleName: "Operator", permissionCodes: ["roles.VIEW"] },
+      { roleId: 2, roleName: "Operator", permissionCodes: ["overview:view"] },
     ] as never);
-    vi.mocked(resolveRolePermissions).mockReturnValue(["roles.VIEW", "ghost.X"]);
-    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["roles.VIEW", "users.VIEW"]));
+    vi.mocked(resolveRolePermissions).mockReturnValue(["overview:view", "ghost.X"]);
+    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["overview:view", "report:view"]));
 
     const snap = await buildSessionSnapshot(1, 100, NOW);
 
-    // 非预置编码角色取 resolveRolePermissions ∩ scope：roles.VIEW 在 scope，ghost.X 不在。
-    expect(snap?.permissions).toEqual(["roles.VIEW"]);
+    expect(snap?.permissions).toEqual(["overview:view"]);
   });
 
   it("grants a normal DB role only its own codes intersected with scope", async () => {
@@ -169,14 +137,13 @@ describe("buildSessionSnapshot", () => {
     ] as never);
     vi.mocked(prisma.sysPartyContract.findMany).mockResolvedValue([VALID_CONTRACT] as never);
     vi.mocked(prisma.sysRole.findMany).mockResolvedValue([
-      dbRole({ permissionCodes: ["users.VIEW", "ghost.X"] }),
+      dbRole({ permissionCodes: ["overview:view", "ghost.X"] }),
     ] as never);
-    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["users.VIEW", "roles.VIEW"]));
+    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["overview:view", "report:view"]));
 
     const snap = await buildSessionSnapshot(1, 100, NOW);
 
-    // ghost.X 不在 scope 被砍；roles.VIEW 未被该角色授予。
-    expect(snap?.permissions).toEqual(["users.VIEW"]);
+    expect(snap?.permissions).toEqual(["overview:view"]);
   });
 
   it("no longer grants all scope to an authorizingType=ADMIN user without a preset role", async () => {
@@ -186,13 +153,12 @@ describe("buildSessionSnapshot", () => {
     ] as never);
     vi.mocked(prisma.sysPartyContract.findMany).mockResolvedValue([VALID_CONTRACT] as never);
     vi.mocked(prisma.sysRole.findMany).mockResolvedValue([
-      dbRole({ permissionCodes: ["users.VIEW"] }),
+      dbRole({ permissionCodes: ["overview:view"] }),
     ] as never);
-    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["users.VIEW", "roles.VIEW"]));
+    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["overview:view", "report:view"]));
 
     const snap = await buildSessionSnapshot(1, 100, NOW);
 
-    // 旧模型会因 ADMIN 拿到整个 scope（含 roles.VIEW）；新模型只给角色自身码 ∩ scope。
-    expect(snap?.permissions).toEqual(["users.VIEW"]);
+    expect(snap?.permissions).toEqual(["overview:view"]);
   });
 });

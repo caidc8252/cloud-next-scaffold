@@ -18,8 +18,6 @@ export type PermissionGroup = {
   items: { code: string; label: string; desc: string }[];
 };
 
-export type AuthorizingType = "ADMIN" | "NORMAL";
-
 /** "users.VIEW" -> "Users View"。仅在 permission 未给 label 时兜底。 */
 function labelFromCode(code: string): string {
   return code
@@ -42,24 +40,6 @@ export function selectPermissionGroups(menus: MenuEntry[]): PermissionGroup[] {
         desc: p.desc ?? "",
       })),
     }));
-}
-
-/**
- * 算最终生效权限码（入参 menus 已按契约过滤）。
- * - scoped = 这些菜单里的全部权限码集合；
- * - ADMIN：返回全集；NORMAL：返回角色权限码 ∩ scoped。
- */
-export function resolveEffectivePermissions(input: {
-  menus: MenuEntry[];
-  authorizingType: AuthorizingType;
-  grantedRoleCodes?: string[];
-}): string[] {
-  const scoped = new Set<string>();
-  for (const m of input.menus) {
-    for (const p of m.permissions ?? []) scoped.add(p.code);
-  }
-  if (input.authorizingType === "ADMIN") return [...scoped];
-  return (input.grantedRoleCodes ?? []).filter((code) => scoped.has(code));
 }
 
 /**

@@ -23,6 +23,7 @@ export const ERR_ROLE_NOT_FOUND = "102001";
 export const ERR_ROLE_NAME_SHORT = "102002";
 export const ERR_ROLE_DELETE_BUILTIN = "102003";
 export const ERR_ROLE_DELETE_ASSIGNED = "102004";
+export const ERR_ROLE_UPDATE_BUILTIN = "102005";
 
 // Platform 1, Module 90 = Middleware / Infra
 // 中间件类故障:对外统一 5xx + 同一句通用文案,客户看不出哪挂了;

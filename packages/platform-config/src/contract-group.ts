@@ -41,3 +41,12 @@ export function roleIdInGroupRange(roleId: number, group: PortalGroup): boolean 
   const [min, max] = GROUP_ROLE_ID_RANGE[group];
   return roleId >= min && roleId <= max;
 }
+
+// 预置（通配）管理员角色：命中时由会话 / 列表注入所在 party 的 scope（即该 party 在其组内的全部能力）。
+// 取各组 roleId 区间的基准值；merchant（201）暂不启用，启用时把它加进来即可。
+const PRESET_ADMIN_ROLE_IDS = new Set<number>([1, 101]);
+
+/** 是否为预置（通配）管理员角色（ADMIN→1 / CUSTOMER→101；merchant 201 缓做）。 */
+export function isPresetAdminRole(roleId: number): boolean {
+  return PRESET_ADMIN_ROLE_IDS.has(roleId);
+}

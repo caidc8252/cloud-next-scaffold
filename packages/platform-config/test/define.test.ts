@@ -23,12 +23,11 @@ describe("defineAppManifest", () => {
     ).toThrow();
   });
 
-  it("throws on empty contractTypes", () => {
-    expect(() =>
-      defineAppManifest({
-        contractKeys: ["ADMIN"],
-        menus: [{ menuCode: "x", menuTitle: "X", parentMenuCode: null, path: "/x", contractTypes: [] }],
-      }),
-    ).toThrow();
+  it("accepts empty contractTypes ([] = universal, replaces old `*`)", () => {
+    const manifest = defineAppManifest({
+      contractKeys: ["ADMIN"],
+      menus: [{ menuCode: "x", menuTitle: "X", parentMenuCode: null, path: "/x", contractTypes: [] }],
+    });
+    expect(manifest.menus[0].contractTypes).toEqual([]);
   });
 });

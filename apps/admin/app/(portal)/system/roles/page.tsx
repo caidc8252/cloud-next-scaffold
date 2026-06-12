@@ -17,7 +17,7 @@ function loadPermissionGroups(contractTypes: string[]): PermissionGroup[] {
 
 export default async function SystemRolesPage() {
   const session = await requirePermissions({ all: ["roles.VIEW"] });
-  const initialRoles = await listRoles(session.currentPartyId);
+  const initialRoles = await listRoles(session.currentPartyId, session.contractTypes);
   const permissionGroups = loadPermissionGroups(session.contractTypes);
   return <RolesPage initialRoles={initialRoles} permissionGroups={permissionGroups} />;
 }
