@@ -129,8 +129,19 @@
 6. 0/多 Party、过期落地页:按已定逻辑(`logic.md` 目标版)。
 7. E2E:登录引导随之对接(见 STATUS「E2E 待跟进」)。
 
-## 9. 待决
+## 9. 决定:**B（2026-06-12）**
 
-- **A 还是 B?**(推荐 **B**)
-- 若 B:cookie 名是否顺手改 `sid → pep-token`(cosmetic,影响一处常量 + 现有会话失效一次)?
-- 部署:`CUSTOMER_APP_URL` / `MERCHANT_APP_URL` 的实际取值 + merchant app 暂未建(可先占位)。
+- **采用方案 B(泛化 handoff)。** 一次性 handoff token 走 URL → 目标 console 后端 `consumeSessionHandoffToken` 校验 + 在自己 host 写 host-only 会话 cookie + 删 token;会话凭证本身不进 URL。
+- **保留将来可快切 A**:这是硬要求 —— 实现时把「如何把会话落到目标 console」收口到**单一函数 + 配置开关**,使切换 A↔B 局部化。
+- cookie 名:暂**沿用 `sid`**(不顺手改 `pep-token`,避免现有会话失效;改名留作纯 cosmetic,任何时候可做)。
+
+### 9.1 可切换性设计（让 A 成为"快切"）
+- 新增**唯一入口** `entryUrlForParty(group, sid)`(或 `resolvePartyEntry`),内部按一个配置开关(如 `SESSION_HANDOFF_MODE = "handoff" | "shared-domain"`)返回:
+  - **B(handoff,默认)**:签一次性 token → 返回 `{portalUrl}/api/auth/session-handoff?token=`(目标后端写 host-only cookie)。
+  - **A(shared-domain,将来)**:直接返回 `portalUrl`(会话 cookie 已写在共享父域,前端直跳)。
+- `buildSessionAndRedirect` / `selectPartner` **只调这个入口**,不内联 handoff 细节。
+- cookie 写入也隔离:B 写 host-only;A 写 `Domain=父域`。集中在 `@cloud/permissions` 的 cookie options,一处切。
+- ⇒ 将来切 A:改配置开关 + 给 cookie 加 `Domain` + console 端可省 handoff(handoff 端点保留作回落即可),**不动各业务调用点**。
+
+### 9.2 仍需的部署输入(实现时确认)
+- `CUSTOMER_APP_URL` / `MERCHANT_APP_URL` 实际取值;merchant app 未建 → 先占位/暂不接 MERCHANT 组。
