@@ -24,6 +24,7 @@
       "@cloud/i18n/client": ["./packages/i18n/src/client.tsx"],
       "@cloud/i18n/plugin": ["./packages/i18n/src/plugin.ts"],
       "@cloud/i18n/server": ["./packages/i18n/src/server.ts"],
+      "@cloud/log": ["./packages/log/src/index.ts"],
       "@cloud/mail": ["./packages/mail/src/index.ts"],
       "@cloud/permissions": ["./packages/permissions/src/index.ts"],
       "@cloud/permissions/server": ["./packages/permissions/src/server/index.ts"],

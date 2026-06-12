@@ -2,6 +2,9 @@ import "server-only";
 
 import { enqueueEmailJob } from "./enqueue.ts";
 import { assertRecipientQuota, type RecipientThrottlePolicy } from "./throttle.ts";
+import { createLogger } from "@cloud/log";
+
+const log = createLogger("mail");
 
 // 译者由 app 注入（按收件人 locale 取词，统一走 @cloud/i18n，包不直接依赖 i18n）。
 export type EmailTranslate = (key: string, values?: Record<string, string | number>) => string;
@@ -21,6 +24,7 @@ export type RenderAndEnqueueOptions<V> = {
 
 // 渲染机制：(可选)按收件人节流 → 跑模板 → 入队（含队列背压）。
 export async function renderAndEnqueue<V>(opts: RenderAndEnqueueOptions<V>): Promise<void> {
+  log.debug("render + enqueue", { purpose: opts.purpose, receivers: opts.receivers.length });
   if (opts.purpose) {
     for (const receiver of opts.receivers) {
       await assertRecipientQuota(receiver, opts.purpose, opts.throttle);
