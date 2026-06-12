@@ -20,6 +20,7 @@ import {
   ERR_ROLE_NAME_SHORT,
   ERR_ROLE_DELETE_BUILTIN,
   ERR_ROLE_DELETE_ASSIGNED,
+  ERR_ROLE_UPDATE_BUILTIN,
   ERR_MW_DB,
   ERR_MW_CACHE,
   ERR_MW_MAIL,
@@ -54,6 +55,7 @@ export const en: ErrorMessages = {
   [ERR_ROLE_NAME_SHORT]: "The role name is too short.",
   [ERR_ROLE_DELETE_BUILTIN]: "Built-in roles cannot be deleted.",
   [ERR_ROLE_DELETE_ASSIGNED]: "Roles with assigned users cannot be deleted.",
+  [ERR_ROLE_UPDATE_BUILTIN]: "Built-in roles cannot be modified.",
   // Middleware / Infra（对客户统一文案，开发凭 code 区分）
   [ERR_MW_DB]: MW_UNAVAILABLE,
   [ERR_MW_CACHE]: MW_UNAVAILABLE,

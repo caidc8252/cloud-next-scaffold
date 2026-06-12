@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MenuEntry } from "@cloud/platform-config";
-import {
-  resolveEffectivePermissions,
-  selectPermissionGroups,
-  selectVisibleMenuTree,
-} from "@/manifest/select";
+import { selectPermissionGroups, selectVisibleMenuTree } from "@/manifest/select";
 
 // 这些 select 函数不再做契约过滤，入参是「已按契约过滤好的」菜单（生产里由 getMenus 提供）。
 // 测试里用 scoped() 模拟 getMenus 的过滤，再把结果喂给 select 函数。
@@ -30,31 +26,6 @@ describe("selectPermissionGroups", () => {
     const users = groups.find((g) => g.menuCode === "users")!;
     expect(users.items.find((i) => i.code === "users.VIEW")!.label).toBe("View Users");
     expect(users.items.find((i) => i.code === "users.CREATE")!.label).toBe("Users Create");
-  });
-});
-
-describe("resolveEffectivePermissions", () => {
-  it("ADMIN gets every code in the scoped menus", () => {
-    const perms = resolveEffectivePermissions({ menus: scoped(["ADMIN"]), authorizingType: "ADMIN" });
-    expect(perms.sort()).toEqual(["roles.VIEW", "users.CREATE", "users.VIEW"]);
-  });
-
-  it("NORMAL keeps only granted codes within the scoped menus", () => {
-    const perms = resolveEffectivePermissions({
-      menus: scoped(["ADMIN"]),
-      authorizingType: "NORMAL",
-      grantedRoleCodes: ["users.VIEW", "sales.VIEW", "ghost"],
-    });
-    expect(perms).toEqual(["users.VIEW"]);
-  });
-
-  it("NORMAL with wider scope admits codes from those contracts", () => {
-    const perms = resolveEffectivePermissions({
-      menus: scoped(["ADMIN", "ISO"]),
-      authorizingType: "NORMAL",
-      grantedRoleCodes: ["sales.VIEW", "users.VIEW"],
-    });
-    expect(perms).toEqual(["sales.VIEW", "users.VIEW"]);
   });
 });
 

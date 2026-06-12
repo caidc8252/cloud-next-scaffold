@@ -2,8 +2,7 @@ import "server-only";
 
 import { prisma } from "@cloud/db";
 import type { Session, SessionPartyRef, SessionRole } from "@cloud/permissions/server";
-import { getMenus, getRoles, resolveRolePermissions } from "@/manifest";
-import { resolveEffectivePermissions } from "@/manifest/select";
+import { getRoles, resolvePartyScope, resolveRolePermissions } from "@/manifest";
 import {
   partnerToday,
   isContractEffective,
@@ -89,38 +88,27 @@ async function buildCurrentContext(
     ? await prisma.sysRole.findMany({ where: { roleId: { in: dbRoleIds } } })
     : [];
 
-  let roles: SessionRole[];
-  let grantedRoleCodes: string[] = [];
+  // PRIVATE（DB）角色须属本 partner + 授权窗（start/end，按 party 时区今天）内有效；GLOBAL 代码角色全局可用、无窗。
+  const today = partnerToday(partyUser.partner.timezone, now);
+  const windowedDbRoles = dbRoles.filter((r) => isContractEffective(r.startDate, r.endDate, today));
+  const applicableDb = selectApplicableRoles({ roles: windowedDbRoles, partyId });
 
-  if (authorizingType === "ADMIN") {
-    // ADMIN 无视角色取契约全量权限；角色仅用于展示。代码角色 roleType 视为 GLOBAL。
-    roles = [
-      ...codeRoles.map((r) => ({ roleId: r.roleId, roleName: r.roleName, roleType: "GLOBAL" })),
-      ...dbRoles.map((r) => ({ roleId: r.roleId, roleName: r.roleName, roleType: r.roleType })),
-    ];
-  } else {
-    // PRIVATE（DB）角色须属本 partner + 授权窗（start/end，按 party 时区今天）内有效；GLOBAL 代码角色全局可用、无窗。
-    const today = partnerToday(partyUser.partner.timezone, now);
-    const windowedDbRoles = dbRoles.filter((r) => isContractEffective(r.startDate, r.endDate, today));
-    const applicableDb = selectApplicableRoles({ roles: windowedDbRoles, partyId });
+  const roles: SessionRole[] = [
+    ...codeRoles.map((r) => ({ roleId: r.roleId, roleName: r.roleName, roleType: "GLOBAL" })),
+    ...applicableDb.map((r) => ({ roleId: r.roleId, roleName: r.roleName, roleType: r.roleType })),
+  ];
 
-    roles = [
-      ...codeRoles.map((r) => ({ roleId: r.roleId, roleName: r.roleName, roleType: "GLOBAL" })),
-      ...applicableDb.map((r) => ({ roleId: r.roleId, roleName: r.roleName, roleType: r.roleType })),
-    ];
-
-    const codes = new Set<string>();
-    for (const r of codeRoles) {
-      for (const code of resolveRolePermissions(r.roleId) ?? []) codes.add(code);
-    }
-    for (const role of applicableDb) {
-      for (const code of extractPermissionCodes(role.permissionCodes)) codes.add(code);
-    }
-    grantedRoleCodes = [...codes];
+  // 权限按 roleId 统一解析（authorizingType 仅展示）：每个角色取自身权限码（预置通配角色的码已由
+  // getRoles 在构造期填成所在组的全部权限），再一律 ∩ party scope。无需特判通配。
+  const scope = resolvePartyScope(contractTypes);
+  const granted = new Set<string>();
+  for (const r of codeRoles) {
+    for (const code of resolveRolePermissions(r.roleId) ?? []) granted.add(code);
   }
-
-  const menus = getMenus(contractTypes);
-  const permissions = resolveEffectivePermissions({ menus, authorizingType, grantedRoleCodes });
+  for (const role of applicableDb) {
+    for (const code of extractPermissionCodes(role.permissionCodes)) granted.add(code);
+  }
+  const permissions = [...granted].filter((code) => scope.has(code));
 
   return { partyName: partyUser.partner.partyName, contractTypes, authorizingType, roles, permissions };
 }

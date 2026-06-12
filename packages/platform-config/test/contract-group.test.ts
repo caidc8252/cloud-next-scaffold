@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   contractTypeGroup,
+  isPresetAdminRole,
   resolvePortalGroup,
   roleIdInGroupRange,
 } from "../src/contract-group.ts";
@@ -42,5 +43,19 @@ describe("roleIdInGroupRange", () => {
     expect(roleIdInGroupRange(150, "CUSTOMER")).toBe(true);
     expect(roleIdInGroupRange(250, "MERCHANT")).toBe(true);
     expect(roleIdInGroupRange(1001, "CUSTOMER")).toBe(false);
+  });
+});
+
+describe("isPresetAdminRole", () => {
+  it("flags the preset (wildcard) admin role of each live group", () => {
+    expect(isPresetAdminRole(1)).toBe(true); // ADMIN 组预置管理员
+    expect(isPresetAdminRole(101)).toBe(true); // CUSTOMER 组预置管理员
+  });
+
+  it("does not flag merchant (201, deferred) or non-preset roles", () => {
+    expect(isPresetAdminRole(201)).toBe(false); // merchant 缓做
+    expect(isPresetAdminRole(2)).toBe(false); // Operator（普通编码角色）
+    expect(isPresetAdminRole(102)).toBe(false); // 组内非基准 id
+    expect(isPresetAdminRole(1001)).toBe(false); // DB 动态 PRIVATE 角色
   });
 });

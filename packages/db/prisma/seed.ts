@@ -1,8 +1,9 @@
 import { prisma } from "../src/index.ts";
 
 // 菜单/权限定义不入库（见 apps/*/manifest + @cloud/platform-config）。契约类型为内联枚举，
-// 不再有 sys_contract_define 表。平台 admin 用户通过 authorizingType=ADMIN 在运行时获得当前
-// 契约下的全量权限，因此 Administrator 角色的 permissionCodes 留空数组即可。
+// 不再有 sys_contract_define 表。平台 admin 用户绑定 Administrator（roleId 1）预置通配角色，
+// 会话据此注入当前 party 的 scope（Administrator 的 permissionCodes 在代码注册表里留空作通配标记，
+// 由 isPresetAdminRole 识别）。authorizingType 保留作展示标志，不再驱动权限。
 
 const DEFAULT_PASSWORD = "ChangeMe!123";
 const DEFAULT_PASSWORD_HASH =
@@ -55,7 +56,8 @@ async function main() {
     },
   });
 
-  // 5. Bind user to platform partner（ADMIN type → 运行时全量权限；roles JSONB 含 admin 角色供展示）
+  // 5. Bind user to platform partner：绑定 Administrator（roleId 1）预置通配角色 → 会话注入当前 party 的 scope。
+  //    roles JSONB 形如 [{ roleId }]；不绑则新模型下零权限、后台进不去（authorizingType 仅作展示）。
   await prisma.sysPartyUser.upsert({
     where: {
       partyId_userId: {
@@ -65,14 +67,16 @@ async function main() {
     },
     update: {
       authorizingType: "ADMIN",
-      status: "ACTIVE"
+      status: "ACTIVE",
+      roles: [{ roleId: 1 }],
     },
     create: {
       partyId: platformPartner.partyId,
       userId: adminUser.userId,
       authorizingType: "ADMIN",
       status: "ACTIVE",
-      authorizingTimestamp: new Date()
+      authorizingTimestamp: new Date(),
+      roles: [{ roleId: 1 }],
     },
   });
 

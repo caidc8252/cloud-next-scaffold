@@ -20,6 +20,7 @@ import {
   ERR_ROLE_NAME_SHORT,
   ERR_ROLE_DELETE_BUILTIN,
   ERR_ROLE_DELETE_ASSIGNED,
+  ERR_ROLE_UPDATE_BUILTIN,
   ERR_MW_DB,
   ERR_MW_CACHE,
   ERR_MW_MAIL,
@@ -53,6 +54,7 @@ export const zhCN: ErrorMessages = {
   [ERR_ROLE_NAME_SHORT]: "角色名称太短。",
   [ERR_ROLE_DELETE_BUILTIN]: "内置角色不可删除。",
   [ERR_ROLE_DELETE_ASSIGNED]: "已分配用户的角色不可删除。",
+  [ERR_ROLE_UPDATE_BUILTIN]: "内置角色不可修改。",
   // 中间件 / 基础设施（对客户统一文案，开发凭 code 区分）
   [ERR_MW_DB]: MW_UNAVAILABLE,
   [ERR_MW_CACHE]: MW_UNAVAILABLE,
