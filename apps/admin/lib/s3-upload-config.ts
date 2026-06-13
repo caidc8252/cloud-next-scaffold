@@ -28,7 +28,7 @@ export function getS3UploadConfig(): S3UploadConfig {
   return {
     bucket: readRequiredEnv("AWS_S3_BUCKET"),
     regionId: readRequiredEnv("AWS_REGION"),
-    directoryPrefix: readRequiredEnv("AWS_S3_UPLOAD_DIRECTORY_PREFIX"),
+    directoryPrefix: readOptionalEnv("AWS_S3_UPLOAD_DIRECTORY_PREFIX"),
     uploadUrl: readOptionalEnv("AWS_S3_UPLOAD_URL"),
     maxSizeBytes: readOptionalIntegerEnv("AWS_S3_MAX_SIZE_BYTES"),
     multipartThresholdBytes: readOptionalIntegerEnv("AWS_S3_MULTIPART_THRESHOLD_BYTES"),
