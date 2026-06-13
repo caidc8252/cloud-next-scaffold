@@ -1,13 +1,24 @@
 import "server-only";
 
 import { prisma } from "@cloud/db";
+import { BusinessError } from "@cloud/request";
 import type { S3ObjectMetadata, S3StoredObject, S3UploadSession } from "@cloud/storage";
+import { copyS3Object, deleteS3Object, uploadFileToS3FromServer } from "@cloud/storage/server";
 import type { ActiveSession } from "@cloud/permissions/server";
 import type { StorageObjectRecord, StorageVisibility } from "../storage/types";
+import { getS3UploadConfig } from "./s3-upload-config";
+import {
+  S3_UPLOAD_PROFILES,
+  type S3UploadProfile,
+  type S3UploadProfileConfig,
+  isObjectKeyInUploadProfileDirectory,
+  resolveS3UploadProfile,
+} from "./s3-upload-profiles";
 import { STORAGE_VISIBILITY } from "./storage-visibility";
 
 const ACTIVE_STATUS = "ACTIVE";
 const PENDING_STATUS = "PENDING";
+const TEMPORARY_STATUS = "TEMPORARY";
 
 type StorageObjectRow = {
   storageObjectId: string;
@@ -29,6 +40,17 @@ type StorageObjectRow = {
 };
 
 type StorageObjectLike = S3StoredObject | S3ObjectMetadata | S3UploadSession;
+
+export type UploadTemporaryStorageObjectInput = {
+  file: File;
+  contentHash?: string;
+};
+
+export type PromoteTemporaryStorageObjectInput = {
+  storageObjectId: string;
+  targetProfile: S3UploadProfile;
+  requireContentTypePrefix?: string;
+};
 
 function toNumberSize(value: bigint | number): number {
   return typeof value === "bigint" ? Number(value) : value;
@@ -168,6 +190,33 @@ export async function createPendingStorageObjectRecord(
   });
 }
 
+export async function uploadTemporaryStorageObject(
+  session: ActiveSession,
+  input: UploadTemporaryStorageObjectInput,
+) {
+  const profile = resolveS3UploadProfile(S3_UPLOAD_PROFILES.TEMPORARY);
+  if (!profile.ok) {
+    throw new BusinessError(profile.code, 400);
+  }
+
+  const storedObject = await uploadFileToS3FromServer(getS3UploadConfig(), {
+    body: await input.file.arrayBuffer(),
+    filename: input.file.name,
+    contentType: input.file.type,
+    directory: profile.value.directory,
+  });
+
+  return upsertStorageObjectRecord(session, storedObject, {
+    originalFilename: input.file.name,
+    sizeBytes: storedObject.sizeBytes ?? input.file.size,
+    contentType: storedObject.contentType,
+    contentHash: input.contentHash,
+    visibility: STORAGE_VISIBILITY.PRIVATE,
+    etag: storedObject.etag,
+    status: TEMPORARY_STATUS,
+  });
+}
+
 export async function saveStorageObjectRecord(
   session: ActiveSession,
   storedObject: S3StoredObject | S3ObjectMetadata,
@@ -184,6 +233,96 @@ export async function saveStorageObjectRecord(
     ...input,
     status: ACTIVE_STATUS,
   });
+}
+
+function assertPromotableTargetProfile(profile: S3UploadProfileConfig): void {
+  if (profile.profile === S3_UPLOAD_PROFILES.TEMPORARY) {
+    throw new BusinessError("storage.temporary_target_invalid", 400);
+  }
+}
+
+function assertRequiredContentTypePrefix(
+  contentType: string,
+  requiredPrefix: string | undefined,
+): void {
+  if (!requiredPrefix) return;
+
+  if (!contentType.toLowerCase().startsWith(requiredPrefix.toLowerCase())) {
+    throw new BusinessError("storage.content_type_invalid", 400);
+  }
+}
+
+export async function promoteTemporaryStorageObject(
+  session: ActiveSession,
+  input: PromoteTemporaryStorageObjectInput,
+) {
+  const profile = resolveS3UploadProfile(input.targetProfile);
+  if (!profile.ok) {
+    throw new BusinessError(profile.code, 400);
+  }
+
+  assertPromotableTargetProfile(profile.value);
+
+  const temp = await prisma.storageObject.findFirst({
+    where: {
+      storageObjectId: input.storageObjectId,
+      partyId: session.currentPartyId,
+      status: TEMPORARY_STATUS,
+    },
+    include: {
+      uploader: {
+        select: {
+          nickName: true,
+        },
+      },
+    },
+  });
+
+  if (!temp) {
+    throw new BusinessError("storage.temporary_not_found", 404);
+  }
+
+  if (!isObjectKeyInUploadProfileDirectory(temp.objectKey, { directory: "tmp" })) {
+    throw new BusinessError("storage.temporary_key_invalid", 400);
+  }
+
+  assertRequiredContentTypePrefix(temp.contentType, input.requireContentTypePrefix);
+
+  const filename = temp.objectKey.split("/").at(-1) ?? temp.originalFilename;
+  const targetObjectKey = `${profile.value.directory}/${filename}`;
+  const promotedObject = await copyS3Object(getS3UploadConfig(), {
+    sourceObjectKey: temp.objectKey,
+    targetObjectKey,
+    contentType: temp.contentType,
+    sizeBytes: toNumberSize(temp.sizeBytes),
+  });
+
+  const row = await prisma.storageObject.update({
+    where: { storageObjectId: temp.storageObjectId },
+    data: {
+      regionId: promotedObject.regionId,
+      objectKey: promotedObject.objectKey,
+      objectUrl: promotedObject.objectUrl,
+      visibility: profile.value.visibility,
+      etag: promotedObject.etag ?? temp.etag,
+      status: ACTIVE_STATUS,
+      deletedAt: null,
+      updUserId: session.userId,
+    },
+    include: {
+      uploader: {
+        select: {
+          nickName: true,
+        },
+      },
+    },
+  });
+
+  await deleteS3Object(getS3UploadConfig(), {
+    objectKey: temp.objectKey,
+  });
+
+  return toStorageObjectRecord(row);
 }
 
 export async function findStorageObjectForDownload(
