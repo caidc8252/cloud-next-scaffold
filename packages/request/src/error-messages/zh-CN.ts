@@ -7,6 +7,7 @@ import {
   ERR_INTERNAL,
   ERR_INVALID_JSON,
   ERR_INVALID_ID,
+  ERR_TOO_MANY_REQUESTS,
   ERR_USER_EMAIL_INVALID,
   ERR_USER_EMAIL_TAKEN,
   ERR_USER_NOT_FOUND,
@@ -19,6 +20,7 @@ import {
   ERR_ROLE_NAME_SHORT,
   ERR_ROLE_DELETE_BUILTIN,
   ERR_ROLE_DELETE_ASSIGNED,
+  ERR_ROLE_UPDATE_BUILTIN,
   ERR_MW_DB,
   ERR_MW_CACHE,
   ERR_MW_MAIL,
@@ -37,6 +39,7 @@ export const zhCN: ErrorMessages = {
   [ERR_INTERNAL]: "服务器内部错误。",
   [ERR_INVALID_JSON]: "请求体不是合法的 JSON。",
   [ERR_INVALID_ID]: "提供的 ID 无效。",
+  [ERR_TOO_MANY_REQUESTS]: "操作过于频繁，请稍后再试。",
   // 用户
   [ERR_USER_EMAIL_INVALID]: "请输入有效的邮箱地址。",
   [ERR_USER_EMAIL_TAKEN]: "该邮箱地址已被使用。",
@@ -51,6 +54,7 @@ export const zhCN: ErrorMessages = {
   [ERR_ROLE_NAME_SHORT]: "角色名称太短。",
   [ERR_ROLE_DELETE_BUILTIN]: "内置角色不可删除。",
   [ERR_ROLE_DELETE_ASSIGNED]: "已分配用户的角色不可删除。",
+  [ERR_ROLE_UPDATE_BUILTIN]: "内置角色不可修改。",
   // 中间件 / 基础设施（对客户统一文案，开发凭 code 区分）
   [ERR_MW_DB]: MW_UNAVAILABLE,
   [ERR_MW_CACHE]: MW_UNAVAILABLE,

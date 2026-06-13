@@ -1,11 +1,12 @@
 import { ContentHeader, PageBody } from "@cloud/ui/components/layout";
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@cloud/ui/components/ui";
-import { requirePermissions } from "@cloud/permissions/server";
+import { requireSession } from "@cloud/permissions/server";
 import { getTranslations } from "@cloud/i18n/server";
 
 
 export default async function DashboardPage() {
-  const session = await requirePermissions({ all: ["dashboard:view"] });
+  // dashboard 为登录可见页（菜单无 permissions），守卫用 requireSession（不挂具体权限码）。
+  const session = await requireSession();
   const t = await getTranslations("dashboard");
 
   return (

@@ -14,6 +14,7 @@ import {
 import { extractRoleIds, parseRoleIds } from "@/service/_shared/role-codes";
 import type { User } from "@/app/(portal)/system/_shared/types";
 import { createPasswordResetToken } from "@/lib/password-reset-token";
+import { sendInviteEmail, sendResetLinkEmail } from "@/lib/email";
 import type {
   CreateInviteInput,
   SetInviteRolesInput,
@@ -73,7 +74,18 @@ export async function createInvite(session: ActiveSession, input: CreateInviteIn
     expiresAt: new Date(Date.now() + INVITE_TTL_MS),
     creUserId: session.userId,
   });
-  return toClientInvite(invite, session.displayName ?? "system");
+
+  const inviterName = session.displayName ?? "system";
+  // 真发邀请邮件（含 onboarding accept 链接）。队列背压/节流异常会冒泡：邀请已落库，
+  // 管理员可重发；这也让发信问题（背压/频率）显式可见。
+  await sendInviteEmail({
+    to: invite.inviteEmail,
+    partyName: session.partyName,
+    inviterName,
+    token: invite.token,
+    expiresAt: invite.expiresAt,
+  });
+  return toClientInvite(invite, inviterName);
 }
 
 export async function updateUser(
@@ -133,8 +145,11 @@ export async function resetUserPassword(session: ActiveSession, userId: number):
     throw new BusinessError(ERR_USER_PROTECTED);
   }
 
-  await createPasswordResetToken(userId);
-  return toClientUser(await usersRepository.getUserWithLink(partyId, userId));
+  const token = await createPasswordResetToken(userId);
+  const user = toClientUser(await usersRepository.getUserWithLink(partyId, userId));
+  // 发重置链接（落 portal /reset-password?token=，复用其消费端）。token 72h。
+  await sendResetLinkEmail({ to: user.email, token, expiresText: "72 hours" });
+  return user;
 }
 
 export async function cancelInvite(session: ActiveSession, inviteId: number): Promise<void> {
@@ -154,7 +169,17 @@ export async function resendInvite(session: ActiveSession, inviteId: number): Pr
     updUserId: session.userId,
     resendCount: { increment: 1 },
   });
-  return toClientInvite(updated, await resolveInviterName(session, updated.inviterUserId));
+
+  const inviterName = await resolveInviterName(session, updated.inviterUserId);
+  // 重发：再发一封邮件。收件人节流 60s 冷却会对连点重发抛 429（期望行为：提示稍后再试）。
+  await sendInviteEmail({
+    to: updated.inviteEmail,
+    partyName: session.partyName,
+    inviterName,
+    token: updated.token,
+    expiresAt: updated.expiresAt,
+  });
+  return toClientInvite(updated, inviterName);
 }
 
 export async function setInviteRoles(

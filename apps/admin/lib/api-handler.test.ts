@@ -38,7 +38,7 @@ describe("api-handler", () => {
     // 401 统一映射到注册表内的 ERR_UNAUTHORIZED，文案随 locale 本地化（无 ambient locale 时为英文基底）。
     expect(body.code).toBe(ERR_UNAUTHORIZED);
     expect(body.message).toBe("Authentication is required or your session has expired.");
-    expect(body.traceId).toMatch(/^BIZ-/);
+    expect(body.traceId).toMatch(/^[0-9a-z]+-[0-9a-f]{8}$/);
   });
 
   it("maps forbidden errors to 403", async () => {
@@ -130,7 +130,7 @@ describe("api-handler", () => {
       message: "success",
       data: { ok: true },
     });
-    expect(body.traceId).toMatch(/^BIZ-/);
+    expect(body.traceId).toMatch(/^[0-9a-z]+-[0-9a-f]{8}$/);
   });
 
   it("flattens pagination fields beside data for paged responses", async () => {
@@ -169,7 +169,7 @@ describe("api-handler", () => {
       message: "success",
       data: { id: 1 },
     });
-    expect(body.traceId).toMatch(/^BIZ-/);
+    expect(body.traceId).toMatch(/^[0-9a-z]+-[0-9a-f]{8}$/);
   });
 
   it("keeps no content responses empty for DELETE-style handlers", async () => {

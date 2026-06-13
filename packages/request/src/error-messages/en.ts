@@ -7,6 +7,7 @@ import {
   ERR_INTERNAL,
   ERR_INVALID_JSON,
   ERR_INVALID_ID,
+  ERR_TOO_MANY_REQUESTS,
   ERR_USER_EMAIL_INVALID,
   ERR_USER_EMAIL_TAKEN,
   ERR_USER_NOT_FOUND,
@@ -19,6 +20,7 @@ import {
   ERR_ROLE_NAME_SHORT,
   ERR_ROLE_DELETE_BUILTIN,
   ERR_ROLE_DELETE_ASSIGNED,
+  ERR_ROLE_UPDATE_BUILTIN,
   ERR_MW_DB,
   ERR_MW_CACHE,
   ERR_MW_MAIL,
@@ -38,6 +40,7 @@ export const en: ErrorMessages = {
   [ERR_INTERNAL]: "Internal server error.",
   [ERR_INVALID_JSON]: "The request body is not valid JSON.",
   [ERR_INVALID_ID]: "The provided identifier is invalid.",
+  [ERR_TOO_MANY_REQUESTS]: "Too many requests. Please try again later.",
   // Users
   [ERR_USER_EMAIL_INVALID]: "A valid email address is required.",
   [ERR_USER_EMAIL_TAKEN]: "This email address is already in use.",
@@ -52,6 +55,7 @@ export const en: ErrorMessages = {
   [ERR_ROLE_NAME_SHORT]: "The role name is too short.",
   [ERR_ROLE_DELETE_BUILTIN]: "Built-in roles cannot be deleted.",
   [ERR_ROLE_DELETE_ASSIGNED]: "Roles with assigned users cannot be deleted.",
+  [ERR_ROLE_UPDATE_BUILTIN]: "Built-in roles cannot be modified.",
   // Middleware / Infra（对客户统一文案，开发凭 code 区分）
   [ERR_MW_DB]: MW_UNAVAILABLE,
   [ERR_MW_CACHE]: MW_UNAVAILABLE,

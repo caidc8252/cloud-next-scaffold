@@ -6,6 +6,7 @@ export const ERR_NOT_FOUND = "100004";
 export const ERR_INTERNAL = "100005";
 export const ERR_INVALID_JSON = "100006";
 export const ERR_INVALID_ID = "100007";
+export const ERR_TOO_MANY_REQUESTS = "100008"; // 操作过于频繁（429 语义；如收件人邮件节流）
 
 // Platform 1, Module 01 = Users
 export const ERR_USER_EMAIL_INVALID = "101001";
@@ -22,6 +23,7 @@ export const ERR_ROLE_NOT_FOUND = "102001";
 export const ERR_ROLE_NAME_SHORT = "102002";
 export const ERR_ROLE_DELETE_BUILTIN = "102003";
 export const ERR_ROLE_DELETE_ASSIGNED = "102004";
+export const ERR_ROLE_UPDATE_BUILTIN = "102005";
 
 // Platform 1, Module 90 = Middleware / Infra
 // 中间件类故障:对外统一 5xx + 同一句通用文案,客户看不出哪挂了;

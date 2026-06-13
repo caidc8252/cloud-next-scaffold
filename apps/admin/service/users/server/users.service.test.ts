@@ -27,9 +27,11 @@ vi.mock("./users.repository", () => ({
   deleteInvite: vi.fn(),
 }));
 vi.mock("@/lib/password-reset-token", () => ({ createPasswordResetToken: vi.fn() }));
+vi.mock("@/lib/email", () => ({ sendInviteEmail: vi.fn(), sendResetLinkEmail: vi.fn() }));
 
 import * as repo from "./users.repository";
 import { createPasswordResetToken } from "@/lib/password-reset-token";
+import { sendInviteEmail, sendResetLinkEmail } from "@/lib/email";
 import {
   cancelInvite,
   createInvite,
@@ -45,6 +47,7 @@ const session = {
   userId: 1,
   displayName: "admin",
   currentPartyId: 100,
+  partyName: "Acme",
   permissions: ["users.UPD"],
 } as unknown as ActiveSession;
 
@@ -119,6 +122,9 @@ describe("createInvite", () => {
     expect(invite.inviteEmail).toBe("new@example.com");
     expect(invite.invitedBy).toBe("admin");
     expect(vi.mocked(repo.createInvite).mock.calls[0][0]).toMatchObject({ intendedRole: [{ roleId: 3 }] });
+    expect(sendInviteEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "new@example.com", token: "tok", partyName: "Acme", inviterName: "admin" }),
+    );
   });
 });
 
@@ -194,13 +200,17 @@ describe("resetUserPassword", () => {
     expect(createPasswordResetToken).not.toHaveBeenCalled();
   });
 
-  it("issues a reset token for an eligible user", async () => {
+  it("issues a reset token and emails the reset link for an eligible user", async () => {
     vi.mocked(repo.findUserLink).mockResolvedValue({ authorizingType: "NORMAL", status: "ACTIVE" } as never);
     vi.mocked(repo.getUserWithLink).mockResolvedValue(userRow() as never);
+    vi.mocked(createPasswordResetToken).mockResolvedValue("rtok");
 
     await resetUserPassword(session, 2);
 
     expect(createPasswordResetToken).toHaveBeenCalledWith(2);
+    expect(sendResetLinkEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "bob@example.com", token: "rtok" }),
+    );
   });
 });
 
@@ -233,6 +243,9 @@ describe("resendInvite", () => {
 
     expect(vi.mocked(repo.updateInvite).mock.calls[0][1]).toMatchObject({ resendCount: { increment: 1 } });
     expect(result.invitedBy).toBe("dora");
+    expect(sendInviteEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "new@example.com", token: "tok", inviterName: "dora" }),
+    );
   });
 });
 

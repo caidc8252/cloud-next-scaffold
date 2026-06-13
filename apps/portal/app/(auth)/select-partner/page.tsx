@@ -9,7 +9,8 @@ import {
 } from "@cloud/permissions/server";
 import { AuthShell } from "@/app/_components/auth-shell";
 import { AuthLead, IconBadge } from "@/app/(auth)/_components/card-bits";
-import { getAdminSessionHandoffUrl } from "@/lib/platform-routing";
+import { resolvePortalGroup } from "@cloud/platform-config";
+import { entryUrlForParty } from "@/lib/platform-routing";
 import { listPartyChoices } from "@/service/auth/server/partner-choices";
 import { PartnerList } from "./_components/partner-list";
 import { Building2 } from "lucide-react";
@@ -27,8 +28,10 @@ export default async function SelectPartnerPage() {
   const t = await getTranslations("portal.partner");
   const session = await getSession();
   if (session) {
-    const handoffToken = await createSessionHandoffToken();
-    redirect(handoffToken ? getAdminSessionHandoffUrl(handoffToken) : "/login");
+    // 已有完整会话：按当前 party 的 portal 组跳对应 console（方案 B）。
+    const group = resolvePortalGroup(session.contractTypes);
+    const handoffToken = group ? await createSessionHandoffToken() : null;
+    redirect(handoffToken && group ? entryUrlForParty(group, handoffToken) : "/login");
   }
 
   const partial = await getPartialSession();

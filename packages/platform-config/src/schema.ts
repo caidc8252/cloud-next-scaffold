@@ -15,7 +15,8 @@ const menuEntrySchema = z.object({
   parentMenuCode: z.string().min(1).nullable(),
   icon: z.string().min(1).optional(),
   path: z.string().min(1).nullable().optional(),
-  contractTypes: z.array(z.string().min(1)).min(1),
+  // 空数组 `[]` = 通用（对所有契约可见，取代旧 `*`）；非空则仅列出的契约可见。
+  contractTypes: z.array(z.string().min(1)),
   order: z.number().optional(),
   permissions: z.array(menuPermissionSchema).optional(),
 });

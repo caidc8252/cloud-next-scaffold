@@ -300,7 +300,7 @@
   - **验证**：admin+portal `tsc` rc=0；全仓 **464/464** 通过；**真库 `db:push --accept-data-loss`（drop contract_type，DB in sync）+ `db:seed` 跑通**。
   → §3 仍待：IDENTITY DDL 改 `START 1001`（现靠 seed setval 兜，仅 pep-schema 目标的 DDL 层）、契约事件类型 7 值（§3.5，admin 域低优先）、会话架构 pep-token/portalUrl（最大架构项，**已搁置**）。〔各 FK 已补齐 ✅〕
 
-### 会话架构 / portalUrl（讨论中，⏸ 已搁置回头处理）
+### 会话架构 / portalUrl（✅ 方案 B 已实现 §8，2026-06-12）
 **已定**：① portalUrl 来源 = **契约类型推 portal 组**（`MERCHANT`→Merchant / `US-ISO·ISV·*-PILOT·PLATFORM-CUSTOM`→Customer / `ADMIN`→Admin），**禁止契约跨组重叠**（代码不变量，契约创建时强制），与角色区间共用一套 `contractGroup(contractType)` 映射（代码、不入库）；portal 组按契约类型推（**不分状态**，过期/终止仍可推→落"合同过期"页）；跨组脏数据兜底优先级 `ADMIN>CUSTOMER>MERCHANT`；URL 走 per-group env（`ADMIN_APP_URL`/`CUSTOMER_APP_URL`/`MERCHANT_APP_URL`）。
-**待定（搁置）**：跨 host 落 cookie 走 **A 共享父域直跳** 还是 **B 泛化现有 handoff**（推荐 B：把 handoff 目标从单一 `ADMIN_APP_URL` 泛化成 `portalUrl` + 给 customer/merchant console 加 `/api/auth/session-handoff` + cookie `sid→pep-token`，不重写 `@cloud/permissions`）。A 贴目标文档但破 Codespaces 开发流。
+**已定（2026-06-12）：方案 B（泛化 handoff）**。一次性 token 走 URL → 目标 console 后端校验后写 host-only cookie + 删 token(会话凭证不进 URL);把 handoff 目标从单一 `ADMIN_APP_URL` 泛化成按 party 推的 `portalUrl` + 给 customer/merchant 加 `/api/auth/session-handoff`,不重写 `@cloud/permissions`。cookie 暂沿用 `sid`(不改名)。**实现时收口到单一 `entryUrlForParty` + 配置开关,使将来可快切 A(共享父域直跳)**。详见 `session-architecture.md` §9。**已实现(§8,提交 4f3d588)**:`contractGroup` 单一真源 + per-group URL + 唯一入口 `entryUrlForParty`(切 A 单点)+ 登录/selectPartner/页按组路由 + customer handoff 端点;469/469。待部署:`CUSTOMER_APP_URL`/`MERCHANT_APP_URL` 取值、merchant app 未建、E2E 对接、(可选)cookie→pep-token。
 **实现 delta（待 A/B 定后）**：① `contractGroup` + per-group URL 配置；② handoff 目标泛化 + customer 加 handoff 端点；③（可选）cookie/redis key 改名。

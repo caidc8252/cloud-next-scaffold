@@ -7,6 +7,7 @@ import {
   ERR_INTERNAL,
   ERR_INVALID_JSON,
   ERR_INVALID_ID,
+  ERR_TOO_MANY_REQUESTS,
   ERR_USER_EMAIL_INVALID,
   ERR_USER_EMAIL_TAKEN,
   ERR_USER_NOT_FOUND,
@@ -19,6 +20,7 @@ import {
   ERR_ROLE_NAME_SHORT,
   ERR_ROLE_DELETE_BUILTIN,
   ERR_ROLE_DELETE_ASSIGNED,
+  ERR_ROLE_UPDATE_BUILTIN,
   ERR_MW_DB,
   ERR_MW_CACHE,
   ERR_MW_MAIL,
@@ -37,6 +39,7 @@ export const ja: ErrorMessages = {
   [ERR_INTERNAL]: "サーバー内部エラーが発生しました。",
   [ERR_INVALID_JSON]: "リクエスト本文が正しい JSON ではありません。",
   [ERR_INVALID_ID]: "指定された ID が無効です。",
+  [ERR_TOO_MANY_REQUESTS]: "リクエストが多すぎます。しばらくしてから再試行してください。",
   // ユーザー
   [ERR_USER_EMAIL_INVALID]: "有効なメールアドレスを入力してください。",
   [ERR_USER_EMAIL_TAKEN]: "このメールアドレスは既に使用されています。",
@@ -51,6 +54,7 @@ export const ja: ErrorMessages = {
   [ERR_ROLE_NAME_SHORT]: "ロール名が短すぎます。",
   [ERR_ROLE_DELETE_BUILTIN]: "組み込みロールは削除できません。",
   [ERR_ROLE_DELETE_ASSIGNED]: "ユーザーが割り当てられているロールは削除できません。",
+  [ERR_ROLE_UPDATE_BUILTIN]: "組み込みロールは変更できません。",
   // ミドルウェア / インフラ（顧客向けは統一文言、開発は code で区別）
   [ERR_MW_DB]: MW_UNAVAILABLE,
   [ERR_MW_CACHE]: MW_UNAVAILABLE,

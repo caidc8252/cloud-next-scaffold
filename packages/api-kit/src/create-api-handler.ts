@@ -1,9 +1,12 @@
 import "server-only";
 
 import { internalErrorResponse, runWithLocale } from "@cloud/request/server";
+import { createLogger, runWithTrace } from "@cloud/log";
 
 // 通用 API 兜底骨架。只依赖 @cloud/request，不认识任何具体应用或业务码。
 // 应用通过 createApiHandler(config) 注入「locale 怎么来」和「错误怎么映射」两块策略。
+
+const log = createLogger("http");
 
 export type ApiHandlerOptions = {
   onError?: (error: unknown) => Response | null;
@@ -55,14 +58,29 @@ export function createApiHandler(config: ApiHandlerConfig) {
     options?: ApiHandlerOptions,
   ): RouteHandler<TArgs> {
     return async (...args) => {
+      // 每请求起一个 trace 上下文：读入站 x-request-id 复用、否则新生成；带上 method/path。
+      // 之后该请求内任何 @cloud/log 调用自动携带 traceId/seq，错误响应也复用同一 traceId。
+      const req = args[0] instanceof Request ? args[0] : undefined;
+      const method = req?.method;
+      const path = req ? new URL(req.url).pathname : undefined;
+      const incomingTraceId = req?.headers.get("x-request-id") ?? undefined;
+
       const locale = await config.resolveLocale();
-      return runWithLocale(locale, async () => {
-        try {
-          return await handler(...args);
-        } catch (error) {
-          return handleApiError(error, options);
-        }
-      });
+      return runWithTrace({ traceId: incomingTraceId, method, path }, () =>
+        runWithLocale(locale, async () => {
+          const startedAt = Date.now();
+          try {
+            const response = await handler(...args);
+            log.info("request completed", { status: response.status, durationMs: Date.now() - startedAt });
+            return response;
+          } catch (error) {
+            // Next 控制流异常（redirect/notFound）由 handleApiError 重新抛出，不记访问日志。
+            const response = handleApiError(error, options);
+            log.info("request completed", { status: response.status, durationMs: Date.now() - startedAt });
+            return response;
+          }
+        }),
+      );
     };
   }
 

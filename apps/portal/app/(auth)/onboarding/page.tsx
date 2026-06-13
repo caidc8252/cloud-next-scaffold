@@ -1,17 +1,14 @@
-import { getSession } from "@/lib/mock/session";
+import { getPartialSession } from "@cloud/permissions/server";
 import { OnboardingScreen } from "./_components/onboarding-screen";
 
-const DEFAULT_TOKEN = "inv_8f2c1a";
-
-// Onboarding is reachable both signed-out and signed-in (the invitee may
-// already have a session). The signed-in landing is exercised by visiting here
-// after signing in; an unknown ?token surfaces the invalid state.
+// 入驻页：未登录/已登录均可达（被邀人可能已有会话）。token 来自邀请链接；未知 token → invalid。
 export default async function OnboardingPage({
   searchParams,
 }: {
   searchParams: Promise<{ token?: string }>;
 }) {
   const { token } = await searchParams;
-  const session = await getSession();
-  return <OnboardingScreen token={token ?? DEFAULT_TOKEN} currentUser={session} />;
+  const session = await getPartialSession();
+  const currentUser = session ? { email: session.email ?? "", displayName: session.displayName } : null;
+  return <OnboardingScreen token={token ?? ""} currentUser={currentUser} />;
 }

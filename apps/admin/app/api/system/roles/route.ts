@@ -11,7 +11,7 @@ import { withApiHandler } from "@/lib/api-handler";
  */
 export const GET = withApiHandler(async () => {
   const session = await assertPermissions({ all: ["roles.VIEW"] });
-  return successResponse(await listRoles(session.currentPartyId));
+  return successResponse(await listRoles(session.currentPartyId, session.contractTypes));
 });
 
 /**

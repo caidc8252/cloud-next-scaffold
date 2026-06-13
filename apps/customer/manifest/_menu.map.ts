@@ -7,14 +7,14 @@ export const appManifest = defineAppManifest({
   // customer 平台面向的契约类型（目标 7 值里的 customer 侧；admin 侧的 ADMIN 不在此）。
   contractKeys: ["US-ISO", "US-ISV", "US-ISO-PILOT", "US-ISV-PILOT", "MERCHANT", "PLATFORM-CUSTOM"],
   menus: [
-    { menuCode: "c-home", menuTitle: "Home", parentMenuCode: null, path: null, contractTypes: ["*"], order: 1 },
+    { menuCode: "c-home", menuTitle: "Home", parentMenuCode: null, path: null, contractTypes: ["US-ISO", "US-ISV", "US-ISO-PILOT", "US-ISV-PILOT", "PLATFORM-CUSTOM"], order: 1 },
     {
       menuCode: "c-overview",
       menuTitle: "Overview",
       parentMenuCode: "c-home",
       path: "/overview",
       icon: "layout-dashboard",
-      contractTypes: ["*"],
+      contractTypes: ["US-ISO", "US-ISV", "US-ISO-PILOT", "US-ISV-PILOT", "PLATFORM-CUSTOM"],
       order: 2,
       permissions: [{ code: "overview:view", label: "View Overview", desc: "View customer console overview" }],
     },

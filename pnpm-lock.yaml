@@ -162,6 +162,9 @@ importers:
       '@cloud/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@cloud/mail':
+        specifier: workspace:*
+        version: link:../../packages/mail
       '@cloud/permissions':
         specifier: workspace:*
         version: link:../../packages/permissions
@@ -305,6 +308,12 @@ importers:
       '@cloud/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@cloud/log':
+        specifier: workspace:*
+        version: link:../../packages/log
+      '@cloud/mail':
+        specifier: workspace:*
+        version: link:../../packages/mail
       '@cloud/permissions':
         specifier: workspace:*
         version: link:../../packages/permissions
@@ -360,6 +369,9 @@ importers:
       '@cloud/i18n':
         specifier: workspace:*
         version: link:../i18n
+      '@cloud/log':
+        specifier: workspace:*
+        version: link:../log
       '@cloud/permissions':
         specifier: workspace:*
         version: link:../permissions
@@ -428,6 +440,30 @@ importers:
         specifier: 'catalog:'
         version: 0.0.1
 
+  packages/log:
+    dependencies:
+      server-only:
+        specifier: 'catalog:'
+        version: 0.0.1
+
+  packages/mail:
+    dependencies:
+      '@cloud/cache':
+        specifier: workspace:*
+        version: link:../cache
+      '@cloud/log':
+        specifier: workspace:*
+        version: link:../log
+      '@cloud/request':
+        specifier: workspace:*
+        version: link:../request
+      server-only:
+        specifier: 'catalog:'
+        version: 0.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+
   packages/permissions:
     dependencies:
       '@cloud/cache':
@@ -457,6 +493,9 @@ importers:
 
   packages/request:
     dependencies:
+      '@cloud/log':
+        specifier: workspace:*
+        version: link:../log
       client-only:
         specifier: ^0.0.1
         version: 0.0.1

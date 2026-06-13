@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@cloud/i18n": "workspace:*",
+    "@cloud/log": "workspace:*",
     "@cloud/permissions": "workspace:*",
     "@cloud/request": "workspace:*",
     "server-only": "catalog:"

@@ -27,6 +27,17 @@ describe("relTime", () => {
     expect(result).toMatch(/Jan\s+15,\s+2025/);
   });
 
+  it("returns 'in Xd' for future timestamps (e.g. invite expiry)", () => {
+    // +7d 加 1h 缓冲，避免边界 floor 受执行间隔影响而抖动。
+    const inSevenDays = new Date(Date.now() + 7 * 86_400_000 + 3_600_000).toISOString();
+    expect(relTime(inSevenDays)).toBe("in 7d");
+  });
+
+  it("returns 'in Xh' for near-future timestamps", () => {
+    const inTwoHours = new Date(Date.now() + 2 * 3_600_000 + 60_000).toISOString();
+    expect(relTime(inTwoHours)).toBe("in 2h");
+  });
+
   it("returns empty string for null", () => {
     expect(relTime(null)).toBe("");
   });

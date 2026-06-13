@@ -1,7 +1,7 @@
 import "server-only";
 
-import { randomBytes } from "node:crypto";
 import { AsyncLocalStorage } from "node:async_hooks";
+import { createLogger, getTraceId, newTraceId } from "@cloud/log";
 import type { CursorPager, ErrorBody, ErrorParams, Pager, SuccessBody } from "./index.ts";
 import {
   ERR_BAD_REQUEST,
@@ -86,10 +86,13 @@ function resolveLogMessage(code: string, fallback?: string): string {
   return lookupMessage(code, "en") ?? fallback ?? code;
 }
 
-function generateTraceId(status: number): string {
-  const prefix = status >= 500 ? "SYS" : "BIZ";
-  const hex = randomBytes(3).toString("hex");
-  return `${prefix}-${hex}`;
+const log = createLogger("request");
+
+// 一个请求一个 traceId：优先取请求级 trace 上下文（withApiHandler 起的 ALS），
+// 取不到（非请求上下文，如脚本/启动期）才即时生成。响应体、错误日志、所有 @cloud/log
+// 行因此共用同一 traceId，端到端可追。
+function resolveTraceId(): string {
+  return getTraceId() ?? newTraceId();
 }
 
 export function successResponse<T>(data: T, pager?: Pager | CursorPager): Response {
@@ -98,7 +101,7 @@ export function successResponse<T>(data: T, pager?: Pager | CursorPager): Respon
     message: "success",
     data,
     ...(pager ? pager : {}),
-    traceId: generateTraceId(200),
+    traceId: resolveTraceId(),
   };
   return Response.json(body);
 }
@@ -109,7 +112,7 @@ export function createdResponse<T>(data: T): Response {
       code: "OK",
       message: "success",
       data,
-      traceId: generateTraceId(201),
+      traceId: resolveTraceId(),
     } satisfies SuccessBody<T>,
     { status: 201 },
   );
@@ -135,7 +138,7 @@ export function errorResponse(
   status = 400,
   options?: ErrorResponseOptions,
 ): Response {
-  const traceId = generateTraceId(status);
+  const traceId = resolveTraceId();
   logError(traceId, code, resolveLogMessage(code, message), options?.cause);
   return Response.json(
     {
@@ -147,13 +150,9 @@ export function errorResponse(
   );
 }
 
-// 统一日志出口：英文/code 稳定，带 cause 时附完整堆栈。
+// 统一日志出口：走 @cloud/log（JSON 行 + traceId/seq），英文/code 稳定，带 cause 时附堆栈。
 function logError(traceId: string, code: string, logMessage: string, cause?: unknown): void {
-  if (cause !== undefined) {
-    console.error(`[${traceId}] [${code}] ${logMessage}`, cause);
-  } else {
-    console.error(`[${traceId}] [${code}] ${logMessage}`);
-  }
+  log.error(logMessage, { code, traceId, ...(cause !== undefined ? { err: cause } : {}) });
 }
 
 export function badRequestResponse(code = ERR_BAD_REQUEST, message?: string): Response {
@@ -173,8 +172,8 @@ export function notFoundResponse(code = ERR_NOT_FOUND, message?: string): Respon
 }
 
 export function internalErrorResponse(error: unknown): Response {
-  const traceId = generateTraceId(500);
-  console.error(`[${traceId}] [${ERR_INTERNAL}]`, error);
+  const traceId = resolveTraceId();
+  log.error("unhandled internal error", { code: ERR_INTERNAL, traceId, err: error });
   return Response.json(
     { message: resolveErrorMessage(ERR_INTERNAL), code: ERR_INTERNAL, traceId } satisfies ErrorBody,
     { status: 500 },

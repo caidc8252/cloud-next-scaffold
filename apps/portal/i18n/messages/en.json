@@ -1,4 +1,22 @@
 {
+  "email": {
+    "common": {
+      "footerIgnore": "If you didn't request this, you can safely ignore this email."
+    },
+    "verifyCode": {
+      "subject": "Your verification code",
+      "expiry": "This code expires in {minutes} minutes.",
+      "intro": {
+        "passwordRecovery": "Use the code below to reset your password."
+      }
+    },
+    "passwordReset": {
+      "subject": "Reset your password",
+      "intro": "A password reset was requested for your account.",
+      "button": "Reset password",
+      "expiry": "This link expires in {duration}."
+    }
+  },
   "portal": {
     "brand": {
       "name": "PEP",
@@ -205,17 +223,46 @@
         "returning": "Returning from {provider}…"
       }
     },
+    "resetPassword": {
+      "invalid": {
+        "title": "Reset link invalid",
+        "sub": "This password reset link is invalid or has expired. Request a new one to continue.",
+        "requestNew": "Request a new link"
+      },
+      "form": {
+        "eyebrow": "Reset password",
+        "title": "Set a new password",
+        "sub": "Choose a strong password you don't use anywhere else.",
+        "newLabel": "New password",
+        "newPlaceholder": "At least {min} characters",
+        "confirmLabel": "Confirm password",
+        "confirmPlaceholder": "Repeat password",
+        "mismatch": "Passwords don't match.",
+        "submit": "Update password",
+        "submitting": "Updating…"
+      },
+      "done": {
+        "title": "Password updated",
+        "sub": "Your password has been changed. Sign in with your new password.",
+        "signIn": "Go to sign in"
+      },
+      "error": "Couldn't reset your password. Please try again."
+    },
     "forgot": {
       "back": "Back to sign in",
       "changeEmail": "Change email",
       "email": {
         "eyebrow": "Account recovery",
         "title": "Reset your password",
-        "sub": "Enter the email on your account and we'll send a 6-digit verification code.",
+        "sub": "Enter your account email and we'll send you a link to reset your password.",
         "label": "Work email",
-        "send": "Send verification code",
-        "sending": "Sending code…",
+        "send": "Send reset link",
+        "sending": "Sending link…",
         "err": "Enter a valid email address."
+      },
+      "sent": {
+        "title": "Check your email",
+        "sub": "If an account exists for {email}, we've sent a link to reset your password."
       },
       "code": {
         "eyebrow": "Step 2 of 3",
@@ -291,6 +338,11 @@
         "signIn": "Sign in"
       },
       "register": {
+        "title": "Create your account",
+        "emailNote": "You'll join with {email}",
+        "submit": "Create account & join",
+        "submitting": "Creating account…",
+        "error": "Something went wrong. Please try again.",
         "stepLabel": "Register · Step {current} of {total}",
         "steps": {
           "email": "Email",

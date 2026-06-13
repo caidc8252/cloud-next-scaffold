@@ -15,6 +15,7 @@
     "@cloud/config": "workspace:*",
     "@cloud/db": "workspace:*",
     "@cloud/i18n": "workspace:*",
+    "@cloud/mail": "workspace:*",
     "@cloud/permissions": "workspace:*",
     "@cloud/platform-config": "workspace:*",
     "@cloud/request": "workspace:*",

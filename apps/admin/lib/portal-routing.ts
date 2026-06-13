@@ -26,3 +26,12 @@ export function getPortalLoginUrl(): string {
   url.hash = "";
   return url.toString();
 }
+
+export function getPortalOnboardingUrl(token: string): string {
+  const url = getPortalAppUrl();
+  url.pathname = "/onboarding";
+  url.search = "";
+  url.hash = "";
+  url.searchParams.set("token", token);
+  return url.toString();
+}

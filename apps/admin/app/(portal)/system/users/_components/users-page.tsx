@@ -50,6 +50,14 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
   const selected = users.find((u) => u.id === selectedId) ?? null;
   const cancelTarget = confirmCancelId ? users.find((u) => u.id === confirmCancelId) : null;
 
+  async function refreshUsers() {
+    const res = await request.get<User[]>(API);
+    setUsers(res.data);
+    setSelectedId((current) =>
+      current && res.data.some((u) => u.id === current) ? current : (res.data[0]?.id ?? null),
+    );
+  }
+
   async function update(next: User): Promise<boolean> {
     try {
       const res = await request.put<User>(`${API}/${next.id}`, {
@@ -86,6 +94,8 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
       toast.success("Invitation sent");
     } catch (err) {
       toastError(err);
+      // createInvite may have persisted before mail enqueue failed; refresh exposes the pending invite.
+      void refreshUsers().catch(() => undefined);
     }
   }
 

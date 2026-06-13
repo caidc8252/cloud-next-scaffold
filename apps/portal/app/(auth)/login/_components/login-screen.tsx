@@ -33,7 +33,7 @@ type MfaResponse =
       triesLeft: number;
     }>);
 
-export function LoginScreen() {
+export function LoginScreen({ returnTo }: { returnTo?: string }) {
   const t = useTranslations("portal.login");
   const router = useRouter();
 
@@ -124,6 +124,7 @@ export function LoginScreen() {
       const res = await request.post<PasswordLoginResponse>("/api/auth/password", {
         email,
         encryptedPassword,
+        ...(returnTo ? { returnTo } : {}),
       });
       await applyPasswordResult(res.data, email);
     } catch (e) {
