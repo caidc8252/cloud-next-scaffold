@@ -5,6 +5,7 @@ import {
   errorResponse,
   forbiddenResponse,
   internalErrorResponse,
+  notFoundResponse,
   unauthorizedResponse,
 } from "@cloud/request/server";
 
@@ -56,6 +57,7 @@ export function s3ErrorResponse(error: unknown): Response {
   if (
     code === "CredentialsProviderError" ||
     code === "InvalidAccessKeyId" ||
+    code === "InvalidClientTokenId" ||
     code === "SignatureDoesNotMatch" ||
     code === "ExpiredToken" ||
     message.includes("Could not load credentials") ||
@@ -71,6 +73,13 @@ export function s3ErrorResponse(error: unknown): Response {
     return forbiddenResponse(
       "storage.s3_access_denied",
       "AWS credentials do not have permission to access the configured S3 object.",
+    );
+  }
+
+  if (code === "NoSuchKey" || code === "NotFound" || awsError?.$metadata?.httpStatusCode === 404) {
+    return notFoundResponse(
+      "storage.s3_object_not_found",
+      "The uploaded S3 object was not found. Complete the upload before confirming it.",
     );
   }
 
