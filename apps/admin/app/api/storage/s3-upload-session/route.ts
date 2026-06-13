@@ -3,6 +3,7 @@ import { badRequestResponse, successResponse } from "@cloud/request/server";
 import { createS3UploadSession } from "@cloud/storage/server";
 import { s3ErrorResponse } from "@/lib/s3-error-response";
 import { getS3UploadConfig } from "@/lib/s3-upload-config";
+import { resolveS3UploadProfile } from "@/lib/s3-upload-profiles";
 import { isContentHashInputPresent, normalizeContentHash } from "@/lib/storage-content-hash";
 import { createPendingStorageObjectRecord } from "@/lib/storage-object-records";
 import { validateStorageVisibilityInput } from "@/lib/storage-visibility";
@@ -13,9 +14,8 @@ type UploadSessionRequest = {
   filename?: string;
   contentType?: string;
   size?: number;
-  directory?: string;
+  uploadProfile?: string;
   contentHash?: string;
-  visibility?: string;
 };
 
 export const POST = withApiHandler(
@@ -46,10 +46,14 @@ export const POST = withApiHandler(
         "contentHash must be a SHA-256 hex digest.",
       );
     }
+    const profile = resolveS3UploadProfile(body.uploadProfile);
+    if (!profile.ok) {
+      return badRequestResponse(profile.code, profile.message);
+    }
     const visibility = validateStorageVisibilityInput({
-      visibility: body.visibility,
+      visibility: profile.value.visibility,
       contentType,
-      directory: body.directory,
+      directory: profile.value.directory,
     });
     if (!visibility.ok) {
       return badRequestResponse(visibility.code, visibility.message);

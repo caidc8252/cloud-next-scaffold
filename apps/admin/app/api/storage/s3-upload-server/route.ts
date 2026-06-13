@@ -4,6 +4,7 @@ import { badRequestResponse, successResponse } from "@cloud/request/server";
 import { uploadFileToS3FromServer } from "@cloud/storage/server";
 import { s3ErrorResponse } from "@/lib/s3-error-response";
 import { getS3UploadConfig } from "@/lib/s3-upload-config";
+import { resolveS3UploadProfile } from "@/lib/s3-upload-profiles";
 import {
   findDuplicateStorageObjectRecord,
   saveStorageObjectRecord,
@@ -50,10 +51,14 @@ export const POST = withApiHandler(
     }
 
     const contentType = file.type || "application/octet-stream";
+    const profile = resolveS3UploadProfile(getStringFormValue(formData, "uploadProfile"));
+    if (!profile.ok) {
+      return badRequestResponse(profile.code, profile.message);
+    }
     const visibility = validateStorageVisibilityInput({
-      visibility: getStringFormValue(formData, "visibility"),
+      visibility: profile.value.visibility,
       contentType,
-      directory: getStringFormValue(formData, "directory"),
+      directory: profile.value.directory,
     });
     if (!visibility.ok) {
       return badRequestResponse(visibility.code, visibility.message);

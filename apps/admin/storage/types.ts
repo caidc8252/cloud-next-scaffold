@@ -22,7 +22,7 @@ export type CompleteS3UploadRequest = {
   contentType?: string;
   sizeBytes?: number;
   contentHash?: string;
-  visibility?: "PRIVATE" | "PUBLIC";
+  uploadProfile?: string;
   etag?: string;
 };
 
