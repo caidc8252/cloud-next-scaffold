@@ -7,7 +7,8 @@ info:
     当前 party 作用域（belongToPartyId = 当前 party 或 NULL）。写入（createNotice）是服务端内部能力，
     不在此对外暴露。响应统一信封 { code, message, data, traceId }。
     x-authorize: authenticated = 仅需登录、无特定权限码。
-    已按 2026-06-13 backend-conflicts 裁决刷新（payload 四件套 / DB 分页 / links URL）。
+    业务规则见 business-logic.md，实体/字段见 domain.md，接口机制见 api-logic.md。
+    分页用 offset Pager，其 page/limit/total/totalPages 由 successResponse 展开到信封顶层（与 data 同级）。
 
 servers:
   - url: https://admin.example.com
@@ -27,7 +28,9 @@ paths:
         - { in: query, name: q,      required: false, schema: { type: string }, description: 标题 / summary 文本搜索 }
       responses:
         "200":
-          description: 通知列表（含分页元信息）
+          description: >
+            通知列表 + 分页元信息。pager 字段（page/limit/total/totalPages）由 successResponse
+            展开到信封**顶层**（与 data 同级），不嵌套在 data 内。
           content:
             application/json:
               schema:
@@ -37,12 +40,10 @@ paths:
                     type: object
                     properties:
                       items: { type: array, items: { $ref: "#/components/schemas/Notice" } }
-                      pager:
-                        type: object
-                        properties:
-                          total: { type: integer }
-                          page:  { type: integer }
-                          limit: { type: integer }
+                  page:       { type: integer }
+                  limit:      { type: integer }
+                  total:      { type: integer }
+                  totalPages: { type: integer }
         "401":
           $ref: "#/components/responses/Unauthorized"
 
