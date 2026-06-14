@@ -17,6 +17,7 @@ vi.mock("./users.repository", () => ({
   listPendingInvites: vi.fn(),
   resolveUsernames: vi.fn(),
   findUserLink: vi.fn(),
+  findUserByEmail: vi.fn(),
   getUserWithLink: vi.fn(),
   updatePartyUser: vi.fn(),
   findPendingInviteByEmail: vi.fn(),
@@ -75,7 +76,7 @@ function inviteRow(overrides: Record<string, unknown> = {}) {
     operatorInviteId: 9,
     inviteEmail: "new@example.com",
     token: "tok",
-    expiresAt: new Date("2026-02-01T00:00:00.000Z"),
+    expiresAt: new Date(Date.now() + 7 * 86_400_000), // 未过期
     resendCount: 0,
     creTime: new Date("2026-01-10T00:00:00.000Z"),
     inviterUserId: 1,
@@ -86,6 +87,7 @@ function inviteRow(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(repo.findUserByEmail).mockResolvedValue(null as never);
 });
 
 describe("listUsersAndInvites", () => {
@@ -125,6 +127,37 @@ describe("createInvite", () => {
     expect(sendInviteEmail).toHaveBeenCalledWith(
       expect.objectContaining({ to: "new@example.com", token: "tok", partyName: "Acme", inviterName: "admin" }),
     );
+  });
+
+  it("已是成员（ACTIVE）→ EMAIL_TAKEN，不发邀请", async () => {
+    vi.mocked(repo.findUserByEmail).mockResolvedValue({ userId: 9 } as never);
+    vi.mocked(repo.findUserLink).mockResolvedValue({ status: "ACTIVE", authorizingType: "NORMAL" } as never);
+    await expect(createInvite(session, { email: "x@example.com" })).rejects.toMatchObject({ code: ERR_USER_EMAIL_TAKEN });
+    expect(repo.createInvite).not.toHaveBeenCalled();
+    expect(repo.updateInvite).not.toHaveBeenCalled();
+  });
+
+  it("已是成员（LOCKED）→ EMAIL_TAKEN", async () => {
+    vi.mocked(repo.findUserByEmail).mockResolvedValue({ userId: 9 } as never);
+    vi.mocked(repo.findUserLink).mockResolvedValue({ status: "LOCKED", authorizingType: "NORMAL" } as never);
+    await expect(createInvite(session, { email: "x@example.com" })).rejects.toMatchObject({ code: ERR_USER_EMAIL_TAKEN });
+  });
+
+  it("同邮箱未过期邀请 → EMAIL_TAKEN", async () => {
+    vi.mocked(repo.findPendingInviteByEmail).mockResolvedValue(inviteRow() as never); // 未过期
+    await expect(createInvite(session, { email: "x@example.com" })).rejects.toMatchObject({ code: ERR_USER_EMAIL_TAKEN });
+    expect(repo.createInvite).not.toHaveBeenCalled();
+  });
+
+  it("同邮箱已过期邀请 → 覆盖原行（不新建）", async () => {
+    vi.mocked(repo.findPendingInviteByEmail).mockResolvedValue(
+      inviteRow({ operatorInviteId: 7, expiresAt: new Date(Date.now() - 1000) }) as never,
+    );
+    vi.mocked(repo.updateInvite).mockResolvedValue(inviteRow({ operatorInviteId: 7 }) as never);
+    await createInvite(session, { email: "x@example.com", roleIds: ["3"] });
+    expect(repo.createInvite).not.toHaveBeenCalled();
+    expect(vi.mocked(repo.updateInvite).mock.calls[0][0]).toBe(7);
+    expect(vi.mocked(repo.updateInvite).mock.calls[0][1]).toMatchObject({ status: "PENDING", resendCount: 0 });
   });
 });
 

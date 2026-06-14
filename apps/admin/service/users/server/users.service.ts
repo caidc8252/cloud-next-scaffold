@@ -58,22 +58,49 @@ export async function listUsersAndInvites(partyId: number): Promise<User[]> {
 
 export async function createInvite(session: ActiveSession, input: CreateInviteInput): Promise<User> {
   const partyId = session.currentPartyId;
-  const existing = await usersRepository.findPendingInviteByEmail(partyId, input.email);
-  if (existing) throw new BusinessError(ERR_USER_EMAIL_TAKEN);
+  const now = new Date();
+
+  // 1) 已是成员（任意状态）→ 拒
+  const existingUser = await usersRepository.findUserByEmail(input.email);
+  if (existingUser) {
+    const link = await usersRepository.findUserLink(partyId, existingUser.userId);
+    if (link) throw new BusinessError(ERR_USER_EMAIL_TAKEN);
+  }
 
   const roleIds = parseRoleIds(input.roleIds);
-  const invite = await usersRepository.createInvite({
-    partyId,
-    inviterPartyId: partyId,
-    inviterUserId: session.userId,
-    inviteEmail: input.email,
-    intendedRole: roleIds.map((roleId) => ({ roleId })),
-    token: randomBytes(INVITE_TOKEN_BYTES).toString("base64url"),
-    expiresAt: new Date(Date.now() + INVITE_TTL_MS),
-    creUserId: session.userId,
-  });
-
   const inviterName = session.displayName ?? "system";
+  const newToken = () => randomBytes(INVITE_TOKEN_BYTES).toString("base64url");
+  const expiresAt = new Date(now.getTime() + INVITE_TTL_MS);
+
+  // 2) 同邮箱旧邀请：未过期→拒，已过期→覆盖，无→新建
+  const pending = await usersRepository.findPendingInviteByEmail(partyId, input.email);
+  let invite;
+  if (pending && pending.expiresAt.getTime() > now.getTime()) {
+    throw new BusinessError(ERR_USER_EMAIL_TAKEN);
+  } else if (pending) {
+    invite = await usersRepository.updateInvite(pending.operatorInviteId, {
+      token: newToken(),
+      expiresAt,
+      intendedRole: roleIds.map((roleId) => ({ roleId })),
+      resendCount: 0,
+      status: "PENDING",
+      inviterPartyId: partyId,
+      inviterUserId: session.userId,
+      updUserId: session.userId,
+    });
+  } else {
+    invite = await usersRepository.createInvite({
+      partyId,
+      inviterPartyId: partyId,
+      inviterUserId: session.userId,
+      inviteEmail: input.email,
+      intendedRole: roleIds.map((roleId) => ({ roleId })),
+      token: newToken(),
+      expiresAt,
+      creUserId: session.userId,
+    });
+  }
+
   // 真发邀请邮件（含 onboarding accept 链接）。队列背压/节流异常会冒泡：邀请已落库，
   // 管理员可重发；这也让发信问题（背压/频率）显式可见。
   await sendInviteEmail({
