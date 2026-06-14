@@ -1,103 +1,57 @@
 "use client";
-
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { request } from "@cloud/request/client";
 import type { Notice } from "@/service/notification/types";
 
-/**
- * Client-side notification store (mock-app phase) — one source of truth shared
- * by the bell, the list page and the detail page, so a mark-read shows up in
- * all three at once (badge + rows). Seeded from the server in the (portal)
- * layout (no mount flash) and re-synced from the route handlers on focus; the
- * server store behind those handlers is the real source.
- *
- * Mounted once in the (portal) layout, wrapping both the header (bell) and the
- * page content (children).
- */
-type NotificationsContextValue = {
-  notices: Notice[];
+type Ctx = {
   unreadCount: number;
+  recentUnread: Notice[];
   markRead: (ids: string[]) => Promise<void>;
   markAllRead: () => Promise<void>;
   refresh: () => Promise<void>;
 };
+const NotificationsContext = createContext<Ctx | null>(null);
 
-const NotificationsContext = createContext<NotificationsContextValue | null>(null);
-
-export function NotificationsProvider({
-  initial,
-  children,
-}: {
-  initial: Notice[];
-  children: React.ReactNode;
-}) {
-  const [notices, setNotices] = useState<Notice[]>(initial);
+export function NotificationsProvider({ children }: { children: React.ReactNode }) {
+  const [recentUnread, setRecentUnread] = useState<Notice[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const refresh = useCallback(async () => {
     try {
-      const res = await request.get<{ items: Notice[] }>("/api/notifications", {
-        query: { limit: 100 },
-      });
-      setNotices(res.data.items);
-    } catch {
-      // Mock phase: keep the last known list on a transient failure.
-    }
+      const [list, count] = await Promise.all([
+        request.get<{ items: Notice[] }>("/api/notifications", { query: { status: "UNREAD", page: 1, limit: 20 } }),
+        request.get<{ count: number }>("/api/notifications/unread-count"),
+      ]);
+      setRecentUnread(list.data.items);
+      setUnreadCount(count.data.count);
+    } catch { /* 保持上次值 */ }
   }, []);
 
-  // Cheap re-sync when the tab regains focus (mirrors the bell's poll-on-focus).
-  // setState happens only inside the event callback, never synchronously here.
   useEffect(() => {
-    const onFocus = () => {
-      refresh();
-    };
+    const onFocus = () => refresh();
+    refresh();
     window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onFocus);
-    return () => {
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onFocus);
-    };
+    return () => window.removeEventListener("focus", onFocus);
   }, [refresh]);
 
-  const markRead = useCallback(
-    async (ids: string[]) => {
-      if (ids.length === 0) return;
-      const want = new Set(ids);
-      setNotices((prev) =>
-        prev.map((n) => (want.has(n.id) ? { ...n, status: "READ" as const } : n)),
-      );
-      try {
-        await request.post("/api/notifications/read", { ids });
-      } catch {
-        refresh();
-      }
-    },
-    [refresh],
-  );
+  const markRead = useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return;
+    const want = new Set(ids);
+    setRecentUnread((p) => p.filter((n) => !want.has(n.id)));
+    setUnreadCount((c) => Math.max(0, c - ids.length));
+    try { await request.post("/api/notifications/read", { ids }); } finally { refresh(); }
+  }, [refresh]);
 
   const markAllRead = useCallback(async () => {
-    setNotices((prev) => prev.map((n) => ({ ...n, status: "READ" as const })));
-    try {
-      await request.post("/api/notifications/read", { all: true });
-    } catch {
-      refresh();
-    }
+    setRecentUnread([]); setUnreadCount(0);
+    try { await request.post("/api/notifications/read", { all: true }); } finally { refresh(); }
   }, [refresh]);
 
-  const unreadCount = notices.reduce((c, n) => (n.status === "UNREAD" ? c + 1 : c), 0);
-
-  return (
-    <NotificationsContext.Provider
-      value={{ notices, unreadCount, markRead, markAllRead, refresh }}
-    >
-      {children}
-    </NotificationsContext.Provider>
-  );
+  return <NotificationsContext.Provider value={{ unreadCount, recentUnread, markRead, markAllRead, refresh }}>{children}</NotificationsContext.Provider>;
 }
 
-export function useNotifications(): NotificationsContextValue {
+export function useNotifications(): Ctx {
   const ctx = useContext(NotificationsContext);
-  if (!ctx) {
-    throw new Error("useNotifications must be used within a NotificationsProvider");
-  }
+  if (!ctx) throw new Error("useNotifications must be used within NotificationsProvider");
   return ctx;
 }

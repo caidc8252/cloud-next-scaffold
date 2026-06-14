@@ -8,7 +8,6 @@ import { UserMenu } from "./_components/user-menu";
 import { getMenuIcon } from "./_components/menu-icon";
 import { PortalHeader } from "./_components/portal-header";
 import { NotificationsProvider } from "./_components/notifications-provider";
-import { list as listNotices } from "@/service/notification/mock-store";
 
 type Menu = {
   id: string;
@@ -99,7 +98,7 @@ export default async function PortalLayout({
 
   return (
     <SidebarProvider defaultCollapsed={defaultCollapsed}>
-      <NotificationsProvider initial={listNotices(100)}>
+      <NotificationsProvider>
         <Layout
           sidebar={
           <Sidebar
