@@ -13,6 +13,7 @@ import {
 } from "@cloud/request/error-codes";
 import { createLogger } from "@cloud/log";
 import { getTranslations } from "@cloud/i18n/server";
+import { isLocale } from "@cloud/i18n";
 import { extractRoleIds, parseRoleIds } from "@/service/_shared/role-codes";
 import type { User } from "@/app/(portal)/system/_shared/types";
 import { createPasswordResetToken } from "@/lib/password-reset-token";
@@ -157,7 +158,8 @@ export async function resetUserPassword(session: ActiveSession, userId: number):
 
   // 站内通知：通知被重置密码的用户（同 app；按收件人 locale 渲染）。埋点失败不阻断重置主流程。
   try {
-    const locale = await usersRepository.findUserLocale(userId);
+    const raw = await usersRepository.findUserLocale(userId);
+    const locale = isLocale(raw) ? raw : "en"; // 收窄到受支持 locale，未知回退 en
     const t = await getTranslations({ locale });
     await createNotice({
       userId,
@@ -166,7 +168,9 @@ export async function resetUserPassword(session: ActiveSession, userId: number):
       title: t("notifications.events.passwordReset.title"),
       payload: {
         summary: t("notifications.events.passwordReset.summary"),
-        detail: t("notifications.events.passwordReset.detail", { expiresText: "72 hours" }),
+        detail: t("notifications.events.passwordReset.detail", {
+          expiresText: t("notifications.events.passwordReset.expires"),
+        }),
       },
     });
   } catch (err) {

@@ -91,7 +91,8 @@
       "passwordReset": {
         "title": "Your password was reset",
         "summary": "An administrator started a password reset for your account",
-        "detail": "An administrator initiated a password reset. Use the link sent to your email to set a new password. The link expires in {expiresText}."
+        "detail": "An administrator initiated a password reset. Use the link sent to your email to set a new password. The link expires in {expiresText}.",
+        "expires": "72 hours"
       }
     }
   },
