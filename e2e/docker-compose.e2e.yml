@@ -1,4 +1,4 @@
-# next-kit:e2e-bootstrap v3
+# next-kit:e2e-bootstrap v7
 services:
   postgres-e2e:
     image: postgres:16-alpine

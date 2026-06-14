@@ -1,4 +1,4 @@
-// next-kit:e2e-bootstrap v3
+// next-kit:e2e-bootstrap v7
 import { defineConfig } from '@playwright/test';
 import { config } from 'dotenv';
 
