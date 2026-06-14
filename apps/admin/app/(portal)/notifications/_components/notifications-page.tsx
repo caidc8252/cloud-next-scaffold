@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ChevronRight, Download, Search, X } from "lucide-react";
 import {
@@ -20,28 +20,34 @@ import {
   type TableColumn,
 } from "@cloud/ui";
 import { useTranslations } from "@cloud/i18n/client";
-import type { Notice, NoticeModule, NoticeStatus } from "@/service/notification/types";
+import { request } from "@cloud/request/client";
+import { toastError } from "@cloud/request/error-toast";
+import type { Notice, NoticeStatus } from "@/service/notification/types";
 import { useNotifications } from "../../_components/notifications-provider";
 import { isUnread, relTime } from "../_lib/notice-meta";
 import { ModuleChip } from "./module-chip";
 
-type ModuleFilter = "All" | NoticeModule;
+type ModuleFilter = "All" | "ticket" | "customer" | "app" | "order" | "account";
 type StatusFilter = "All" | NoticeStatus;
 type Filters = { q: string; module: ModuleFilter; status: StatusFilter };
 
 const EMPTY: Filters = { q: "", module: "All", status: "All" };
-const MODULES: NoticeModule[] = ["ticket", "customer", "app", "order"];
+const MODULES: Exclude<ModuleFilter, "All">[] = ["ticket", "customer", "app", "order", "account"];
 const STATUSES: NoticeStatus[] = ["UNREAD", "READ"];
 
 export function NotificationsPage() {
   const t = useTranslations("notifications");
   const router = useRouter();
-  const { notices, unreadCount, markRead, markAllRead } = useNotifications();
+  const { unreadCount, markRead, markAllRead } = useNotifications();
 
   const [draft, setDraft] = useState<Filters>(EMPTY);
   const [applied, setApplied] = useState<Filters>(EMPTY);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const moduleLabel = (m: ModuleFilter) =>
     m === "All" ? t("filter.allTypes") : t(`module.${m}`);
@@ -64,39 +70,59 @@ export function NotificationsPage() {
     setPage(1);
   };
 
-  const filtered = useMemo(() => {
-    let list = notices;
-    if (applied.module !== "All") list = list.filter((n) => n.module === applied.module);
-    if (applied.status !== "All") list = list.filter((n) => n.status === applied.status);
-    const q = applied.q.trim().toLowerCase();
-    if (q) {
-      list = list.filter(
-        (n) =>
-          n.title.toLowerCase().includes(q) || n.payload.body.toLowerCase().includes(q),
-      );
-    }
-    return list;
-  }, [notices, applied]);
+  // Server-side fetch: triggered by page, pageSize, or applied filters
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    const q = {
+      page,
+      limit: pageSize,
+      ...(applied.status !== "All" ? { status: applied.status } : {}),
+      ...(applied.module !== "All" ? { module: applied.module } : {}),
+      ...(applied.q ? { q: applied.q } : {}),
+    };
+    request
+      .get<{ items: Notice[] }>("/api/notifications", { query: q })
+      .then((res) => {
+        if (!alive) return;
+        setNotices(res.data.items);
+        setTotal(res.total ?? 0);
+      })
+      .catch((err) => {
+        if (alive) toastError(err);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [page, pageSize, applied]);
 
   const hasFilters = applied.q !== "" || applied.module !== "All" || applied.status !== "All";
-  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const safePage = Math.min(page, pageCount);
-  const pageRows = filtered.slice((safePage - 1) * pageSize, (safePage - 1) * pageSize + pageSize);
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
   const open = (n: Notice) => {
+    // Optimistic: mark this row as read locally, then navigate
     markRead([n.id]);
+    setNotices((prev) => prev.map((item) => (item.id === n.id ? { ...item, status: "READ" } : item)));
     router.push(`/notifications/${n.id}`);
+  };
+
+  const handleMarkAllRead = () => {
+    markAllRead();
+    setNotices((prev) => prev.map((n) => ({ ...n, status: "READ" })));
   };
 
   const exportCsv = () => {
     const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
     const head = [t("col.when"), t("col.type"), t("col.statusHead"), t("col.title"), t("col.body")];
-    const rows = filtered.map((n) => [
+    const rows = notices.map((n) => [
       relTime(n.createdAt),
-      moduleLabel(n.module),
+      n.type ?? "",
       isUnread(n) ? statusLabel("UNREAD") : statusLabel("READ"),
-      n.title,
-      n.payload.body,
+      n.title ?? "",
+      n.payload.summary,
     ]);
     const csv = [head, ...rows].map((r) => r.map(esc).join(",")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
@@ -107,7 +133,7 @@ export function NotificationsPage() {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    toast.success(t("exported", { count: filtered.length }));
+    toast.success(t("exported", { count: notices.length }));
   };
 
   const columns: TableColumn<Notice>[] = [
@@ -131,11 +157,11 @@ export function NotificationsPage() {
           >
             {n.title}
           </div>
-          <div className="truncate text-2xs text-content-tertiary">{n.payload.body}</div>
+          <div className="truncate text-2xs text-content-tertiary">{n.payload.summary}</div>
         </div>
       ),
     },
-    { key: "type", title: t("col.type"), render: (n) => <ModuleChip module={n.module} /> },
+    { key: "type", title: t("col.type"), render: (n) => <ModuleChip type={n.type} /> },
     {
       key: "when",
       title: t("col.when"),
@@ -165,7 +191,7 @@ export function NotificationsPage() {
             variant="secondary"
             iconLeft={<Check className="size-4" />}
             disabled={unreadCount === 0}
-            onClick={() => markAllRead()}
+            onClick={handleMarkAllRead}
           >
             {t("markAllRead")}
           </Button>
@@ -257,16 +283,16 @@ export function NotificationsPage() {
           <div className="flex items-center justify-between gap-3 border-b border-line-subtle px-4 py-3">
             <div className="text-sm text-content-secondary">
               <span className="font-mono font-semibold tabular-nums text-content-primary">
-                {filtered.length}
+                {total}
               </span>{" "}
-              {t("count", { count: filtered.length })}
+              {t("count", { count: total })}
               {hasFilters && <span className="text-content-tertiary"> {t("matchingFilters")}</span>}
             </div>
             <Button
               variant="secondary"
               size="sm"
               iconLeft={<Download className="size-3.5" />}
-              disabled={filtered.length === 0}
+              disabled={notices.length === 0 || loading}
               onClick={exportCsv}
             >
               {t("export")}
@@ -275,7 +301,7 @@ export function NotificationsPage() {
 
           <Table
             columns={columns}
-            rows={pageRows}
+            rows={notices}
             rowKey={(n) => n.id}
             onRowClick={open}
             empty={
@@ -286,10 +312,10 @@ export function NotificationsPage() {
           />
 
           <RichPagination
-            page={safePage}
+            page={page}
             pageCount={pageCount}
             onPageChange={setPage}
-            total={filtered.length}
+            total={total}
             pageSize={pageSize}
             onPageSizeChange={(n) => {
               setPageSize(n);
