@@ -25,6 +25,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Empty,
   PAGE_BODY_PADDING_CLASS_NAME,
   StatCard,
   Tabs,
@@ -165,8 +166,8 @@ export function DetailPageTemplate() {
       <TabsContent value="collections" className={PAGE_BODY_PADDING_CLASS_NAME}>
         <Card>
           <CardHeader>
-            <CardTitle className="text-md">Section title</CardTitle>
-            <CardDescription className="text-xs leading-relaxed text-content-tertiary">
+            <CardTitle>Section title</CardTitle>
+            <CardDescription>
               A short line describing what this collection of rows represents.
             </CardDescription>
             <CardAction>
@@ -213,9 +214,7 @@ export function DetailPageTemplate() {
       </TabsContent>
 
       <TabsContent value="items" className={PAGE_BODY_PADDING_CLASS_NAME}>
-        <div className="px-4 py-12 text-center text-sm text-content-tertiary">
-          Section empty state — px-4~6 py-8~12, centered, text-sm tertiary.
-        </div>
+        <Empty title="No items yet." />
       </TabsContent>
     </Tabs>
   );

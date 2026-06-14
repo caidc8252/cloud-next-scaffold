@@ -26,6 +26,18 @@ interface ModalProps {
   description?: React.ReactNode
   footer?: React.ReactNode
   closeOnOverlay?: boolean
+  /**
+   * Whether pressing Escape closes the modal. Default true.
+   *
+   * base-ui hardwires Escape handling on the Dialog root (there is no
+   * `disableEscapeKey` prop — only `disablePointerDismissal` for the overlay),
+   * so we suppress it here by inspecting the close reason and cancelling
+   * base-ui's own dismissal. Set false for flows that must not be lost to a
+   * stray keypress (multi-step forms, in-flight submits). This only gates
+   * Escape — `closeOnOverlay` and `showCloseButton` stay independent. For a
+   * dialog that forbids every casual dismissal, prefer <AlertDialog>.
+   */
+  closeOnEscape?: boolean
   showCloseButton?: boolean
   /** Width preset: 'sm'|'md'|'lg'|'xl'|'fullscreen'. Default 'md' (480px). */
   size?: ModalSize
@@ -40,6 +52,7 @@ function Modal({
   description,
   footer,
   closeOnOverlay = true,
+  closeOnEscape = true,
   showCloseButton = true,
   size = "md",
   children,
@@ -50,8 +63,15 @@ function Modal({
   return (
     <DialogPrimitive.Root
       open={open}
-      onOpenChange={(isOpen) => {
-        if (!isOpen) onClose?.()
+      onOpenChange={(isOpen, eventDetails) => {
+        if (isOpen) return
+        // base-ui always handles Escape; intercept it here when disabled.
+        // cancel() stops base-ui's own dismissal so the popup stays mounted.
+        if (!closeOnEscape && eventDetails.reason === "escape-key") {
+          eventDetails.cancel()
+          return
+        }
+        onClose?.()
       }}
       disablePointerDismissal={!closeOnOverlay}
     >
