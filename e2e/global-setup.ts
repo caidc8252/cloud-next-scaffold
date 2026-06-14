@@ -1,71 +1,44 @@
-// next-kit:e2e-bootstrap v3
+// next-kit:e2e-bootstrap v7
 //
-// STUB landed by `bin/setup e2e`. The CONTRACT bits below are filled in
-// (env fast-fail, three roles, captcha header, storageState paths). The
-// only thing you must complete is the actual SIGN-IN flow for this app —
-// see the TODO. Do NOT commit real credentials; values come from .env.test.
-import { chromium, type FullConfig } from '@playwright/test';
+// 用真实浏览器走 portal 登录页（应用自身完成 RSA 加密 + 跨 host handoff），
+// storageState 落 admin 会话。避免在 Node 里重写 RSA/handoff。
+import { chromium, type FullConfig } from "@playwright/test";
+import { mkdir } from "node:fs/promises";
 
 const REQUIRED = [
-  'E2E_BASE_URL',
-  'E2E_USER_EMAIL',
-  'E2E_USER_PASSWORD',
-  'E2E_ADMIN_EMAIL',
-  'E2E_ADMIN_PASSWORD',
-  'E2E_CAPTCHA_BYPASS_TOKEN',
+  "E2E_BASE_URL",
+  "E2E_PORTAL_URL",
+  "E2E_ADMIN_EMAIL",
+  "E2E_ADMIN_PASSWORD",
+  "E2E_CAPTCHA_BYPASS_TOKEN",
+  "DATABASE_URL",
+  "REDIS_URL",
 ] as const;
 
-// NOTE: this app authenticates by `account` (the SysUser.username), not email.
-// The E2E_*_EMAIL env vars therefore carry the account/username (the seeded
-// admin's username is `admin`). Login is POST /api/auth/login → JSON
-// { data: { redirectTo } }: `/` for a single-entity user, `/select-entity`
-// for a multi-entity user, `/locked` for one with no active entity. We drive
-// the route directly (not the UI): page.request shares the context cookie jar,
-// so the session cookie set by createSession() is captured by storageState().
-async function signInAndSave(
-  baseURL: string,
-  account: string,
-  password: string,
-  storageStatePath: string,
-): Promise<void> {
+export default async function globalSetup(_config: FullConfig): Promise<void> {
+  const missing = REQUIRED.filter((k) => !process.env[k]);
+  if (missing.length) throw new Error(`global-setup: missing env: ${missing.join(", ")}`);
+
+  const portalUrl = process.env.E2E_PORTAL_URL!;
+  const adminUrl = process.env.E2E_BASE_URL!;
+  await mkdir("e2e/.auth", { recursive: true });
+
   const browser = await chromium.launch();
-  const page = await browser.newPage({
-    baseURL,
-    extraHTTPHeaders: { 'X-E2E-Bypass-Captcha': process.env.E2E_CAPTCHA_BYPASS_TOKEN! },
+  const ctx = await browser.newContext({
+    extraHTTPHeaders: { "X-E2E-Bypass-Captcha": process.env.E2E_CAPTCHA_BYPASS_TOKEN! },
   });
+  const page = await ctx.newPage();
   try {
-    const res = await page.request.post('/api/auth/login', { data: { account, password } });
-    if (!res.ok()) {
-      throw new Error(
-        `global-setup: login failed for ${account} (HTTP ${res.status()}): ${await res.text()}`,
-      );
-    }
-    const redirectTo = ((await res.json()) as { data?: { redirectTo?: string } }).data?.redirectTo;
-    if (redirectTo === '/select-entity') {
-      // Multi-entity users need an explicit entity pick, which requires an
-      // entityId this setup can't infer. Seed/point this role at a
-      // single-entity test user instead.
-      throw new Error(
-        `global-setup: ${account} resolves to multiple entities (redirectTo=/select-entity). ` +
-          `Use a single-entity test user, or extend this setup to POST /api/auth/select-entity.`,
-      );
-    }
-    if (redirectTo === '/locked') {
-      throw new Error(`global-setup: ${account} has no active entity (redirectTo=/locked).`);
-    }
-    // Session cookie now lives in the shared context jar — persist it.
-    await page.context().storageState({ path: storageStatePath });
+    // portal 登录页：应用自身做 login-challenge + RSA 加密 + POST /api/auth/password，
+    // 成功后 handoff 跨域跳 admin console（ADMIN 组）。
+    await page.goto(`${portalUrl}/login`);
+    await page.fill("#login-email", process.env.E2E_ADMIN_EMAIL!);
+    await page.fill("#login-password", process.env.E2E_ADMIN_PASSWORD!);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    // 等到落 admin host（handoff 完成、admin sid 已写）。
+    await page.waitForURL((url) => url.origin === adminUrl, { timeout: 30_000 });
+    await ctx.storageState({ path: "e2e/.auth/admin.json" });
   } finally {
     await browser.close();
   }
-}
-
-export default async function globalSetup(_config: FullConfig): Promise<void> {
-  const missing = REQUIRED.filter(k => !process.env[k]);
-  if (missing.length) {
-    throw new Error(`global-setup: missing env vars: ${missing.join(', ')}. See .env.test.example.`);
-  }
-  const baseURL = process.env.E2E_BASE_URL!;
-  await signInAndSave(baseURL, process.env.E2E_USER_EMAIL!, process.env.E2E_USER_PASSWORD!, 'e2e/.auth/user.json');
-  await signInAndSave(baseURL, process.env.E2E_ADMIN_EMAIL!, process.env.E2E_ADMIN_PASSWORD!, 'e2e/.auth/admin.json');
 }

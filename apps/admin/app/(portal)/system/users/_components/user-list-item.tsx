@@ -77,7 +77,7 @@ export function UserListItem({ user, active, onClick, onResend, onCancel }: User
       </div>
       {isPending && (
         <div className="flex shrink-0 gap-1">
-          {onResend && (
+          {onResend && !isExpired && (
             <Button variant="ghost" size="icon-xs" aria-label="Resend invitation" title="Resend invitation"
               className="hover:bg-surface-active" onClick={(e) => { e.stopPropagation(); onResend(); }}>
               <RefreshCw />

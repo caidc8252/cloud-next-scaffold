@@ -1,0 +1,29 @@
+# next-kit:e2e-bootstrap v7
+services:
+  postgres-e2e:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: e2e
+      POSTGRES_PASSWORD: e2e
+      POSTGRES_DB: e2e
+    ports:
+      - "5434:5432" # 5432/5433 taken by local docker postgres; matches DATABASE_URL in .env.test
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U e2e -d e2e"]
+      interval: 1s
+      timeout: 5s
+      retries: 30
+
+  redis-e2e:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379" # 6379 taken by local docker redis; matches REDIS_URL in .env.test
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 20

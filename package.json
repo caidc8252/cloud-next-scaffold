@@ -33,7 +33,9 @@
     "db:studio": "node scripts/prisma.mjs studio",
     "db:setup": "pnpm db:generate && pnpm db:push && pnpm db:seed",
     "check:diff-coverage": "vitest run --coverage --coverage.reporter=lcov --coverage.reporter=html && node scripts/check-diff-coverage.mjs",
-    "test:e2e": "docker compose -f docker-compose.e2e.yml up -d --wait postgres-e2e && pnpm db:push && pnpm db:seed && playwright test && E2E_MARKER_ROOTS='apps/*/src apps/*/app apps/*/middleware.ts' node scripts/check-e2e-orphans.mjs"
+    "test:e2e": "pnpm test:e2e:spec && pnpm check:e2e-orphans",
+    "test:e2e:spec": "docker compose -f e2e/docker-compose.e2e.yml up -d --wait postgres-e2e redis-e2e && node --env-file=.env.test scripts/prisma.mjs db push && E2E_SEED=1 node --env-file=.env.test scripts/prisma.mjs db seed && playwright test",
+    "check:e2e-orphans": "E2E_MARKER_ROOTS='apps/*/src apps/*/app apps/*/middleware.ts' node scripts/check-e2e-orphans.mjs"
   },
   "dependencies": {
     "next": "16.2.6",
@@ -60,6 +62,9 @@
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.1.6",
     "@vitest/coverage-v8": "^4.1.0",
-    "@playwright/test": "^1.49.0"
+    "@playwright/test": "^1.49.0",
+    "pg": "^8.13.0",
+    "@types/pg": "^8.11.10",
+    "typescript-eslint": "^8.0.0"
   }
 }

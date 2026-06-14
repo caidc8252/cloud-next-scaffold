@@ -140,6 +140,29 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
     }
   }
 
+  async function regenerateInvite(user: User) {
+    try {
+      const res = await request.post<User>(`${API}/${user.id}/regenerate-invite`);
+      setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
+      toast.success("Invitation regenerated");
+    } catch (err) {
+      toastError(err);
+    }
+  }
+
+  // Expired invite → re-send by re-creating (backend overwrites the expired row for the same email).
+  async function reinviteExpired(user: User) {
+    try {
+      const res = await request.post<User>(API, { email: user.inviteEmail, roleIds: user.roleIds });
+      setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
+      setSelectedId(res.data.id);
+      toast.success("Invitation re-sent");
+    } catch (err) {
+      toastError(err);
+      void refreshUsers().catch(() => undefined);
+    }
+  }
+
   function requestCancel(userId: string) {
     setConfirmCancelId(userId);
   }
@@ -216,7 +239,10 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
             {selected ? (
               selected.status === "PENDING" ? (
                 <PendingInviteDetail user={selected} roles={roles}
-                  onResend={() => resendInvite(selected)} onCancel={() => requestCancel(selected.id)} onSave={updateInviteRoles} />
+                  onResend={() => resendInvite(selected)}
+                  onRegenerate={() => regenerateInvite(selected)}
+                  onReinvite={() => reinviteExpired(selected)}
+                  onCancel={() => requestCancel(selected.id)} onSave={updateInviteRoles} />
               ) : (
                 <UserDetail user={selected} users={users} roles={roles} currentUserId={currentUserId} onSave={update}
                   onResetPassword={() => resetPassword(selected)} onToggleLock={() => toggleLock(selected)} />

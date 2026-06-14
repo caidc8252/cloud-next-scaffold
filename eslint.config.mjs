@@ -27,6 +27,6 @@ export default defineConfig([
     ".agents/**",
     ".playwright-mcp/**",
   ]),
-  // next-kit:eslint-restricted-imports v6
+  // next-kit:eslint-restricted-imports v10
   ...nextKitGuardrail({ appApi: ["apps/*/app/api/**/*.{ts,tsx,js,jsx}"] }),
 ]);

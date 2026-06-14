@@ -11,6 +11,9 @@
 // See skills/setup/references/eslint.md and
 // docs/superpowers/specs/2026-05-27-setup-clean-architecture-design.md.
 
+import { createRequire } from 'node:module';
+const requireFrom = createRequire(import.meta.url);
+
 // ---- no-restricted-imports entries ---------------------------------------
 const NEXT_AUTH = { name: 'next-auth', message: 'Use @cloud/permissions/server: requireSession, getSession, assertPermissions.' };
 const STYLED = { name: 'styled-components', message: 'No CSS-in-JS. Use Tailwind utilities over @cloud/ui tokens.' };
@@ -26,6 +29,10 @@ const CACHE_GROUP = [
   { name: 'redis', message: 'Use @cloud/cache: kv.get/set/del/expire.' },
   { name: '@redis/client', message: 'Use @cloud/cache: kv.get/set/del/expire.' },
 ];
+const STORAGE_GROUP = [
+  { name: '@aws-sdk/client-s3', message: 'Use @cloud/storage/server (upload sessions, server upload, signed download) or @cloud/storage/client (browser direct + multipart). Don\'t construct the S3 client in app code.' },
+  { name: '@aws-sdk/client-sts', message: 'Use @cloud/storage — credential/STS handling lives in the package, not app code.' },
+];
 const PRISMA_IMPORT = { name: '@prisma/client', message: 'Import the client and any model/enum types from @cloud/db. Under Prisma 7 the client generates to packages/db/generated/prisma — @prisma/client no longer resolves the model types; re-export them from @cloud/db rather than deep-importing generated internals.' };
 const CLOUD_DB = { name: '@cloud/db', message: 'Route handlers must not touch the DB directly — call a service (service/<domain>/server/*.service.ts).' };
 const DATA_LAYER_PATTERN = { group: ['**/*.repository', '**/*.mapper'], message: 'Route handlers delegate to a service — call service/<domain>/server/*.service.ts instead. Repository/mapper (data + VO layers) are invoked by the service, not the route.' };
@@ -35,7 +42,7 @@ const NEXT_INTL_PATTERN = { group: ['next-intl', 'next-intl/client'], message: '
 const VALIDATORS_PATTERN = { group: ['yup', 'joi', 'valibot', 'superstruct'], message: 'Use Zod for all input validation.' };
 const EMOTION_PATTERN = { group: ['@emotion/*'], message: 'No CSS-in-JS. Use Tailwind utilities over @cloud/ui tokens.' };
 
-const ALL_PATHS = [NEXT_AUTH, ...BCRYPT_GROUP, ...CACHE_GROUP, PRISMA_IMPORT, STYLED];
+const ALL_PATHS = [NEXT_AUTH, ...BCRYPT_GROUP, ...CACHE_GROUP, ...STORAGE_GROUP, PRISMA_IMPORT, STYLED];
 const ALL_PATTERNS = [NEXT_AUTH_PATTERN, NEXT_INTL_PATTERN, VALIDATORS_PATTERN, EMOTION_PATTERN];
 
 const without = (arr, drop) => arr.filter(x => !drop.includes(x));
@@ -49,17 +56,50 @@ const SEL_USE_SERVER = { selector: "ExpressionStatement[directive='use server']"
 const SEL_ASCHILD = { selector: "JSXAttribute[name.name='asChild']", message: "@cloud/ui uses base-ui (not Radix). Replace `asChild` with `render={<Component />}`. base-ui spreads unknown props silently onto the DOM — `asChild` compiles without error but the handler won't fire. Confirm prop names against packages/ui/src/components/ui/<name>.tsx." };
 const SEL_TABLE = { selector: "JSXOpeningElement[name.name=/^(TableHeader|TableBody|TableRow|TableHead|TableCell|TableFooter|TableCaption)$/]", message: '@cloud/ui Table uses a columns/rows API, not shadcn slot composition. Use `<Table<R> columns={...} rows={...} rowKey={...} />`. See packages/ui/src/components/ui/table.tsx for the typed config shape.' };
 const SEL_ONOPENCHANGE = { selector: "JSXOpeningElement[name.name='Modal'] > JSXAttribute[name.name='onOpenChange']", message: '`Modal` renames the dialog callback to `onClose` — the wrapper maps it internally, so `onOpenChange` is silently dropped. base-ui primitives that forward the native callback (CommandDialog, Sheet, Drawer, Popover, DropdownMenu, HoverCard, Tooltip, …) correctly keep `onOpenChange`. See packages/ui/src/components/ui/modal.tsx.' };
-const SEL_ARBITRARY_LITERAL = { selector: "JSXAttribute[name.name='className'] Literal[value=/(?:^|\\s)(?!(?:[a-z-]+:)*(?:w|h|min-w|max-w|min-h|max-h)-\\[)(?:[a-z-]+:)*[a-z-]+-\\[/]", message: 'No arbitrary Tailwind values except w-/h-/min-w-/max-w-/min-h-/max-h-. Use a @cloud/ui design token; compose tokens via a named @utility, never inline [...]. See the ui skill.' };
-const SEL_ARBITRARY_TEMPLATE = { selector: "JSXAttribute[name.name='className'] TemplateElement[value.cooked=/(?:^|\\s)(?!(?:[a-z-]+:)*(?:w|h|min-w|max-w|min-h|max-h)-\\[)(?:[a-z-]+:)*[a-z-]+-\\[/]", message: 'No arbitrary Tailwind values except w-/h-/min-w-/max-w-/min-h-/max-h-. Use a @cloud/ui design token; compose tokens via a named @utility, never inline [...]. See the ui skill.' };
+const SEL_ARBITRARY_LITERAL = { selector: "JSXAttribute[name.name='className'] Literal[value=/(?:^|\\s)(?:[a-z-]+:)*[a-z-]+-\\[/]", message: "No arbitrary Tailwind values. Snap to the nearest design-token scale class or use the primitive's size prop; compose tokens via a named @utility. See the ui skill." };
+const SEL_ARBITRARY_TEMPLATE = { selector: "JSXAttribute[name.name='className'] TemplateElement[value.cooked=/(?:^|\\s)(?:[a-z-]+:)*[a-z-]+-\\[/]", message: "No arbitrary Tailwind values. Snap to the nearest design-token scale class or use the primitive's size prop; compose tokens via a named @utility. See the ui skill." };
 const SEL_CURSOR = { selector: "JSXOpeningElement[name.name=/^[a-z]/]:has(JSXAttribute[name.name='onClick']):not(:has(JSXAttribute[name.name='className'] Literal[value=/(?:^|\\s)cursor-(?:pointer|not-allowed)(?:\\s|$)/]))", message: 'Clickable native elements (onClick) need a static cursor-pointer (or cursor-not-allowed) in className. For interactive UI, use a @cloud/ui primitive — it owns its cursor.' };
 const SEL_INLINE_STYLE = { selector: "JSXAttribute[name.name='style'] Property[value.type='Literal']:not([key.value=/^--/])", message: 'No inline style for static visuals — use a Tailwind utility. style is only for dynamic/runtime values (transform/animation, runtime width/height/opacity) or CSS-variable (--*) injection.' };
 const SEL_NATIVE_FORM = { selector: "JSXOpeningElement[name.name=/^(button|input|select|textarea)$/]", message: 'Use @cloud/ui primitives, not native form controls: <button>→Button, <input>→Input, <select>→Select, <textarea>→Textarea. Compose under apps/*/components/. See the ui skill.' };
 const SEL_FRAG_MAP_ARROW = { selector: "CallExpression[callee.property.name='map'] > ArrowFunctionExpression > JSXFragment", message: "A .map() callback must not return a bare <>…</> Fragment — use a host element or @cloud/ui component (it can't carry a key, and loops need a container). See the ui skill." };
 const SEL_FRAG_MAP_BLOCK = { selector: "CallExpression[callee.property.name='map'] > ArrowFunctionExpression > BlockStatement > ReturnStatement > JSXFragment", message: "A .map() callback must not return a bare <>…</> Fragment — use a host element or @cloud/ui component (it can't carry a key, and loops need a container). See the ui skill." };
+const SEL_CARD_PADDING = { selector: "JSXOpeningElement[name.name='Card'] JSXAttribute[name.name='className'] Literal[value=/(?:^|\\s)(?:[a-z-]+:)*p(?:[xytrblse])?-/]", message: 'Card owns no padding — put content in the slots (CardHeader/CardContent/CardFooter), which pad via `size`. A `p-*` on Card is the hand-rolled-card smell. See packages/ui/src/components/ui/card.tsx.' };
+// A content-driven height class (`h-auto`/`h-fit`/`h-min`/`h-max`) in className
+// can't grow a *sized* Button/Toggle: their size variants set a custom token
+// (`h-control-*`) that tailwind-merge can't dedupe against a standard `h-*` class,
+// so the override silently no-ops. The fix is the variant the components already
+// expose — `size="auto"`. The important forms (`h-auto!` / `!h-auto`) are the
+// sanctioned force-override and pass: the (?:^|\s)…(?:\s|$) boundaries don't match
+// across the `!`. Like the arbitrary-value ban, it ships as a Literal +
+// TemplateElement pair so `cn("h-auto")` and a backtick className are both caught
+// (computed/variable classNames and renamed/wrapped components are not — same
+// name-match limit as the base-ui selectors).
+const SEL_HAUTO_SIZE_LITERAL = { selector: "JSXOpeningElement[name.name=/^(Button|Toggle)$/] JSXAttribute[name.name='className'] Literal[value=/(?:^|\\s)(?:[a-z-]+:)*h-(?:auto|fit|min|max)(?:\\s|$)/]", message: "Don't set a content-driven height on a Button/Toggle via className (h-auto/h-fit/h-min/h-max) — its sized variants set a custom h-control-* token that tailwind-merge can't dedupe against an h-* class, so it silently no-ops. Use size=\"auto\"; force a sized variant only with the important form (e.g. h-auto!). See the ui skill." };
+const SEL_HAUTO_SIZE_TEMPLATE = { selector: "JSXOpeningElement[name.name=/^(Button|Toggle)$/] JSXAttribute[name.name='className'] TemplateElement[value.cooked=/(?:^|\\s)(?:[a-z-]+:)*h-(?:auto|fit|min|max)(?:\\s|$)/]", message: "Don't set a content-driven height on a Button/Toggle via className (h-auto/h-fit/h-min/h-max) — its sized variants set a custom h-control-* token that tailwind-merge can't dedupe against an h-* class, so it silently no-ops. Use size=\"auto\"; force a sized variant only with the important form (e.g. h-auto!). See the ui skill." };
 
 const STYLING = [SEL_ARBITRARY_LITERAL, SEL_ARBITRARY_TEMPLATE, SEL_CURSOR, SEL_INLINE_STYLE, SEL_NATIVE_FORM, SEL_FRAG_MAP_ARROW, SEL_FRAG_MAP_BLOCK];
-const BASE_UI = [SEL_ASCHILD, SEL_TABLE, SEL_ONOPENCHANGE];
+const BASE_UI = [SEL_ASCHILD, SEL_TABLE, SEL_ONOPENCHANGE, SEL_CARD_PADDING, SEL_HAUTO_SIZE_LITERAL, SEL_HAUTO_SIZE_TEMPLATE];
 const APP_SET = [SEL_PRISMA, SEL_USE_SERVER, ...BASE_UI, ...STYLING];
+
+// ---- data-layer query rules (repository region only) -----------------------
+// Anchoring on the `prisma`/`tx` BASE object is what makes these tractable:
+// `prisma.user.findMany()` nests as callee.object.object.name='prisma', while
+// the $-prefixed methods (`prisma.$queryRaw`, `prisma.$transaction`) have an
+// Identifier base (callee.object.name), so banning the former never touches
+// the latter.
+// Rule 1 — reads use raw SQL; the query builder's READ methods are banned in
+// the data layer. Writes keep the builder (create/update/…), so they're absent.
+const SEL_RAW_QUERY = { selector: "CallExpression[callee.object.object.name=/^(prisma|tx)$/][callee.property.name=/^(findMany|findUnique|findUniqueOrThrow|findFirst|findFirstOrThrow|count|aggregate|groupBy)$/]", message: 'Reads use raw SQL via prisma.$queryRaw`…` (typed), not the query builder (findMany/findUnique/…). Writes keep the builder inside a transaction. See the db skill.' };
+// Rule 2 — a read needs no transaction, not even several reads for a consistent
+// snapshot. A legitimate $transaction always contains a write; flag one that
+// contains NONE — no builder write, no $executeRawUnsafe call, no $executeRaw
+// tagged template. (A write expressed as $queryRaw would false-positive, but
+// that's its own anti-pattern; writes use $executeRaw.)
+// Every write-detection clause is ANCHORED on the prisma/tx base — otherwise an
+// incidental non-prisma call inside the callback (`seen.delete(id)`, `map.update(k)`)
+// would match `callee.property.name` and falsely suppress the flag.
+const SEL_NO_READ_TXN = { selector: "CallExpression[callee.object.name=/^(prisma|tx)$/][callee.property.name='$transaction']:not(:has(CallExpression[callee.object.object.name=/^(prisma|tx)$/][callee.property.name=/^(create|createMany|createManyAndReturn|update|updateMany|updateManyAndReturn|upsert|delete|deleteMany)$/])):not(:has(CallExpression[callee.object.name=/^(prisma|tx)$/][callee.property.name='$executeRawUnsafe'])):not(:has(TaggedTemplateExpression[tag.object.name=/^(prisma|tx)$/][tag.property.name='$executeRaw']))", message: 'No $transaction around reads — reads never need one, not even for a consistent snapshot. Transactions are only for multi-statement mutations needing atomicity. See the db skill.' };
+const DATA_LAYER = [SEL_RAW_QUERY, SEL_NO_READ_TXN];
 
 const syntax = (...sels) => ['error', ...sels];
 
@@ -115,6 +155,34 @@ const requireE2eCell = {
 };
 const nextKitPlugin = { meta: { name: 'eslint-plugin-next-kit', version: '0.0.0' }, rules: { 'require-e2e-cell': requireE2eCell } };
 
+// ---- type-aware rules (no deprecated APIs) ---------------------------------
+// `@typescript-eslint/no-deprecated` needs TYPE information, so this is the one
+// region where the otherwise-parserless preset injects the typescript-eslint
+// parser + `projectService` and turns the rule on. It is NOT a consumer opt-in:
+// `bin/setup eslint` adds the `typescript-eslint` devDependency so the rule is
+// active out of the box. Cost the consumer inherits: their TS lint becomes
+// type-aware (slower), and a tsconfig must cover the linted files. `files` is
+// SCOPED to source dirs (not bare **/*.ts): root config files and scripts/ are
+// commonly outside the tsconfig, and `projectService` errors HARD on an
+// uncovered file. A consumer already using `parserOptions.project` must drop it
+// — `project` + `projectService` conflict. Exported for shape-testing.
+export function typeAwareBlock(tseslint, files) {
+  return {
+    files,
+    languageOptions: { parser: tseslint.parser, parserOptions: { projectService: true } },
+    plugins: { '@typescript-eslint': tseslint.plugin },
+    rules: { '@typescript-eslint/no-deprecated': 'error' },
+  };
+}
+// Loaded lazily: a repo momentarily without `typescript-eslint` installed still
+// gets every syntax rule — only this block drops out (the setup tool adds the
+// dep, so the gap is transient). Never let a missing dep kill the whole config.
+function typeAwareBlocks(files) {
+  let tseslint;
+  try { tseslint = requireFrom('typescript-eslint'); } catch { return []; }
+  return [typeAwareBlock(tseslint, files)];
+}
+
 // IMPORTANT: every glob used in a `files:` key MUST be extension-qualified
 // (end in `*.{ts,tsx,js,jsx}`). A bare directory glob like `packages/**` does
 // NOT match files under real ESLint flat config — the file is reported
@@ -128,28 +196,43 @@ export function nextKitGuardrail({
   packagesI18n = 'packages/i18n/**/*.{ts,tsx,js,jsx}',
   packagesSecurity = 'packages/security/**/*.{ts,tsx,js,jsx}',
   packagesCache = 'packages/cache/**/*.{ts,tsx,js,jsx}',
+  packagesStorage = 'packages/storage/**/*.{ts,tsx,js,jsx}',
   routeHandlers = ['app/**/route.{ts,tsx,js,jsx}', 'src/app/**/route.{ts,tsx,js,jsx}'],
   middleware = ['middleware.{ts,tsx,js,jsx}', 'src/middleware.{ts,tsx,js,jsx}'],
+  repository = ['**/*.repository.{ts,tsx,js,jsx}'],
+  // Source dirs for type-aware linting (no-deprecated). Scoped, not bare **/*.ts,
+  // so root config files / scripts (commonly outside the tsconfig) don't trip
+  // projectService's hard "file not in project" error.
+  typeAware = ['app/**/*.{ts,tsx,mts,cts}', 'src/**/*.{ts,tsx,mts,cts}', 'apps/**/*.{ts,tsx,mts,cts}', 'packages/**/*.{ts,tsx,mts,cts}', 'service/**/*.{ts,tsx,mts,cts}'],
 } = {}) {
   return [
     // ---- no-restricted-imports (non-overlapping regions) ----
     // Route handlers: the full global set PLUS the data-layer ban.
     { files: appApi, rules: { 'no-restricted-imports': imports([...ALL_PATHS, CLOUD_DB], [...ALL_PATTERNS, DATA_LAYER_PATTERN]) } },
-    { ignores: [packagesSecurity, packagesCache, packagesI18n, packagesDb, ...appApi], rules: { 'no-restricted-imports': imports(ALL_PATHS, ALL_PATTERNS) } },
+    { ignores: [packagesSecurity, packagesCache, packagesStorage, packagesI18n, packagesDb, ...appApi], rules: { 'no-restricted-imports': imports(ALL_PATHS, ALL_PATTERNS) } },
     { files: [packagesSecurity], rules: { 'no-restricted-imports': imports(without(ALL_PATHS, BCRYPT_GROUP), ALL_PATTERNS) } },
     { files: [packagesCache], rules: { 'no-restricted-imports': imports(without(ALL_PATHS, CACHE_GROUP), ALL_PATTERNS) } },
+    { files: [packagesStorage], rules: { 'no-restricted-imports': imports(without(ALL_PATHS, STORAGE_GROUP), ALL_PATTERNS) } },
     { files: [packagesI18n], rules: { 'no-restricted-imports': imports(ALL_PATHS, without(ALL_PATTERNS, [NEXT_INTL_PATTERN])) } },
     { files: [packagesDb], rules: { 'no-restricted-imports': imports(without(ALL_PATHS, [PRISMA_IMPORT]), ALL_PATTERNS) } },
 
     // ---- no-restricted-syntax (non-overlapping regions) ----
     { files: appApi, rules: { 'no-restricted-syntax': syntax(SEL_NEXT_RESPONSE_JSON, SEL_RESPONSE_JSON, ...APP_SET) } },
-    { ignores: [packages, ...appApi], rules: { 'no-restricted-syntax': syntax(...APP_SET) } },
+    // Region B excludes the data layer (it gets its own region below) so files match exactly one block.
+    { ignores: [packages, ...appApi, ...repository], rules: { 'no-restricted-syntax': syntax(...APP_SET) } },
+    // Data layer (*.repository.*): the app set PLUS the query rules (raw-SQL reads, no read-only transactions).
+    // `ignores` keeps it mutually exclusive with A (appApi) and C/D/E (packages) — a repository file
+    // under either of those matches only that region, so no last-block-wins selector drop.
+    { files: repository, ignores: [packages, ...appApi], rules: { 'no-restricted-syntax': syntax(...APP_SET, ...DATA_LAYER) } },
     { files: [packagesDb], rules: { 'no-restricted-syntax': syntax(SEL_USE_SERVER) } },
     { files: [packagesI18n], rules: { 'no-restricted-syntax': syntax(SEL_PRISMA) } },
     { files: [packages], ignores: [packagesDb, packagesI18n], rules: { 'no-restricted-syntax': syntax(SEL_PRISMA, SEL_USE_SERVER) } },
 
     // ---- require-e2e-cell (route handlers + middleware carry an @e2e-cell marker) ----
     { files: [...routeHandlers, ...middleware], plugins: { 'next-kit': nextKitPlugin }, rules: { 'next-kit/require-e2e-cell': 'error' } },
+
+    // ---- type-aware: ban deprecated APIs (kit-delivered + active, not opt-in) ----
+    ...typeAwareBlocks(typeAware),
   ];
 }
 

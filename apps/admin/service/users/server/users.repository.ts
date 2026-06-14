@@ -63,6 +63,11 @@ export function findUserLink(partyId: number, userId: number) {
   });
 }
 
+/** 邮箱 → 用户（createInvite 成员校验用，查不到返回 null）。 */
+export function findUserByEmail(email: string) {
+  return prisma.sysUser.findUnique({ where: { email } });
+}
+
 /** 变更后重新读出用户 + 归属 link，供 mapper 出 VO。 */
 export function getUserWithLink(partyId: number, userId: number) {
   return prisma.sysUser.findUniqueOrThrow({
@@ -91,10 +96,10 @@ export function findInvite(partyId: number, operatorInviteId: number) {
   });
 }
 
-/** 当前 partner 下待消费邀请（resend / 改角色用）。 */
-export function findPendingInvite(partyId: number, operatorInviteId: number) {
+/** 当前 partner 下「未过期」待消费邀请（resend / 改角色 / 重新生成 共用）。 */
+export function findPendingInvite(partyId: number, operatorInviteId: number, now: Date = new Date()) {
   return prisma.sysOperatorInvite.findFirst({
-    where: { operatorInviteId, partyId, status: "PENDING" },
+    where: { operatorInviteId, partyId, status: "PENDING", expiresAt: { gt: now } },
   });
 }
 
