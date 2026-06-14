@@ -19,7 +19,9 @@
       "ticket": "チケット",
       "customer": "顧客",
       "app": "アプリ",
-      "order": "注文"
+      "order": "注文",
+      "account": "アカウント",
+      "default": "通知"
     },
     "status": {
       "unread": "未読",
@@ -61,6 +63,36 @@
       "back": "通知",
       "notFound": "通知が見つかりません。",
       "ctaPlaceholder": "モック: {label} を開きます"
+    },
+    "fields": {
+      "ticket": "チケット",
+      "priority": "優先度",
+      "customer": "顧客",
+      "slaDue": "SLA 期限",
+      "status": "ステータス",
+      "order": "注文",
+      "commenter": "コメント者",
+      "assignedBy": "担当割当",
+      "raisedBy": "起票元",
+      "queue": "キュー",
+      "reopenedBy": "再オープン者",
+      "previously": "以前",
+      "resolvedBy": "解決者",
+      "resolution": "解決策",
+      "appVersion": "アプリ版",
+      "result": "結果",
+      "app": "アプリ",
+      "action": "操作",
+      "operator": "オペレーター",
+      "invitedBy": "招待者",
+      "expires": "期限"
+    },
+    "events": {
+      "passwordReset": {
+        "title": "パスワードがリセットされました",
+        "summary": "管理者がアカウントのパスワードリセットを開始しました",
+        "detail": "管理者がパスワードリセットを開始しました。メールに送信されたリンクから新しいパスワードを設定してください。リンクは {expiresText} 後に失効します。"
+      }
     }
   },
   "email": {

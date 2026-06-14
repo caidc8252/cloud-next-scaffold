@@ -19,7 +19,9 @@
       "ticket": "Tickets",
       "customer": "Customers",
       "app": "Apps",
-      "order": "Orders"
+      "order": "Orders",
+      "account": "Account",
+      "default": "Notification"
     },
     "status": {
       "unread": "Unread",
@@ -61,6 +63,36 @@
       "back": "Notifications",
       "notFound": "Notification not found.",
       "ctaPlaceholder": "Mock: would open {label}"
+    },
+    "fields": {
+      "ticket": "Ticket",
+      "priority": "Priority",
+      "customer": "Customer",
+      "slaDue": "SLA due",
+      "status": "Status",
+      "order": "Order",
+      "commenter": "Commenter",
+      "assignedBy": "Assigned by",
+      "raisedBy": "Raised by",
+      "queue": "Queue",
+      "reopenedBy": "Reopened by",
+      "previously": "Previously",
+      "resolvedBy": "Resolved by",
+      "resolution": "Resolution",
+      "appVersion": "App version",
+      "result": "Result",
+      "app": "App",
+      "action": "Action",
+      "operator": "Operator",
+      "invitedBy": "Invited by",
+      "expires": "Expires"
+    },
+    "events": {
+      "passwordReset": {
+        "title": "Your password was reset",
+        "summary": "An administrator started a password reset for your account",
+        "detail": "An administrator initiated a password reset. Use the link sent to your email to set a new password. The link expires in {expiresText}."
+      }
     }
   },
   "email": {

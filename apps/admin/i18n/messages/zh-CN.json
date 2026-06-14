@@ -19,7 +19,9 @@
       "ticket": "工单",
       "customer": "客户",
       "app": "应用",
-      "order": "订单"
+      "order": "订单",
+      "account": "账户",
+      "default": "通知"
     },
     "status": {
       "unread": "未读",
@@ -61,6 +63,36 @@
       "back": "通知",
       "notFound": "未找到通知。",
       "ctaPlaceholder": "Mock：将打开 {label}"
+    },
+    "fields": {
+      "ticket": "工单",
+      "priority": "优先级",
+      "customer": "客户",
+      "slaDue": "SLA 截止",
+      "status": "状态",
+      "order": "订单",
+      "commenter": "评论人",
+      "assignedBy": "指派人",
+      "raisedBy": "提交方",
+      "queue": "队列",
+      "reopenedBy": "重开人",
+      "previously": "此前",
+      "resolvedBy": "解决人",
+      "resolution": "解决方案",
+      "appVersion": "应用版本",
+      "result": "结果",
+      "app": "应用",
+      "action": "动作",
+      "operator": "操作员",
+      "invitedBy": "邀请人",
+      "expires": "过期"
+    },
+    "events": {
+      "passwordReset": {
+        "title": "你的密码已被重置",
+        "summary": "管理员为你的账号发起了密码重置",
+        "detail": "管理员发起了密码重置。请使用发送到你邮箱的链接设置新密码。链接将在 {expiresText} 后过期。"
+      }
     }
   },
   "email": {
