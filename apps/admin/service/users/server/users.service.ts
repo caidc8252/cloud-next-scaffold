@@ -207,6 +207,28 @@ export async function resendInvite(session: ActiveSession, inviteId: number): Pr
   return toClientInvite(updated, inviterName);
 }
 
+/** 重新生成：换 token + 刷新有效期 + 重发；旧 token 立即失效。仅未过期邀请可用。 */
+export async function regenerateInvite(session: ActiveSession, inviteId: number): Promise<User> {
+  const invite = await usersRepository.findPendingInvite(session.currentPartyId, inviteId);
+  if (!invite) throw new BusinessError(ERR_USER_NO_PENDING_INVITE, 404);
+
+  const updated = await usersRepository.updateInvite(invite.operatorInviteId, {
+    token: randomBytes(INVITE_TOKEN_BYTES).toString("base64url"),
+    expiresAt: new Date(Date.now() + INVITE_TTL_MS),
+    updUserId: session.userId,
+  });
+
+  const inviterName = await resolveInviterName(session, updated.inviterUserId);
+  await sendInviteEmail({
+    to: updated.inviteEmail,
+    partyName: session.partyName,
+    inviterName,
+    token: updated.token,
+    expiresAt: updated.expiresAt,
+  });
+  return toClientInvite(updated, inviterName);
+}
+
 export async function setInviteRoles(
   session: ActiveSession,
   inviteId: number,
