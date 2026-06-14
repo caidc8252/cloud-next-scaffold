@@ -86,6 +86,41 @@ async function main() {
     `SELECT setval(pg_get_serial_sequence('sys_role', 'role_id'), 1000, true)`,
   );
 
+  // 给 admin 预置几条站内通知（dev/e2e 用；幂等：先按 user 清再插）
+  await prisma.sysNotice.deleteMany({ where: { userId: adminUser.userId } });
+  await prisma.sysNotice.createMany({
+    data: [
+      {
+        userId: adminUser.userId,
+        belongToPartyId: platformPartner.partyId,
+        noticeType: "ticket.assigned",
+        title: "A ticket was assigned to you",
+        status: "UNREAD",
+        payload: {
+          summary: "T-2026-003 · Security alert",
+          detail: "Assigned to you for L2 triage.",
+          fields: [
+            { key: "ticket", value: "T-2026-003", mono: true },
+            { key: "priority", value: "High" },
+          ],
+          links: [{ label: "Open ticket T-2026-003", type: "button", url: "/tickets/T-2026-003" }],
+        },
+      },
+      {
+        userId: adminUser.userId,
+        belongToPartyId: platformPartner.partyId,
+        noticeType: "order.complete",
+        title: "Your order is complete",
+        status: "READ",
+        payload: {
+          summary: "SO-2026-0184 completed",
+          fields: [{ key: "order", value: "SO-2026-0184", mono: true }],
+        },
+      },
+    ],
+  });
+  console.log(`seeded notices for admin (userId=${adminUser.userId})`);
+
   console.log(`seeded platform partner (id=${platformPartner.partyId})`);
   console.log(`seeded admin user: admin (password=${DEFAULT_PASSWORD})`);
   console.log(`sys_role sequence set to start at 1001 (dynamic PRIVATE roles)`);

@@ -170,7 +170,7 @@ export async function resetUserPassword(session: ActiveSession, userId: number):
       },
     });
   } catch (err) {
-    log.warn({ err, userId }, "passwordReset notice failed (non-blocking)");
+    log.warn("passwordReset notice failed (non-blocking)", { err, userId });
   }
 
   return user;
