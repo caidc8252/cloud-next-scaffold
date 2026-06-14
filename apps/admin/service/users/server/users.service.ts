@@ -11,6 +11,8 @@ import {
   ERR_USER_NOT_FOUND,
   ERR_USER_PROTECTED,
 } from "@cloud/request/error-codes";
+import { createLogger } from "@cloud/log";
+import { getTranslations } from "@cloud/i18n/server";
 import { extractRoleIds, parseRoleIds } from "@/service/_shared/role-codes";
 import type { User } from "@/app/(portal)/system/_shared/types";
 import { createPasswordResetToken } from "@/lib/password-reset-token";
@@ -20,9 +22,12 @@ import type {
   SetInviteRolesInput,
   UpdateUserInput,
 } from "@/service/users/schemas/users.schema";
+import { createNotice } from "@/service/notification/server/notification.service";
 import { toClientInvite, toClientUser } from "./users.mapper";
 import { canChangeRoles, isProtectedUser, isSelf, rolesChanged } from "./users.policy";
 import * as usersRepository from "./users.repository";
+
+const log = createLogger("users.service");
 
 // 邀请 id 的解析与合成 id 同源（mapper 铸造 `invite-<id>`）。route 只允许依赖 service，
 // 故由 service 转出，避免 route 直接 import mapper（被 lint 的数据层导入规则拦截）。
@@ -149,6 +154,25 @@ export async function resetUserPassword(session: ActiveSession, userId: number):
   const user = toClientUser(await usersRepository.getUserWithLink(partyId, userId));
   // 发重置链接（落 portal /reset-password?token=，复用其消费端）。token 72h。
   await sendResetLinkEmail({ to: user.email, token, expiresText: "72 hours" });
+
+  // 站内通知：通知被重置密码的用户（同 app；按收件人 locale 渲染）。埋点失败不阻断重置主流程。
+  try {
+    const locale = await usersRepository.findUserLocale(userId);
+    const t = await getTranslations({ locale });
+    await createNotice({
+      userId,
+      belongToPartyId: partyId,
+      noticeType: "account.passwordReset",
+      title: t("notifications.events.passwordReset.title"),
+      payload: {
+        summary: t("notifications.events.passwordReset.summary"),
+        detail: t("notifications.events.passwordReset.detail", { expiresText: "72 hours" }),
+      },
+    });
+  } catch (err) {
+    log.warn({ err, userId }, "passwordReset notice failed (non-blocking)");
+  }
+
   return user;
 }
 

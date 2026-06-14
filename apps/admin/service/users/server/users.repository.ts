@@ -109,3 +109,9 @@ export function updateInvite(operatorInviteId: number, data: UpdateInviteData) {
 export function deleteInvite(operatorInviteId: number) {
   return prisma.sysOperatorInvite.delete({ where: { operatorInviteId } });
 }
+
+/** 读取用户偏好语言（用于按收件人 locale 渲染通知文案）；无值时回退 "en"。 */
+export async function findUserLocale(userId: number): Promise<string> {
+  const u = await prisma.sysUser.findUnique({ where: { userId }, select: { locale: true } });
+  return u?.locale ?? "en";
+}

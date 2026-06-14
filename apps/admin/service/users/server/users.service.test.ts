@@ -25,13 +25,18 @@ vi.mock("./users.repository", () => ({
   createInvite: vi.fn(),
   updateInvite: vi.fn(),
   deleteInvite: vi.fn(),
+  findUserLocale: vi.fn(),
 }));
 vi.mock("@/lib/password-reset-token", () => ({ createPasswordResetToken: vi.fn() }));
 vi.mock("@/lib/email", () => ({ sendInviteEmail: vi.fn(), sendResetLinkEmail: vi.fn() }));
+vi.mock("@/service/notification/server/notification.service", () => ({ createNotice: vi.fn() }));
+vi.mock("@cloud/i18n/server", () => ({ getTranslations: vi.fn(async () => (k: string) => k) }));
+vi.mock("@cloud/log", () => ({ createLogger: vi.fn(() => ({ warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() })) }));
 
 import * as repo from "./users.repository";
 import { createPasswordResetToken } from "@/lib/password-reset-token";
 import { sendInviteEmail, sendResetLinkEmail } from "@/lib/email";
+import { createNotice } from "@/service/notification/server/notification.service";
 import {
   cancelInvite,
   createInvite,
@@ -211,6 +216,19 @@ describe("resetUserPassword", () => {
     expect(sendResetLinkEmail).toHaveBeenCalledWith(
       expect.objectContaining({ to: "bob@example.com", token: "rtok" }),
     );
+  });
+
+  it("resetUserPassword sends an in-app notice to the target user", async () => {
+    vi.mocked(repo.findUserLink).mockResolvedValue({ status: "ACTIVE", authorizingType: "NORMAL" } as never);
+    vi.mocked(repo.getUserWithLink).mockResolvedValue(userRow({ userId: 42, email: "u@x.com" }) as never);
+    vi.mocked(repo.findUserLocale).mockResolvedValue("zh-CN" as never);
+    vi.mocked(createPasswordResetToken).mockResolvedValue("tok" as never);
+
+    await resetUserPassword(session, 42);
+
+    expect(createNotice).toHaveBeenCalledWith(expect.objectContaining({
+      userId: 42, noticeType: "account.passwordReset", belongToPartyId: session.currentPartyId,
+    }));
   });
 });
 
