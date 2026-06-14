@@ -1,11 +1,13 @@
 openapi: 3.1.0
 info:
   title: 消息通知（notice-message）API
-  version: 1.0.0
+  version: 2.0.0
   description: >
-    用户消息通知的读取面：列表 / 未读数（角标）/ 标记已读。均按当前用户 + 当前 party 作用域
-    （belongToPartyId = 当前 party 或 NULL）。写入（createNotice）是服务端内部能力，不在此对外暴露。
-    响应统一信封 { code, message, data, traceId }。x-authorize: authenticated = 仅需登录、无特定权限码。
+    用户消息通知的读取面：列表（数据库分页）/ 未读数（角标）/ 标记已读。均按当前用户 +
+    当前 party 作用域（belongToPartyId = 当前 party 或 NULL）。写入（createNotice）是服务端内部能力，
+    不在此对外暴露。响应统一信封 { code, message, data, traceId }。
+    x-authorize: authenticated = 仅需登录、无特定权限码。
+    已按 2026-06-13 backend-conflicts 裁决刷新（payload 四件套 / DB 分页 / links URL）。
 
 servers:
   - url: https://admin.example.com
@@ -15,16 +17,17 @@ paths:
   /api/notifications:
     get:
       operationId: listNotifications
-      summary: 当前用户的通知列表（当前 party 作用域，最新在前）
+      summary: 当前用户的通知列表（当前 party 作用域，最新在前，数据库分页）
       x-authorize: authenticated
       parameters:
-        - in: query
-          name: limit
-          required: false
-          schema: { type: integer, default: 30, maximum: 100 }
+        - { in: query, name: page,   required: false, schema: { type: integer, default: 1, minimum: 1 } }
+        - { in: query, name: limit,  required: false, schema: { type: integer, default: 25, maximum: 100 } }
+        - { in: query, name: status, required: false, schema: { type: string, enum: [UNREAD, READ] }, description: 状态筛选 }
+        - { in: query, name: module, required: false, schema: { type: string }, description: 按 noticeType 前缀筛选（ticket/customer/app/order…） }
+        - { in: query, name: q,      required: false, schema: { type: string }, description: 标题 / summary 文本搜索 }
       responses:
         "200":
-          description: 通知列表
+          description: 通知列表（含分页元信息）
           content:
             application/json:
               schema:
@@ -33,9 +36,13 @@ paths:
                   data:
                     type: object
                     properties:
-                      items:
-                        type: array
-                        items: { $ref: "#/components/schemas/Notice" }
+                      items: { type: array, items: { $ref: "#/components/schemas/Notice" } }
+                      pager:
+                        type: object
+                        properties:
+                          total: { type: integer }
+                          page:  { type: integer }
+                          limit: { type: integer }
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -67,15 +74,11 @@ paths:
           application/json:
             schema:
               oneOf:
-                - type: object
-                  required: [ids]
-                  properties: { ids: { type: array, items: { type: string }, minItems: 1 } }
-                - type: object
-                  required: [all]
-                  properties: { all: { const: true } }
+                - { type: object, required: [ids], properties: { ids: { type: array, items: { type: string }, minItems: 1 } } }
+                - { type: object, required: [all], properties: { all: { const: true } } }
       responses:
         "200":
-          description: 已标记（幂等;仅 UNREAD→READ;仅本人 + 当前作用域）
+          description: 已标记（幂等；仅 UNREAD→READ；仅本人 + 当前作用域）
           content:
             application/json:
               schema:
@@ -101,17 +104,44 @@ components:
     Notice:
       type: object
       properties:
-        id: { type: string, description: noticeId(uuid) }
-        type: { type: string, nullable: true, description: noticeType（开放集） }
-        title: { type: string, nullable: true }
-        payload: { type: object, description: 按 type 分型;必含 content;可含 link }
-        status: { type: string, enum: [UNREAD, READ] }
+        id:        { type: string, description: noticeId(uuid) }
+        type:      { type: string, nullable: true, description: noticeType（开放集；约定 "<module>.<event>"，前缀供展示层派生 module） }
+        title:     { type: string, nullable: true, description: 生产者提供、展示原样；空则不显示标题行 }
+        status:    { type: string, enum: [UNREAD, READ] }
         createdAt: { type: string, format: date-time }
-      required: [id, status, createdAt]
+        payload:   { $ref: "#/components/schemas/NoticePayload" }
+      required: [id, status, createdAt, payload]
+    NoticePayload:
+      type: object
+      description: >
+        统一四件套。文本（summary/detail/fields.value/links.label）由生产者按收件人语言渲染好后存，
+        展示端原样不翻译；fields.key 展示时走 i18n。
+      required: [summary]
+      properties:
+        summary: { type: string, description: 必含，纯文本一行摘要 }
+        detail:  { type: string, description: 可选，纯文本正文段落 }
+        fields:
+          type: array
+          items:
+            type: object
+            required: [key, value]
+            properties:
+              key:   { type: string, description: 展示时走 i18n（notifications.fields.<key>），缺译显原 key }
+              value: { type: string, description: 最终文本 }
+              mono:  { type: boolean }
+        links:
+          type: array
+          items:
+            type: object
+            required: [label, url]
+            properties:
+              label: { type: string }
+              type:  { type: string, enum: [text, button], default: button }
+              url:   { type: string, description: 生产者发通知时拼好；同 app 相对路径 / 跨 app 绝对 }
     Error:
       type: object
       required: [code, message]
       properties:
-        code: { type: string }
+        code:    { type: string }
         message: { type: string }
         traceId: { type: string }

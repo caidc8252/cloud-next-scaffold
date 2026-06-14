@@ -7,6 +7,8 @@ import { getSessionMenus } from "@/lib/session-menus";
 import { UserMenu } from "./_components/user-menu";
 import { getMenuIcon } from "./_components/menu-icon";
 import { PortalHeader } from "./_components/portal-header";
+import { NotificationsProvider } from "./_components/notifications-provider";
+import { list as listNotices } from "@/service/notification/mock-store";
 
 type Menu = {
   id: string;
@@ -97,8 +99,9 @@ export default async function PortalLayout({
 
   return (
     <SidebarProvider defaultCollapsed={defaultCollapsed}>
-      <Layout
-        sidebar={
+      <NotificationsProvider initial={listNotices(100)}>
+        <Layout
+          sidebar={
           <Sidebar
             brand={{
               title: env.NEXT_PUBLIC_APP_NAME,
@@ -115,9 +118,10 @@ export default async function PortalLayout({
           />
         }
         header={<PortalHeader menus={menus} breadcrumbs={breadcrumbs} />}
-      >
-        {children}
-      </Layout>
+        >
+          {children}
+        </Layout>
+      </NotificationsProvider>
     </SidebarProvider>
   );
 }

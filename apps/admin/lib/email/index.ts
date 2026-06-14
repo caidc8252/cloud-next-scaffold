@@ -2,7 +2,7 @@ import "server-only";
 
 import { getTranslations } from "@cloud/i18n/server";
 import { renderAndEnqueue, type EmailTranslate } from "@cloud/mail";
-import { getPortalOnboardingUrl } from "@/lib/portal-routing";
+import { getPortalOnboardingUrl, getPortalResetPasswordUrl } from "@/lib/portal-routing";
 import { inviteTemplate, type InviteEmailVars } from "./invite.ts";
 import { verifyCodeTemplate, type VerifyCodeEmailVars, type VerifyCodeIntent } from "./verify-code.ts";
 import { passwordResetTemplate, type PasswordResetEmailVars } from "./password-reset.ts";
@@ -66,7 +66,7 @@ export async function sendResetLinkEmail(input: {
   token: string;
   expiresText: string;
 }): Promise<void> {
-  const resetUrl = `${PORTAL_APP_URL}/reset-password?token=${encodeURIComponent(input.token)}`;
+  const resetUrl = getPortalResetPasswordUrl(input.token);
   await renderAndEnqueue<PasswordResetEmailVars>({
     template: passwordResetTemplate,
     vars: { resetUrl, expiresText: input.expiresText },

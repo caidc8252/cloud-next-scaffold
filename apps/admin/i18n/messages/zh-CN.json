@@ -1,4 +1,68 @@
 {
+  "notifications": {
+    "title": "通知",
+    "markAllRead": "全部标为已读",
+    "markRead": "标为已读",
+    "viewAll": "查看全部通知",
+    "showingUnread": "显示 {total} 条未读中的 {shown} 条",
+    "group": {
+      "today": "今天",
+      "earlier": "更早"
+    },
+    "empty": {
+      "caughtUp": "已全部读完",
+      "caughtUpDesc": "没有未读通知。",
+      "none": "暂无通知",
+      "noneDesc": "新的工单与订单更新会显示在这里。"
+    },
+    "module": {
+      "ticket": "工单",
+      "customer": "客户",
+      "app": "应用",
+      "order": "订单"
+    },
+    "status": {
+      "unread": "未读",
+      "read": "已读"
+    },
+    "list": {
+      "title": "通知",
+      "subtitle": "工单、客户、应用与订单的所有可执行更新。点击通知可打开相关记录。",
+      "emptyFiltered": "没有符合筛选条件的通知。"
+    },
+    "search": {
+      "placeholder": "搜索通知…",
+      "action": "搜索"
+    },
+    "filter": {
+      "allTypes": "全部类型",
+      "allStatuses": "全部状态"
+    },
+    "col": {
+      "notification": "通知",
+      "type": "类型",
+      "when": "时间",
+      "statusHead": "状态",
+      "title": "标题",
+      "body": "内容"
+    },
+    "count": "{count, plural, other {条通知}}",
+    "matchingFilters": "符合筛选",
+    "export": "导出",
+    "exported": "{count, plural, other {已导出 # 条通知}}",
+    "activeFilters": "筛选条件：",
+    "clearAll": "清除全部",
+    "chip": {
+      "search": "搜索：{q}",
+      "type": "类型：{label}",
+      "status": "状态：{label}"
+    },
+    "detail": {
+      "back": "通知",
+      "notFound": "未找到通知。",
+      "ctaPlaceholder": "Mock：将打开 {label}"
+    }
+  },
   "email": {
     "common": {
       "footerIgnore": "如果这不是你发起的操作，可以忽略此邮件。",

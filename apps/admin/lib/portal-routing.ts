@@ -35,3 +35,12 @@ export function getPortalOnboardingUrl(token: string): string {
   url.searchParams.set("token", token);
   return url.toString();
 }
+
+export function getPortalResetPasswordUrl(token: string): string {
+  const url = getPortalAppUrl();
+  url.pathname = "/reset-password";
+  url.search = "";
+  url.hash = "";
+  url.searchParams.set("token", token);
+  return url.toString();
+}

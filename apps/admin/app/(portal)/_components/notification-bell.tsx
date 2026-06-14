@@ -1,103 +1,226 @@
 "use client";
 
-import { Bell } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Bell, Check, ChevronRight } from "lucide-react";
 import {
+  Button,
   Popover,
   PopoverContent,
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
+  cn,
 } from "@cloud/ui";
+import { useTranslations } from "@cloud/i18n/client";
+import type { Notice } from "@/service/notification/types";
+import { useNotifications } from "./notifications-provider";
+import {
+  MODULE_META,
+  groupOf,
+  isUnread,
+  relTime,
+  type NoticeGroup,
+} from "../notifications/_lib/notice-meta";
+
+const POPOVER_CAP = 20;
 
 /**
  * Notification bell button + popover (client component).
  *
- * Current scope: STATIC — no data fetched, no state, always shows zero
- * notifications with an empty state inside the popover. The bell is mounted
- * so the UI shape is locked in and ready for backend wiring later.
+ * A quick "scan the latest" surface: UNREAD-only, newest-first, capped at 20,
+ * grouped Today / Earlier, with Mark-all and a "View all notifications" footer
+ * routing to /notifications. Reads/writes the shared NotificationsProvider, so
+ * marking read here updates the badge, the list page and the detail in sync.
  *
- * Mounted via AppHeader's `notification` slot (see portal-header.tsx).
- *
- * ────────────────────────────────────────────────────────────────
- * How to wire real notifications (when backend lands)
- * ────────────────────────────────────────────────────────────────
- *
- * Step 1 — Schema + producer (server side, not this file)
- *   Add a sys_notification table (recipientUserId, partyId, type, payload,
- *   readAt, creTime). Provide a server-side enqueue function in
- *   apps/admin/lib/notifications/server.ts that all features call to write rows.
- *
- * Step 2 — Route handlers (server side)
- *   GET    /api/notifications              list (paginated)
- *   GET    /api/notifications/unread-count count only (cheap, for the badge)
- *   POST   /api/notifications/read         body: { ids?: number[], all?: boolean }
- *   All three guarded by assertPermissions() and scoped to current partyId.
- *
- * Step 3 — Hook (client side, this file)
- *   Replace the hardcoded `count = 0` and empty body below with a hook:
- *
- *     const { count, items, markRead } = useNotifications();
- *
- *   Implementation choices:
- *   - SWR/React Query: fetch count every 30-60s while document is visible
- *   - useEffect + setInterval: lighter, no extra deps
- *   - SSE: GET /api/notifications/stream — keep `useNotifications` as the
- *     single seam so swapping poll → stream does not touch any UI
- *
- * Step 4 — Badge wiring
- *   The badge below is already conditionally rendered when count > 0.
- *   Just pass the live count in. Cap display at "99+" for readability.
- *
- * Step 5 — Item rendering
- *   Inside <PopoverContent>, render the list:
- *     - Group by readAt === null vs not, or just sort by creTime desc
- *     - Click item → router.push(item.link) + optimistic markRead(item.id)
- *     - "Mark all as read" button at the top
- *     - Show NOTIFICATION_TYPES[item.type] metadata (icon + title template)
- *
- * Step 6 — Real-time refresh
- *   On focus/visibilitychange, refetch count. On server action that produces
- *   a notification, the next poll picks it up — no manual revalidate needed.
- *
- * ────────────────────────────────────────────────────────────────
- * Caveats
- * ────────────────────────────────────────────────────────────────
- * - Mount once (in PortalHeader, lives in portal layout). Multiple mounts
- *   would multiply poll requests.
- * - Permission scope is per-partner; on partner switch the list must reset
- *   (current partyId is part of session, so the route handler handles it).
- * - The popover is anchored to the bell button — keep <PopoverTrigger> as
- *   the bell, do not separate them.
+ * Mounted via AppHeader's `notification` slot (see portal-header.tsx); the
+ * provider is mounted once in the (portal) layout.
  */
 export function NotificationBell() {
-  const count = 10;
+  const t = useTranslations("notifications");
+  const router = useRouter();
+  const { notices, unreadCount, markRead, markAllRead } = useNotifications();
+  const [open, setOpen] = useState(false);
+
+  const unread = notices.filter(isUnread);
+  const recent = unread.slice(0, POPOVER_CAP);
+  const truncated = unread.length - recent.length;
+  const hasHistory = notices.length > 0;
+
+  const groups: { g: NoticeGroup; rows: Notice[] }[] = (
+    ["today", "earlier"] as const
+  )
+    .map((g) => ({ g, rows: recent.filter((n) => groupOf(n.createdAt) === g) }))
+    .filter((x) => x.rows.length > 0);
+
+  const openNotice = (n: Notice) => {
+    markRead([n.id]);
+    setOpen(false);
+    router.push(`/notifications/${n.id}`);
+  };
+  const viewAll = () => {
+    setOpen(false);
+    router.push("/notifications");
+  };
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         render={
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="relative flex items-center justify-center w-8 h-8 rounded-lg text-content-secondary hover:bg-surface-hover hover:text-content-primary transition-colors cursor-pointer"
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t("title")}
+            className="relative text-content-secondary"
           >
             <Bell size={15} />
-            {count > 0 && (
-              <span className="absolute -top-1 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-error text-[10px] font-medium leading-4 text-content-inverse text-center">
-                {count > 99 ? "99+" : count}
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 grid min-w-4 h-4 place-items-center rounded-full bg-error px-1 text-2xs font-medium leading-none text-content-inverse">
+                {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
-          </button>
+          </Button>
         }
       />
-      <PopoverContent align="end" sideOffset={8} className="w-80 p-0">
-        <PopoverHeader className="px-3 py-2 border-b border-line-subtle">
-          <PopoverTitle className="text-sm">Notifications</PopoverTitle>
+      <PopoverContent align="end" sideOffset={8} className="w-96 p-0">
+        <PopoverHeader className="flex flex-row items-center gap-2 px-3 py-2 border-b border-line-subtle">
+          <PopoverTitle className="text-sm">{t("title")}</PopoverTitle>
+          {unreadCount > 0 && (
+            <span className="grid min-w-5 place-items-center rounded-full bg-primary-50 px-1.5 text-2xs font-semibold text-primary-700">
+              {unreadCount}
+            </span>
+          )}
+          <Button
+            variant="ghost"
+            size="xs"
+            iconLeft={<Check className="size-3" />}
+            disabled={unreadCount === 0}
+            onClick={() => markAllRead()}
+            className="ml-auto text-content-secondary"
+          >
+            {t("markAllRead")}
+          </Button>
         </PopoverHeader>
-        <div className="px-3 py-8 text-center text-sm text-content-tertiary">
-          No notifications.
+
+        <div className="max-h-96 overflow-auto">
+          {groups.length === 0 ? (
+            <div className="flex flex-col items-center gap-1 px-3 py-10 text-center">
+              <Bell className="size-7 text-content-tertiary" />
+              <div className="text-sm font-medium text-content-primary">
+                {hasHistory ? t("empty.caughtUp") : t("empty.none")}
+              </div>
+              <div className="text-xs text-content-tertiary">
+                {hasHistory ? t("empty.caughtUpDesc") : t("empty.noneDesc")}
+              </div>
+            </div>
+          ) : (
+            groups.map(({ g, rows }) => (
+              <div key={g}>
+                <div className="sticky top-0 bg-surface-2 px-3 py-1.5 text-2xs font-semibold uppercase tracking-wide text-content-tertiary">
+                  {t(`group.${g}`)}
+                </div>
+                {rows.map((n) => (
+                  <BellRow
+                    key={n.id}
+                    notice={n}
+                    onOpen={() => openNotice(n)}
+                    onMarkRead={() => markRead([n.id])}
+                    markReadLabel={t("markRead")}
+                  />
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="border-t border-line-subtle">
+          {truncated > 0 && (
+            <div className="px-3 pt-2 text-center text-2xs text-content-tertiary">
+              {t("showingUnread", { shown: recent.length, total: unread.length })}
+            </div>
+          )}
+          <Button
+            variant="ghost"
+            block
+            iconRight={<ChevronRight className="size-3" />}
+            onClick={viewAll}
+            className="rounded-none text-xs font-medium text-primary-700"
+          >
+            {t("viewAll")}
+          </Button>
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+function BellRow({
+  notice,
+  onOpen,
+  onMarkRead,
+  markReadLabel,
+}: {
+  notice: Notice;
+  onOpen: () => void;
+  onMarkRead: () => void;
+  markReadLabel: string;
+}) {
+  const meta = MODULE_META[notice.module];
+  const Icon = meta.icon;
+  const unread = isUnread(notice);
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      className={cn(
+        "flex cursor-pointer items-start gap-2.5 px-3 py-2.5 hover:bg-surface-hover",
+        unread && "bg-primary-50/40",
+      )}
+    >
+      <span
+        className={cn(
+          "mt-0.5 grid size-7 shrink-0 place-items-center rounded-md border",
+          meta.chip,
+        )}
+      >
+        <Icon className="size-3.5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div
+          className={cn(
+            "truncate text-sm text-content-primary",
+            unread && "font-semibold",
+          )}
+        >
+          {notice.title}
+        </div>
+        <div className="truncate text-xs text-content-secondary">{notice.payload.body}</div>
+        <div className="mt-0.5 text-2xs text-content-tertiary">{relTime(notice.createdAt)}</div>
+      </div>
+      {unread ? (
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          title={markReadLabel}
+          aria-label={markReadLabel}
+          onClick={(e) => {
+            e.stopPropagation();
+            onMarkRead();
+          }}
+          className="mt-0.5 shrink-0 text-content-tertiary"
+        >
+          <Check className="size-3.5" />
+        </Button>
+      ) : (
+        <ChevronRight className="mt-1.5 size-3.5 shrink-0 text-content-tertiary" />
+      )}
+    </div>
   );
 }
