@@ -1,4 +1,5 @@
 import { Ticket, Users, Package, Banknote, KeyRound, Bell, type LucideIcon } from "lucide-react";
+import { useFormatter } from "@cloud/i18n/client";
 import type { Notice } from "@/service/notification/types";
 
 /**
@@ -54,19 +55,20 @@ export function openNoticeLink(router: { push: (u: string) => void }, url: strin
 }
 
 /**
- * Relative time, past/future symmetric, falling back to an absolute date beyond
- * 30 days. Mirrors the system helper; kept feature-local to avoid a cross-feature
- * import.
+ * 相对时间格式化 hook（**locale-aware**，走 next-intl `useFormatter`，不硬编码文案）。
+ * 返回 `(iso) => string`：30 天内用相对时间（“5 分钟前 / in 3 days”，随界面语言），
+ * 30 天外回退本地化绝对日期。客户端组件用：`const relTime = useRelTime()`。
  */
-export function relTime(iso: string): string {
-  const ms = new Date(iso).getTime() - Date.now();
-  const abs = Math.abs(ms);
-  const phrase = (n: number, unit: string) => (ms >= 0 ? `in ${n}${unit}` : `${n}${unit} ago`);
-  if (abs < 60_000) return "just now";
-  if (abs < 3_600_000) return phrase(Math.floor(abs / 60_000), "m");
-  if (abs < 86_400_000) return phrase(Math.floor(abs / 3_600_000), "h");
-  if (abs < 30 * 86_400_000) return phrase(Math.floor(abs / 86_400_000), "d");
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+export function useRelTime(): (iso: string) => string {
+  const format = useFormatter();
+  return (iso: string) => {
+    const date = new Date(iso);
+    const now = Date.now();
+    if (Math.abs(now - date.getTime()) >= 30 * 86_400_000) {
+      return format.dateTime(date, { year: "numeric", month: "short", day: "numeric" });
+    }
+    return format.relativeTime(date, now);
+  };
 }
 
 export type NoticeGroup = "today" | "earlier";

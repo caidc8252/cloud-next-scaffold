@@ -24,7 +24,7 @@ import { request } from "@cloud/request/client";
 import { toastError } from "@cloud/request/error-toast";
 import type { Notice, NoticeStatus } from "@/service/notification/types";
 import { useNotifications } from "../../_components/notifications-provider";
-import { isUnread, relTime } from "../_lib/notice-meta";
+import { isUnread, useRelTime } from "../_lib/notice-meta";
 import { ModuleChip } from "./module-chip";
 
 type ModuleFilter = "All" | "ticket" | "customer" | "app" | "order" | "account";
@@ -38,6 +38,7 @@ const STATUSES: NoticeStatus[] = ["UNREAD", "READ"];
 export function NotificationsPage({ currentPartyName }: { currentPartyName: string }) {
   const t = useTranslations("notifications");
   const router = useRouter();
+  const relTime = useRelTime();
   const { unreadCount, markRead, markAllRead } = useNotifications();
 
   const [draft, setDraft] = useState<Filters>(EMPTY);

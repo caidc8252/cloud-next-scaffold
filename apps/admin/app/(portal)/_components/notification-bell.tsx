@@ -20,7 +20,7 @@ import {
   groupOf,
   isUnread,
   moduleOf,
-  relTime,
+  useRelTime,
   type NoticeGroup,
 } from "../notifications/_lib/notice-meta";
 
@@ -164,6 +164,7 @@ function BellRow({
   markReadLabel: string;
 }) {
   const t = useTranslations("notifications");
+  const relTime = useRelTime();
   const meta = MODULE_META[moduleOf(notice.type)];
   const Icon = meta.icon;
   const unread = isUnread(notice);

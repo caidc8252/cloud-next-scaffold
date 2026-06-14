@@ -7,7 +7,7 @@ import { Button, Card, PageBody } from "@cloud/ui";
 import { useTranslations } from "@cloud/i18n/client";
 import type { Notice } from "@/service/notification/types";
 import { useNotifications } from "../../_components/notifications-provider";
-import { relTime, openNoticeLink } from "../_lib/notice-meta";
+import { useRelTime, openNoticeLink } from "../_lib/notice-meta";
 import { ModuleChip } from "./module-chip";
 
 /**
@@ -21,6 +21,7 @@ export function NotificationDetail({ notice, currentPartyName }: { notice: Notic
   const t = useTranslations("notifications");
   const tf = useTranslations("notifications.fields");
   const router = useRouter();
+  const relTime = useRelTime();
   const { markRead } = useNotifications();
 
   useEffect(() => {
