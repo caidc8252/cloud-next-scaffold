@@ -14,7 +14,7 @@
 |---|---|---|
 | `noticeId` | uuid PK | |
 | `userId` | int | 收件人；读取按 `userId = session.userId`。**一行只对一个收件人** |
-| `belongToPartyId` | int? | 作用域 party；**null = 跨 party 全局**，否则仅该 party 上下文可见 |
+| `belongToPartyId` | int? | **归属 party（展示标注 + 可见性作用域双重含义）**：非 null = 仅该 party 上下文可见（即只在「当前 party = 它」时出现）；**null = 系统/管理员对本账号发出，任一 party 上下文均可见**。读取仍按作用域过滤（见下），故界面里**非 null 命中的必是当前 party** |
 | `noticeType` | varchar(40)? | 通知类型（**开放集**，生产者必给）。约定 `"<module>.<event>"`；前缀供**展示层**派生 module（图标/颜色），决定 payload 模板 |
 | `title` | varchar(200)? | 标题。**生产者提供、展示原样**；空则不显示标题行（不做模板兜底） |
 | `payload` | jsonb `{}` | 统一四件套（见下）；**必含 `summary`** |
@@ -41,7 +41,10 @@
 - **通知**：`created(UNREAD)` →（查看/标记）→ `READ`。**只读化、不可逆**；本期**无 删除/dismiss/mark-unread**。
 
 ## 作用域规则（贯穿读取）
-读取（列表 / 未读数 / 标记已读）一律按：**`userId = session.userId`** 且 **(`belongToPartyId = session.currentPartyId` 或 `IS NULL`)**。切 party 时结果随之变化。
+读取（列表 / 未读数 / 标记已读）一律按：**`userId = session.userId`** 且 **(`belongToPartyId = session.currentPartyId` 或 `IS NULL`)**。
+- ⇒ 任一 party 上下文都能看到：**当前 party 的通知 + 你全部的系统/全局(null)通知**；切 party 时 party 类随之变、null 类恒在。
+- ⇒ 因此能看到的**非 null 通知必属当前 party**，其业务链接在当前 `currentPartyId` 上下文打开、上下文永远匹配（不会拿别 party 的记录在当前 party 误操作）。
+- **例外（不套此过滤）**：跨 party 未读统计 `unreadCountByParty`（party 切换器红点用）仅按 `userId` 收窄、按 party 分组——见 `api-logic.md`。
 
 ## Invariants
 1. **只读自己的**：任何读/写以 `userId = session.userId` 收窄。

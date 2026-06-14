@@ -19,5 +19,6 @@ export type Notice = {
   title: string | null;     // 生产者给、展示原样
   status: NoticeStatus;
   createdAt: string;        // ISO
+  belongToPartyId: number | null; // 归属 party；null = 系统/全局（任一 party 可见）。客户端据此显「系统」或当前平台名
   payload: NoticePayload;
 };

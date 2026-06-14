@@ -35,6 +35,23 @@ export function countUnread(s: NoticeScope) {
   return prisma.sysNotice.count({ where: unreadWhere(s) });
 }
 
+/**
+ * 各 party 的未读数（party 切换器红点用）。**有意跨 party**：仅按 userId 收窄、按 belongToPartyId
+ * 分组，不套作用域的当前 party 过滤；全局(null)不计入（恒可见、不会漏）。
+ */
+export async function unreadCountByParty(userId: number): Promise<Record<number, number>> {
+  const rows = await prisma.sysNotice.groupBy({
+    by: ["belongToPartyId"],
+    where: { userId, status: "UNREAD", belongToPartyId: { not: null } },
+    _count: { _all: true },
+  });
+  const out: Record<number, number> = {};
+  for (const r of rows) {
+    if (r.belongToPartyId != null) out[r.belongToPartyId] = r._count._all;
+  }
+  return out;
+}
+
 export function findByIdScoped(s: NoticeScope, noticeId: string) {
   return prisma.sysNotice.findFirst({ where: { ...scopeWhere(s), noticeId } });
 }

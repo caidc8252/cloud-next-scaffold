@@ -1,12 +1,18 @@
+import { requirePermissions } from "@cloud/permissions/server";
 import { NotificationDetail } from "../_components/notification-detail";
 import { loadNotice } from "../_server/loader";
 
 /**
  * Notification detail page — RSC. Auth is enforced inside loadNotice (via
- * requirePermissions), so this page stays thin: fetch → render.
+ * requirePermissions). requirePermissions is called again here only to obtain
+ * partyName for the ownership badge — getSession is request-level cached so
+ * there is no double round-trip.
  */
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const notice = await loadNotice(id);
-  return <NotificationDetail notice={notice} />;
+  const [notice, session] = await Promise.all([
+    loadNotice(id),
+    requirePermissions({ all: [] }),
+  ]);
+  return <NotificationDetail notice={notice} currentPartyName={session.partyName} />;
 }

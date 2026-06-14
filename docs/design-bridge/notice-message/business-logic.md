@@ -11,7 +11,9 @@
 - **生产者**：服务端业务流程（非用户角色），经内部 `createNotice` 写入；**无对外建通知 API**（防伪造他人通知）。
 
 ## 3. 作用域（贯穿所有读写）
-用户只见/只改满足「`userId = 本人` 且 `belongToPartyId = 当前 party 或 全局(NULL)`」的通知。**列表 / 未读数 / 标记已读三者同一口径**；切 party 时可见集随之变化。（精确 where 公式见 `api-logic.md`「贯穿作用域」。）
+用户只见/只改满足「`userId = 本人` 且 `belongToPartyId = 当前 party 或 全局(NULL)`」的通知。**列表 / 未读数 / 标记已读三者同一口径**；切 party 时 party 类可见集随之变、**全局(null)类恒可见**。（精确 where 见 `api-logic.md`「贯穿作用域」。）
+- **不跨 party 显示，是有意的安全选择**：能看到的非 null 通知必属当前 party，其业务链接在当前上下文打开、永远匹配——杜绝「在 B 公司里对着 A 公司的记录误操作」。全局(null)通知是账号级（如密码重置），不绑 party 业务，也无错配。
+- 代价「会漏其它 party 的通知」由 §「跨 party 未读提示」补救，**不靠把别 party 通知混进当前收件箱**。
 
 ## 4. 通知生命周期
 - `created(UNREAD)` →（打开详情，或点「标记已读 / 全部已读」）→ `READ`。
@@ -38,6 +40,18 @@
 ## 9. 列表与铃铛行为
 - **列表页**：服务端**数据库分页**（每页默认 25、上限 100）+ 服务端筛选 `status` / `module` / `q`（标题+summary）；最新在前；支持 CSV 导出。
 - **铃铛**：取 top-N 未读、按 Today / Earlier 分组；角标 = 未读数；标记已读后角标 / 列表 / 详情同步。
+
+## 9b. 归属标识（列表/详情必显、铃铛轻量）
+每条通知标注其来源，避免用户误判：
+- **全局/系统（`belongToPartyId = null`）** → 标识 `notifications.party.system`（en `System` / zh `系统` / ja `システム`）。系统/管理员对你账号本身发的。
+- **party 类（非 null）** → 标识 = **当前平台名 `session.partyName`**（因可见的非 null 必属当前 party，无需 join 取名）。
+- **列表 + 详情必须明确显示**该标识；**铃铛**对 null 给一个**小标记**即可（party 类可不显）。
+
+## 9c. 跨 party 未读提示（“别漏”补救）
+**party 切换器**（切换公司入口）对「有未读 party 类通知」的 party 显红点/计数，让用户知道别的 party 有未读、无需逐个切进去看。
+- 数据：`unreadCountByParty`——`count WHERE userId=本人 AND status=UNREAD AND belongToPartyId IS NOT NULL GROUP BY belongToPartyId`。**仅按 `userId` 收窄、不受当前 party 限制**（这是唯一有意跨 party 的查询；安全位仍是 userId）。
+- 全局(null)未读**不计入**切换器（它在任一 party 恒可见、不会漏）。
+- 客户端经 `NotificationsProvider` 取 `unreadByParty`，切换器据此渲染红点。
 
 ## 10. 硬约束
 本功能的不变量（只读改自己的、三读写口径一致、mark-read 幂等单向、payload 必含 summary、生产者内部化、module 不落库、语言固化）以 **`domain.md` §Invariants** 为准，本文不另列以免漂移。

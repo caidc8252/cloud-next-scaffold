@@ -87,6 +87,9 @@
       "invitedBy": "Invited by",
       "expires": "Expires"
     },
+    "party": {
+      "system": "System"
+    },
     "events": {
       "passwordReset": {
         "title": "Your password was reset",

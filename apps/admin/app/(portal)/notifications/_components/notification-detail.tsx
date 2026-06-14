@@ -17,7 +17,7 @@ import { ModuleChip } from "./module-chip";
  * paragraph, structured fields (key → i18n label with raw-key fallback), and
  * action links (button or text style).
  */
-export function NotificationDetail({ notice }: { notice: Notice | null }) {
+export function NotificationDetail({ notice, currentPartyName }: { notice: Notice | null; currentPartyName: string }) {
   const t = useTranslations("notifications");
   const tf = useTranslations("notifications.fields");
   const router = useRouter();
@@ -73,7 +73,7 @@ export function NotificationDetail({ notice }: { notice: Notice | null }) {
             <ModuleChip type={notice.type} />
           </div>
           <div className="text-sm text-content-tertiary">
-            {payload.summary} · {relTime(notice.createdAt)}
+            {payload.summary} · {relTime(notice.createdAt)} · {notice.belongToPartyId == null ? t("party.system") : currentPartyName}
           </div>
         </div>
       </div>

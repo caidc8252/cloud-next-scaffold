@@ -6,10 +6,11 @@ vi.mock("./notification.repository", () => ({
   scopeWhere: vi.fn(), unreadWhere: vi.fn(),
   listScoped: vi.fn(), countUnread: vi.fn(), findByIdScoped: vi.fn(),
   markReadByIds: vi.fn(), markAllRead: vi.fn(), create: vi.fn(),
+  unreadCountByParty: vi.fn(),
 }));
 
 import * as repo from "./notification.repository";
-import { listNotices, unreadCount, markRead, createNotice } from "./notification.service";
+import { listNotices, unreadCount, unreadCountByParty, markRead, createNotice } from "./notification.service";
 
 const session = { userId: 7, currentPartyId: 100, partyName: "P", permissions: [] } as unknown as ActiveSession;
 const row = (id: string) => ({
@@ -47,6 +48,15 @@ describe("unreadCount", () => {
   it("counts via repo", async () => {
     vi.mocked(repo.countUnread).mockResolvedValue(5 as never);
     expect(await unreadCount(session)).toBe(5);
+  });
+});
+
+describe("unreadCountByParty", () => {
+  it("delegates to repo using session.userId and returns counts map", async () => {
+    vi.mocked(repo.unreadCountByParty).mockResolvedValue({ 100: 3 } as never);
+    const result = await unreadCountByParty(session);
+    expect(repo.unreadCountByParty).toHaveBeenCalledWith(session.userId);
+    expect(result).toEqual({ 100: 3 });
   });
 });
 

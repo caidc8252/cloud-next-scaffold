@@ -10,6 +10,7 @@ type SysNoticeRow = {
   title: string | null;
   status: string;
   creTime: Date;
+  belongToPartyId: number | null;
   payload: unknown;
 };
 
@@ -20,6 +21,7 @@ export function toNotice(row: SysNoticeRow): Notice {
     title: row.title,
     status: row.status as NoticeStatus,
     createdAt: row.creTime.toISOString(),
+    belongToPartyId: row.belongToPartyId,
     payload: (row.payload ?? { summary: "" }) as NoticePayload,
   };
 }

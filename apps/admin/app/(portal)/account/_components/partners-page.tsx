@@ -9,12 +9,14 @@ import { request } from "@cloud/request/client";
 import { toastError } from "@cloud/request/error-toast";
 import { useTranslations, useLocale } from "@cloud/i18n/client";
 import type { AccountPartner } from "@/app/(portal)/account/_shared/types";
+import { useNotifications } from "@/app/(portal)/_components/notifications-provider";
 import { UPHeader } from "./up-chrome";
 
 export function PartnersPageClient({ initialPartners }: { initialPartners: AccountPartner[] }) {
   const t = useTranslations("account");
   const locale = useLocale();
   const router = useRouter();
+  const { unreadByParty } = useNotifications();
   const [pending, setPending] = useState<AccountPartner | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -52,12 +54,12 @@ export function PartnersPageClient({ initialPartners }: { initialPartners: Accou
 
       <div className="flex flex-col gap-2.5">
         {initialPartners.map((p) => (
-          <button
+          <Button
             key={p.partyUserId}
-            type="button"
+            variant="ghost"
             onClick={() => onSelect(p)}
             className={cn(
-              "flex w-full cursor-pointer items-center gap-3.5 rounded-xl border bg-surface-2 px-4 py-3.5 text-left transition-colors hover:border-line-strong",
+              "flex h-auto w-full cursor-pointer items-center gap-3.5 rounded-xl border bg-surface-2 px-4 py-3.5 text-left transition-colors hover:border-line-strong",
               p.isCurrent ? "border-primary/40" : "border-line-default",
               p.locked && "opacity-70",
             )}
@@ -100,6 +102,11 @@ export function PartnersPageClient({ initialPartners }: { initialPartners: Accou
                 )}
               </div>
             </div>
+            {(unreadByParty[p.partyId] ?? 0) > 0 && (
+              <span className="grid min-w-5 place-items-center rounded-full bg-error px-1.5 text-2xs font-semibold leading-5 text-content-inverse">
+                {(unreadByParty[p.partyId] ?? 0) > 99 ? "99+" : unreadByParty[p.partyId]}
+              </span>
+            )}
             <div className="flex-none text-content-tertiary">
               {p.isCurrent ? (
                 <Check size={18} className="text-primary" />
@@ -109,7 +116,7 @@ export function PartnersPageClient({ initialPartners }: { initialPartners: Accou
                 <ExternalLink size={15} />
               )}
             </div>
-          </button>
+          </Button>
         ))}
       </div>
 

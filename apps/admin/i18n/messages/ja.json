@@ -87,6 +87,9 @@
       "invitedBy": "招待者",
       "expires": "期限"
     },
+    "party": {
+      "system": "システム"
+    },
     "events": {
       "passwordReset": {
         "title": "パスワードがリセットされました",

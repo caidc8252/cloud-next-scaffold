@@ -87,6 +87,9 @@
       "invitedBy": "邀请人",
       "expires": "过期"
     },
+    "party": {
+      "system": "系统"
+    },
     "events": {
       "passwordReset": {
         "title": "你的密码已被重置",

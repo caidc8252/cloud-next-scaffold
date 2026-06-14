@@ -117,6 +117,14 @@ async function main() {
           fields: [{ key: "order", value: "SO-2026-0184", mono: true }],
         },
       },
+      {
+        userId: adminUser.userId,
+        belongToPartyId: null,
+        noticeType: "account.passwordReset",
+        title: "Your password was reset",
+        status: "UNREAD",
+        payload: { summary: "An administrator reset your password" },
+      },
     ],
   });
   console.log(`seeded notices for admin (userId=${adminUser.userId})`);

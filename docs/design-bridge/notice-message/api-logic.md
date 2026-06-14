@@ -10,13 +10,18 @@
 1. `assertPermissions({ all: [] })` → 取 session（仅需登录）。
 2. 查 `scope(session)`，按 `creTime` 倒序，**数据库 offset 分页**（`page` 默认 1、`limit` 默认 25、上限 100；用 `@cloud/request` 的 `Pager`）。
 3. 可选服务端筛选（与分页同查询，保证翻页正确）：`status`（UNREAD/READ）、`module`（按 `noticeType` 前缀 `startsWith "<module>."`）、`q`（`title` `contains` 与 `payload.summary` 的 JSON `string_contains` 组 OR；该 OR 收在 `AND` 下，不冲掉作用域的 party-OR）。
-4. 映射为客户端 `Notice`：`{ id: noticeId, type: noticeType, title, status, createdAt: creTime, payload }`。
+4. 映射为客户端 `Notice`：`{ id: noticeId, type: noticeType, title, status, createdAt: creTime, belongToPartyId, payload }`（`belongToPartyId` 供客户端区分系统/全局 vs 当前平台，见 `business-logic.md` §9b）。
 5. 响应：`successResponse({ items }, pager)`——`pager` 的 `page/limit/total/totalPages` **展开到信封顶层**（与 `data` 同级，非嵌套在 `data` 内）。
 6. 展示层从 `noticeType` 前缀派生 `module`（图标/颜色/类型 chip）；**`module` 不落库、不在响应里**。
 
 ## notificationsUnreadCount `GET /api/notifications/unread-count`
 1. 同上鉴权。
 2. `count(scope(session) AND status="UNREAD")` → `{ count }`。廉价，供铃铛角标挂载/聚焦刷新。
+
+## notificationsUnreadByParty `GET /api/notifications/unread-by-party`
+1. 同上鉴权。
+2. **有意跨 party**（不套作用域的 party 过滤，仅 `userId` 收窄）：`groupBy belongToPartyId where userId=session.userId AND status="UNREAD" AND belongToPartyId IS NOT NULL` → `{ counts: { "<partyId>": n } }`。
+3. 供 **party 切换器**红点（§9c）；全局(null)未读不计入（恒可见、不会漏）。
 
 ## markNotificationsRead `POST /api/notifications/read`
 1. 同上鉴权；`req.json()` 解析失败 → `BusinessError(ERR_INVALID_JSON=100006)`；body 经 `markReadBodySchema`（`{ ids: string[] }` 或 `{ all: true }`），不合法 → `BusinessError(ERR_BAD_REQUEST=100001)`。

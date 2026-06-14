@@ -35,7 +35,7 @@ const EMPTY: Filters = { q: "", module: "All", status: "All" };
 const MODULES: Exclude<ModuleFilter, "All">[] = ["ticket", "customer", "app", "order", "account"];
 const STATUSES: NoticeStatus[] = ["UNREAD", "READ"];
 
-export function NotificationsPage() {
+export function NotificationsPage({ currentPartyName }: { currentPartyName: string }) {
   const t = useTranslations("notifications");
   const router = useRouter();
   const { unreadCount, markRead, markAllRead } = useNotifications();
@@ -158,6 +158,9 @@ export function NotificationsPage() {
             {n.title}
           </div>
           <div className="truncate text-2xs text-content-tertiary">{n.payload.summary}</div>
+          <div className="mt-0.5 text-2xs text-content-tertiary">
+            {n.belongToPartyId == null ? t("party.system") : currentPartyName}
+          </div>
         </div>
       ),
     },

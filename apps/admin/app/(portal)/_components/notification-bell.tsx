@@ -163,6 +163,7 @@ function BellRow({
   onMarkRead: () => void;
   markReadLabel: string;
 }) {
+  const t = useTranslations("notifications");
   const meta = MODULE_META[moduleOf(notice.type)];
   const Icon = meta.icon;
   const unread = isUnread(notice);
@@ -191,13 +192,20 @@ function BellRow({
         <Icon className="size-3.5" />
       </span>
       <div className="min-w-0 flex-1">
-        <div
-          className={cn(
-            "truncate text-sm text-content-primary",
-            unread && "font-semibold",
+        <div className="flex items-center gap-1.5">
+          <span
+            className={cn(
+              "truncate text-sm text-content-primary",
+              unread && "font-semibold",
+            )}
+          >
+            {notice.title}
+          </span>
+          {notice.belongToPartyId == null && (
+            <span className="shrink-0 rounded border border-line-subtle bg-surface-3 px-1 py-px text-2xs font-medium text-content-tertiary">
+              {t("party.system")}
+            </span>
           )}
-        >
-          {notice.title}
         </div>
         <div className="truncate text-xs text-content-secondary">{notice.payload.summary}</div>
         <div className="mt-0.5 text-2xs text-content-tertiary">{relTime(notice.createdAt)}</div>

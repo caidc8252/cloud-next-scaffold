@@ -19,6 +19,11 @@ export function unreadCount(session: ActiveSession): Promise<number> {
   return repo.countUnread(scopeOf(session));
 }
 
+/** 各 party 未读数（切换器红点）。有意跨 party，仅按 userId 收窄。 */
+export function unreadCountByParty(session: ActiveSession): Promise<Record<number, number>> {
+  return repo.unreadCountByParty(session.userId);
+}
+
 export async function getNoticeByIdScoped(session: ActiveSession, id: string): Promise<Notice | null> {
   const row = await repo.findByIdScoped(scopeOf(session), id);
   return row ? toNotice(row) : null;

@@ -64,6 +64,29 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /api/notifications/unread-by-party:
+    get:
+      operationId: notificationsUnreadByParty
+      summary: 各 party 的未读数（party 切换器红点；有意跨 party，仅按 userId 收窄）
+      x-authorize: authenticated
+      responses:
+        "200":
+          description: "按 belongToPartyId 分组的未读数（仅 belongToPartyId NOT NULL）"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      counts:
+                        type: object
+                        additionalProperties: { type: integer }
+                        description: "{ \"<partyId>\": 未读数 }"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /api/notifications/read:
     post:
       operationId: markNotificationsRead
@@ -110,8 +133,9 @@ components:
         title:     { type: string, nullable: true, description: 生产者提供、展示原样；空则不显示标题行 }
         status:    { type: string, enum: [UNREAD, READ] }
         createdAt: { type: string, format: date-time }
+        belongToPartyId: { type: integer, nullable: true, description: 归属 party；null = 系统/全局（任一 party 可见）。客户端据此显「系统」或当前平台名 }
         payload:   { $ref: "#/components/schemas/NoticePayload" }
-      required: [id, status, createdAt, payload]
+      required: [id, status, createdAt, belongToPartyId, payload]
     NoticePayload:
       type: object
       description: >
