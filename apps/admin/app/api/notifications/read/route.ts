@@ -4,33 +4,15 @@ import { successResponse } from "@cloud/request/server";
 import { ERR_INVALID_JSON, ERR_BAD_REQUEST } from "@cloud/request/error-codes";
 import { assertPermissions } from "@cloud/permissions/server";
 import { withApiHandler } from "@/lib/api-handler";
-import { markRead, markAllRead } from "@/service/notification/mock-store";
+import { markReadBodySchema } from "@/service/notification/schemas/notification.schema";
+import { markRead } from "@/service/notification/server/notification.service";
 
-/**
- * Mark notifications read — by id list (`{ ids }`) or all (`{ all: true }`).
- * Idempotent and one-way (UNREAD→READ); returns `{ updated }`. Authenticated only.
- *
- * Mock phase: mutates the shared store. Real version scopes the update by
- * userId + currentPartyId so a user can only touch their own. Swap replaces
- * only this body.
- */
+/** 标记已读（ids 或 all）。幂等、单向 UNREAD→READ、仅本人+作用域。仅登录。 */
 export const POST = withApiHandler(async (req: Request) => {
-  await assertPermissions({ all: [] });
-
+  const session = await assertPermissions({ all: [] });
   let raw: unknown;
-  try {
-    raw = await req.json();
-  } catch {
-    throw new BusinessError(ERR_INVALID_JSON);
-  }
-
-  const body = (raw ?? {}) as { ids?: unknown; all?: unknown };
-  if (body.all === true) {
-    return successResponse({ updated: markAllRead() });
-  }
-  if (Array.isArray(body.ids) && body.ids.length > 0) {
-    const ids = body.ids.filter((x): x is string => typeof x === "string");
-    return successResponse({ updated: markRead(ids) });
-  }
-  throw new BusinessError(ERR_BAD_REQUEST);
+  try { raw = await req.json(); } catch { throw new BusinessError(ERR_INVALID_JSON); }
+  const parsed = markReadBodySchema.safeParse(raw);
+  if (!parsed.success) throw new BusinessError(ERR_BAD_REQUEST);
+  return successResponse({ updated: await markRead(session, parsed.data) });
 });

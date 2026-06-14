@@ -2,16 +2,10 @@
 import { successResponse } from "@cloud/request/server";
 import { assertPermissions } from "@cloud/permissions/server";
 import { withApiHandler } from "@/lib/api-handler";
-import { unreadCount } from "@/service/notification/mock-store";
+import { unreadCount } from "@/service/notification/server/notification.service";
 
-/**
- * Current user's unread count — the cheap endpoint the bell badge polls on
- * focus/visibility change. Authenticated only.
- *
- * Mock phase: counts the shared store. Real version: COUNT(SysNotice WHERE
- * status=UNREAD AND scope). Swap replaces only this body.
- */
+/** 当前用户未读数（铃铛角标）。仅登录。 */
 export const GET = withApiHandler(async () => {
-  await assertPermissions({ all: [] });
-  return successResponse({ count: unreadCount() });
+  const session = await assertPermissions({ all: [] });
+  return successResponse({ count: await unreadCount(session) });
 });

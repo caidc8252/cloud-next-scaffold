@@ -2,18 +2,13 @@
 import { successResponse } from "@cloud/request/server";
 import { assertPermissions } from "@cloud/permissions/server";
 import { withApiHandler } from "@/lib/api-handler";
-import { list } from "@/service/notification/mock-store";
+import { listNoticesQuerySchema } from "@/service/notification/schemas/notification.schema";
+import { listNotices } from "@/service/notification/server/notification.service";
 
-/**
- * Current user's notification list (newest-first), for the bell popover and the
- * full list page. Authenticated only — no specific permission code.
- *
- * Mock phase: reads the shared in-memory store. The real version will scope by
- * userId + currentPartyId and read SysNotice; the swap replaces only this body.
- */
+/** 当前用户通知列表（作用域 + DB offset 分页 + 服务端筛选 status/module/q）。仅登录。 */
 export const GET = withApiHandler(async (req: Request) => {
-  await assertPermissions({ all: [] });
-  const limitRaw = new URL(req.url).searchParams.get("limit");
-  const limit = Math.min(Math.max(Number(limitRaw) || 50, 1), 100);
-  return successResponse({ items: list(limit) });
+  const session = await assertPermissions({ all: [] });
+  const query = listNoticesQuerySchema.parse(Object.fromEntries(new URL(req.url).searchParams));
+  const { items, pager } = await listNotices(session, query);
+  return successResponse({ items }, pager);
 });
