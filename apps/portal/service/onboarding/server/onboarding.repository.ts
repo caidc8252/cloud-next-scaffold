@@ -40,8 +40,8 @@ type BindInviteParams = {
   now?: Date;
 };
 
-// 单事务：消费邀请（PENDING 条件更新，防并发双消费）→(建号)→ upsert 归属（幂等）→
-// 首管/激活规则（party 为 ONBOARDING 则本成员 ADMIN 且激活主体）。
+// 单事务：消费邀请（PENDING 条件更新，防并发双消费）→(建号)→ upsert 归属（幂等，恒 NORMAL）。
+// 场景一目标 party 已 ACTIVE，不读写 sys_party；首管/激活属场景二（onboarding，CONF-1）。
 export async function bindInvite(
   params: BindInviteParams,
 ): Promise<{ userId: number; alreadyMember: boolean }> {
@@ -74,14 +74,7 @@ export async function bindInvite(
       userId = created.userId;
     }
 
-    // 3) party 当前状态决定首管/激活
-    const party = await tx.sysParty.findUnique({
-      where: { partyId: params.partyId },
-      select: { status: true },
-    });
-    const isOnboardingParty = party?.status === "ONBOARDING";
-
-    // 4) upsert 归属（幂等：已是成员则不改角色/类型）
+    // 3) upsert 归属（幂等：已是成员则不改角色/类型）
     const existing = await tx.sysPartyUser.findUnique({
       where: { partyId_userId: { partyId: params.partyId, userId } },
       select: { partyUserId: true },
@@ -95,21 +88,13 @@ export async function bindInvite(
           partyId: params.partyId,
           userId,
           roles: params.roles as never,
-          authorizingType: isOnboardingParty ? "ADMIN" : "NORMAL",
+          authorizingType: "NORMAL",
           authorizingTimestamp: now,
           authorizingUserId: params.inviterUserId,
           authorizingUserName: params.inviterName,
           status: "ACTIVE",
           creUserId: params.inviterUserId,
         },
-      });
-    }
-
-    // 5) 首个成员加入 → 激活主体
-    if (isOnboardingParty) {
-      await tx.sysParty.update({
-        where: { partyId: params.partyId },
-        data: { status: "ACTIVE", updUserId: params.inviterUserId },
       });
     }
 
