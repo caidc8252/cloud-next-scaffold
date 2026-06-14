@@ -34,7 +34,7 @@
     "db:setup": "pnpm db:generate && pnpm db:push && pnpm db:seed",
     "check:diff-coverage": "vitest run --coverage --coverage.reporter=lcov --coverage.reporter=html && node scripts/check-diff-coverage.mjs",
     "test:e2e": "pnpm test:e2e:spec && pnpm check:e2e-orphans",
-    "test:e2e:spec": "docker compose -f e2e/docker-compose.e2e.yml up -d --wait postgres-e2e && node --env-file=.env.test scripts/prisma.mjs db push && E2E_SEED=1 node --env-file=.env.test scripts/prisma.mjs db seed && playwright test",
+    "test:e2e:spec": "docker compose -f e2e/docker-compose.e2e.yml up -d --wait postgres-e2e redis-e2e && node --env-file=.env.test scripts/prisma.mjs db push && E2E_SEED=1 node --env-file=.env.test scripts/prisma.mjs db seed && playwright test",
     "check:e2e-orphans": "E2E_MARKER_ROOTS='apps/*/src apps/*/app apps/*/middleware.ts' node scripts/check-e2e-orphans.mjs"
   },
   "dependencies": {
