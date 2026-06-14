@@ -189,10 +189,10 @@ export async function resendInvite(session: ActiveSession, inviteId: number): Pr
   const invite = await usersRepository.findPendingInvite(session.currentPartyId, inviteId);
   if (!invite) throw new BusinessError(ERR_USER_NO_PENDING_INVITE, 404);
 
+  // CONF-4: 重发只补发邮件，不刷新 token 或 expiresAt；过期邀请由 findPendingInvite 收紧后返回 null。
   const updated = await usersRepository.updateInvite(invite.operatorInviteId, {
-    expiresAt: new Date(Date.now() + INVITE_TTL_MS),
-    updUserId: session.userId,
     resendCount: { increment: 1 },
+    updUserId: session.userId,
   });
 
   const inviterName = await resolveInviterName(session, updated.inviterUserId);

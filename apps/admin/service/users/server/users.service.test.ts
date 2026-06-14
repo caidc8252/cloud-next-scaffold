@@ -267,6 +267,22 @@ describe("resendInvite", () => {
     await expect(resendInvite(session, 9)).rejects.toMatchObject({ code: ERR_USER_NO_PENDING_INVITE });
   });
 
+  it("过期邀请 → ERR_USER_NO_PENDING_INVITE", async () => {
+    vi.mocked(repo.findPendingInvite).mockResolvedValue(null as never); // 收紧后过期即 null
+    await expect(resendInvite(session, 9)).rejects.toMatchObject({ code: ERR_USER_NO_PENDING_INVITE });
+  });
+
+  it("未过期 → 只 resendCount+1，不改 token/expiresAt", async () => {
+    vi.mocked(repo.findPendingInvite).mockResolvedValue(inviteRow({ operatorInviteId: 9 }) as never);
+    vi.mocked(repo.updateInvite).mockResolvedValue(inviteRow({ operatorInviteId: 9 }) as never);
+    vi.mocked(repo.resolveUsernames).mockResolvedValue(new Map([[1, "admin"]]));
+    await resendInvite(session, 9);
+    const patch = vi.mocked(repo.updateInvite).mock.calls[0][1];
+    expect(patch).toMatchObject({ resendCount: { increment: 1 } });
+    expect(patch).not.toHaveProperty("token");
+    expect(patch).not.toHaveProperty("expiresAt");
+  });
+
   it("bumps resendCount and resolves a foreign inviter name from the repo", async () => {
     vi.mocked(repo.findPendingInvite).mockResolvedValue({ operatorInviteId: 9 } as never);
     vi.mocked(repo.updateInvite).mockResolvedValue(inviteRow({ inviterUserId: 77 }) as never);
