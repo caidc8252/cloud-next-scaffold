@@ -29,7 +29,32 @@ export function markRead(session: ActiveSession, body: MarkReadBody): Promise<nu
   return "all" in body ? repo.markAllRead(scope) : repo.markReadByIds(scope, body.ids);
 }
 
-/** 通用生产者：服务端内部，任何域/app 直接调用；对业务零认知。文本由调用方按收件人语言渲染好。 */
+/**
+ * 站内通知的**唯一生产者**（服务端内部；不暴露建通知 API，防伪造他人通知）。
+ * 任何业务域 / 任何 app 想给某用户发站内通知就调它；对业务零认知。
+ * 跨 app 可写同一 `sys_notice` 表（如 portal 写、admin 侧用户收）。
+ *
+ * 用法（在业务事件点，**非阻断**调用）：
+ *   try {
+ *     const locale = isLocale(raw) ? raw : "en";          // 收件人 sys_user.locale，收窄回退 en
+ *     const t = await getTranslations({ locale });         // 按收件人语言（非 cookie 版）
+ *     await createNotice({
+ *       userId,                                            // 收件人
+ *       belongToPartyId,                                   // 省略/null = 该用户跨 party 全局
+ *       noticeType: "<module>.<event>",                    // module 前端派生图标，不落库
+ *       title: t("notifications.events.<event>.title"),
+ *       payload: {                                         // 四件套；文本均已按收件人语言渲染好
+ *         summary: t("...summary"),                        // 必含，纯文本
+ *         detail: t("...detail"),                          // 可选段落
+ *         fields: [{ key: "ticket", value, mono: true }],  // key 走 notifications.fields.<key>
+ *         links: [{ label, type: "button", url: "/..." }], // url 生产者拼好（同 app 相对/跨 app 绝对）
+ *       },
+ *     });
+ *   } catch (err) { log.warn("... notice failed (non-blocking)", { err }); }
+ *
+ * 写一行 `SysNotice`（status=UNREAD），写后不可变（只 mark-read）。
+ * 详见 `.claude/docs/notice.md`（含「接新埋点事件」配方）。
+ */
 export async function createNotice(input: CreateNoticeInput): Promise<void> {
   const v = createNoticeInputSchema.parse(input);
   await repo.create({
