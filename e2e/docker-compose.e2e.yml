@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: e2e
       POSTGRES_DB: e2e
     ports:
-      - "5432:5432" # if 5432 is taken, change host port AND DATABASE_URL in .env.test
+      - "5434:5432" # 5432/5433 taken by local docker postgres; matches DATABASE_URL in .env.test
     tmpfs:
       - /var/lib/postgresql/data
     healthcheck:
@@ -15,3 +15,15 @@ services:
       interval: 1s
       timeout: 5s
       retries: 30
+
+  redis-e2e:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379" # 6379 taken by local docker redis; matches REDIS_URL in .env.test
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
