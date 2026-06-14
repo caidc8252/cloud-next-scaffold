@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, User, Clock, Shield, Copy, Pencil, AlertTriangle } from "lucide-react";
+import { Mail, User, Clock, Shield, Copy, Pencil, AlertTriangle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle, Checkbox, toast } from "@cloud/ui";
 import type { Role, User as UserType } from "@/app/(portal)/system/_shared/types";
 import { fmtDateTime, relTime } from "@/app/(portal)/system/_shared/helpers";
@@ -10,6 +10,8 @@ type PendingInviteDetailProps = {
   user: UserType;
   roles: Role[];
   onResend: () => void;
+  onRegenerate: () => void;
+  onReinvite: () => void;
   onCancel: () => void;
   onSave: (u: UserType) => Promise<boolean>;
 };
@@ -29,7 +31,7 @@ function maskUrl(url: string): string {
   return `${prefix}${token.slice(0, 4)}****${token.slice(-4)}`;
 }
 
-export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }: PendingInviteDetailProps) {
+export function PendingInviteDetail({ user, roles, onResend, onRegenerate, onReinvite, onCancel, onSave }: PendingInviteDetailProps) {
   const [now] = useState(Date.now);
   const inviteUrl = buildInviteUrl(user.inviteToken ?? user.id);
   const isExpired = !!user.inviteExpiresAt && new Date(user.inviteExpiresAt).getTime() < now;
@@ -107,7 +109,14 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <Button variant="ghost" size="sm" iconLeft={<Mail size={14} />} onClick={onResend}>Resend</Button>
+          {isExpired ? (
+            <Button variant="ghost" size="sm" iconLeft={<Mail size={14} />} onClick={onReinvite}>Re-send (replace)</Button>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" iconLeft={<Mail size={14} />} onClick={onResend}>Resend</Button>
+              <Button variant="ghost" size="sm" iconLeft={<RefreshCw size={14} />} onClick={onRegenerate}>Regenerate link</Button>
+            </>
+          )}
           <Button variant="ghost-danger" size="sm" iconLeft={<Shield size={14} />} onClick={onCancel}>Cancel invite</Button>
         </div>
       </div>
@@ -118,7 +127,7 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
           <Alert variant="error">
             <AlertTriangle size={14} />
             <AlertDescription>
-              <strong>This invitation has expired.</strong> Resend to generate a new 7-day window, or cancel it.
+              <strong>This invitation has expired.</strong> Re-send a fresh invitation to replace it, or cancel it.
             </AlertDescription>
           </Alert>
         ) : (
@@ -181,7 +190,7 @@ export function PendingInviteDetail({ user, roles, onResend, onCancel, onSave }:
                 <CardTitle>Pre-assigned roles ({editingRoles ? draftRoleIds.size : invitedRoles.length})</CardTitle>
                 <p className="text-xs text-content-tertiary mt-0.5">The invitee will see these on the authorization step and gain them once they accept.</p>
               </div>
-              {!editingRoles && (
+              {!editingRoles && !isExpired && (
                 <Button variant="ghost" size="sm" iconLeft={<Pencil size={13} />}
                   onClick={() => { setDraftRoleIds(new Set(user.roleIds)); setEditingRoles(true); }}>
                   Edit
