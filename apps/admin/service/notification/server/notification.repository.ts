@@ -1,19 +1,12 @@
 // notification.repository.ts
-// 通知域数据访问。纯函数（scopeWhere/unreadWhere）+ Prisma 查询（Task 4 追加）。
+// 通知域数据访问（Prisma）。纯作用域 where-builder 拆到 notification.scope.ts（脱 DB 单测），此处复用并 re-export。
 import "server-only";
 import { prisma } from "@cloud/db";
 import type { NoticeStatus } from "../types";
+import { scopeWhere, unreadWhere, type NoticeScope } from "./notification.scope";
 
-export type NoticeScope = { userId: number; partyId: number };
-
-/** 作用域：本人 + (当前 party 或 全局)。供 list/count/markRead 共用，口径一致。 */
-export function scopeWhere(s: NoticeScope) {
-  return { userId: s.userId, OR: [{ belongToPartyId: s.partyId }, { belongToPartyId: null }] };
-}
-
-export function unreadWhere(s: NoticeScope) {
-  return { ...scopeWhere(s), status: "UNREAD" as NoticeStatus };
-}
+export { scopeWhere, unreadWhere } from "./notification.scope";
+export type { NoticeScope } from "./notification.scope";
 
 type ListOpts = { skip: number; take: number; status?: NoticeStatus; module?: string; q?: string };
 

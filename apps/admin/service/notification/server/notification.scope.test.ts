@@ -1,6 +1,6 @@
 // notification.scope.test.ts
 import { describe, expect, it } from "vitest";
-import { scopeWhere, unreadWhere } from "./notification.repository";
+import { scopeWhere, unreadWhere } from "./notification.scope";
 
 describe("scopeWhere", () => {
   it("scopes by userId and (party OR null)", () => {
