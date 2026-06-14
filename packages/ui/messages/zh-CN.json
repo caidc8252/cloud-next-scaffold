@@ -30,6 +30,18 @@
       "prev": "上一页",
       "next": "下一页",
       "last": "末页"
+    },
+    "listFilter": {
+      "search": "搜索",
+      "advanced": "高级",
+      "advancedTitle": "高级筛选",
+      "advancedHint": "所有条件 AND · 点「应用并搜索」才生效 · 关闭保留草稿",
+      "reset": "重置",
+      "applySearch": "应用并搜索",
+      "activeFilters": "已应用筛选：",
+      "clearAll": "清除全部",
+      "close": "关闭",
+      "removeFilter": "移除筛选"
     }
   }
 }
