@@ -19,11 +19,10 @@ import {
   MODULE_META,
   groupOf,
   isUnread,
+  moduleOf,
   relTime,
   type NoticeGroup,
 } from "../notifications/_lib/notice-meta";
-
-const POPOVER_CAP = 20;
 
 /**
  * Notification bell button + popover (client component).
@@ -39,18 +38,17 @@ const POPOVER_CAP = 20;
 export function NotificationBell() {
   const t = useTranslations("notifications");
   const router = useRouter();
-  const { notices, unreadCount, markRead, markAllRead } = useNotifications();
+  const { recentUnread, unreadCount, markRead, markAllRead } = useNotifications();
   const [open, setOpen] = useState(false);
 
-  const unread = notices.filter(isUnread);
-  const recent = unread.slice(0, POPOVER_CAP);
-  const truncated = unread.length - recent.length;
-  const hasHistory = notices.length > 0;
+  // recentUnread is already server-limited to top-20 unread; no client filter needed.
+  const truncated = 0;
+  const hasHistory = recentUnread.length > 0 || unreadCount > 0;
 
   const groups: { g: NoticeGroup; rows: Notice[] }[] = (
     ["today", "earlier"] as const
   )
-    .map((g) => ({ g, rows: recent.filter((n) => groupOf(n.createdAt) === g) }))
+    .map((g) => ({ g, rows: recentUnread.filter((n) => groupOf(n.createdAt) === g) }))
     .filter((x) => x.rows.length > 0);
 
   const openNotice = (n: Notice) => {
@@ -136,7 +134,7 @@ export function NotificationBell() {
         <div className="border-t border-line-subtle">
           {truncated > 0 && (
             <div className="px-3 pt-2 text-center text-2xs text-content-tertiary">
-              {t("showingUnread", { shown: recent.length, total: unread.length })}
+              {t("showingUnread", { shown: recentUnread.length, total: recentUnread.length + truncated })}
             </div>
           )}
           <Button
@@ -165,7 +163,7 @@ function BellRow({
   onMarkRead: () => void;
   markReadLabel: string;
 }) {
-  const meta = MODULE_META[notice.module];
+  const meta = MODULE_META[moduleOf(notice.type)];
   const Icon = meta.icon;
   const unread = isUnread(notice);
   return (
@@ -201,7 +199,7 @@ function BellRow({
         >
           {notice.title}
         </div>
-        <div className="truncate text-xs text-content-secondary">{notice.payload.body}</div>
+        <div className="truncate text-xs text-content-secondary">{notice.payload.summary}</div>
         <div className="mt-0.5 text-2xs text-content-tertiary">{relTime(notice.createdAt)}</div>
       </div>
       {unread ? (
