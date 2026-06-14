@@ -1,13 +1,12 @@
-import { requirePermissions } from "@cloud/permissions/server";
 import { NotificationDetail } from "../_components/notification-detail";
+import { loadNotice } from "../_server/loader";
 
 /**
- * Notification detail page. Authenticated only. The notice is read client-side
- * from the shared NotificationsProvider (same store as the bell/list), so this
- * stays a thin RSC that enforces the session and forwards the id.
+ * Notification detail page — RSC. Auth is enforced inside loadNotice (via
+ * requirePermissions), so this page stays thin: fetch → render.
  */
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  await requirePermissions({ all: [] });
   const { id } = await params;
-  return <NotificationDetail id={id} />;
+  const notice = await loadNotice(id);
+  return <NotificationDetail notice={notice} />;
 }
