@@ -22,7 +22,7 @@ export const createNoticeInputSchema = z.object({
   title: z.string(),
   payload: z.object({
     summary: z.string().min(1),
-    detail: z.string().optional(),
+    detail: z.string().min(1), // 必填：禁止空 detail 记录（创建入口强制）
     fields: z.array(z.object({ key: z.string(), value: z.string(), mono: z.boolean().optional() })).optional(),
     links: z.array(z.object({ label: z.string(), type: z.enum(["text", "button"]), url: z.string() })).optional(),
   }),

@@ -22,7 +22,7 @@
 
 ## 5. 生产规则（createNotice）
 - **唯一入口、服务端内部**；任一业务域 / 任一 app 的服务端均可调用，**跨 app 写同一 `sys_notice` 表**（如 portal 入驻完成 → 通知 admin 侧邀请人）。禁止业务里直接 `prisma.sysNotice.create` 或另开建通知接口。
-- `payload` **必含 `summary`**；`noticeType` 必给、约定 `"<module>.<event>"`。写一行 `UNREAD`，**写后不可变**（只 mark-read）。
+- `payload` **必含 `summary` 与 `detail`**（创建入口 zod 强制非空，**禁止空 detail 记录**）；`noticeType` 必给、约定 `"<module>.<event>"`。写一行 `UNREAD`，**写后不可变**（只 mark-read）。
 - **埋点非阻断**：在业务事件点 `try/catch` 调用，失败仅 `log.warn`、**不影响主流程返回、不回滚**（通知是副作用，不是业务事务的一部分）。
 - 「哪些业务事件 → 产生哪种通知」是**产品决策、逐个增量接**（候选与配方见 `api-logic.md`「反应/埋点」+ `.claude/docs/notice.md`）。已接：`account.passwordReset`（管理员重置他人密码 → 通知该用户）。
 

@@ -8,7 +8,7 @@ export type NoticeLink = { label: string; type: "text" | "button"; url: string }
 
 export type NoticePayload = {
   summary: string;          // 必含，纯文本
-  detail?: string;          // 可选，纯文本段落
+  detail: string;           // 必含，纯文本段落（创建入口强制非空）
   fields?: NoticeField[];
   links?: NoticeLink[];
 };

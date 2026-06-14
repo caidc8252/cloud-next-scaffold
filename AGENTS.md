@@ -38,7 +38,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **邮件**：发邮件统一走 `@cloud/mail` 推 Redis `mail:queue`（外部平台消费发信），不直接发信 / 不直接 `lpush`；`content` 极简 HTML 且变量 `escapeHtml`、`title` 纯文本；模板落各 app `lib/email/`、文案走 i18n `email.*`、译者 app 注入；队列背压 500 + 用户可触发邮件按收件人节流；包不读 env。→ 发邮件前读 `.claude/docs/email-capability.md`
 - **能力归属**：能力两端（client/server）不拆散、整体进同一包双入口；包只做纯能力、配置业务侧注入、不偷读 env；部署常量留 app。→ 抽包/调整能力归属前读 `.claude/docs/capability-ownership.md`
 - **日志**：服务端打日志统一走 `@cloud/log` 的 `createLogger("<scope>")`，**不裸 `console.*`**；单一 JSON 行格式、`LOG_LEVEL` 控级；请求级 `traceId`/`seq` 由 `withApiHandler` 经 `AsyncLocalStorage` 自动携带，错误响应与日志共用同一 traceId。→ 打服务端日志前读 `.claude/docs/logging.md`
-- **站内通知**：给用户发站内通知统一走 `service/notification` 的服务端内部 `createNotice`（唯一生产者、不暴露建通知 API、跨 app 可写同 `sys_notice`），**不自己 `prisma.sysNotice.create`**；payload 四件套 `summary`(必含)/`detail?`/`fields[]`/`links[]`；`noticeType="<module>.<event>"`（module 前端派生不落库）；文本按**收件人 `sys_user.locale`** 渲染好再传（展示端不翻译）、`links.url` 生产者拼好；埋点在业务事件点 `try/catch` 调、**失败非阻断**。→ 发通知/接埋点前读 `.claude/docs/notice.md`
+- **站内通知**：给用户发站内通知统一走 `service/notification` 的服务端内部 `createNotice`（唯一生产者、不暴露建通知 API、跨 app 可写同 `sys_notice`），**不自己 `prisma.sysNotice.create`**；payload 四件套 `summary`+`detail`(均必含非空)/`fields[]`/`links[]`；`noticeType="<module>.<event>"`（module 前端派生不落库）；文本按**收件人 `sys_user.locale`** 渲染好再传（展示端不翻译）、`links.url` 生产者拼好；埋点在业务事件点 `try/catch` 调、**失败非阻断**。→ 发通知/接埋点前读 `.claude/docs/notice.md`
 
 ## 默认开发链路
 

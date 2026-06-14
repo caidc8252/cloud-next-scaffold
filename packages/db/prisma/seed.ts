@@ -86,7 +86,13 @@ async function main() {
     `SELECT setval(pg_get_serial_sequence('sys_role', 'role_id'), 1000, true)`,
   );
 
-  // 给 admin 预置几条站内通知（dev/e2e 用；幂等：先按 user 清再插）
+  // 清理异常/不正确的历史通知：payload 缺 detail 或 detail 为空（新规则禁止空 detail 记录）。
+  const removed = await prisma.$executeRawUnsafe(
+    `DELETE FROM sys_notice WHERE payload->>'detail' IS NULL OR payload->>'detail' = ''`,
+  );
+  console.log(`removed ${removed} notice(s) with empty/missing detail`);
+
+  // 给 admin 预置几条合规站内通知（dev/e2e 用；均含非空 detail；幂等：先按 user 清再插）
   await prisma.sysNotice.deleteMany({ where: { userId: adminUser.userId } });
   await prisma.sysNotice.createMany({
     data: [
@@ -98,7 +104,7 @@ async function main() {
         status: "UNREAD",
         payload: {
           summary: "T-2026-003 · Security alert",
-          detail: "Assigned to you for L2 triage.",
+          detail: "Assigned to you for L2 triage. Customer reports intermittent card-reader failures on 3 of 8 lanes.",
           fields: [
             { key: "ticket", value: "T-2026-003", mono: true },
             { key: "priority", value: "High" },
@@ -114,7 +120,20 @@ async function main() {
         status: "READ",
         payload: {
           summary: "SO-2026-0184 completed",
+          detail: "All sample devices on this order have been activated and the order is now complete.",
           fields: [{ key: "order", value: "SO-2026-0184", mono: true }],
+        },
+      },
+      {
+        userId: adminUser.userId,
+        belongToPartyId: platformPartner.partyId,
+        noticeType: "customer.invited",
+        title: "Invitation accepted",
+        status: "UNREAD",
+        payload: {
+          summary: "ops@brightleaf.co accepted your invite",
+          detail: "The operator you invited has completed registration and accepted the invitation.",
+          fields: [{ key: "operator", value: "ops@brightleaf.co" }],
         },
       },
       {
@@ -123,7 +142,10 @@ async function main() {
         noticeType: "account.passwordReset",
         title: "Your password was reset",
         status: "UNREAD",
-        payload: { summary: "An administrator reset your password" },
+        payload: {
+          summary: "An administrator reset your password",
+          detail: "An administrator initiated a password reset. Use the link sent to your email to set a new password.",
+        },
       },
     ],
   });

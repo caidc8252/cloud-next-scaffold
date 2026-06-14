@@ -63,12 +63,13 @@ describe("unreadCountByParty", () => {
 describe("createNotice", () => {
   it("validates and writes UNREAD with null party default", async () => {
     vi.mocked(repo.create).mockResolvedValue(row("c") as never);
-    await createNotice({ userId: 9, noticeType: "account.passwordReset", title: "T", payload: { summary: "s" } });
+    await createNotice({ userId: 9, noticeType: "account.passwordReset", title: "T", payload: { summary: "s", detail: "d" } });
     expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({
       userId: 9, belongToPartyId: null, noticeType: "account.passwordReset", title: "T",
     }));
   });
-  it("rejects payload without summary", async () => {
+  it("rejects payload without summary or detail", async () => {
     await expect(createNotice({ userId: 9, noticeType: "t.x", title: "T", payload: {} } as never)).rejects.toBeTruthy();
+    await expect(createNotice({ userId: 9, noticeType: "t.x", title: "T", payload: { summary: "s" } } as never)).rejects.toBeTruthy();
   });
 });

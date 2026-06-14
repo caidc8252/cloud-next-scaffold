@@ -46,7 +46,7 @@ createNotice(input: {
   title: string;                   // 标题（按收件人语言渲染好）
   payload: {                       // 四件套，文本均按收件人语言渲染好
     summary: string;               // 必含
-    detail?: string;
+    detail: string;                // 必含（非空，zod 强制）
     fields?: { key: string; value: string; mono?: boolean }[];
     links?: { label: string; type: "text" | "button"; url: string }[];
   };

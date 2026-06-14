@@ -4,7 +4,7 @@
 
 - 想给某用户发站内通知，统一调服务端内部 **`createNotice`**（`service/notification/server/notification.service.ts`）——它是**唯一生产者**、对外不暴露建通知 API（防伪造他人通知）。任何业务域 / 任何 app 的服务端都可调（跨 app 写同一张 `sys_notice` 表，如 portal 入驻完成 → 通知 admin 侧邀请人）。**不要**自己 `prisma.sysNotice.create`、不要新开建通知接口
 - 入参契约（`createNoticeInputSchema`，单一真源）：`{ userId(收件人), belongToPartyId?(省略=该用户跨 party 全局), noticeType, title, payload }`。写一行 `SysNotice`（`status=UNREAD`），写后不可变（只 mark-read）
-- **payload 四件套**（无特例结构）：`summary`（**必含**，纯文本，铃铛/列表一行）+ `detail?`（纯文本段落，详情正文）+ `fields?[]`（`{key,value,mono?}`，详情属性栅格）+ `links?[]`（`{label,type:'text'|'button',url}`，详情跳转按钮）。**删了** content/actor/cta/nav/module 等旧形状，别再用
+- **payload 四件套**（无特例结构）：`summary`（**必含**，纯文本，铃铛/列表一行）+ `detail`（**必含非空**，纯文本段落，详情正文；创建入口 zod 强制，禁空 detail 记录）+ `fields?[]`（`{key,value,mono?}`，详情属性栅格）+ `links?[]`（`{label,type:'text'|'button',url}`，详情跳转按钮）。**删了** content/actor/cta/nav/module 等旧形状，别再用
 - **`noticeType` 约定 `"<module>.<event>"`**（如 `ticket.assigned`、`account.passwordReset`）。`module` **不落库**，前端从前缀派生图标/颜色/类型 chip/筛选（已知 ticket/customer/app/order/account，未知→default 通用图标）。新增一类 module 只需在 `app/(portal)/notifications/_lib/notice-meta.ts` 的 `MODULE_META` 加一项
 - **`title` 生产者提供、展示原样**、空则不显示标题行（不做模板兜底）
 - **语言规则（关键）**：生产者内容（`title`/`summary`/`detail`/`fields[].value`/`links[].label`）由**调用方按收件人语言渲染好再传**——取 `sys_user.locale`（用 `isLocale()` 收窄、回退 `en`）→ `getTranslations({ locale })`（**不能用 cookie 版**，收件人 ≠ 当前请求者）。展示端**原样不翻译**。结构标签（`fields[].key` 查 `notifications.fields.<key>` 缺则显原 key、module chip）才在**展示时** i18n

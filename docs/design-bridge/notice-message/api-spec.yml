@@ -141,10 +141,10 @@ components:
       description: >
         统一四件套。文本（summary/detail/fields.value/links.label）由生产者按收件人语言渲染好后存，
         展示端原样不翻译；fields.key 展示时走 i18n。
-      required: [summary]
+      required: [summary, detail]
       properties:
         summary: { type: string, description: 必含，纯文本一行摘要 }
-        detail:  { type: string, description: 可选，纯文本正文段落 }
+        detail:  { type: string, description: 必含（非空），纯文本正文段落；创建入口强制 }
         fields:
           type: array
           items:

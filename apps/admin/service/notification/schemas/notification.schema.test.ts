@@ -25,8 +25,12 @@ describe("createNoticeInputSchema", () => {
   it("requires summary in payload", () => {
     expect(createNoticeInputSchema.safeParse({ userId: 1, noticeType: "t.x", title: "T", payload: {} }).success).toBe(false);
   });
-  it("accepts minimal", () => {
-    const r = createNoticeInputSchema.parse({ userId: 1, noticeType: "t.x", title: "T", payload: { summary: "s" } });
+  it("requires non-empty detail in payload", () => {
+    expect(createNoticeInputSchema.safeParse({ userId: 1, noticeType: "t.x", title: "T", payload: { summary: "s" } }).success).toBe(false);
+    expect(createNoticeInputSchema.safeParse({ userId: 1, noticeType: "t.x", title: "T", payload: { summary: "s", detail: "" } }).success).toBe(false);
+  });
+  it("accepts minimal (summary + detail)", () => {
+    const r = createNoticeInputSchema.parse({ userId: 1, noticeType: "t.x", title: "T", payload: { summary: "s", detail: "d" } });
     expect(r.payload.summary).toBe("s");
   });
 });
