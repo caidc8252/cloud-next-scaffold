@@ -1,13 +1,12 @@
 "use client";
 
 import { useTranslations } from "@cloud/i18n/client";
-import type { NoticeModule } from "@/service/notification/types";
-import { MODULE_META } from "../_lib/notice-meta";
+import { MODULE_META, moduleOf } from "../_lib/notice-meta";
 
-/** Small module pill: tinted icon + label (e.g. a blue "Tickets" chip). */
-export function ModuleChip({ module }: { module: NoticeModule }) {
+/** 模块 chip：按 noticeType 前缀派生图标/色/标签。 */
+export function ModuleChip({ type }: { type: string | null }) {
   const t = useTranslations("notifications");
-  const meta = MODULE_META[module];
+  const meta = MODULE_META[moduleOf(type)];
   const Icon = meta.icon;
   return (
     <span
