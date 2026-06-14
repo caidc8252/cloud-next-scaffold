@@ -73,7 +73,6 @@ export function NotificationsPage() {
   // Server-side fetch: triggered by page, pageSize, or applied filters
   useEffect(() => {
     let alive = true;
-    setLoading(true);
     const q = {
       page,
       limit: pageSize,
@@ -81,19 +80,20 @@ export function NotificationsPage() {
       ...(applied.module !== "All" ? { module: applied.module } : {}),
       ...(applied.q ? { q: applied.q } : {}),
     };
-    request
-      .get<{ items: Notice[] }>("/api/notifications", { query: q })
-      .then((res) => {
+    async function load() {
+      setLoading(true);
+      try {
+        const res = await request.get<{ items: Notice[] }>("/api/notifications", { query: q });
         if (!alive) return;
         setNotices(res.data.items);
         setTotal(res.total ?? 0);
-      })
-      .catch((err) => {
+      } catch (err) {
         if (alive) toastError(err);
-      })
-      .finally(() => {
+      } finally {
         if (alive) setLoading(false);
-      });
+      }
+    }
+    void load();
     return () => {
       alive = false;
     };

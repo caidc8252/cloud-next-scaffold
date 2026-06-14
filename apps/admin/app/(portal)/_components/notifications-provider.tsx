@@ -29,7 +29,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     const onFocus = () => refresh();
-    refresh();
+    void (async () => { await refresh(); })();
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [refresh]);

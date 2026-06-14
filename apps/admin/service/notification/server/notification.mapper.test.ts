@@ -1,5 +1,5 @@
 // notification.mapper.test.ts
-import { describe, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import { toNotice } from "./notification.mapper";
 
 it("maps SysNotice row to Notice VO", () => {
