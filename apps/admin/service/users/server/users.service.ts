@@ -11,6 +11,7 @@ import {
   ERR_USER_NOT_FOUND,
   ERR_USER_PROTECTED,
 } from "@cloud/request/error-codes";
+import { INVITE_TTL_MS, INVITE_TOKEN_BYTES } from "@cloud/platform-config";
 import { extractRoleIds, parseRoleIds } from "@/service/_shared/role-codes";
 import type { User } from "@/app/(portal)/system/_shared/types";
 import { createPasswordResetToken } from "@/lib/password-reset-token";
@@ -30,9 +31,6 @@ export { parseInviteId } from "./users.mapper";
 
 // 用户域业务编排。接收「已解析的入参 + 当前会话」，从不接触 Request / URLSearchParams。
 // 可预期错误一律 throw BusinessError（route 的 withApiHandler 统一兜底）。
-
-const INVITE_TTL_MS = 7 * 86_400_000;
-const INVITE_TOKEN_BYTES = 24;
 
 /** 邀请人 id → 显示用户名（本人走 session，其余查库，查不到回退 system）。 */
 async function resolveInviterName(session: ActiveSession, inviterUserId: number): Promise<string> {
