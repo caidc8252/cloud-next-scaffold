@@ -20,6 +20,15 @@ describe("admin platform manifest", () => {
     expect(codes).toContain("dashboard");
   });
 
+  it("keeps the S3 upload demo login-only", () => {
+    const menus = getMenus("ADMIN");
+    const codes = menus.map((m) => m.menuCode);
+    const demo = menus.find((m) => m.menuCode === "s3-upload-demo");
+
+    expect(codes).toContain("s3-upload-demo");
+    expect(demo?.permissions ?? []).toEqual([]);
+  });
+
   it("exposes the global contract union (across all apps)", () => {
     // CONTRACT_KEYS 是各 app 声明 contractKeys 的全局并集（admin + customer）。
     const expected = [

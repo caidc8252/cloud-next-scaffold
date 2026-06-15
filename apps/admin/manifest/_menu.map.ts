@@ -57,5 +57,17 @@ export const appManifest = defineAppManifest({
         { code: "users.CHANGE_ROLE", label: "Change Role", desc: "Change user's assigned role" },
       ],
     },
+
+    // ── Storage ───────────────────────────────────────────
+    { menuCode: "storage", menuTitle: "Storage", parentMenuCode: null, path: null, icon: "upload-cloud", contractTypes: [], order: 200 },
+    {
+      menuCode: "s3-upload-demo",
+      menuTitle: "S3 Upload",
+      parentMenuCode: "storage",
+      path: "/storage/s3-upload-demo",
+      icon: "upload-cloud",
+      contractTypes: [],
+      order: 201,
+    },
   ],
 });

@@ -16,11 +16,20 @@ import {
   CardTitle,
   Input,
   Progress,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Table,
-  ToggleSwitch,
   type TableColumn,
 } from "@cloud/ui/components/ui";
 import { SERVER_S3_UPLOAD_THRESHOLD_BYTES } from "../lib/s3-upload-policy";
+import {
+  S3_UPLOAD_PROFILE_OPTIONS,
+  S3_UPLOAD_PROFILES,
+  type S3UploadProfile,
+} from "../lib/s3-upload-profiles";
 import type {
   DuplicateStorageObjectResponse,
   S3DownloadUrlResponse,
@@ -28,9 +37,7 @@ import type {
   StorageVisibility,
 } from "./types";
 
-const DEFAULT_VISIBILITY = "PRIVATE" satisfies StorageVisibility;
-const PUBLIC_VISIBILITY = "PUBLIC" satisfies StorageVisibility;
-const PUBLIC_DIRECTORY = "public/images";
+const DEFAULT_UPLOAD_PROFILE = S3_UPLOAD_PROFILES.DEBUG_PRIVATE;
 
 type UploadState =
   | "idle"
@@ -82,14 +89,12 @@ async function calculateFileSha256(file: File, signal: AbortSignal): Promise<str
 
 async function uploadFileThroughServer(
   file: File,
-  directory: string,
-  visibility: StorageVisibility,
+  uploadProfile: S3UploadProfile,
   signal: AbortSignal,
 ): Promise<StorageObjectRecord> {
   const formData = new FormData();
   formData.set("file", file);
-  formData.set("directory", directory);
-  formData.set("visibility", visibility);
+  formData.set("uploadProfile", uploadProfile);
 
   const response = await fetch("/api/storage/s3-upload-server", {
     method: "POST",
@@ -115,8 +120,7 @@ type S3UploadDemoProps = {
 
 export function S3UploadDemo({ initialRecords }: S3UploadDemoProps) {
   const [file, setFile] = useState<File | null>(null);
-  const [directory, setDirectory] = useState("debug");
-  const [isPublicUpload, setIsPublicUpload] = useState(false);
+  const [uploadProfile, setUploadProfile] = useState<S3UploadProfile>(DEFAULT_UPLOAD_PROFILE);
   const [state, setState] = useState<UploadState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
@@ -134,8 +138,10 @@ export function S3UploadDemo({ initialRecords }: S3UploadDemoProps) {
     state === "uploading" ||
     state === "finalizing";
   const shouldUploadThroughServer = file ? file.size <= SERVER_S3_UPLOAD_THRESHOLD_BYTES : false;
-  const uploadVisibility = isPublicUpload ? PUBLIC_VISIBILITY : DEFAULT_VISIBILITY;
-  const uploadDirectory = isPublicUpload ? PUBLIC_DIRECTORY : directory;
+  const selectedProfile =
+    S3_UPLOAD_PROFILE_OPTIONS.find((profile) => profile.profile === uploadProfile) ??
+    S3_UPLOAD_PROFILE_OPTIONS[0];
+  const uploadVisibility: StorageVisibility = selectedProfile.visibility;
 
   const columns = useMemo<TableColumn<StorageObjectRecord>[]>(
     () => [
@@ -233,7 +239,7 @@ export function S3UploadDemo({ initialRecords }: S3UploadDemoProps) {
       etag?: string;
     },
     contentHash: string,
-    visibility: StorageVisibility,
+    profile: S3UploadProfile,
   ) {
     const response = await request.post<StorageObjectRecord>("/api/storage/uploads/complete", {
       objectKey: result.objectKey,
@@ -241,7 +247,7 @@ export function S3UploadDemo({ initialRecords }: S3UploadDemoProps) {
       contentType: result.contentType,
       sizeBytes: fileToComplete.size,
       contentHash,
-      visibility,
+      uploadProfile: profile,
       etag: result.etag,
     });
 
@@ -270,7 +276,7 @@ export function S3UploadDemo({ initialRecords }: S3UploadDemoProps) {
           query: {
             contentHash,
             sizeBytes: file.size,
-            visibility: uploadVisibility,
+            uploadProfile,
           },
           signal: abortController.signal,
         },
@@ -285,12 +291,7 @@ export function S3UploadDemo({ initialRecords }: S3UploadDemoProps) {
 
       if (file.size <= SERVER_S3_UPLOAD_THRESHOLD_BYTES) {
         setState("server-uploading");
-        record = await uploadFileThroughServer(
-          file,
-          uploadDirectory,
-          uploadVisibility,
-          abortController.signal,
-        );
+        record = await uploadFileThroughServer(file, uploadProfile, abortController.signal);
       } else {
         const response = await request.post<S3UploadSession>(
           "/api/storage/s3-upload-session",
@@ -298,9 +299,8 @@ export function S3UploadDemo({ initialRecords }: S3UploadDemoProps) {
             filename: file.name,
             contentType: file.type || "application/octet-stream",
             size: file.size,
-            directory: uploadDirectory,
+            uploadProfile,
             contentHash,
-            visibility: uploadVisibility,
           },
           { signal: abortController.signal },
         );
@@ -319,7 +319,7 @@ export function S3UploadDemo({ initialRecords }: S3UploadDemoProps) {
         });
 
         setState("finalizing");
-        record = await completeBrowserUpload(file, result, contentHash, uploadVisibility);
+        record = await completeBrowserUpload(file, result, contentHash, uploadProfile);
       }
 
       setProgress(100);
@@ -372,7 +372,7 @@ export function S3UploadDemo({ initialRecords }: S3UploadDemoProps) {
               <Input
                 className="md:col-span-2"
                 type="file"
-                accept={isPublicUpload ? "image/*" : undefined}
+                accept={uploadVisibility === "PUBLIC" ? "image/*" : undefined}
                 disabled={isBusy}
                 onChange={(event) => {
                   setFile(event.target.files?.[0] ?? null);
@@ -381,26 +381,25 @@ export function S3UploadDemo({ initialRecords }: S3UploadDemoProps) {
                   setState("idle");
                 }}
               />
-              <Input
-                value={uploadDirectory}
-                disabled={isBusy || isPublicUpload}
-                placeholder={isPublicUpload ? PUBLIC_DIRECTORY : "debug"}
-                onChange={(event) => setDirectory(event.target.value)}
-              />
+              <Select
+                value={uploadProfile}
+                onValueChange={(value) => setUploadProfile(value as S3UploadProfile)}
+                disabled={isBusy}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue>{selectedProfile.profile}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {S3_UPLOAD_PROFILE_OPTIONS.map((profile) => (
+                    <SelectItem key={profile.profile} value={profile.profile}>
+                      {profile.profile}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <ToggleSwitch
-                label="Public image"
-                checked={isPublicUpload}
-                disabled={isBusy}
-                onCheckedChange={(checked) => {
-                  setIsPublicUpload(checked);
-                  setError(null);
-                  setProgress(0);
-                  setState("idle");
-                }}
-              />
               <Button
                 type="button"
                 loading={isBusy}
@@ -421,7 +420,9 @@ export function S3UploadDemo({ initialRecords }: S3UploadDemoProps) {
                 </Button>
               )}
               {file && <Badge tone="info">{formatBytes(file.size)}</Badge>}
-              {isPublicUpload && <Badge tone="success">public/images</Badge>}
+              <Badge tone={uploadVisibility === "PUBLIC" ? "success" : "neutral"}>
+                {selectedProfile.directory}
+              </Badge>
               {file && (
                 <Badge
                   tone={shouldUploadThroughServer ? "success" : isMultipart ? "warning" : "info"}
