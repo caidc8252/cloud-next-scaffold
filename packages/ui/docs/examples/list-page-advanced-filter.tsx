@@ -11,33 +11,84 @@
 //
 // The sheet FIELDS ARE PLACEHOLDERS — real fields are product-defined. Reference
 // implementation: apps/admin/.../apps/app-publish/_components/app-publish-list.tsx
-// NOT exported from @cloud/ui — never enters the bundle.
+//
+// Sticky model is identical to examples/list-page.tsx: the condition band stays in
+// normal flow (non-sticky default) and scrolls away, while the summary bar + table
+// header dock to the scroll-root top. NOT exported from @cloud/ui — never bundled.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { ChevronRight, Download, Search } from "lucide-react";
 import {
   AdvancedFilterField,
   AdvancedFilterGroup,
   AdvancedFilterButton,
   AdvancedFilterSheet,
   AppliedFilters,
+  Badge,
   Button,
   Card,
+  Empty,
   FilterChip,
   Input,
+  LIST_SUMMARY_BAR_HEIGHT,
   ListConditionBand,
+  ListSummaryBar,
   PageBody,
+  RichPagination,
   SearchInput,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Table,
   Toggle,
   ToggleGroup,
   useListFilters,
+  type TableColumn,
 } from "@cloud/ui";
+
+// Self-contained demo data so the sticky list reads end to end (the table no
+// longer defers to list-page.tsx).
+type Resource = { id: string; name: string; category: string; reference: string; window: string };
+const ROWS: Resource[] = [
+  { id: "1", name: "Ingest pipeline", category: "Option one", reference: "REF-1042", window: "24h" },
+  { id: "2", name: "Edge cache node", category: "Option two", reference: "REF-2087", window: "7d" },
+  { id: "3", name: "Billing reconciler", category: "Option one", reference: "REF-3310", window: "30d" },
+  { id: "4", name: "Webhook dispatcher", category: "Option two", reference: "REF-4521", window: "24h" },
+];
+
+const COLUMNS: TableColumn<Resource>[] = [
+  {
+    key: "name",
+    title: "RESOURCE",
+    sortable: true,
+    render: (r) => <span className="text-sm font-medium text-content-primary">{r.name}</span>,
+  },
+  {
+    key: "category",
+    title: "CATEGORY",
+    render: (r) => <Badge tone="info">{r.category}</Badge>,
+  },
+  {
+    key: "reference",
+    title: "REFERENCE",
+    render: (r) => <span className="font-mono text-2xs tabular-nums text-content-secondary">{r.reference}</span>,
+  },
+  {
+    key: "window",
+    title: "WINDOW",
+    render: (r) => <span className="text-content-secondary">{r.window}</span>,
+  },
+  {
+    key: "actions",
+    title: "",
+    width: 48,
+    align: "right",
+    render: () => <ChevronRight className="inline-block size-3.5 text-content-tertiary" />,
+  },
+];
 
 // Placeholder advanced conditions — names are intentionally generic (the spec does
 // not prescribe fields). All are single-value so countActive() can drive the badge;
@@ -102,12 +153,35 @@ export function ListPageAdvancedFilterTemplate() {
           }
         />
 
-        {/* List card context — the count band + Table + pagination live in examples/list-page.tsx */}
-        <Card elevation={1} className="-mt-2">
-          <div className="px-4 py-3 text-sm text-content-secondary">
-            List rows render here — see <code className="font-mono text-xs">examples/list-page.tsx</code> for the count band,
-            Table, and pagination.
-          </div>
+        {/* §5 — list card: summary bar + Table + pagination. overflow-clip rounds the
+            corners without trapping the sticky summary bar / table header. */}
+        <Card elevation={1} className="overflow-clip">
+          <ListSummaryBar
+            total={ROWS.length}
+            label={
+              <>
+                resources
+                {filters.hasApplied && <span className="text-content-tertiary"> matching filters</span>}
+              </>
+            }
+            actions={
+              <Button variant="secondary" size="sm" iconLeft={<Download className="size-3.5" />} onClick={() => {}}>
+                Export
+              </Button>
+            }
+          />
+
+          <Table
+            columns={COLUMNS}
+            rows={ROWS}
+            rowKey={(r) => r.id}
+            onRowClick={() => {}}
+            stickyHeader
+            stickyHeaderTop={LIST_SUMMARY_BAR_HEIGHT}
+            empty={<Empty title="No resources match your search." />}
+          />
+
+          <RichPagination page={1} pageCount={1} onPageChange={() => {}} total={ROWS.length} pageSize={25} onPageSizeChange={() => {}} />
         </Card>
       </PageBody>
 

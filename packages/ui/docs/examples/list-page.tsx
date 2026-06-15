@@ -148,11 +148,10 @@ export function ListPageTemplate() {
       </div>
 
       <PageBody>
-        {/* §4 — condition band: quick-bar slot + applied-chip slot. sticky={false}:
-            the band scrolls away; the list card's summary bar + table header are
-            what stays docked at the top (see ListSummaryBar + Table stickyHeader below). */}
+        {/* §4 — condition band: quick-bar slot + applied-chip slot. Non-sticky by
+            default now — the band scrolls away; the list card's summary bar + table
+            header are what stays docked at the top (see ListSummaryBar + Table below). */}
         <ListConditionBand
-          sticky={false}
           toolbar={
             <>
               <SearchInput
