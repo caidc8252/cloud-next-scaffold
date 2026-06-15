@@ -72,5 +72,6 @@ coverage/
 e2e/.auth/
 playwright-report/
 .env.test
+.playwright-mcp/*
 
 docker-data/*
