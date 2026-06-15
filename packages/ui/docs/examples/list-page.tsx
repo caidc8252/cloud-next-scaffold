@@ -4,9 +4,14 @@
 // STYLE TEMPLATE · List page (spec §1.1 §2.2 §3–§5)
 //
 // Compilable style skeleton for the portal LIST page shape. The condition band,
-// chips, and draft/applied state come from the @cloud/ui list-filter family
-// (ListConditionBand / SearchInput / AppliedFilters / FilterChip) + useListFilters
-// (spec §4) — pages no longer hand-roll the sticky band or filter state.
+// chips, summary bar, and draft/applied state come from the @cloud/ui list-filter
+// family (ListConditionBand / SearchInput / AppliedFilters / FilterChip /
+// ListSummaryBar) + useListFilters (spec §4) — pages no longer hand-roll them.
+//
+// Sticky model: the condition band scrolls away (sticky={false}); what stays
+// docked at the scroll-root top is the result-count/Export summary bar plus the
+// table's column header (Table stickyHeader, offset by LIST_SUMMARY_BAR_HEIGHT).
+// The list Card runs overflow-visible so it doesn't trap those sticky elements.
 // Reference implementation: apps/admin/.../sales/catalog/_components/catalog-list.tsx
 //
 // Style-only: data is hardcoded, <a> stands in for next/link. In a real page:
@@ -23,7 +28,9 @@ import {
   Card,
   Empty,
   FilterChip,
+  LIST_SUMMARY_BAR_HEIGHT,
   ListConditionBand,
+  ListSummaryBar,
   PageBody,
   RichPagination,
   SearchInput,
@@ -141,8 +148,11 @@ export function ListPageTemplate() {
       </div>
 
       <PageBody>
-        {/* §4 — condition band: quick-bar slot + applied-chip slot. The band owns sticky / full-bleed math. */}
+        {/* §4 — condition band: quick-bar slot + applied-chip slot. sticky={false}:
+            the band scrolls away; the list card's summary bar + table header are
+            what stays docked at the top (see ListSummaryBar + Table stickyHeader below). */}
         <ListConditionBand
+          sticky={false}
           toolbar={
             <>
               <SearchInput
@@ -175,26 +185,36 @@ export function ListPageTemplate() {
           }
         />
 
-        {/* §5 — list card: count band + Table + pagination band (card adds no padding) */}
-        <Card elevation={1} className="-mt-2">
-          <div className="flex items-center justify-between gap-3 border-b border-line-subtle px-4 py-3">
-            <div className="flex items-baseline gap-1 text-sm text-content-secondary">
-              <span className="font-mono font-semibold text-content-primary tabular-nums">{ROWS.length}</span>
-              <span>
+        {/* §5 — list card: summary bar + Table + pagination band (card adds no padding).
+            overflow-clip is REQUIRED here: it still rounds the corners but, unlike the
+            card's default overflow-hidden, does NOT establish a scroll container — so the
+            sticky summary bar / table header dock to the page instead of being trapped. */}
+        <Card elevation={1} className="overflow-clip">
+          {/* Sticky summary bar — pins to the scroll-root top together with the table header. */}
+          <ListSummaryBar
+            total={ROWS.length}
+            label={
+              <>
                 customers
                 {filters.hasApplied && <span className="text-content-tertiary"> matching filters</span>}
-              </span>
-            </div>
-            <Button variant="secondary" size="sm" iconLeft={<Download className="size-3.5" />} onClick={() => {}}>
-              Export
-            </Button>
-          </div>
+              </>
+            }
+            actions={
+              <Button variant="secondary" size="sm" iconLeft={<Download className="size-3.5" />} onClick={() => {}}>
+                Export
+              </Button>
+            }
+          />
 
+          {/* stickyHeader docks the column header to the page scroll root; stickyHeaderTop
+              offsets it by the summary bar's height so the two tile flush. */}
           <Table
             columns={COLUMNS}
             rows={ROWS}
             rowKey={(r) => r.id}
             onRowClick={() => {}}
+            stickyHeader
+            stickyHeaderTop={LIST_SUMMARY_BAR_HEIGHT}
             empty={<Empty title="No customers match your search." />}
           />
 

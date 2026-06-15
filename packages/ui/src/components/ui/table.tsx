@@ -41,6 +41,21 @@ export interface TableProps<R> {
   bordered?: boolean
   /** Keep the first column visible during horizontal scroll */
   stickyFirstColumn?: boolean
+  /**
+   * Dock the column header to the page scroll root (not the wrapper) so it
+   * stays pinned as the body scrolls. Trade-off: this drops the wrapper's own
+   * horizontal scrollbar (overflow-x:auto would clip the sticky) — wide tables
+   * overflow the page instead, so leave it off for them. The host Card must use
+   * `overflow-clip` (not its default overflow-hidden, which traps the sticky).
+   * Default off (current behavior: wrapper-relative, effectively non-sticky vertically).
+   */
+  stickyHeader?: boolean
+  /**
+   * Top offset (px or CSS length) for the docked header — set to the height of
+   * any sticky bar sitting above the table (e.g. LIST_SUMMARY_BAR_HEIGHT) so
+   * the header tiles flush beneath it. Only meaningful with stickyHeader.
+   */
+  stickyHeaderTop?: number | string
   /** Per-row visual state: selected (left accent bar), disabled, expanded */
   rowState?: (row: R, index: number) => TableRowState | undefined
   className?: string
@@ -79,6 +94,8 @@ export function Table<R>({
   striped,
   bordered,
   stickyFirstColumn,
+  stickyHeader,
+  stickyHeaderTop,
   rowState,
   className,
 }: TableProps<R>) {
@@ -102,13 +119,16 @@ export function Table<R>({
   return (
     <div
       className={cn(
-        'w-full overflow-auto',
+        'w-full',
+        // stickyHeader needs an unclipped wrapper so the head can dock to the
+        // page scroll root; otherwise keep overflow-auto for horizontal scroll.
+        stickyHeader ? 'overflow-visible' : 'overflow-auto',
         bordered && 'border border-line-default rounded-xl shadow-1',
         className,
       )}
     >
       <table className="w-full text-md border-collapse">
-        <thead className="bg-surface-3 sticky top-0 z-10">
+        <thead className="bg-surface-3 sticky z-10" style={{ top: stickyHeaderTop ?? 0 }}>
           <tr>
             {columns.map((col, colIndex) => (
               <th

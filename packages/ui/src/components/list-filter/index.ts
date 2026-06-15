@@ -4,6 +4,7 @@
 export { FilterChip } from "./filter-chip"
 export { AppliedFilters } from "./applied-filters"
 export { ListConditionBand } from "./list-condition-band"
+export { ListSummaryBar, LIST_SUMMARY_BAR_HEIGHT } from "./list-summary-bar"
 export { SearchInput } from "./search-input"
 export { AdvancedFilterButton } from "./advanced-filter-button"
 export {
