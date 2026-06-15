@@ -4,13 +4,14 @@ import type { ReactNode } from "react"
 
 // Condition band shell (portal-page-style-spec §4). Fills two slots: toolbar
 // (quick-bar controls) + applied (the chip row, may be null).
-// sticky (default true) docks the band under the app header with the standard
-// full-bleed / negative-margin math; pass sticky={false} for short / embedded
-// lists (e.g. a card grid) that keep the band in normal flow.
+// sticky (default false) keeps the band in normal flow: the standard list page
+// docks the result-count/Export bar + table header instead (see ListSummaryBar
+// + Table stickyHeader), so the filter band scrolls away. Pass sticky={true} to
+// dock the band under the app header with the full-bleed / negative-margin math.
 export function ListConditionBand({
   toolbar,
   applied,
-  sticky = true,
+  sticky = false,
 }: {
   toolbar: ReactNode
   applied?: ReactNode
