@@ -1,19 +1,13 @@
-export type StorageObjectRecord = {
-  id: string;
+export type StorageFileObject = {
   bucket: string;
   regionId: string;
+  uploadUrl: string;
   objectKey: string;
   objectUrl: string;
-  accessUrl: string | null;
-  originalFilename: string;
   contentType: string;
-  sizeBytes: number;
-  contentHash: string | null;
-  visibility: "PRIVATE" | "PUBLIC";
-  etag: string | null;
-  status: string;
-  uploadedAt: string;
-  uploadedBy: string;
+  sizeBytes?: number;
+  etag?: string;
+  lastModified?: string;
 };
 
-export type StorageVisibility = StorageObjectRecord["visibility"];
+export type StorageVisibility = "PRIVATE" | "PUBLIC";

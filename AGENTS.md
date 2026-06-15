@@ -34,7 +34,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **接口与请求**：**不用 Server Action**，一切 mutation 走 Route Handler；业务错误一律 `throw BusinessError`（带 `PMMNNN` 码）/ `MiddlewareError`，**不裸 `throw new Error("文本")`**；成功走 `successResponse()`/`createdResponse()`，204 用 `noContentResponse()`；默认 `withApiHandler()` 兜底；错误码是协议、message 是展示。→ 写接口/改请求响应/分页前读 `.claude/docs/api-and-requests.md`
 - **i18n**：所有用户可见文案走 message、**禁止硬编码**；统一走 `@cloud/i18n`，禁止直接 import `next-intl`；`en`/`zh-CN`/`ja` 同步补齐，`en` 为基底。→ 新增/改文案前读 `.claude/docs/i18n.md`
 - **鉴权与权限**：前端只是体验层，**读写保护必须落服务端守卫**；route 用 `assertPermissions()`，page/layout 用 `requirePermissions()`，范围校验落 service/policy；菜单走 role→permission→menu 链路。→ 接登录态/权限/菜单前读 `.claude/docs/auth-permissions.md`
-- **存储与 S3**：统一走 `@cloud/storage`，不在业务里 new AWS SDK；配置由业务侧注入、包不读 `.env`；文件本体落 `storage_object`、业务归属落业务表字段，单文件存 `storageObjectId`，多文件存 `storageObjectId[]`；公开文件限 `public/` 前缀。→ 动 S3/上传下载前读 `.claude/docs/storage-s3.md`
+- **存储与 S3**：统一走 `@cloud/storage`，不在业务里 new AWS SDK；配置由业务侧注入、包不读 `.env`；项目不提供统一文件表，S3 返回的文件信息由各业务表按需保存；公开文件限 `public/` 前缀。→ 动 S3/上传下载前读 `.claude/docs/storage-s3.md`
 - **邮件**：发邮件统一走 `@cloud/mail` 推 Redis `mail:queue`（外部平台消费发信），不直接发信 / 不直接 `lpush`；`content` 极简 HTML 且变量 `escapeHtml`、`title` 纯文本；模板落各 app `lib/email/`、文案走 i18n `email.*`、译者 app 注入；队列背压 500 + 用户可触发邮件按收件人节流；包不读 env。→ 发邮件前读 `.claude/docs/email-capability.md`
 - **能力归属**：能力两端（client/server）不拆散、整体进同一包双入口；包只做纯能力、配置业务侧注入、不偷读 env；部署常量留 app。→ 抽包/调整能力归属前读 `.claude/docs/capability-ownership.md`
 - **日志**：服务端打日志统一走 `@cloud/log` 的 `createLogger("<scope>")`，**不裸 `console.*`**；单一 JSON 行格式、`LOG_LEVEL` 控级；请求级 `traceId`/`seq` 由 `withApiHandler` 经 `AsyncLocalStorage` 自动携带，错误响应与日志共用同一 traceId。→ 打服务端日志前读 `.claude/docs/logging.md`
@@ -62,5 +62,5 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 - 若 key 名无重复歧义，尽量保持所有表一致。
 - 读多写少、聚合入口明确、反查低频的关联可以用 JSONB 数组保存 id，避免无意义的通用关联表。
-- 文件业务归属默认由业务表字段表达：单文件存 `storageObjectId`，多文件存 `storageObjectId[]`；数组顺序就是展示顺序。
-- 写入数组 id 前必须在 service 层逐个校验目标记录属于当前 `partyId`、状态有效，并符合业务类型/可见性要求；需要反查时再评估索引或专门查询方案。
+- 文件信息默认由业务表字段表达：可以只存 URL，也可以存 objectKey、bucket、contentType、sizeBytes、etag 等 S3 返回信息；多文件建议用 JSONB 数组，数组顺序就是展示顺序。
+- 写入文件信息前必须在 service 层完成业务权限、业务对象归属、文件类型、可见性和 S3 `HeadObject` 校验；需要反查、去重或清理时由业务域自己评估索引或专门查询方案。

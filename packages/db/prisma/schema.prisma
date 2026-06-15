@@ -42,7 +42,6 @@ model SysParty {
   roles                SysRole[]
   operatorInvites      SysOperatorInvite[] @relation("invitedParty")
   invitesSentFromParty SysOperatorInvite[] @relation("inviterParty")
-  storageObjects       StorageObject[]
   notices              SysNotice[]
 
   @@index([country], map: "idx_sys_party_country")
@@ -148,7 +147,6 @@ model SysUser {
   partyUsers           SysPartyUser[]
   mfaInfos               SysMfaInfo[]
   sentInvites            SysOperatorInvite[]
-  uploadedStorageObjects StorageObject[]
   notices                SysNotice[]
 
   @@index([email])
@@ -239,38 +237,6 @@ model SysOperatorInvite {
 }
 
 // 菜单与权限定义不入库，由各 apps/*/manifest + @cloud/platform-config 提供。
-
-// ─── storage_object ─────────────────────────────────────
-model StorageObject {
-  storageObjectId  String    @id @default(uuid()) @map("storage_object_id")
-  partyId         Int       @map("party_id")
-  uploaderUserId   Int       @map("uploader_user_id")
-  bucket           String    @db.VarChar(255)
-  regionId         String    @map("region_id") @db.VarChar(64)
-  objectKey        String    @map("object_key") @db.VarChar(1024)
-  objectUrl        String    @map("object_url") @db.VarChar(1200)
-  originalFilename String    @map("original_filename") @db.VarChar(255)
-  contentType      String    @map("content_type") @db.VarChar(255)
-  sizeBytes        BigInt    @map("size_bytes")
-  contentHash      String?   @map("content_hash") @db.VarChar(64)
-  visibility       String    @default("PRIVATE") @db.VarChar(20)
-  etag             String?   @db.VarChar(255)
-  status           String    @default("ACTIVE") @db.VarChar(20)
-  creTime          DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
-  creUserId        Int       @default(0) @map("cre_user_id")
-  updTime          DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
-  updUserId        Int       @default(0) @map("upd_user_id")
-  deletedAt        DateTime? @map("deleted_at") @db.Timestamp(3)
-
-  partner  SysParty @relation(fields: [partyId], references: [partyId])
-  uploader SysUser  @relation(fields: [uploaderUserId], references: [userId])
-
-  @@unique([partyId, bucket, objectKey], map: "uk_storage_object_partner_bucket_key")
-  @@index([partyId, contentHash, sizeBytes, status], map: "idx_storage_object_partner_hash_size_status")
-  @@index([partyId, status, creTime(sort: Desc)], map: "idx_storage_object_partner_status_time")
-  @@index([uploaderUserId], map: "idx_storage_object_uploader")
-  @@map("storage_object")
-}
 
 // ─── sys_operation_log（操作日志，UUID 主键，只写不改）─────────────
 // 无 FK：append-only 审计，party_id / operator_user_id 仅冗余存值，不约束。

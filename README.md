@@ -253,7 +253,7 @@ export function UsersActions({ permissions }: { permissions: string[] }) {
 
 Amazon S3 相关能力统一走 `@cloud/storage/server` / `@cloud/storage/client`，不要在业务代码里直接初始化 AWS SDK 客户端。
 
-服务端可用 `createS3UploadSession()` 生成带临时 STS 凭证的上传会话，适合前端直传；也可用 `uploadFileToS3FromServer()` 由服务端直接上传文件。上传完成后的业务记录保存在 `storage_object` 表，下载时先校验当前租户下的数据库记录，再由服务端生成短期 S3 GET 链接。
+服务端可用 `createS3UploadSession()` 生成带临时 STS 凭证的上传会话，适合前端直传；也可用 `uploadFileToS3FromServer()` 由服务端直接上传文件。上传完成后，S3 返回的文件信息由各业务表按需保存；私有下载时先校验业务权限和业务对象归属，再用 `objectKey` 生成短期 S3 GET 链接。
 
 ```ts
 import {
@@ -298,7 +298,7 @@ const downloadUrl = await createS3DownloadUrl(s3Config, {
 
 用于上传/下载的 AWS 身份除了写入权限，也必须具备读取权限。上传普通文件和公开图片都需要目标 prefix 的 `s3:PutObject`；下载签名链接使用 `s3:GetObject`，下载前的对象校验使用 `HeadObject`，AWS 侧同样要求身份具备 `s3:GetObject`。如果配置了 `AWS_S3_UPLOAD_ROLE_ARN`，被 assume 的 role 自身策略也要允许目标 bucket/prefix 的 `s3:PutObject` / `s3:GetObject`，session policy 不能放大 role 原本没有的权限。
 
-公开图片使用 `visibility=PUBLIC`，默认仍是 `PRIVATE`。公开上传只允许 `image/*`，并且对象 key 必须落在 `public/` 前缀下；返回记录中的 `accessUrl` 只有公开文件才有值，可直接用于头像、Logo、公开图片等 `<img src>` 场景。S3 侧不要公开整个 bucket，只给 `public/*` 配只读 bucket policy。这个 bucket policy 只解决匿名读取，不给应用 AWS 身份增加上传权限；应用身份仍需要 IAM policy 允许 `s3:PutObject` 到 `public/*`。
+公开图片使用业务约定的公开 profile。公开上传只允许 `image/*`，并且对象 key 必须落在 `public/` 前缀下；公开文件的 `objectUrl` 可由业务 DTO 作为头像、Logo、公开图片等 `<img src>` 场景的 URL 返回。S3 侧不要公开整个 bucket，只给 `public/*` 配只读 bucket policy。这个 bucket policy 只解决匿名读取，不给应用 AWS 身份增加上传权限；应用身份仍需要 IAM policy 允许 `s3:PutObject` 到 `public/*`。
 
 ```json
 {
@@ -323,9 +323,9 @@ await uploadFileToS3FromBrowser({
 });
 ```
 
-当前脚手架保留 `@cloud/storage` 包和 `storage_object` 数据模型，但不再内置 S3 上传演示页面。业务应用需要文件上传时，应在对应 domain 下按上面的 package 能力接入，并把文件归属关系写入业务表字段。
+当前脚手架保留 `@cloud/storage` 包和 app 侧 storage helper，但不再内置 S3 上传演示页面，也不提供统一文件表。业务应用需要文件上传时，应在对应 domain 下按上面的 package 能力接入，并把需要的文件信息写入业务表字段。
 
-文件业务归属不要写进 `storage_object`。`storage_object` 只保存文件本体；头像、图标这类单文件关系在业务表存 `storageObjectId`，合同附件、展示图这类多文件关系在业务表存 `storageObjectId[]`。写入前必须逐个校验文件属于当前 `partyId`、`status = ACTIVE`，并符合业务可见性和类型要求。
+S3 可返回 `bucket`、`regionId`、`uploadUrl`、`objectKey`、`objectUrl`、`contentType`、`sizeBytes`、`etag`、`lastModified` 等信息。业务可以只保存一个 URL，也可以保存完整对象快照；多文件建议用 JSONB 数组保存对象快照，数组顺序就是展示顺序。写入业务表前必须完成业务权限、业务对象归属、文件类型、可见性和 HeadObject 校验。
 
 新增或重置本地数据库后，需要执行：
 
@@ -334,7 +334,7 @@ pnpm db:push
 pnpm db:seed
 ```
 
-`db:push` 会创建 `storage_object` 表；`db:seed` 不再初始化 S3 demo 菜单或 `storage.*` 权限。
+`db:push` 会同步业务 schema；`db:seed` 不再初始化 S3 demo 菜单或 `storage.*` 权限。
 
 ## 国际化
 
