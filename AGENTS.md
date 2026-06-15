@@ -34,7 +34,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **接口与请求**：**不用 Server Action**，一切 mutation 走 Route Handler；业务错误一律 `throw BusinessError`（带 `PMMNNN` 码）/ `MiddlewareError`，**不裸 `throw new Error("文本")`**；成功走 `successResponse()`/`createdResponse()`，204 用 `noContentResponse()`；默认 `withApiHandler()` 兜底；错误码是协议、message 是展示。→ 写接口/改请求响应/分页前读 `.claude/docs/api-and-requests.md`
 - **i18n**：所有用户可见文案走 message、**禁止硬编码**；统一走 `@cloud/i18n`，禁止直接 import `next-intl`；`en`/`zh-CN`/`ja` 同步补齐，`en` 为基底。→ 新增/改文案前读 `.claude/docs/i18n.md`
 - **鉴权与权限**：前端只是体验层，**读写保护必须落服务端守卫**；route 用 `assertPermissions()`，page/layout 用 `requirePermissions()`，范围校验落 service/policy；菜单走 role→permission→menu 链路。→ 接登录态/权限/菜单前读 `.claude/docs/auth-permissions.md`
-- **存储与 S3**：统一走 `@cloud/storage`，不在业务里 new AWS SDK；配置由业务侧注入、包不读 `.env`；文件本体落 `storage_object`、业务归属落 `storage_attachment`；公开文件限 `public/` 前缀。→ 动 S3/上传下载前读 `.claude/docs/storage-s3.md`
+- **存储与 S3**：统一走 `@cloud/storage`，不在业务里 new AWS SDK；配置由业务侧注入、包不读 `.env`；文件本体落 `storage_object`、业务归属落业务表字段，单文件存 `storageObjectId`，多文件存 `storageObjectId[]`；公开文件限 `public/` 前缀。→ 动 S3/上传下载前读 `.claude/docs/storage-s3.md`
 - **邮件**：发邮件统一走 `@cloud/mail` 推 Redis `mail:queue`（外部平台消费发信），不直接发信 / 不直接 `lpush`；`content` 极简 HTML 且变量 `escapeHtml`、`title` 纯文本；模板落各 app `lib/email/`、文案走 i18n `email.*`、译者 app 注入；队列背压 500 + 用户可触发邮件按收件人节流；包不读 env。→ 发邮件前读 `.claude/docs/email-capability.md`
 - **能力归属**：能力两端（client/server）不拆散、整体进同一包双入口；包只做纯能力、配置业务侧注入、不偷读 env；部署常量留 app。→ 抽包/调整能力归属前读 `.claude/docs/capability-ownership.md`
 - **日志**：服务端打日志统一走 `@cloud/log` 的 `createLogger("<scope>")`，**不裸 `console.*`**；单一 JSON 行格式、`LOG_LEVEL` 控级；请求级 `traceId`/`seq` 由 `withApiHandler` 经 `AsyncLocalStorage` 自动携带，错误响应与日志共用同一 traceId。→ 打服务端日志前读 `.claude/docs/logging.md`
@@ -61,12 +61,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## 数据库
 
 - 若 key 名无重复歧义，尽量保持所有表一致。
-- 关联关系大部分通过关联关系表查询；除非为性能优化**且关联值为单值**才内联，数组不行。
-
-### 已批准例外：角色/权限关联用 JSONB 数组
-
-- 对齐系统 DB 脚本（Partner/Contract/Role/User/MFA/Invite）后，**两处**关联刻意用 JSONB 数组替代关联表，是上面「数组不行」规则的**已批准例外**：
-  - `sys_partner_user.roles`：用户在某 partner 下绑定的角色，`List<{roleId}>`，取代旧 `sys_user_role` join 表
-  - `sys_role.permission_codes`：角色含的权限码，`List<string>`，取代旧 `sys_role_permission` join 表
-- 理由：读多写少、反查频率低，会话聚合一次性读出后在内存派生；脚本为这两列配了 GIN 反查索引意图（Prisma 暂不发 GIN，反查走 `array_contains`）。
-- **不要扩大这个例外**：新增关联默认走关联表；仅当同样满足「读多写少 + 单一聚合入口 + 反查低频」时回本节讨论后再加。
+- 读多写少、聚合入口明确、反查低频的关联可以用 JSONB 数组保存 id，避免无意义的通用关联表。
+- 文件业务归属默认由业务表字段表达：单文件存 `storageObjectId`，多文件存 `storageObjectId[]`；数组顺序就是展示顺序。
+- 写入数组 id 前必须在 service 层逐个校验目标记录属于当前 `partyId`、状态有效，并符合业务类型/可见性要求；需要反查时再评估索引或专门查询方案。

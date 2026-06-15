@@ -323,9 +323,9 @@ await uploadFileToS3FromBrowser({
 });
 ```
 
-当前脚手架保留 `@cloud/storage` 包和 `storage_object` / `storage_attachment` 数据模型，但不再内置 S3 上传演示页面。业务应用需要文件上传时，应在对应 domain 下按上面的 package 能力接入，并把文件归属关系写入 `storage_attachment`。
+当前脚手架保留 `@cloud/storage` 包和 `storage_object` 数据模型，但不再内置 S3 上传演示页面。业务应用需要文件上传时，应在对应 domain 下按上面的 package 能力接入，并把文件归属关系写入业务表字段。
 
-文件业务归属不要写进 `storage_object`。`storage_object` 只保存文件本体；应用包、头像、合同附件等业务关系写入 `storage_attachment`，用 `subjectType + subjectId + purpose` 表达绑定关系。常用约定示例：应用安装包 `APP / <appId> / PACKAGE`，用户头像 `SYS_USER / <userId> / AVATAR`，合同附件 `CONTRACT / <contractId> / ATTACHMENT`。
+文件业务归属不要写进 `storage_object`。`storage_object` 只保存文件本体；头像、图标这类单文件关系在业务表存 `storageObjectId`，合同附件、展示图这类多文件关系在业务表存 `storageObjectId[]`。写入前必须逐个校验文件属于当前 `partyId`、`status = ACTIVE`，并符合业务可见性和类型要求。
 
 新增或重置本地数据库后，需要执行：
 
@@ -334,7 +334,7 @@ pnpm db:push
 pnpm db:seed
 ```
 
-`db:push` 会创建 `storage_object` / `storage_attachment` 表；`db:seed` 不再初始化 S3 demo 菜单或 `storage.*` 权限。
+`db:push` 会创建 `storage_object` 表；`db:seed` 不再初始化 S3 demo 菜单或 `storage.*` 权限。
 
 ## 国际化
 
