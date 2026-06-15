@@ -14,8 +14,8 @@
 - mutation 走 Route Handler，不用 Server Action。
 - route 只做 HTTP 适配；权限、业务范围、绑定策略放 service / policy。
 - 业务错误抛 `BusinessError` / `MiddlewareError`，成功响应走 `successResponse()` / `createdResponse()` / `noContentResponse()`。
-- 公开文件只允许图片，必须 `contentType` 为 `image/*`，且 object key 在 `public/` 下。
-- 私有文件不要返回固定 URL；下载前先校验业务权限和业务对象归属，再生成短期 signed URL。
+- 公开文件只允许真实图片，必须校验 PNG/JPEG/GIF/WebP/AVIF 等文件头签名，不能只信客户端传入的 `ContentType`；object key 必须在 `public/` 下。
+- 私有文件不要返回固定 URL；下载前先校验业务权限和业务对象归属，再用后端固定或推导的 PRIVATE profile 生成短期 signed URL。
 - 直传完成必须 `HeadObject` 成功后才写业务表；不要信任前端传来的最终 metadata。
 
 ## 1. 现有实现位置
@@ -44,7 +44,7 @@
 | `uploadUrl` | 配置 | S3 endpoint 或 CDN/custom host |
 | `objectKey` | 上传 / session / copy / metadata | S3 对象 key，是私有下载、复制、删除的核心定位字段 |
 | `objectUrl` | helper 推导 | 稳定对象 URL；公开文件可直接访问，私有文件不能当下载授权 |
-| `contentType` | 上传输入或 HeadObject | MIME 类型；直传完成后以 S3 `ContentType` 为准 |
+| `contentType` | 上传输入、HeadObject 或文件头识别 | MIME 类型；PUBLIC 文件以服务端识别的真实图片类型为准 |
 | `sizeBytes` | 上传输入 / HeadObject | 文件字节数；HeadObject 的 `ContentLength` 最可信 |
 | `etag` | S3 响应 | S3 ETag；multipart 时不等同内容 MD5 |
 | `lastModified` | HeadObject | S3 最后修改时间 |
@@ -55,6 +55,8 @@
 ## 3. uploadProfile
 
 `uploadProfile` 是后端给文件用途起的业务名字，它决定 S3 目录和可见性。正式业务接口应该由后端固定或根据业务对象推导，前端不要直接传 profile 决定文件用途。
+
+普通业务接口不要暴露 `existingObjectKey`。它是“复用或指定目标 S3 key”的底层可选能力，只允许在后端已确认业务对象、旧文件归属和替换语义后使用；一旦使用，必须校验该 key 落在当前 profile 目录内。
 
 当前 profile：
 
@@ -73,6 +75,7 @@
 3. 公开资源目录必须是 `public` 或 `public/...`，并校验 `image/*`。
 4. 私有资源不要放进 `public/`。
 5. 临时目录使用 `tmp` 或 `tmp/...`，不要写 `/tmp`；S3 没有真正根目录，前导 `/` 会成为 key 的一部分。
+6. 多租户或多业务对象共享同一 profile 时，优先在业务 profile / service 生成包含 party、tenant 或业务对象 id 的目录段；否则必须依赖随机 objectKey 和业务表归属校验避免跨对象覆盖。
 
 推荐目录：
 
@@ -182,7 +185,7 @@ sequenceDiagram
 3. service 固定 profile，调用 `createProfileUploadSession()`。
 4. 浏览器调用 `uploadFileToS3FromBrowser({ file, session })` 上传到 S3。
 5. 上传完成后调用业务域 complete 接口。
-6. complete 接口必须 `HeadObject`，以 S3 返回的 `contentType`、`sizeBytes`、`etag` 为准。
+6. complete 接口必须 `HeadObject`，以 S3 返回的 `sizeBytes`、`etag` 为准；PUBLIC 文件还必须读取对象前几个字节校验真实图片签名，不能只信 `ContentType`。
 7. service 根据业务规则写业务表字段。
 
 浏览器直传：
@@ -209,10 +212,12 @@ sequenceDiagram
   UI->>API2: complete(objectKey, size, hash)
   API2->>API2: assertPermissions 业务权限
   API2->>Service: 完成确认
-  Service->>Helper: getS3FileMetadata(objectKey)
+  Service->>Helper: getVerifiedS3FileMetadata(objectKey, profile)
   Helper->>S3: HeadObject
-  S3-->>Helper: contentType/sizeBytes/etag/lastModified
-  Service->>Service: 校验目录/大小/类型
+  S3-->>Helper: sizeBytes/etag/lastModified
+  Helper->>S3: GetObject Range bytes=0-31
+  S3-->>Helper: 文件头字节
+  Service->>Service: 校验目录/大小/真实文件类型
   Service->>DB: 按需写文件信息
   Service-->>API2: 业务 DTO
   API2-->>UI: successResponse
@@ -233,9 +238,10 @@ sequenceDiagram
 1. 业务 service 从业务上下文或请求中取得临时对象信息，至少需要 `objectKey`、`contentType`，最好有 `sizeBytes` 和 `originalFilename`。
 2. 校验临时 `objectKey` 必须在 `tmp/` 下，并校验文件类型、大小、上传人、业务权限。
 3. 根据业务接口选择正式 profile，例如应用图标使用 `application.icon -> public/applications/icons -> PUBLIC`。
-4. S3 没有 rename，转正必须 `CopyObject` 到正式目录下的新 `objectKey`。
-5. `HeadObject` 校验正式对象后，业务 service 保存需要的文件信息到业务表。
-6. 删除原 `tmp/...` 对象；如果删除失败，交给清理任务重试。
+4. 后端必须生成新的随机正式 `objectKey`，不要把 `tmp/...` 的最后一段直接拼到正式目录；`originalFilename` 只能参与显示或作为 sanitize 后的尾部提示。
+5. S3 没有 rename，转正必须 `CopyObject` 到正式目录下的新 `objectKey`；`CopyObject` 默认不覆盖已有对象。
+6. `HeadObject` 校验正式对象后，业务 service 保存需要的文件信息到业务表。
+7. 删除原 `tmp/...` 对象；如果删除失败，交给清理任务重试。
 
 临时文件完整时序：
 
@@ -285,11 +291,12 @@ sequenceDiagram
 
 | 函数 | 用途 | 业务需要关心 |
 | --- | --- | --- |
-| `createProfileUploadSession` | 按后端 profile 创建浏览器直传 session | 先做业务权限校验；`credentials` 只给前端上传，不写业务表 |
-| `uploadFileToS3Profile` | 按后端 profile 由服务端上传文件 | 返回 S3 对象信息，业务自己决定落哪些字段 |
-| `getS3FileMetadata` | HeadObject 获取 S3 真实 metadata | 直传完成、下载前、转正后优先调用 |
-| `promoteTemporaryS3Object` | 复制 tmp 文件到正式 profile 并删除 tmp 原对象 | 传临时对象信息；图片场景传 `requireContentTypePrefix: "image/"` |
-| `createPrivateS3DownloadUrl` | 私有文件下载前 HeadObject 并生成短期 signed URL | 调用前必须完成业务权限和业务对象归属校验 |
+| `createProfileUploadSession` | 按后端 profile 创建浏览器直传 session | 先做业务权限校验；`credentials` 只给前端上传，不写业务表；普通业务不要暴露 `existingObjectKey` |
+| `uploadFileToS3Profile` | 按后端 profile 由服务端上传文件 | 返回 S3 对象信息，业务自己决定落哪些字段；普通业务不要暴露 `existingObjectKey` |
+| `getS3FileMetadata` | HeadObject 获取 S3 metadata | 私有文件下载前可调用；PUBLIC 文件不要只靠它判断真实类型 |
+| `getVerifiedS3FileMetadata` | HeadObject + profile 目录校验 + PUBLIC 图片文件头校验 | 浏览器直传 complete 写业务表前优先调用 |
+| `promoteTemporaryS3Object` | 复制 tmp 文件到正式 profile 并删除 tmp 原对象 | 传临时对象信息；图片场景传 `requireContentTypePrefix: "image/"`；正式 key 由后端随机生成 |
+| `createPrivateS3DownloadUrl` | 私有文件下载前校验 PRIVATE profile 目录、HeadObject 并生成短期 signed URL | 调用前必须完成业务权限和业务对象归属校验；profile 由后端固定或推导，不让前端决定 |
 
 这些函数只处理存储能力，不替业务决定权限码、业务表字段、数组排序、DTO 字段名或清理策略。
 
@@ -297,12 +304,14 @@ sequenceDiagram
 
 私有文件不能把 `objectUrl` 直接返回给前端读取。
 
+storage helper 只能确认 `objectKey` 落在指定 PRIVATE profile 目录、S3 对象存在，并生成短期 signed URL；它不知道业务对象、租户、组织或文件归属。当前用户是否能访问业务对象、文件是否属于该业务对象，必须由具体业务 service 根据业务表确认。
+
 规则：
 
 1. Route 做明确业务下载权限守卫。
 2. Service 校验当前用户是否能访问该业务对象。
-3. Service 从业务表读取文件信息，至少取得 `objectKey`，可选取得 `originalFilename`。
-4. 调 `createPrivateS3DownloadUrl()` 生成短期 GET 签名链接。
+3. Service 从业务表读取该业务对象绑定的文件信息，至少取得 `objectKey`，可选取得 `originalFilename`；不要接收前端传入的任意 `objectKey` 作为下载目标。
+4. 后端固定或推导该业务文件的 PRIVATE profile，调 `createPrivateS3DownloadUrl()` 生成短期 GET 签名链接。
 5. 响应只返回 `{ url, expiresInSeconds }` 或业务约定 DTO，不要把 signed URL 持久化到数据库或日志。
 
 默认有效期 300 秒；`@cloud/storage` 会把有效期限制在 60 到 3600 秒之间。
@@ -320,8 +329,8 @@ sequenceDiagram
   UI->>API: 请求下载业务文件
   API->>API: assertPermissions 业务下载权限
   API->>Service: contractId/applicationId 等业务参数
-  Service->>Service: 校验业务对象归属和文件归属
-  Service->>Helper: createPrivateS3DownloadUrl(objectKey, filename)
+  Service->>Service: 从业务表校验对象访问权和文件归属
+  Service->>Helper: createPrivateS3DownloadUrl(objectKey, privateProfile, filename)
   Helper->>S3: HeadObject
   S3-->>Helper: metadata
   Helper->>S3: GetObject signed URL
@@ -382,7 +391,7 @@ sequenceDiagram
 7. 客户端按大小选择服务端上传或直传；正式业务调用业务接口只传文件和业务对象参数，不传任意 `directory` 或 `uploadProfile`。
 8. 业务 service 用 HeadObject 确认 S3 metadata 后写业务表。
 9. 公开文件由业务 DTO 自己决定返回字段名，例如 `iconUrl`、`imageUrl`、`logoUrl`。
-10. 私有文件通过业务接口换 signed URL。
+10. 私有文件通过业务接口换 signed URL；下载时 service 必须从业务表确认文件归属，不让前端直接提交 `objectKey` 换签名。
 
 ## 12. 禁止事项
 
@@ -392,9 +401,14 @@ sequenceDiagram
 - 不把私有文件放到 `public/` 下。
 - 不把非图片做成 `PUBLIC`。
 - 不把临时文件绑定为正式业务资源。
+- 不把 `tmp/...` 的最后一段直接作为正式 objectKey。
+- 不让普通业务接口或前端传 `existingObjectKey`；确需使用时必须后端推导并校验当前 profile 目录。
+- 不允许 `CopyObject` 默认静默覆盖已有对象；覆盖必须是显式业务语义并有额外权限和归属校验。
 - 不新增统一文件本体表或通用文件归属表。
 - 不把 signed URL 存入数据库或日志。
+- 不用裸 `objectKey` 为私有文件签名；必须带后端固定或推导的 PRIVATE profile，并校验 key 落在该 profile 目录。
 - 不在 `HeadObject` 失败时 fallback 到前端 metadata。
+- 不把 `HeadObject.ContentType` 当作 PUBLIC 文件的真实类型；PUBLIC 文件必须校验文件头签名。
 - 不把“菜单能看到”当作安全边界。
 - 不长期保留 `assertPermissions({ all: [] })` 这类空权限守卫。
 

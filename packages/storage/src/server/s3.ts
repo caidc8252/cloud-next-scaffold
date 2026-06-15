@@ -55,6 +55,12 @@ export type GetS3ObjectMetadataInput = {
   abortSignal?: AbortSignal;
 };
 
+export type GetS3ObjectBytesInput = {
+  objectKey: string;
+  range?: string;
+  abortSignal?: AbortSignal;
+};
+
 export type CreateS3DownloadUrlInput = {
   objectKey: string;
   filename?: string;
@@ -73,6 +79,7 @@ export type CopyS3ObjectInput = {
   targetObjectKey: string;
   contentType?: string;
   sizeBytes?: number;
+  allowOverwrite?: boolean;
   abortSignal?: AbortSignal;
 };
 
@@ -392,6 +399,46 @@ function encodeCopySource(bucket: string, objectKey: string): string {
   return `${bucket}/${encodedKey}`;
 }
 
+async function readS3BodyBytes(body: unknown): Promise<Uint8Array> {
+  if (!body) return new Uint8Array();
+
+  if (body instanceof Uint8Array) {
+    return body;
+  }
+
+  if (body instanceof ArrayBuffer) {
+    return new Uint8Array(body);
+  }
+
+  if (
+    typeof body === "object" &&
+    body !== null &&
+    "transformToByteArray" in body &&
+    typeof body.transformToByteArray === "function"
+  ) {
+    return await body.transformToByteArray();
+  }
+
+  if (
+    typeof body === "object" &&
+    body !== null &&
+    "arrayBuffer" in body &&
+    typeof body.arrayBuffer === "function"
+  ) {
+    return new Uint8Array(await body.arrayBuffer());
+  }
+
+  if (Symbol.asyncIterator in Object(body)) {
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of body as AsyncIterable<Uint8Array | Buffer | string>) {
+      chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : new Uint8Array(chunk));
+    }
+    return Buffer.concat(chunks);
+  }
+
+  throw new Error("Unsupported S3 object body.");
+}
+
 export function getS3ConfigSummary(config: S3UploadConfig): S3ConfigSummary {
   const normalized = normalizeS3UploadConfig(config);
 
@@ -538,6 +585,7 @@ export async function copyS3Object(
       Key: targetObjectKey,
       CopySource: encodeCopySource(normalized.bucket, sourceObjectKey),
       ContentType: contentType || undefined,
+      IfNoneMatch: input.allowOverwrite ? undefined : "*",
       MetadataDirective: contentType ? "REPLACE" : undefined,
     }),
     { abortSignal: input.abortSignal },
@@ -608,6 +656,30 @@ export async function getS3ObjectMetadata(
     etag: response.ETag,
     lastModified: response.LastModified?.toISOString(),
   };
+}
+
+export async function getS3ObjectBytes(
+  config: S3UploadConfig,
+  input: GetS3ObjectBytesInput,
+): Promise<Uint8Array> {
+  const normalized = normalizeS3UploadConfig(config);
+  const objectKey = normalizeObjectKey(input.objectKey);
+  const scopedCredentials = normalized.stsRoleArn
+    ? await mintTemporaryCredentials(normalized, objectKey, S3_READ_ACTIONS)
+    : undefined;
+  const client = scopedCredentials
+    ? createScopedS3Client(normalized, scopedCredentials)
+    : createS3Client(normalized);
+  const response = await client.send(
+    new GetObjectCommand({
+      Bucket: normalized.bucket,
+      Key: objectKey,
+      Range: input.range,
+    }),
+    { abortSignal: input.abortSignal },
+  );
+
+  return readS3BodyBytes(response.Body);
 }
 
 export async function createS3DownloadUrl(

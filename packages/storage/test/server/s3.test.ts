@@ -300,6 +300,31 @@ describe("getS3ObjectMetadata", () => {
   });
 });
 
+describe("getS3ObjectBytes", () => {
+  it("reads a byte range from the configured bucket", async () => {
+    s3SendMock.mockResolvedValueOnce({
+      Body: {
+        transformToByteArray: vi.fn(async () => new Uint8Array([0x89, 0x50, 0x4e, 0x47])),
+      },
+    });
+
+    const { getS3ObjectBytes } = await import("../../src/server/s3.ts");
+    const bytes = await getS3ObjectBytes(BASE_CONFIG, {
+      objectKey: "uploads/icon.png",
+      range: "bytes=0-31",
+    });
+
+    expect(Array.from(bytes)).toEqual([0x89, 0x50, 0x4e, 0x47]);
+
+    const getCommand = s3SendMock.mock.calls[0]?.[0] as {
+      input: Record<string, string>;
+    };
+    expect(getCommand.input.Bucket).toBe("merchant-debug-bucket");
+    expect(getCommand.input.Key).toBe("uploads/icon.png");
+    expect(getCommand.input.Range).toBe("bytes=0-31");
+  });
+});
+
 describe("createS3StoredObjectReference", () => {
   it("builds an object reference without calling S3", async () => {
     const { createS3StoredObjectReference } = await import("../../src/server/s3.ts");
@@ -355,6 +380,7 @@ describe("copyS3Object", () => {
     expect(copyCommand.input.Bucket).toBe("merchant-debug-bucket");
     expect(copyCommand.input.Key).toBe("public/applications/icons/icon one.png");
     expect(copyCommand.input.CopySource).toBe("merchant-debug-bucket/tmp/icon%20one.png");
+    expect(copyCommand.input.IfNoneMatch).toBe("*");
     expect(copyCommand.input.MetadataDirective).toBe("REPLACE");
   });
 
