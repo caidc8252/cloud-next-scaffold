@@ -2,9 +2,10 @@
 
 import { useState, useMemo } from "react";
 import { User, Mail, Globe, Clock, Check, Shield, KeyRound, Copy, AlertTriangle } from "lucide-react";
-import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle, Collapsible, CollapsibleContent, CollapsibleTrigger, Field, Input, Modal, Switch, Textarea } from "@cloud/ui";
+import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle, Collapsible, CollapsibleContent, CollapsibleTrigger, Field, Input, Switch, Textarea } from "@cloud/ui";
 import type { Role, User as UserType } from "@/app/(portal)/system/_shared/types";
 import { relTime, initials } from "@/app/(portal)/system/_shared/helpers";
+import { ConfirmModal } from "@/app/(portal)/system/_shared/confirm-modal";
 import { PASSWORD_POLICY } from "@cloud/config/password-policy";
 
 type UserDetailProps = {
@@ -13,8 +14,8 @@ type UserDetailProps = {
   roles: Role[];
   currentUserId: string;
   onSave: (u: UserType) => Promise<boolean>;
-  onResetPassword: () => void;
-  onToggleLock: () => void;
+  onResetPassword: () => Promise<boolean>;
+  onToggleLock: () => Promise<boolean>;
 };
 
 export function UserDetail({ user, users, roles, currentUserId, onSave, onResetPassword, onToggleLock }: UserDetailProps) {
@@ -30,7 +31,14 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
     setDraft(user);
   }
 
-  const dirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify(user), [draft, user]);
+  // 只比可编辑字段（remark/roleIds，顺序无关）；忽略服务端元数据（updatedAt 等保存后会变），
+  // 否则保存成功也会一直判定为"脏"、按钮卡在 Save changes。
+  const dirty = useMemo(() => {
+    if (draft.remark !== user.remark) return true;
+    const a = [...(draft.roleIds ?? [])].sort();
+    const b = [...(user.roleIds ?? [])].sort();
+    return a.length !== b.length || a.some((id, i) => id !== b[i]);
+  }, [draft, user]);
   const disabled = user.status === "INACTIVE";
   const isProtected = user.id === currentUserId || user.authorizingType === "ADMIN";
   const displayInitials = initials(user.displayName || user.loginName);
@@ -79,9 +87,9 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <Button variant="ghost" size="sm" iconLeft={<KeyRound size={14} />} onClick={() => setConfirmReset(true)} disabled={isProtected}>Reset password</Button>
+          <Button variant="ghost" size="sm" iconLeft={<KeyRound size={14} />} onClick={() => setConfirmReset(true)} disabled={isProtected || saving}>Reset password</Button>
           <Button variant={disabled ? "primary" : "ghost"} size="sm" iconLeft={<Shield size={14} />}
-            onClick={() => setConfirmLock(true)} disabled={isProtected}>{disabled ? "Enable" : "Disable"}</Button>
+            onClick={() => setConfirmLock(true)} disabled={isProtected || saving}>{disabled ? "Enable" : "Disable"}</Button>
           <Button variant="primary" size="sm" loading={saving} disabled={!dirty || saving} onClick={save}
             iconLeft={dirty || saving ? undefined : <Check size={14} />}>
             {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
@@ -147,7 +155,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
               <div className="col-span-2">
                 <Field label="Remark" hint="Internal note. Visible only to platform admins.">
                   <Textarea rows={3} value={draft.remark} onChange={(e) => setDraft({ ...draft, remark: e.target.value })}
-                    placeholder="Optional notes about this user." />
+                    placeholder="Optional notes about this user." disabled={saving} />
                 </Field>
               </div>
             </div>
@@ -171,7 +179,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
               const usersWithRole = users.filter((u) => (u.roleIds ?? []).includes(r.id));
               return (
                 <div key={r.id} className="flex items-center gap-3 px-5 py-3 border-b border-line-subtle last:border-b-0">
-                  <Switch checked={on} onCheckedChange={() => toggleRole(r.id)} size="sm" disabled={isProtected} />
+                  <Switch checked={on} onCheckedChange={() => toggleRole(r.id)} size="sm" disabled={isProtected || saving} />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold text-content-primary flex items-center gap-2">
                       {r.name}
@@ -212,7 +220,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
       {/* Confirm reset modal */}
       {confirmReset && (
         <ConfirmModal open={confirmReset} onClose={() => setConfirmReset(false)} title="Send password reset link?"
-          onConfirm={() => { setConfirmReset(false); onResetPassword(); }} confirmLabel="Send reset link" confirmVariant="primary">
+          onConfirm={onResetPassword} confirmLabel="Send reset link" loadingLabel="Sending…" confirmVariant="primary">
           <p className="text-sm text-content-secondary">
             A password-reset link will be emailed to <strong>{user.email}</strong>.
           </p>
@@ -229,8 +237,9 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
       {confirmLock && (
         <ConfirmModal open={confirmLock} onClose={() => setConfirmLock(false)}
           title={disabled ? "Enable account?" : "Disable account?"}
-          onConfirm={() => { setConfirmLock(false); onToggleLock(); }}
+          onConfirm={onToggleLock}
           confirmLabel={disabled ? "Enable" : "Disable account"}
+          loadingLabel={disabled ? "Enabling…" : "Disabling…"}
           confirmVariant={disabled ? "primary" : "danger"}>
           <p className="text-sm text-content-secondary">
             {disabled
@@ -272,20 +281,5 @@ function PolicyRow({ icon, name, desc, val }: { icon: React.ReactNode; name: str
         {val}
       </span>
     </div>
-  );
-}
-
-function ConfirmModal({ open, onClose, title, onConfirm, confirmLabel, confirmVariant, children }: {
-  open: boolean; onClose: () => void; title: string; onConfirm: () => void;
-  confirmLabel: string; confirmVariant: "primary" | "danger"; children: React.ReactNode;
-}) {
-  return (
-    <Modal open={open} onClose={onClose} title={title}
-      footer={<div className="flex gap-2 justify-end">
-        <Button variant="ghost" onClick={onClose}>Cancel</Button>
-        <Button variant={confirmVariant} onClick={onConfirm}>{confirmLabel}</Button>
-      </div>}>
-      {children}
-    </Modal>
   );
 }

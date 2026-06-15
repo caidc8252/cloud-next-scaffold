@@ -1,6 +1,7 @@
 import { requirePermissions } from "@cloud/permissions/server";
 import { listUsersAndInvites } from "@/service/users/server/users.service";
 import { listAssignableRoles } from "@/service/roles/server/roles.service";
+import { getPortalBaseUrl } from "@/lib/portal-routing";
 import { UsersPage } from "@/app/(portal)/system/users/_components/users-page";
 
 export default async function SystemUsersPage() {
@@ -18,6 +19,7 @@ export default async function SystemUsersPage() {
       initialUsers={initialUsers}
       initialRoles={initialRoles}
       currentUserId={String(session.userId)}
+      portalBaseUrl={getPortalBaseUrl()}
     />
   );
 }

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  getPortalBaseUrl,
   getPortalLoginUrl,
   getPortalOnboardingUrl,
+  getPortalResetPasswordUrl,
   getPortalSelectPartnerUrl,
 } from "./portal-routing.ts";
 
@@ -36,6 +38,23 @@ describe("portal routing", () => {
       expect(getPortalOnboardingUrl("a b&c")).toBe(
         "https://portal.example.com/onboarding?token=a+b%26c",
       );
+    });
+  });
+
+  it("builds a safe reset-password URL with an encoded token, same host as onboarding", () => {
+    withPortalUrl("https://portal.example.com/base?x=1#old", () => {
+      expect(getPortalResetPasswordUrl("a b&c")).toBe(
+        "https://portal.example.com/reset-password?token=a+b%26c",
+      );
+    });
+  });
+
+  it("exposes the portal origin for client-built links (no path)", () => {
+    withPortalUrl(undefined, () => {
+      expect(getPortalBaseUrl()).toBe("http://localhost:3100");
+    });
+    withPortalUrl("https://portal.example.com/base", () => {
+      expect(getPortalBaseUrl()).toBe("https://portal.example.com");
     });
   });
 

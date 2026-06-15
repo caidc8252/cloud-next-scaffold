@@ -5,3 +5,4 @@ export const ERR_OB_INVITE_CONSUMED = "104003";
 export const ERR_OB_EMAIL_TAKEN = "104004";
 export const ERR_OB_PASSWORD_WEAK = "104005";
 export const ERR_OB_NOT_AUTHENTICATED = "104006";
+export const ERR_OB_ALREADY_MEMBER = "104007";

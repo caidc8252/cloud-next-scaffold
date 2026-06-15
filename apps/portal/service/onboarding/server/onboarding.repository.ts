@@ -2,7 +2,7 @@ import "server-only";
 
 import { prisma } from "@cloud/db";
 import { BusinessError } from "@cloud/request";
-import { ERR_OB_INVITE_CONSUMED } from "@/lib/onboarding-error-codes";
+import { ERR_OB_ALREADY_MEMBER, ERR_OB_INVITE_CONSUMED } from "@/lib/onboarding-error-codes";
 
 // onboarding 域数据访问。验票读取 + 接受邀请的原子绑定事务。
 
@@ -15,6 +15,15 @@ export function findInviteByToken(token: string) {
 
 export function findUserByEmail(email: string) {
   return prisma.sysUser.findUnique({ where: { email } });
+}
+
+/** 该用户是否已是本 party 成员（按 @@unique([partyId,userId]) 单行存在判定，口径与 bindInvite 事务内兜底一致）。 */
+export async function isPartyMember(partyId: number, userId: number): Promise<boolean> {
+  const link = await prisma.sysPartyUser.findUnique({
+    where: { partyId_userId: { partyId, userId } },
+    select: { partyUserId: true },
+  });
+  return link !== null;
 }
 
 /** 邀请人显示名（查不到回退 system），用于归属的 authorizingUserName。 */
@@ -40,12 +49,16 @@ type BindInviteParams = {
   now?: Date;
 };
 
-// 单事务：消费邀请（PENDING 条件更新，防并发双消费）→(建号)→ upsert 归属（幂等，恒 NORMAL）。
-// 场景一目标 party 已 ACTIVE，不读写 sys_party；首管/激活属场景二（onboarding，CONF-1）。
-export async function bindInvite(
-  params: BindInviteParams,
-): Promise<{ userId: number; alreadyMember: boolean }> {
+// 接受邀请的原子绑定。CONF-1：场景一目标 party 已 ACTIVE，本路径成员恒 NORMAL、不读写 sys_party
+//（首管/激活属场景二 onboarding）。已是本 party 成员 → 抛 ALREADY_MEMBER、不重复加入。
+// 事务前先预检既有用户的成员身份：命中即拒、不开事务（省去「消费邀请→回滚」开销）；
+// 新建用户（userId=null）必非成员，跳过预检；并发竞态由事务内的兜底校验保证最终一致。
+export async function bindInvite(params: BindInviteParams): Promise<{ userId: number }> {
   const now = params.now ?? new Date();
+
+  if (params.userId !== null && (await isPartyMember(params.partyId, params.userId))) {
+    throw new BusinessError(ERR_OB_ALREADY_MEMBER, 409);
+  }
 
   return prisma.$transaction(async (tx) => {
     // 1) 原子消费邀请：仅 PENDING → CONSUMED。count 0 表示已被他人消费/取消。
@@ -74,30 +87,26 @@ export async function bindInvite(
       userId = created.userId;
     }
 
-    // 3) upsert 归属（幂等：已是成员则不改角色/类型）
+    // 3) 建归属：事务内再判一次成员身份（并发兜底），命中则抛错回滚（邀请还原 PENDING）。
     const existing = await tx.sysPartyUser.findUnique({
       where: { partyId_userId: { partyId: params.partyId, userId } },
       select: { partyUserId: true },
     });
-    let alreadyMember = false;
-    if (existing) {
-      alreadyMember = true;
-    } else {
-      await tx.sysPartyUser.create({
-        data: {
-          partyId: params.partyId,
-          userId,
-          roles: params.roles as never,
-          authorizingType: "NORMAL",
-          authorizingTimestamp: now,
-          authorizingUserId: params.inviterUserId,
-          authorizingUserName: params.inviterName,
-          status: "ACTIVE",
-          creUserId: params.inviterUserId,
-        },
-      });
-    }
+    if (existing) throw new BusinessError(ERR_OB_ALREADY_MEMBER, 409);
+    await tx.sysPartyUser.create({
+      data: {
+        partyId: params.partyId,
+        userId,
+        roles: params.roles as never,
+        authorizingType: "NORMAL",
+        authorizingTimestamp: now,
+        authorizingUserId: params.inviterUserId,
+        authorizingUserName: params.inviterName,
+        status: "ACTIVE",
+        creUserId: params.inviterUserId,
+      },
+    });
 
-    return { userId, alreadyMember };
+    return { userId };
   });
 }

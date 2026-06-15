@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ERR_OB_ALREADY_MEMBER } from "@/lib/onboarding-error-codes";
 
 const { tx, prisma } = vi.hoisted(() => {
   const tx = {
@@ -7,24 +8,34 @@ const { tx, prisma } = vi.hoisted(() => {
     sysParty: { findUnique: vi.fn(), update: vi.fn() },
     sysPartyUser: { findUnique: vi.fn(), create: vi.fn() },
   };
-  return { tx, prisma: { $transaction: vi.fn(async (cb: (t: typeof tx) => unknown) => cb(tx)) } };
+  return {
+    tx,
+    prisma: {
+      $transaction: vi.fn(async (cb: (t: typeof tx) => unknown) => cb(tx)),
+      // 事务前预检（isPartyMember）用的是非事务句柄。
+      sysPartyUser: { findUnique: vi.fn() },
+    },
+  };
 });
 vi.mock("@cloud/db", () => ({ prisma }));
 
 import { bindInvite } from "./onboarding.repository";
 
+const baseParams = {
+  inviteId: 7, partyId: 42, userId: 5,
+  roles: [{ roleId: 150 }], inviterUserId: 1, inviterName: "admin", now: new Date(),
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   tx.sysOperatorInvite.updateMany.mockResolvedValue({ count: 1 });
-  tx.sysPartyUser.findUnique.mockResolvedValue(null); // 尚非成员
+  tx.sysPartyUser.findUnique.mockResolvedValue(null); // 事务内：尚非成员
+  prisma.sysPartyUser.findUnique.mockResolvedValue(null); // 事务前预检：尚非成员
 });
 
 describe("bindInvite（场景一）", () => {
   it("既有用户接受：成员恒 NORMAL、绝不读写 party", async () => {
-    await bindInvite({
-      inviteId: 7, partyId: 42, userId: 5,
-      roles: [{ roleId: 150 }], inviterUserId: 1, inviterName: "admin", now: new Date(),
-    });
+    await bindInvite(baseParams);
     expect(tx.sysPartyUser.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ authorizingType: "NORMAL" }) }),
     );
@@ -32,14 +43,17 @@ describe("bindInvite（场景一）", () => {
     expect(tx.sysParty.update).not.toHaveBeenCalled();
   });
 
-  it("已是成员则幂等：不重复建归属、不激活", async () => {
+  it("事务前预检命中已是成员：抛 ALREADY_MEMBER、不开事务（不消费邀请）", async () => {
+    prisma.sysPartyUser.findUnique.mockResolvedValue({ partyUserId: 99 });
+    await expect(bindInvite(baseParams)).rejects.toMatchObject({ code: ERR_OB_ALREADY_MEMBER });
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(tx.sysOperatorInvite.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("并发兜底（预检漏过、事务内命中）：抛 ALREADY_MEMBER、不重复建归属", async () => {
     tx.sysPartyUser.findUnique.mockResolvedValue({ partyUserId: 99 });
-    const r = await bindInvite({
-      inviteId: 7, partyId: 42, userId: 5,
-      roles: [{ roleId: 150 }], inviterUserId: 1, inviterName: "admin", now: new Date(),
-    });
-    expect(r.alreadyMember).toBe(true);
+    await expect(bindInvite(baseParams)).rejects.toMatchObject({ code: ERR_OB_ALREADY_MEMBER });
+    expect(prisma.$transaction).toHaveBeenCalled();
     expect(tx.sysPartyUser.create).not.toHaveBeenCalled();
-    expect(tx.sysParty.update).not.toHaveBeenCalled();
   });
 });

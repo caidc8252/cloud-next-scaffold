@@ -93,7 +93,7 @@ describe("accept", () => {
 
   it("binds an existing session user and returns the redirect", async () => {
     repo.findInviteByToken.mockResolvedValue(inviteRow());
-    repo.bindInvite.mockResolvedValue({ userId: 5, alreadyMember: false });
+    repo.bindInvite.mockResolvedValue({ userId: 5 });
 
     const res = await accept({ mode: "existing", token: "tok" }, 5);
 
@@ -101,6 +101,6 @@ describe("accept", () => {
       expect.objectContaining({ inviteId: 7, partyId: 42, userId: 5, roles: [{ roleId: 150 }] }),
     );
     expect(buildSessionAndRedirect).toHaveBeenCalledWith(5, ERR_OB_NOT_AUTHENTICATED);
-    expect(res).toEqual({ redirectTo: "http://console/api/auth/session-handoff?token=x", alreadyMember: false });
+    expect(res).toEqual({ redirectTo: "http://console/api/auth/session-handoff?token=x" });
   });
 });

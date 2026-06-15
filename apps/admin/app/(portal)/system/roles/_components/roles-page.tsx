@@ -43,7 +43,7 @@ export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesP
 
   const selected = roles.find((r) => r.id === selectedId) ?? null;
 
-  async function update(next: Role) {
+  async function update(next: Role): Promise<boolean> {
     try {
       const res = await request.put<Role>(`${API_BASE}/${next.id}`, {
         name: next.name,
@@ -52,12 +52,14 @@ export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesP
       });
       setRoles((prev) => prev.map((r) => (r.id === next.id ? res.data : r)));
       toast.success("Role saved");
+      return true;
     } catch (err) {
       toastError(err);
+      return false;
     }
   }
 
-  async function createRole(draft: { name: string; description: string; baseId: string | null }) {
+  async function createRole(draft: { name: string; description: string; baseId: string | null }): Promise<boolean> {
     const base = draft.baseId ? roles.find((r) => r.id === draft.baseId) : null;
     try {
       const res = await request.post<Role>(API_BASE, {
@@ -69,12 +71,14 @@ export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesP
       setSelectedId(res.data.id);
       setShowNew(false);
       toast.success(`Role "${draft.name}" created`);
+      return true;
     } catch (err) {
       toastError(err);
+      return false;
     }
   }
 
-  async function deleteRole(id: string) {
+  async function deleteRole(id: string): Promise<boolean> {
     try {
       await request.delete(`${API_BASE}/${id}`);
       setRoles((prev) => {
@@ -83,12 +87,14 @@ export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesP
         return next;
       });
       toast.success("Role deleted");
+      return true;
     } catch (err) {
       toastError(err);
+      return false;
     }
   }
 
-  async function duplicate(source: Role, newName: string) {
+  async function duplicate(source: Role, newName: string): Promise<boolean> {
     try {
       const res = await request.post<Role>(API_BASE, {
         name: newName,
@@ -99,8 +105,10 @@ export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesP
       setSelectedId(res.data.id);
       setDuplicateSource(null);
       toast.success(`Role duplicated as "${newName}"`);
+      return true;
     } catch (err) {
       toastError(err);
+      return false;
     }
   }
 
@@ -150,7 +158,7 @@ export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesP
       </PageBody>
       <NewRoleModal open={showNew} onClose={() => setShowNew(false)} onCreate={createRole} allRoles={roles} />
       <DuplicateRoleModal source={duplicateSource} onClose={() => setDuplicateSource(null)}
-        onDuplicate={(name) => duplicateSource && duplicate(duplicateSource, name)} />
+        onDuplicate={(name) => (duplicateSource ? duplicate(duplicateSource, name) : Promise.resolve(false))} />
     </>
   );
 }
