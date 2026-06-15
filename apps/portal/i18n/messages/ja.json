@@ -186,7 +186,8 @@
         "signOutOther": "サインアウトして別アカウントを使用",
         "registerNew": "新規アカウント登録",
         "continueWith": "続行方法",
-        "signInExisting": "既存アカウントでサインイン"
+        "signInExisting": "既存アカウントでサインイン",
+        "error": "問題が発生しました。もう一度お試しください。"
       },
       "signin": { "step": "ステップ 1 / 2", "title": "アカウントにサインイン", "emailLabel": "メール", "passwordLabel": "パスワード", "passwordHint": "デモ：6 文字以上の任意。", "signingIn": "サインイン中…", "signIn": "サインイン" },
       "register": {

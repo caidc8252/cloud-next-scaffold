@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { Check, Clock, Plus, RefreshCw, User } from "lucide-react";
 import { Button } from "@cloud/ui";
+import { RequestError } from "@cloud/request/client";
 import { useFormatter, useTranslations } from "@cloud/i18n/client";
 import type { CurrentUser, InvitePublic } from "./types";
 import { initials } from "@/lib/format";
-import { AuthLead, Divider } from "@/app/(auth)/_components/card-bits";
+import { AuthLead, Divider, ErrorBanner } from "@/app/(auth)/_components/card-bits";
 import { AccountRow, EntRow, ObCard } from "./ob-bits";
 
 export function ObLanding({
@@ -27,12 +28,18 @@ export function ObLanding({
   const t = useTranslations("portal.onboarding.landing");
   const format = useFormatter();
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  // 捕获一次"现在"，避免在 render 里调 Date.now()（react-hooks/purity，与 pending-invite-detail 同姿态）。
+  const [now] = useState(Date.now);
 
   async function join() {
+    setErr("");
     setBusy(true);
     try {
+      // 成功时 onJoinCurrent 会跳走（保持 busy）；失败（如已是成员 ALREADY_MEMBER）回填 banner。
       await onJoinCurrent();
-    } finally {
+    } catch (e) {
+      setErr(e instanceof RequestError ? (e.body?.message ?? t("error")) : t("error"));
       setBusy(false);
     }
   }
@@ -46,6 +53,7 @@ export function ObLanding({
         <>
           <Divider>{t("signedInAs")}</Divider>
           <AccountRow name={currentUser.displayName ?? currentUser.email} email={currentUser.email} />
+          {err ? <div className="mt-3"><ErrorBanner>{err}</ErrorBanner></div> : null}
           <div className="mt-4 flex flex-col gap-2.5">
             <Button block loading={busy} iconLeft={busy ? undefined : <Check size={15} />} onClick={join}>
               {t("useThis")}
@@ -77,7 +85,7 @@ export function ObLanding({
         <span>
           {t.rich("expires", {
             email: invite.inviteEmail,
-            when: format.relativeTime(new Date(invite.expiresAt), Date.now()),
+            when: format.relativeTime(new Date(invite.expiresAt), now),
             b: (c) => <strong className="font-semibold text-content-secondary">{c}</strong>,
           })}
         </span>

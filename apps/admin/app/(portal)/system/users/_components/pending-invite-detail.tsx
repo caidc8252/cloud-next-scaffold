@@ -9,16 +9,18 @@ import { fmtDateTime, relTime } from "@/app/(portal)/system/_shared/helpers";
 type PendingInviteDetailProps = {
   user: UserType;
   roles: Role[];
-  onResend: () => void;
-  onRegenerate: () => void;
-  onReinvite: () => void;
+  // 门户站点 origin（服务端注入）：邀请链接消费端在门户，不能用 admin 自身 origin。
+  portalBaseUrl: string;
+  onResend: () => Promise<boolean>;
+  onRegenerate: () => Promise<boolean>;
+  onReinvite: () => Promise<boolean>;
   onCancel: () => void;
   onSave: (u: UserType) => Promise<boolean>;
 };
 
-function buildInviteUrl(token: string): string {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  return `${origin}/invite?token=${token}`;
+// 与邮件里的 getPortalOnboardingUrl 同构（门户 origin + /onboarding + 编码 token），保证「复制」=「邮件」。
+function buildInviteUrl(portalBaseUrl: string, token: string): string {
+  return `${portalBaseUrl}/onboarding?token=${encodeURIComponent(token)}`;
 }
 
 function maskUrl(url: string): string {
@@ -31,9 +33,9 @@ function maskUrl(url: string): string {
   return `${prefix}${token.slice(0, 4)}****${token.slice(-4)}`;
 }
 
-export function PendingInviteDetail({ user, roles, onResend, onRegenerate, onReinvite, onCancel, onSave }: PendingInviteDetailProps) {
+export function PendingInviteDetail({ user, roles, portalBaseUrl, onResend, onRegenerate, onReinvite, onCancel, onSave }: PendingInviteDetailProps) {
   const [now] = useState(Date.now);
-  const inviteUrl = buildInviteUrl(user.inviteToken ?? user.id);
+  const inviteUrl = user.inviteToken ? buildInviteUrl(portalBaseUrl, user.inviteToken) : "";
   const isExpired = !!user.inviteExpiresAt && new Date(user.inviteExpiresAt).getTime() < now;
 
   const adminRoles = roles; // 可分配角色已由 listAssignableRoles 算好（平台区间预置 + party PRIVATE）
@@ -42,6 +44,17 @@ export function PendingInviteDetail({ user, roles, onResend, onRegenerate, onRei
   const [editingRoles, setEditingRoles] = useState(false);
   const [draftRoleIds, setDraftRoleIds] = useState<Set<string>>(new Set(user.roleIds));
   const [savingRoles, setSavingRoles] = useState(false);
+
+  // 邀请操作（重发/换链接/过期重邀）异步态：点击者转圈，期间全部禁用，防重复/防并发误点。
+  const [pending, setPending] = useState<null | "resend" | "regenerate" | "reinvite">(null);
+  async function runAction(kind: "resend" | "regenerate" | "reinvite", fn: () => Promise<boolean>) {
+    setPending(kind);
+    try {
+      await fn();
+    } finally {
+      setPending(null);
+    }
+  }
 
   // Reset draft when user changes
   const [prevId, setPrevId] = useState(user.id);
@@ -110,14 +123,20 @@ export function PendingInviteDetail({ user, roles, onResend, onRegenerate, onRei
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {isExpired ? (
-            <Button variant="ghost" size="sm" iconLeft={<Mail size={14} />} onClick={onReinvite}>Re-send (replace)</Button>
+            <Button variant="ghost" size="sm" loading={pending === "reinvite"} disabled={pending !== null}
+              iconLeft={pending === "reinvite" ? undefined : <Mail size={14} />}
+              onClick={() => runAction("reinvite", onReinvite)}>Re-send (replace)</Button>
           ) : (
             <>
-              <Button variant="ghost" size="sm" iconLeft={<Mail size={14} />} onClick={onResend}>Resend</Button>
-              <Button variant="ghost" size="sm" iconLeft={<RefreshCw size={14} />} onClick={onRegenerate}>Regenerate link</Button>
+              <Button variant="ghost" size="sm" loading={pending === "resend"} disabled={pending !== null}
+                iconLeft={pending === "resend" ? undefined : <Mail size={14} />}
+                onClick={() => runAction("resend", onResend)}>Resend</Button>
+              <Button variant="ghost" size="sm" loading={pending === "regenerate"} disabled={pending !== null}
+                iconLeft={pending === "regenerate" ? undefined : <RefreshCw size={14} />}
+                onClick={() => runAction("regenerate", onRegenerate)}>Regenerate link</Button>
             </>
           )}
-          <Button variant="ghost-danger" size="sm" iconLeft={<Shield size={14} />} onClick={onCancel}>Cancel invite</Button>
+          <Button variant="ghost-danger" size="sm" disabled={pending !== null} iconLeft={<Shield size={14} />} onClick={onCancel}>Cancel invite</Button>
         </div>
       </div>
 

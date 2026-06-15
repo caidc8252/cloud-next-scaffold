@@ -13,10 +13,10 @@ import { NewUserModal } from "./new-user-modal";
 
 const API = "/api/system/users";
 
-type UsersPageProps = { initialUsers: User[]; initialRoles: Role[]; currentUserId: string };
+type UsersPageProps = { initialUsers: User[]; initialRoles: Role[]; currentUserId: string; portalBaseUrl: string };
 type StatusFilter = "all" | "active" | "inactive" | "pending";
 
-export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPageProps) {
+export function UsersPage({ initialUsers, initialRoles, currentUserId, portalBaseUrl }: UsersPageProps) {
   const [users, setUsers] = useState(initialUsers);
   const roles = initialRoles;
 
@@ -25,6 +25,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [showNew, setShowNew] = useState(false);
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   const stats = useMemo(() => ({
     total: users.length,
@@ -85,81 +86,95 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
     }
   }
 
-  async function createUser(draft: { email: string; roleIds: string[] }) {
+  async function createUser(draft: { email: string; roleIds: string[] }): Promise<boolean> {
     try {
       const res = await request.post<User>(API, draft);
       setUsers((prev) => [res.data, ...prev]);
       setSelectedId(res.data.id);
       setShowNew(false);
       toast.success("Invitation sent");
+      return true;
     } catch (err) {
       toastError(err);
       // createInvite may have persisted before mail enqueue failed; refresh exposes the pending invite.
       void refreshUsers().catch(() => undefined);
+      return false;
     }
   }
 
-  async function toggleLock(user: User) {
+  async function toggleLock(user: User): Promise<boolean> {
     try {
       const res = await request.post<User>(`${API}/${user.id}/lock`);
       setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
       toast.success(user.status === "INACTIVE" ? "User enabled" : "User disabled");
+      return true;
     } catch (err) {
       toastError(err);
+      return false;
     }
   }
 
-  async function resetPassword(user: User) {
+  async function resetPassword(user: User): Promise<boolean> {
     try {
       const res = await request.post<User>(`${API}/${user.id}/reset-password`);
       setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
       toast.success("Password reset link sent");
+      return true;
     } catch (err) {
       toastError(err);
+      return false;
     }
   }
 
-  async function cancelInvite(userId: string) {
+  async function cancelInvite(userId: string): Promise<boolean> {
     try {
       await request.post(`${API}/${userId}/cancel-invite`);
       setUsers((prev) => prev.filter((u) => u.id !== userId));
       if (selectedId === userId) setSelectedId(null);
       toast.success("Invitation cancelled");
+      return true;
     } catch (err) {
       toastError(err);
+      return false;
     }
   }
 
-  async function resendInvite(user: User) {
+  async function resendInvite(user: User): Promise<boolean> {
     try {
       const res = await request.post<User>(`${API}/${user.id}/resend-invite`);
       setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
       toast.success("Invitation resent");
+      return true;
     } catch (err) {
       toastError(err);
+      return false;
     }
   }
 
-  async function regenerateInvite(user: User) {
+  async function regenerateInvite(user: User): Promise<boolean> {
     try {
       const res = await request.post<User>(`${API}/${user.id}/regenerate-invite`);
       setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
       toast.success("Invitation regenerated");
+      return true;
     } catch (err) {
       toastError(err);
+      return false;
     }
   }
 
   // Expired invite → re-send by re-creating (backend overwrites the expired row for the same email).
-  async function reinviteExpired(user: User) {
+  async function reinviteExpired(user: User): Promise<boolean> {
     try {
       const res = await request.post<User>(API, { email: user.inviteEmail, roleIds: user.roleIds });
       setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
       setSelectedId(res.data.id);
       toast.success("Invitation re-sent");
+      return true;
     } catch (err) {
       toastError(err);
       void refreshUsers().catch(() => undefined);
+      return false;
     }
   }
 
@@ -167,11 +182,12 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
     setConfirmCancelId(userId);
   }
 
-  function confirmCancelInvite() {
-    if (confirmCancelId) {
-      cancelInvite(confirmCancelId);
-      setConfirmCancelId(null);
-    }
+  async function confirmCancelInvite() {
+    if (!confirmCancelId) return;
+    setCancelling(true);
+    const ok = await cancelInvite(confirmCancelId);
+    setCancelling(false);
+    if (ok) setConfirmCancelId(null);
   }
 
   const statItems: { label: string; value: number; colorClass: string; filterKey: StatusFilter }[] = [
@@ -238,7 +254,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
           <Card className="min-w-0 flex-1">
             {selected ? (
               selected.status === "PENDING" ? (
-                <PendingInviteDetail user={selected} roles={roles}
+                <PendingInviteDetail user={selected} roles={roles} portalBaseUrl={portalBaseUrl}
                   onResend={() => resendInvite(selected)}
                   onRegenerate={() => regenerateInvite(selected)}
                   onReinvite={() => reinviteExpired(selected)}
@@ -258,10 +274,10 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId }: UsersPa
       <NewUserModal open={showNew} onClose={() => setShowNew(false)} onCreate={createUser} users={users} roles={roles} />
 
       {/* Cancel invite confirmation */}
-      <Modal open={!!confirmCancelId} onClose={() => setConfirmCancelId(null)} title="Cancel invitation?"
+      <Modal open={!!confirmCancelId} onClose={() => { if (!cancelling) setConfirmCancelId(null); }} title="Cancel invitation?"
         footer={<div className="flex gap-2 justify-end">
-          <Button variant="ghost" onClick={() => setConfirmCancelId(null)}>Keep invitation</Button>
-          <Button variant="danger" onClick={confirmCancelInvite}>Cancel invitation</Button>
+          <Button variant="ghost" disabled={cancelling} onClick={() => setConfirmCancelId(null)}>Keep invitation</Button>
+          <Button variant="danger" loading={cancelling} onClick={confirmCancelInvite}>Cancel invitation</Button>
         </div>}>
         <p className="text-sm text-content-secondary">
           This will permanently remove the pending invitation for{" "}

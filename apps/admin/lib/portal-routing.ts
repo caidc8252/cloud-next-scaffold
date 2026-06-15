@@ -35,3 +35,18 @@ export function getPortalOnboardingUrl(token: string): string {
   url.searchParams.set("token", token);
   return url.toString();
 }
+
+// 管理员重置他人密码 → 链接落门户 /reset-password（复用其消费端），与 onboarding 同源解析。
+export function getPortalResetPasswordUrl(token: string): string {
+  const url = getPortalAppUrl();
+  url.pathname = "/reset-password";
+  url.search = "";
+  url.hash = "";
+  url.searchParams.set("token", token);
+  return url.toString();
+}
+
+// 门户站点 origin：客户端拼邀请链接用（与 getPortalOnboardingUrl 同源，保证"复制"= "邮件"）。
+export function getPortalBaseUrl(): string {
+  return getPortalAppUrl().origin;
+}

@@ -58,6 +58,7 @@ export async function accept(input: AcceptInput, sessionUserId: number | null): 
 
   if (input.mode === "existing") {
     if (sessionUserId === null) throw new BusinessError(ERR_OB_NOT_AUTHENTICATED, 401);
+    // 成员去重（含事务前预检 + 事务内并发兜底）统一落在 repo.bindInvite，已是成员则抛 ALREADY_MEMBER。
     userId = sessionUserId;
   } else {
     // register：email 恒取邀请邮箱；已占用则引导转登录。
@@ -75,7 +76,7 @@ export async function accept(input: AcceptInput, sessionUserId: number | null): 
   }
 
   const inviterName = await repo.resolveInviterName(invite.inviterUserId);
-  const { userId: boundUserId, alreadyMember } = await repo.bindInvite({
+  const { userId: boundUserId } = await repo.bindInvite({
     inviteId: invite.operatorInviteId,
     partyId: invite.partyId,
     userId,
@@ -88,5 +89,5 @@ export async function accept(input: AcceptInput, sessionUserId: number | null): 
 
   // 建/重建会话并按 party 的 portal 组跳对应 console（复用登录收尾；新用户恰好 1 party→直达）。
   const { redirectTo } = await buildSessionAndRedirect(boundUserId, ERR_OB_NOT_AUTHENTICATED);
-  return { redirectTo, alreadyMember };
+  return { redirectTo };
 }

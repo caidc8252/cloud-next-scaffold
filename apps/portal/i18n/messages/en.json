@@ -325,7 +325,8 @@
         "registerNew": "Register a new account",
         "continueWith": "Continue with",
         "signInExisting": "Sign in with existing account",
-        "expires": "Sent to <b>{email}</b> · expires {when}"
+        "expires": "Sent to <b>{email}</b> · expires {when}",
+        "error": "Something went wrong. Please try again."
       },
       "signin": {
         "step": "Step 1 of 2",

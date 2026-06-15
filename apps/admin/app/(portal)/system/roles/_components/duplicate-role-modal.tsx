@@ -7,7 +7,7 @@ import type { Role } from "@/app/(portal)/system/_shared/types";
 type DuplicateRoleModalProps = {
   source: Role | null;
   onClose: () => void;
-  onDuplicate: (name: string) => void;
+  onDuplicate: (name: string) => Promise<boolean>;
 };
 
 export function DuplicateRoleModal({ source, onClose, onDuplicate }: DuplicateRoleModalProps) {
@@ -19,22 +19,31 @@ export function DuplicateRoleModal({ source, onClose, onDuplicate }: DuplicateRo
 type DuplicateRoleModalBodyProps = {
   source: Role;
   onClose: () => void;
-  onDuplicate: (name: string) => void;
+  onDuplicate: (name: string) => Promise<boolean>;
 };
 
 function DuplicateRoleModalBody({ source, onClose, onDuplicate }: DuplicateRoleModalBodyProps) {
   const [name, setName] = useState(`${source.name} (copy)`);
+  const [submitting, setSubmitting] = useState(false);
   const valid = name.trim().length > 1;
 
-  function handleSubmit() {
-    if (valid) onDuplicate(name.trim());
+  async function handleSubmit() {
+    if (!valid || submitting) return;
+    setSubmitting(true);
+    try {
+      await onDuplicate(name.trim()); // 成功后父层关闭弹窗；失败保留输入、弹窗不关
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
-    <Modal open onClose={onClose} title="Duplicate role"
+    <Modal open closeOnOverlay={!submitting} onClose={onClose} title="Duplicate role"
       footer={<div className="flex gap-2 justify-end">
         <Button variant="ghost" onClick={onClose}>Cancel</Button>
-        <Button variant="primary" disabled={!valid} onClick={handleSubmit}>Duplicate</Button>
+        <Button variant="primary" loading={submitting} disabled={!valid} onClick={handleSubmit}>
+          {submitting ? "Duplicating…" : "Duplicate"}
+        </Button>
       </div>}>
       <div className="space-y-3">
         <p className="text-sm text-content-secondary">
@@ -42,7 +51,7 @@ function DuplicateRoleModalBody({ source, onClose, onDuplicate }: DuplicateRoleM
         </p>
         <Field label="New role name" required>
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter role name"
-            autoFocus onKeyDown={(e) => { if (e.key === "Enter" && valid) handleSubmit(); }} />
+            autoFocus disabled={submitting} onKeyDown={(e) => { if (e.key === "Enter" && valid) handleSubmit(); }} />
         </Field>
       </div>
     </Modal>
