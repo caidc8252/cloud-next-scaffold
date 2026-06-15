@@ -6,6 +6,7 @@
 
 - S3 能力统一走 `@cloud/storage/server`、`@cloud/storage/client` 或 app 侧 storage helper，业务代码不要直接 new AWS SDK。
 - 配置由 app 侧读取并显式传入 storage package，`packages/storage` 不读 `.env`。
+- admin 应用侧只读取 `AWS_S3_BUCKET`、`AWS_REGION`、`AWS_ACCESS_KEY_ID`、`AWS_SECRET_ACCESS_KEY`、`AWS_S3_MAX_SIZE_BYTES`、`AWS_S3_MULTIPART_THRESHOLD_BYTES`、`AWS_S3_MULTIPART_PART_SIZE_BYTES`。
 - 前端不决定 S3 目录，不传任意 `directory`。
 - 正式业务接口由后端固定或推导 `uploadProfile`。
 - 项目不提供统一文件本体表，也不提供通用 `/api/storage/*` 生产入口。
@@ -355,7 +356,7 @@ sequenceDiagram
 - 临时转正：源对象 `s3:GetObject` + 目标对象 `s3:PutObject`
 - 删除 tmp：`s3:DeleteObject`
 
-如果配置 `AWS_S3_UPLOAD_ROLE_ARN`，STS session policy 只能收窄权限，不能放大 role 自身没有的权限。
+浏览器直传 session 使用 STS `GetFederationToken` 生成临时凭证；session policy 只能收窄权限，不能放大应用 AWS 身份原本没有的权限。
 
 公开读取的 bucket policy 只开放 `public/*`：
 

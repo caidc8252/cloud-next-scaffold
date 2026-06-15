@@ -98,7 +98,6 @@ const S3_DELETE_ACTIONS = ["s3:DeleteObject"] as const;
 
 function getServerProxyUrl(): string | undefined {
   return (
-    process.env.AWS_SDK_PROXY_URL?.trim() ||
     process.env.HTTPS_PROXY?.trim() ||
     process.env.https_proxy?.trim() ||
     process.env.HTTP_PROXY?.trim() ||

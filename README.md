@@ -266,9 +266,15 @@ import {
 const s3Config = {
   bucket: process.env.AWS_S3_BUCKET!,
   regionId: process.env.AWS_REGION!,
-  directoryPrefix: "uploads",
-  stsRoleArn: process.env.AWS_S3_UPLOAD_ROLE_ARN,
-  stsExternalId: process.env.AWS_S3_UPLOAD_EXTERNAL_ID,
+  maxSizeBytes: process.env.AWS_S3_MAX_SIZE_BYTES
+    ? Number(process.env.AWS_S3_MAX_SIZE_BYTES)
+    : undefined,
+  multipartThresholdBytes: process.env.AWS_S3_MULTIPART_THRESHOLD_BYTES
+    ? Number(process.env.AWS_S3_MULTIPART_THRESHOLD_BYTES)
+    : undefined,
+  multipartPartSizeBytes: process.env.AWS_S3_MULTIPART_PART_SIZE_BYTES
+    ? Number(process.env.AWS_S3_MULTIPART_PART_SIZE_BYTES)
+    : undefined,
 };
 
 const session = await createS3UploadSession(s3Config, {
@@ -294,9 +300,21 @@ const downloadUrl = await createS3DownloadUrl(s3Config, {
 });
 ```
 
-`s3Config` 必填 `bucket` 和 `regionId`。默认 `uploadUrl` 会生成 `https://{bucket}.s3.{regionId}.amazonaws.com`；如果接 CDN 或自定义域名，可传 `uploadUrl`。未配置 `stsRoleArn` 时使用 `GetFederationToken`，配置后使用 `AssumeRole`。
+admin 应用侧只读取这些 S3 环境变量：
 
-用于上传/下载的 AWS 身份除了写入权限，也必须具备读取权限。上传普通文件和公开图片都需要目标 prefix 的 `s3:PutObject`；下载签名链接使用 `s3:GetObject`，下载前的对象校验使用 `HeadObject`，AWS 侧同样要求身份具备 `s3:GetObject`。如果配置了 `AWS_S3_UPLOAD_ROLE_ARN`，被 assume 的 role 自身策略也要允许目标 bucket/prefix 的 `s3:PutObject` / `s3:GetObject`，session policy 不能放大 role 原本没有的权限。
+```txt
+AWS_S3_BUCKET
+AWS_REGION
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_S3_MAX_SIZE_BYTES
+AWS_S3_MULTIPART_THRESHOLD_BYTES
+AWS_S3_MULTIPART_PART_SIZE_BYTES
+```
+
+`s3Config` 必填 `bucket` 和 `regionId`。默认 `uploadUrl` 会生成 `https://{bucket}.s3.{regionId}.amazonaws.com`。服务端 AWS SDK 使用 `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`；浏览器直传 session 通过 STS `GetFederationToken` 生成临时凭证。
+
+用于上传/下载的 AWS 身份除了写入权限，也必须具备读取权限。上传普通文件和公开图片都需要目标 prefix 的 `s3:PutObject`；下载签名链接使用 `s3:GetObject`，下载前的对象校验使用 `HeadObject`，AWS 侧同样要求身份具备 `s3:GetObject`。浏览器直传还需要允许应用身份调用 STS `GetFederationToken`；session policy 只能收窄权限，不能放大身份原本没有的权限。
 
 公开图片使用业务约定的公开 profile。公开上传只允许 `image/*`，并且对象 key 必须落在 `public/` 前缀下；公开文件的 `objectUrl` 可由业务 DTO 作为头像、Logo、公开图片等 `<img src>` 场景的 URL 返回。S3 侧不要公开整个 bucket，只给 `public/*` 配只读 bucket policy。这个 bucket policy 只解决匿名读取，不给应用 AWS 身份增加上传权限；应用身份仍需要 IAM policy 允许 `s3:PutObject` 到 `public/*`。
 
@@ -323,7 +341,7 @@ await uploadFileToS3FromBrowser({
 });
 ```
 
-当前脚手架保留 `@cloud/storage` 包和 app 侧 storage helper，但不再内置 S3 上传演示页面，也不提供统一文件表。业务应用需要文件上传时，应在对应 domain 下按上面的 package 能力接入，并把需要的文件信息写入业务表字段。
+当前脚手架保留 `@cloud/storage` 包和 app 侧 storage helper，也提供一个无鉴权的本地 S3 调试页 `/s3-debug`。生产业务仍不提供统一文件表；业务应用需要文件上传时，应在对应 domain 下按上面的 package 能力接入，并把需要的文件信息写入业务表字段。
 
 S3 可返回 `bucket`、`regionId`、`uploadUrl`、`objectKey`、`objectUrl`、`contentType`、`sizeBytes`、`etag`、`lastModified` 等信息。业务可以只保存一个 URL，也可以保存完整对象快照；多文件建议用 JSONB 数组保存对象快照，数组顺序就是展示顺序。写入业务表前必须完成业务权限、业务对象归属、文件类型、可见性和 HeadObject 校验。
 

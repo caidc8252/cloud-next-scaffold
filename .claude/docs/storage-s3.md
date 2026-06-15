@@ -8,7 +8,8 @@
 - 默认上传策略：`<= 5 MB` 的浏览器文件可走服务端上传，`> 5 MB` 走 `createS3UploadSession()` + `uploadFileToS3FromBrowser()` 直传；直传中 `> 100 MB` 默认 multipart
 - 不要在业务代码里直接 new AWS SDK 的 `S3Client` / `STSClient`，除非先确认 `@cloud/storage` 无法覆盖需求并同步沉淀包能力
 - S3 配置由业务侧从环境变量读取后显式传入 storage package，storage package 不直接读取 `.env`
-- S3 目录由业务侧 upload profile / service 显式决定，不允许前端任意传 `directory`；`AWS_S3_UPLOAD_DIRECTORY_PREFIX` 只作为历史兜底
+- admin 应用侧只读取 `AWS_S3_BUCKET`、`AWS_REGION`、`AWS_ACCESS_KEY_ID`、`AWS_SECRET_ACCESS_KEY`、`AWS_S3_MAX_SIZE_BYTES`、`AWS_S3_MULTIPART_THRESHOLD_BYTES`、`AWS_S3_MULTIPART_PART_SIZE_BYTES`
+- S3 目录由业务侧 upload profile / service 显式决定，不允许前端任意传 `directory`
 - 项目不提供统一文件本体表；S3 返回的 `bucket`、`regionId`、`objectKey`、`objectUrl`、`contentType`、`sizeBytes`、`etag`、`lastModified` 等信息由各业务表按需保存
 - 业务可以只存一个公开 URL，也可以保存完整文件对象；多文件建议用 JSONB 数组，数组顺序就是展示顺序
 - 私有文件不要返回固定 URL；业务下载接口先校验业务权限和业务对象归属，再用 `objectKey` 生成短期 signed URL
