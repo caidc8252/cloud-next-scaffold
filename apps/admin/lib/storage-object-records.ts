@@ -5,7 +5,7 @@ import { BusinessError } from "@cloud/request";
 import type { S3ObjectMetadata, S3StoredObject, S3UploadSession } from "@cloud/storage";
 import { copyS3Object, deleteS3Object, uploadFileToS3FromServer } from "@cloud/storage/server";
 import type { ActiveSession } from "@cloud/permissions/server";
-import type { StorageObjectRecord, StorageVisibility } from "../storage/types";
+import type { StorageObjectRecord, StorageVisibility } from "./storage-types";
 import { getS3UploadConfig } from "./s3-upload-config";
 import {
   S3_UPLOAD_PROFILES,

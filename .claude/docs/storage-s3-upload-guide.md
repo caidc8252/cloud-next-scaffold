@@ -28,13 +28,13 @@
 | `apps/admin/lib/s3-upload-profiles.ts` | upload profile 到目录和可见性的映射 |
 | `apps/admin/lib/storage-object-records.ts` | `storage_object` 入库、查重、临时上传、临时转正、下载查询 |
 | `apps/admin/lib/storage-visibility.ts` | PUBLIC / PRIVATE 输入校验 |
-| `apps/admin/app/api/storage/*` | 当前 demo / 底层示例 route；真实业务不要把空权限守卫照搬进生产域 |
+| `apps/admin/lib/storage-types.ts` | storage helper 对外返回的文件记录类型 |
 
 新增业务能力优先落 `apps/<app>/service/<domain>/`。当前 `apps/admin/lib/storage-*` 是已有实现位置；重构或新增业务编排时不要继续把逻辑堆进 route。
 
 ## 2. uploadProfile
 
-`uploadProfile` 是后端给文件用途起的业务名字，它决定 S3 目录和可见性。前端可以在 demo / 底层接口里传受控枚举；正式业务接口应该由后端固定或根据业务对象推导。
+`uploadProfile` 是后端给文件用途起的业务名字，它决定 S3 目录和可见性。正式业务接口应该由后端固定或根据业务对象推导，前端不要直接传 profile 决定文件用途。
 
 当前 profile：
 
@@ -133,12 +133,12 @@ contract.file_storage_object_ids -> List<string>
 
 ### 服务端上传
 
-适用于小文件。当前示例接口是 `POST /api/storage/s3-upload-server`。
+适用于小文件。业务 route 接收文件和业务对象参数，完成业务权限校验后调用 storage helper。
 
 流程：
 
-1. Route 做服务端权限守卫；正式业务必须换成明确业务权限。
-2. 正式业务接口读取 `file` 后由后端固定 profile；通用 demo 接口只允许读取受控枚举 `uploadProfile`。
+1. Route 做明确业务权限守卫，例如 `applications.UPDATE` / `contracts.UPLOAD`。
+2. 业务接口读取 `file` 后由后端固定 profile，不从前端读取任意 `uploadProfile`。
 3. 后端根据 profile 决定 `directory` 和 `visibility`。
 4. 校验文件非空且不超过 `SERVER_S3_UPLOAD_THRESHOLD_BYTES`。
 5. 通过 `validateStorageVisibilityInput()` 校验公开/私有规则。
@@ -149,22 +149,18 @@ contract.file_storage_object_ids -> List<string>
 
 ### 浏览器直传
 
-适用于大文件。当前示例接口组合是：
-
-- `POST /api/storage/s3-upload-session`
-- 浏览器调用 `uploadFileToS3FromBrowser()`
-- `POST /api/storage/uploads/complete`
+适用于大文件。业务 route 负责创建直传 session 和完成确认，浏览器只拿业务接口返回的 session 调 `uploadFileToS3FromBrowser()`。
 
 流程：
 
 1. 客户端先用 `crypto.subtle.digest("SHA-256", ...)` 计算文件 hash。
-2. 客户端可先调 `GET /api/storage/uploads/duplicate` 做查重，命中则无需上传。
-3. 正式业务接口由后端固定 profile；通用 demo 接口创建直传 session 时可传 `filename`、`contentType`、`size`、`uploadProfile`、`contentHash`。
+2. 客户端可先调业务域查重接口做查重，命中则无需上传。
+3. 业务接口由后端固定 profile；创建直传 session 时只接收必要文件参数，例如 `filename`、`contentType`、`size`、`contentHash`。
 4. Route 做服务端权限守卫，校验文件参数、hash 格式和 profile。
 5. 服务端调用 `createS3UploadSession()` 生成限定到单个 `objectKey` 的 STS 临时凭证。
 6. 服务端同步创建一条 `PENDING` 的 `storage_object`，记录预期文件信息。
 7. 客户端调用 `uploadFileToS3FromBrowser({ file, session, signal, onProgress })` 上传到 S3。
-8. 直传完成后调用完成接口；正式业务仍由后端固定 profile，通用 demo 接口可额外传受控枚举 `uploadProfile`。
+8. 直传完成后调用业务域完成接口；服务端仍由业务上下文固定 profile。
 9. 服务端必须用 `getS3ObjectMetadata()` 做 `HeadObject` 校验。
 10. 服务端再次查重；若已有相同 ACTIVE 文件，返回已有记录。
 11. 表单草稿上传写 `TEMPORARY`；即时生效上传才直接写 `ACTIVE`。
@@ -220,22 +216,18 @@ contract.file_storage_object_ids -> List<string>
 
 ### 列表
 
-当前示例接口：`GET /api/storage/uploads`。
-
 规则：
 
-- Route 做服务端权限守卫；正式业务替换为明确查看权限。
+- Route 做明确业务查看权限守卫。
 - 查询 `storage_object` 必须带 `partyId = session.currentPartyId` 和 `status = ACTIVE`。
-- 默认按 `creTime desc` 返回最近 100 条。
+- 业务列表先读业务表上的 `storageObjectId` / `storageObjectId[]`，再按当前租户查询 `storage_object` 并按业务顺序组装 DTO。
 - 公开文件可由业务 DTO 返回可访问 URL；私有文件只返回元数据，不返回可直接访问的 URL。
 
 ### 私有下载
 
-当前示例接口：`GET /api/storage/uploads/[storageObjectId]/download`。
-
 规则：
 
-1. Route 做服务端权限守卫；正式业务替换为明确下载权限。
+1. Route 做明确业务下载权限守卫。
 2. 通过 `storageObjectId + partyId + ACTIVE` 查询数据库记录；查不到返回 404。
 3. 在对应 domain service / policy 里校验当前用户是否能访问该业务对象。
 4. 调用 `getS3ObjectMetadata()` 做下载前对象存在性和 AWS 读权限校验。
@@ -246,7 +238,7 @@ contract.file_storage_object_ids -> List<string>
 
 ## 7. 权限
 
-当前 demo 页面和接口是登录态级别，用于验证 S3 链路。生产业务不要照搬空权限守卫，也不要新增通用 `storage.*` 业务权限码；上传、替换、删除、下载授权归属到实际业务域。
+项目不提供通用 `/api/storage/*` 生产入口；上传、替换、删除、下载授权归属到实际业务域。不要新增通用 `storage.*` 业务权限码，也不要把 storage helper 包成登录即可调用的 API。
 
 示例：
 
@@ -317,7 +309,7 @@ app 侧通过 `getS3UploadConfig()` 读取环境变量并传给 `@cloud/storage/
 4. 在 manifest 和角色里补齐权限码。
 5. 新增 domain service：封装上传完成后的业务绑定、范围校验、资源列表。
 6. 新增 API route：只做权限、参数、响应适配。
-7. 客户端按大小选择服务端上传或直传；正式业务调用业务接口只传文件，通用 demo / 底层接口只允许传受控枚举 `uploadProfile`，不传任意 `directory`。
+7. 客户端按大小选择服务端上传或直传；正式业务调用业务接口只传文件和业务对象参数，不传任意 `directory` 或 `uploadProfile`。
 8. 表单草稿先写 `TEMPORARY`，保存成功后转正为 `ACTIVE`。
 9. 业务表保存 `storageObjectId` 或 `storageObjectId[]`，不要保存 S3 key 或公网 URL 作为唯一来源。
 10. 公开文件由业务 DTO 自己决定返回字段名，例如 `iconUrl`、`imageUrl`、`logoUrl`。

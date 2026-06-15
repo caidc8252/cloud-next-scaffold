@@ -1,4 +1,4 @@
-import type { StorageVisibility } from "@/storage/types";
+import type { StorageVisibility } from "@/lib/storage-types";
 
 export const S3_UPLOAD_PROFILES = {
   DEBUG_PRIVATE: "debug.private",
