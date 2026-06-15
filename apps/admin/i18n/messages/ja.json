@@ -1,4 +1,104 @@
 {
+  "notifications": {
+    "title": "通知",
+    "markAllRead": "すべて既読にする",
+    "markRead": "既読にする",
+    "viewAll": "すべての通知を表示",
+    "showingUnread": "未読 {total} 件中 {shown} 件を表示",
+    "group": {
+      "today": "今日",
+      "earlier": "それ以前"
+    },
+    "empty": {
+      "caughtUp": "すべて確認済みです",
+      "caughtUpDesc": "未読の通知はありません。",
+      "none": "通知はありません",
+      "noneDesc": "新しいチケットや注文の更新がここに表示されます。"
+    },
+    "module": {
+      "ticket": "チケット",
+      "customer": "顧客",
+      "app": "アプリ",
+      "order": "注文",
+      "account": "アカウント",
+      "default": "通知"
+    },
+    "status": {
+      "unread": "未読",
+      "read": "既読"
+    },
+    "list": {
+      "title": "通知",
+      "subtitle": "チケット・顧客・アプリ・注文にわたるすべての対応可能な更新。通知をクリックすると関連レコードを開きます。",
+      "emptyFiltered": "条件に一致する通知はありません。"
+    },
+    "search": {
+      "placeholder": "通知を検索…",
+      "action": "検索"
+    },
+    "filter": {
+      "allTypes": "すべての種類",
+      "allStatuses": "すべてのステータス"
+    },
+    "col": {
+      "notification": "通知",
+      "type": "種類",
+      "when": "日時",
+      "statusHead": "ステータス",
+      "title": "タイトル",
+      "body": "本文"
+    },
+    "count": "{count, plural, other {件の通知}}",
+    "matchingFilters": "（絞り込み）",
+    "export": "エクスポート",
+    "exported": "{count, plural, other {# 件の通知をエクスポートしました}}",
+    "activeFilters": "適用中のフィルター:",
+    "clearAll": "すべてクリア",
+    "chip": {
+      "search": "検索: {q}",
+      "type": "種類: {label}",
+      "status": "ステータス: {label}"
+    },
+    "detail": {
+      "back": "通知",
+      "notFound": "通知が見つかりません。",
+      "ctaPlaceholder": "モック: {label} を開きます"
+    },
+    "fields": {
+      "ticket": "チケット",
+      "priority": "優先度",
+      "customer": "顧客",
+      "slaDue": "SLA 期限",
+      "status": "ステータス",
+      "order": "注文",
+      "commenter": "コメント者",
+      "assignedBy": "担当割当",
+      "raisedBy": "起票元",
+      "queue": "キュー",
+      "reopenedBy": "再オープン者",
+      "previously": "以前",
+      "resolvedBy": "解決者",
+      "resolution": "解決策",
+      "appVersion": "アプリ版",
+      "result": "結果",
+      "app": "アプリ",
+      "action": "操作",
+      "operator": "オペレーター",
+      "invitedBy": "招待者",
+      "expires": "期限"
+    },
+    "party": {
+      "system": "システム"
+    },
+    "events": {
+      "passwordReset": {
+        "title": "パスワードがリセットされました",
+        "summary": "管理者がアカウントのパスワードリセットを開始しました",
+        "detail": "管理者がパスワードリセットを開始しました。メールに送信されたリンクから新しいパスワードを設定してください。リンクは {expiresText} 後に失効します。",
+        "expires": "72 時間"
+      }
+    }
+  },
   "email": {
     "common": {
       "footerIgnore": "心当たりがない場合は、このメールを無視してください。",

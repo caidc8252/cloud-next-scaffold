@@ -171,6 +171,9 @@ importers:
       '@cloud/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@cloud/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@cloud/mail':
         specifier: workspace:*
         version: link:../../packages/mail

@@ -24,7 +24,7 @@ model SysParty {
   address          String?  @db.VarChar(500)
   contactName      String?  @map("contact_name") @db.VarChar(100)
   email            String?  @db.Citext
-  phoneCountryCode String?  @map("phone_country_code") @db.VarChar(8)
+  callingCode      String?  @map("calling_code") @db.VarChar(8)
   phone            String?  @db.VarChar(32)
   timezone         String   @db.VarChar(64)
   license          String?  @db.VarChar(200)
@@ -137,6 +137,9 @@ model SysUser {
   nickName                          String    @map("nick_name") @db.VarChar(100)
   email                             String    @unique @db.Citext
   country                           String?   @db.VarChar(8)
+  locale                            String    @default("en") @db.VarChar(35)
+  callingCode                       String?   @map("calling_code") @db.VarChar(8)
+  phone                             String?   @db.VarChar(32)
   mfaEnable                         Boolean   @default(false) @map("mfa_enable")
   status                            String    @default("ACTIVE") @db.VarChar(20)
   lastLoginAt                       DateTime? @map("last_login_at") @db.Timestamp(3)
@@ -325,7 +328,7 @@ model SysOperationLog {
 }
 
 // ─── sys_notice（站内消息，UUID 主键）─────────────
-// payload 按 notice_type 不同载荷不同，必含 content；status 取值 UNREAD / READ 由应用层保证。
+// payload 按 notice_type 不同载荷不同，必含 summary（取代旧 content，见 notice backend-conflicts 裁决）；status 取值 UNREAD / READ 由应用层保证。
 model SysNotice {
   noticeId        String   @id @default(uuid()) @map("notice_id")
   userId          Int      @map("user_id")

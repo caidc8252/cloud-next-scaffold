@@ -1,4 +1,104 @@
 {
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "markRead": "Mark as read",
+    "viewAll": "View all notifications",
+    "showingUnread": "Showing {shown} of {total} unread",
+    "group": {
+      "today": "Today",
+      "earlier": "Earlier"
+    },
+    "empty": {
+      "caughtUp": "You're all caught up",
+      "caughtUpDesc": "No unread notifications.",
+      "none": "No notifications",
+      "noneDesc": "New tickets and order updates show up here."
+    },
+    "module": {
+      "ticket": "Tickets",
+      "customer": "Customers",
+      "app": "Apps",
+      "order": "Orders",
+      "account": "Account",
+      "default": "Notification"
+    },
+    "status": {
+      "unread": "Unread",
+      "read": "Read"
+    },
+    "list": {
+      "title": "Notifications",
+      "subtitle": "Every actionable update across tickets, customers, apps and orders. Click a notification to open the related record.",
+      "emptyFiltered": "No notifications match your filters."
+    },
+    "search": {
+      "placeholder": "Search notifications…",
+      "action": "Search"
+    },
+    "filter": {
+      "allTypes": "All types",
+      "allStatuses": "All statuses"
+    },
+    "col": {
+      "notification": "Notification",
+      "type": "Type",
+      "when": "When",
+      "statusHead": "Status",
+      "title": "Title",
+      "body": "Body"
+    },
+    "count": "{count, plural, one {notification} other {notifications}}",
+    "matchingFilters": "matching filters",
+    "export": "Export",
+    "exported": "{count, plural, one {# notification exported} other {# notifications exported}}",
+    "activeFilters": "Active filters:",
+    "clearAll": "Clear all",
+    "chip": {
+      "search": "Search: {q}",
+      "type": "Type: {label}",
+      "status": "Status: {label}"
+    },
+    "detail": {
+      "back": "Notifications",
+      "notFound": "Notification not found.",
+      "ctaPlaceholder": "Mock: would open {label}"
+    },
+    "fields": {
+      "ticket": "Ticket",
+      "priority": "Priority",
+      "customer": "Customer",
+      "slaDue": "SLA due",
+      "status": "Status",
+      "order": "Order",
+      "commenter": "Commenter",
+      "assignedBy": "Assigned by",
+      "raisedBy": "Raised by",
+      "queue": "Queue",
+      "reopenedBy": "Reopened by",
+      "previously": "Previously",
+      "resolvedBy": "Resolved by",
+      "resolution": "Resolution",
+      "appVersion": "App version",
+      "result": "Result",
+      "app": "App",
+      "action": "Action",
+      "operator": "Operator",
+      "invitedBy": "Invited by",
+      "expires": "Expires"
+    },
+    "party": {
+      "system": "System"
+    },
+    "events": {
+      "passwordReset": {
+        "title": "Your password was reset",
+        "summary": "An administrator started a password reset for your account",
+        "detail": "An administrator initiated a password reset. Use the link sent to your email to set a new password. The link expires in {expiresText}.",
+        "expires": "72 hours"
+      }
+    }
+  },
   "email": {
     "common": {
       "footerIgnore": "If you didn't request this, you can safely ignore this email.",
