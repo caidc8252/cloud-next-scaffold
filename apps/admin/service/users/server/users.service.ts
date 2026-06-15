@@ -11,6 +11,7 @@ import {
   ERR_USER_NOT_FOUND,
   ERR_USER_PROTECTED,
 } from "@cloud/request/error-codes";
+import { INVITE_TTL_MS, INVITE_TOKEN_BYTES } from "@cloud/platform-config";
 import { createLogger } from "@cloud/log";
 import { getTranslations } from "@cloud/i18n/server";
 import { isLocale } from "@cloud/i18n";
@@ -36,9 +37,6 @@ export { parseInviteId } from "./users.mapper";
 
 // 用户域业务编排。接收「已解析的入参 + 当前会话」，从不接触 Request / URLSearchParams。
 // 可预期错误一律 throw BusinessError（route 的 withApiHandler 统一兜底）。
-
-const INVITE_TTL_MS = 7 * 86_400_000;
-const INVITE_TOKEN_BYTES = 24;
 
 /** 邀请人 id → 显示用户名（本人走 session，其余查库，查不到回退 system）。 */
 async function resolveInviterName(session: ActiveSession, inviterUserId: number): Promise<string> {
@@ -66,22 +64,49 @@ export async function listUsersAndInvites(partyId: number): Promise<User[]> {
 
 export async function createInvite(session: ActiveSession, input: CreateInviteInput): Promise<User> {
   const partyId = session.currentPartyId;
-  const existing = await usersRepository.findPendingInviteByEmail(partyId, input.email);
-  if (existing) throw new BusinessError(ERR_USER_EMAIL_TAKEN);
+  const now = new Date();
+
+  // 1) 已是成员（任意状态）→ 拒
+  const existingUser = await usersRepository.findUserByEmail(input.email);
+  if (existingUser) {
+    const link = await usersRepository.findUserLink(partyId, existingUser.userId);
+    if (link) throw new BusinessError(ERR_USER_EMAIL_TAKEN);
+  }
 
   const roleIds = parseRoleIds(input.roleIds);
-  const invite = await usersRepository.createInvite({
-    partyId,
-    inviterPartyId: partyId,
-    inviterUserId: session.userId,
-    inviteEmail: input.email,
-    intendedRole: roleIds.map((roleId) => ({ roleId })),
-    token: randomBytes(INVITE_TOKEN_BYTES).toString("base64url"),
-    expiresAt: new Date(Date.now() + INVITE_TTL_MS),
-    creUserId: session.userId,
-  });
-
   const inviterName = session.displayName ?? "system";
+  const newToken = () => randomBytes(INVITE_TOKEN_BYTES).toString("base64url");
+  const expiresAt = new Date(now.getTime() + INVITE_TTL_MS);
+
+  // 2) 同邮箱旧邀请：未过期→拒，已过期→覆盖，无→新建
+  const pending = await usersRepository.findPendingInviteByEmail(partyId, input.email);
+  let invite;
+  if (pending && pending.expiresAt.getTime() > now.getTime()) {
+    throw new BusinessError(ERR_USER_EMAIL_TAKEN);
+  } else if (pending) {
+    invite = await usersRepository.updateInvite(pending.operatorInviteId, {
+      token: newToken(),
+      expiresAt,
+      intendedRole: roleIds.map((roleId) => ({ roleId })),
+      resendCount: 0,
+      status: "PENDING",
+      inviterPartyId: partyId,
+      inviterUserId: session.userId,
+      updUserId: session.userId,
+    });
+  } else {
+    invite = await usersRepository.createInvite({
+      partyId,
+      inviterPartyId: partyId,
+      inviterUserId: session.userId,
+      inviteEmail: input.email,
+      intendedRole: roleIds.map((roleId) => ({ roleId })),
+      token: newToken(),
+      expiresAt,
+      creUserId: session.userId,
+    });
+  }
+
   // 真发邀请邮件（含 onboarding accept 链接）。队列背压/节流异常会冒泡：邀请已落库，
   // 管理员可重发；这也让发信问题（背压/频率）显式可见。
   await sendInviteEmail({
@@ -192,14 +217,36 @@ export async function resendInvite(session: ActiveSession, inviteId: number): Pr
   const invite = await usersRepository.findPendingInvite(session.currentPartyId, inviteId);
   if (!invite) throw new BusinessError(ERR_USER_NO_PENDING_INVITE, 404);
 
+  // CONF-4: 重发只补发邮件，不刷新 token 或 expiresAt；过期邀请由 findPendingInvite 收紧后返回 null。
   const updated = await usersRepository.updateInvite(invite.operatorInviteId, {
-    expiresAt: new Date(Date.now() + INVITE_TTL_MS),
-    updUserId: session.userId,
     resendCount: { increment: 1 },
+    updUserId: session.userId,
   });
 
   const inviterName = await resolveInviterName(session, updated.inviterUserId);
   // 重发：再发一封邮件。收件人节流 60s 冷却会对连点重发抛 429（期望行为：提示稍后再试）。
+  await sendInviteEmail({
+    to: updated.inviteEmail,
+    partyName: session.partyName,
+    inviterName,
+    token: updated.token,
+    expiresAt: updated.expiresAt,
+  });
+  return toClientInvite(updated, inviterName);
+}
+
+/** 重新生成：换 token + 刷新有效期 + 重发；旧 token 立即失效。仅未过期邀请可用。 */
+export async function regenerateInvite(session: ActiveSession, inviteId: number): Promise<User> {
+  const invite = await usersRepository.findPendingInvite(session.currentPartyId, inviteId);
+  if (!invite) throw new BusinessError(ERR_USER_NO_PENDING_INVITE, 404);
+
+  const updated = await usersRepository.updateInvite(invite.operatorInviteId, {
+    token: randomBytes(INVITE_TOKEN_BYTES).toString("base64url"),
+    expiresAt: new Date(Date.now() + INVITE_TTL_MS),
+    updUserId: session.userId,
+  });
+
+  const inviterName = await resolveInviterName(session, updated.inviterUserId);
   await sendInviteEmail({
     to: updated.inviteEmail,
     partyName: session.partyName,

@@ -1,21 +1,149 @@
 openapi: 3.1.0
 info:
   title: 邀请入驻（invite-user / onboarding）API
-  version: 1.0.0-target
+  version: 1.1.0-target
   description: >
-    目标规格。onboarding 自有两个接口（验票 / 接受）；既有用户登录复用 /api/auth/*。
-    所有响应走统一信封：成功 successResponse({...})，错误 { code, message }，code 为 6 位字符串。
-    错误码是协议、message 仅展示。
+    目标规格。两侧端点：
+    (1) admin 侧「邀请管理」（场景一：操作员邀新同事，落 sys_operator_invite）——createInvite / list /
+        setInviteRoles / resend / regenerate / cancel；
+    (2) portal 侧「被邀请人接受」——验票 / 接受；既有用户登录复用 /api/auth/*。
+    所有响应走统一信封：成功 successResponse({...})/createdResponse({...})，错误 { code, message }，code 为 6 位字符串。
+    错误码是协议、message 仅展示。x-authorize 标每个 op 的服务端权限码（公开端点标 public）。
+    范围仅【场景一】；场景二（onboarding 首管/激活）、SSO、任意邮箱+验证码为待办，不在本契约。
 
 servers:
+  - url: https://admin.example.com
+    description: ADMIN 平台后台（操作员邀请管理）
   - url: https://portal.example.com
-    description: portal（统一登录入口，host 持有 sid 会话 cookie）
+    description: portal（统一登录入口 + 被邀请人接受）
 
 paths:
+  # ─────────────── admin 侧：邀请管理（场景一核心）───────────────
+  /api/system/users:
+    get:
+      operationId: listUsersAndInvites
+      x-authorize: users.VIEW
+      summary: 当前 Party 的运营人员列表（在册用户 + 待消费邀请合成的 PENDING 伪条目）
+      responses:
+        "200":
+          description: 列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/UserOrInvite" }
+    post:
+      operationId: createInvite
+      x-authorize: users.INVITE
+      summary: 邀请一名运营人员加入当前 Party（不预建用户，accept 时才建）
+      description: >
+        成员校验 + 过期覆盖（裁决 CONF-2/4）：
+        ① 邮箱已是本 Party 成员（任意状态，含 LOCKED）→ 400 ERR_USER_EMAIL_TAKEN；
+        ② 同邮箱有未过期 PENDING 邀请 → 400 ERR_USER_EMAIL_TAKEN；
+        ③ 同邮箱仅有已过期 PENDING 邀请 → 覆盖该行（新 token/有效期/角色 + 重发），不新建；
+        ④ 否则新建。落库后经 @cloud/mail 真发邀请邮件（收件人 60s 冷却）。
+        有效期取自 @cloud/platform-config 的 INVITE_TTL_MS（裁决 CONF-3）。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateInviteBody" }
+      responses:
+        "201":
+          description: 邀请已创建/覆盖并寄出（返回 PENDING 伪条目）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/UserOrInvite" }
+        "400":
+          description: 邮箱格式非法 / 邮箱已是成员或已有未过期邀请（业务错误默认 400）
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                invalid: { value: { code: "101001", message: "请输入有效的邮箱地址。" } }
+                taken:   { value: { code: "101002", message: "该邮箱地址已被使用。" } }
+
+  /api/system/users/{userId}/invite-roles:
+    put:
+      operationId: setInviteRoles
+      x-authorize: users.CHANGE_ROLE
+      summary: 改未过期 PENDING 邀请的预置角色
+      description: 仅未过期 PENDING 可改；已过期/已消费 → 404 ERR_USER_NO_PENDING_INVITE（要改去 createInvite 覆盖）。裁决 CONF-4。
+      parameters: [{ $ref: "#/components/parameters/InviteId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SetInviteRolesBody" }
+      responses:
+        "200":
+          description: 已更新
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { $ref: "#/components/schemas/UserOrInvite" } } }
+        "404": { $ref: "#/components/responses/NoPendingInvite" }
+
+  /api/system/users/{userId}/resend-invite:
+    post:
+      operationId: resendInvite
+      x-authorize: users.INVITE
+      summary: 重发未过期 PENDING 邀请（仅重寄同一封，不改 token/有效期）
+      description: 仅未过期可重发；已过期 → 404 ERR_USER_NO_PENDING_INVITE。只 resendCount+1，token/expiresAt 不变。裁决 CONF-4。收件人 60s 冷却命中 → 429。
+      parameters: [{ $ref: "#/components/parameters/InviteId" }]
+      responses:
+        "200":
+          description: 已重寄
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { $ref: "#/components/schemas/UserOrInvite" } } }
+        "404": { $ref: "#/components/responses/NoPendingInvite" }
+        "429": { $ref: "#/components/responses/MailThrottled" }
+
+  /api/system/users/{userId}/regenerate-invite:
+    post:
+      operationId: regenerateInvite
+      x-authorize: users.INVITE
+      summary: 重新生成未过期 PENDING 邀请（换 token + 刷有效期 + 重发；旧链接立即失效）
+      description: 用于链接疑似泄露的轮换。仅未过期可用；已过期 → 404 ERR_USER_NO_PENDING_INVITE。不改 resendCount。裁决 CONF-4。收件人 60s 冷却命中 → 429。
+      parameters: [{ $ref: "#/components/parameters/InviteId" }]
+      responses:
+        "200":
+          description: 已重新生成
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { $ref: "#/components/schemas/UserOrInvite" } } }
+        "404": { $ref: "#/components/responses/NoPendingInvite" }
+        "429": { $ref: "#/components/responses/MailThrottled" }
+
+  /api/system/users/{userId}/cancel-invite:
+    post:
+      operationId: cancelInvite
+      x-authorize: users.INVITE
+      summary: 撤销待消费邀请（任意 PENDING，含已过期）
+      description: 仅 PENDING 可撤；已消费/不存在 → ERR_USER_CANCEL_NOT_PENDING。撤销后 token 立即失效。
+      parameters: [{ $ref: "#/components/parameters/InviteId" }]
+      responses:
+        "204": { description: 已撤销 }
+        "400":
+          description: 非待处理邀请
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples: { notPending: { value: { code: "101007", message: "只能取消待处理的邀请。" } } }
+
+  # ─────────────── portal 侧：被邀请人接受 ───────────────
   /api/onboarding/invite:
     get:
+      operationId: getInvite
+      x-authorize: public
       summary: 验票 — 解析邀请链接
-      description: 公开（无需会话）。按 token 查邀请，必须 PENDING 且未过期。
+      description: 公开（无需会话）。按 token 查邀请，必须 PENDING 且未过期。token 不存在不泄露任何 party 信息。
       parameters:
         - in: query
           name: token
@@ -30,7 +158,9 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/InvitePublic"
+                    type: object
+                    properties:
+                      invitation: { $ref: "#/components/schemas/InvitePublic" }
         "404":
           description: 不存在 / 过期 / 已消费
           content:
@@ -43,10 +173,14 @@ paths:
 
   /api/onboarding/accept:
     post:
-      summary: 接受邀请 — 绑定 + 消费 + 激活 + 建会话
+      operationId: acceptInvite
+      x-authorize: public
+      summary: 接受邀请 — 绑定 + 消费 + 建会话
       description: >
         两模式。existing：用当前会话用户绑定（需 sid 会话）。register：用被邀邮箱新建账号并绑定。
-        全程单事务；成功返回前端应跳转的 redirectTo（对应 console 的 handoff URL，或 /select-partner）。
+        【场景一 · 裁决 CONF-1】被邀人恒以 authorizingType=NORMAL 绑定，**不激活 Party**（party 已 ACTIVE）；
+        首管/激活属场景二（待办）。全程单事务；账号已是成员 → 幂等成功（alreadyMember=true，不降级）。
+        成功返回前端应跳转的 redirectTo（恰好 1 可选 Party → 对应 console handoff URL；多/零选 → /select-partner）。
       requestBody:
         required: true
         content:
@@ -71,7 +205,12 @@ paths:
                       alreadyMember: { type: boolean, description: 该账号此前已是该 party 成员 }
         "400":
           description: 密码不合规 / 加密无效 / 请求过期
-          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                weak:    { value: { code: "104005", message: "Password does not meet policy." } }
+                replay:  { value: { code: "103011", message: "Request expired." } }
         "401":
           description: mode=existing 但无有效会话
           content:
@@ -91,6 +230,8 @@ paths:
   # ── 复用的既有登录接口（onboarding 既有用户路径）。完整定义见 portal/api-spec。──
   /api/auth/login-challenge:
     get:
+      operationId: loginChallenge
+      x-authorize: public
       summary: （复用）发 serverTimestamp + nonce
       description: register 加密新密码、既有用户登录共用。
       responses:
@@ -109,6 +250,8 @@ paths:
 
   /api/auth/password:
     post:
+      operationId: loginPassword
+      x-authorize: public
       summary: （复用）既有用户登录，支持 returnTo
       description: >
         带 returnTo 时（限站内 /onboarding 前缀）：认证成功后只建 portal 会话、返回 { redirectTo: returnTo }，
@@ -138,6 +281,8 @@ paths:
 
   /api/auth/mfa:
     post:
+      operationId: verifyMfa
+      x-authorize: public
       summary: （复用）MFA 二段校验
       description: returnTo 由 mfaToken 透传；成功后若带 returnTo → 建 portal 会话 + 跳 returnTo。
       requestBody:
@@ -158,7 +303,66 @@ paths:
               schema: { type: object, properties: { data: { type: object, properties: { redirectTo: { type: string } } } } }
 
 components:
+  parameters:
+    InviteId:
+      in: path
+      name: userId
+      required: true
+      description: 复用 [userId] 路径段；邀请操作时其值为合成邀请 id `invite-<operatorInviteId>`（与真实用户数字 id 区分）。
+      schema: { type: string, pattern: "^invite-[0-9]+$" }
+
+  responses:
+    NoPendingInvite:
+      description: 无未过期待处理邀请（不存在 / 已过期 / 已消费）
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples: { none: { value: { code: "101006", message: "该用户没有待处理的邀请。" } } }
+    MailThrottled:
+      description: 收件人发信冷却中（60s）
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
   schemas:
+    CreateInviteBody:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email, description: 被邀邮箱 }
+        roleIds:
+          type: array
+          description: 预置角色（多选，可空）
+          items: { oneOf: [{ type: string }, { type: integer }] }
+
+    SetInviteRolesBody:
+      type: object
+      properties:
+        roleIds:
+          type: array
+          description: 省略表示不动角色
+          items: { oneOf: [{ type: string }, { type: integer }] }
+
+    UserOrInvite:
+      type: object
+      description: >
+        列表/邀请操作的统一 VO：在册用户 或 PENDING 伪条目（id 形如 invite-<id>，status=PENDING）。
+        邀请行带 invite* 字段；前端用 inviteExpiresAt < now 判过期以决定可显操作。
+      properties:
+        id: { type: string, description: 真实用户为数字串；邀请为 `invite-<operatorInviteId>` }
+        status: { type: string, enum: [ACTIVE, INACTIVE, PENDING] }
+        displayName: { type: string }
+        email: { type: string }
+        roleIds: { type: array, items: { type: string } }
+        authorizingType: { type: string, enum: [ADMIN, NORMAL] }
+        # 邀请伪条目专属：
+        inviteEmail: { type: string, format: email }
+        inviteToken: { type: string }
+        inviteExpiresAt: { type: string, format: date-time }
+        invitedAt: { type: string, format: date-time }
+        invitedBy: { type: string }
+        resendCount: { type: integer }
+
     InvitePublic:
       type: object
       description: 验票返回（不含 token 以外的敏感字段）

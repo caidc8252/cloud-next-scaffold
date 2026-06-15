@@ -19,3 +19,4 @@ export {
   resolvePortalGroup,
   roleIdInGroupRange,
 } from "./contract-group.ts";
+export { INVITE_TTL_MS, INVITE_TOKEN_BYTES } from "./invite.ts";

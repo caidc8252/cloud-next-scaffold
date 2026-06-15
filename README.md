@@ -387,7 +387,7 @@ export function Example() {
 
 ### 用户邀请
 
-通过邮箱邀请新用户，生成邀请链接 `https://{域名}/invite?token=xxx`。邀请人可预分配角色，受邀人完成注册后角色生效。
+通过邮箱邀请新用户，生成邀请链接 `https://{域名}/onboarding?token=xxx`。邀请人可预分配角色，受邀人完成注册后角色生效。
 
 ### 用户操作权限
 

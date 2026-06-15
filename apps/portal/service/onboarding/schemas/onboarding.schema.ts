@@ -29,5 +29,4 @@ export type InvitePublic = {
 
 export type AcceptResult = {
   redirectTo: string;
-  alreadyMember: boolean;
 };
