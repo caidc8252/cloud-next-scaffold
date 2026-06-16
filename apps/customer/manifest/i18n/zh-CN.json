@@ -1,0 +1,6 @@
+{
+  "role": {
+    "customerPresetAdmin": "客户管理员",
+    "customerPresetAdminDesc": "内置客户管理员角色"
+  }
+}

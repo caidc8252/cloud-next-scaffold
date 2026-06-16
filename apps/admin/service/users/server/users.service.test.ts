@@ -55,7 +55,7 @@ const session = {
   displayName: "admin",
   currentPartyId: 100,
   partyName: "Acme",
-  permissions: ["users.UPD"],
+  permissions: ["users.update"],
 } as unknown as ActiveSession;
 
 function userRow(overrides: Record<string, unknown> = {}) {
@@ -183,7 +183,7 @@ describe("updateUser", () => {
     });
   });
 
-  it("rejects a role change without users.CHANGE_ROLE permission", async () => {
+  it("rejects a role change without users.changeRole permission", async () => {
     vi.mocked(repo.findUserLink).mockResolvedValue({
       authorizingType: "NORMAL",
       roles: [{ roleId: 5 }],

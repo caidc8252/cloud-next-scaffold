@@ -51,7 +51,7 @@ function dbRole(over: Record<string, unknown> = {}) {
     partyId: 100,
     startDate: new Date("2026-06-01T00:00:00Z"),
     endDate: new Date("2026-12-31T00:00:00Z"),
-    permissionCodes: ["users.VIEW"],
+    permissionCodes: ["users.view"],
     ...over,
   };
 }
@@ -134,14 +134,14 @@ describe("buildSessionSnapshot", () => {
     vi.mocked(getRoles).mockReturnValue([
       { roleId: 1, roleName: "Administrator", permissionCodes: [] },
     ] as never);
-    // getRoles 已在构造期把 roleId 1 填成组权限；这里模拟 resolveRolePermissions 返回该组权限（含一个组外码）。
-    vi.mocked(resolveRolePermissions).mockReturnValue(["users.VIEW", "roles.VIEW", "out.OF_SCOPE"]);
-    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["users.VIEW", "roles.VIEW"]));
+    // roleId 1（预置超管）显式列码；这里模拟 resolveRolePermissions 返回其码（含一个组外码 out.OF_SCOPE）。
+    vi.mocked(resolveRolePermissions).mockReturnValue(["users.view", "roles.view", "out.OF_SCOPE"]);
+    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["users.view", "roles.view"]));
 
     const snap = await buildSessionSnapshot(1, 100, NOW);
 
     // 组权限 ∩ party scope：out.OF_SCOPE 被砍。
-    expect(snap?.permissions.slice().sort()).toEqual(["roles.VIEW", "users.VIEW"]);
+    expect(snap?.permissions.slice().sort()).toEqual(["roles.view", "users.view"]);
   });
 
   it("grants a non-preset code role its own permission codes intersected with scope", async () => {
@@ -151,15 +151,15 @@ describe("buildSessionSnapshot", () => {
     ] as never);
     vi.mocked(prisma.sysPartyContract.findMany).mockResolvedValue([VALID_CONTRACT] as never);
     vi.mocked(getRoles).mockReturnValue([
-      { roleId: 2, roleName: "Operator", permissionCodes: ["roles.VIEW"] },
+      { roleId: 2, roleName: "Operator", permissionCodes: ["roles.view"] },
     ] as never);
-    vi.mocked(resolveRolePermissions).mockReturnValue(["roles.VIEW", "ghost.X"]);
-    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["roles.VIEW", "users.VIEW"]));
+    vi.mocked(resolveRolePermissions).mockReturnValue(["roles.view", "ghost.x"]);
+    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["roles.view", "users.view"]));
 
     const snap = await buildSessionSnapshot(1, 100, NOW);
 
-    // 非预置编码角色取 resolveRolePermissions ∩ scope：roles.VIEW 在 scope，ghost.X 不在。
-    expect(snap?.permissions).toEqual(["roles.VIEW"]);
+    // 非预置编码角色取 resolveRolePermissions ∩ scope：roles.view 在 scope，ghost.x 不在。
+    expect(snap?.permissions).toEqual(["roles.view"]);
   });
 
   it("grants a normal DB role only its own codes intersected with scope", async () => {
@@ -169,14 +169,14 @@ describe("buildSessionSnapshot", () => {
     ] as never);
     vi.mocked(prisma.sysPartyContract.findMany).mockResolvedValue([VALID_CONTRACT] as never);
     vi.mocked(prisma.sysRole.findMany).mockResolvedValue([
-      dbRole({ permissionCodes: ["users.VIEW", "ghost.X"] }),
+      dbRole({ permissionCodes: ["users.view", "ghost.x"] }),
     ] as never);
-    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["users.VIEW", "roles.VIEW"]));
+    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["users.view", "roles.view"]));
 
     const snap = await buildSessionSnapshot(1, 100, NOW);
 
-    // ghost.X 不在 scope 被砍；roles.VIEW 未被该角色授予。
-    expect(snap?.permissions).toEqual(["users.VIEW"]);
+    // ghost.x 不在 scope 被砍；roles.view 未被该角色授予。
+    expect(snap?.permissions).toEqual(["users.view"]);
   });
 
   it("no longer grants all scope to an authorizingType=ADMIN user without a preset role", async () => {
@@ -186,13 +186,13 @@ describe("buildSessionSnapshot", () => {
     ] as never);
     vi.mocked(prisma.sysPartyContract.findMany).mockResolvedValue([VALID_CONTRACT] as never);
     vi.mocked(prisma.sysRole.findMany).mockResolvedValue([
-      dbRole({ permissionCodes: ["users.VIEW"] }),
+      dbRole({ permissionCodes: ["users.view"] }),
     ] as never);
-    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["users.VIEW", "roles.VIEW"]));
+    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["users.view", "roles.view"]));
 
     const snap = await buildSessionSnapshot(1, 100, NOW);
 
-    // 旧模型会因 ADMIN 拿到整个 scope（含 roles.VIEW）；新模型只给角色自身码 ∩ scope。
-    expect(snap?.permissions).toEqual(["users.VIEW"]);
+    // 旧模型会因 ADMIN 拿到整个 scope（含 roles.view）；新模型只给角色自身码 ∩ scope。
+    expect(snap?.permissions).toEqual(["users.view"]);
   });
 });

@@ -7,6 +7,7 @@ import type { Role, User, PermissionGroup } from "@/app/(portal)/system/_shared/
 import { relTime } from "@/app/(portal)/system/_shared/helpers";
 import { ConfirmModal } from "@/app/(portal)/system/_shared/confirm-modal";
 import { PermissionsCard } from "./permissions-card";
+import { applyGrant, computeLocked } from "./require-chain";
 
 type RoleEditorProps = {
   role: Role;
@@ -41,6 +42,10 @@ export function RoleEditor({ role, users, permissionGroups, onSave, onDuplicate,
   const assignedUsers = users.filter((u) => u.roleIds.includes(role.id));
   const locked = role.builtin || saving; // builtin 不可编辑；保存期间锁住属性
 
+  // require 链：全菜单的权限项拍平，供联动勾选；lockedPerms = 被已授予后代依赖的前置（不可单独取消）。
+  const allItems = useMemo(() => permissionGroups.flatMap((g) => g.items), [permissionGroups]);
+  const lockedPerms = useMemo(() => computeLocked(allItems, draft.permissions), [allItems, draft.permissions]);
+
   async function save() {
     setSaving(true);
     try {
@@ -50,23 +55,17 @@ export function RoleEditor({ role, users, permissionGroups, onSave, onDuplicate,
     }
   }
 
+  // 单项切换沿 require 链联动：勾选连带勾前置，取消连带取消依赖。
   function togglePerm(code: string) {
-    const perms = draft.permissions.includes(code)
-      ? draft.permissions.filter((p) => p !== code)
-      : [...draft.permissions, code];
-    setDraft({ ...draft, permissions: perms });
+    const grant = !draft.permissions.includes(code);
+    setDraft({ ...draft, permissions: applyGrant(allItems, draft.permissions, code, grant) });
   }
 
   function toggleGroup(menuId: string, grant: boolean) {
     const group = permissionGroups.find((g) => g.menuId === menuId);
-    const groupCodes = group ? group.items.map((p) => p.code) : [];
-    let perms: string[];
-    if (grant) {
-      perms = [...new Set([...draft.permissions, ...groupCodes])];
-    } else {
-      const removeSet = new Set(groupCodes);
-      perms = draft.permissions.filter((p) => !removeSet.has(p));
-    }
+    if (!group) return;
+    let perms = draft.permissions;
+    for (const it of group.items) perms = applyGrant(allItems, perms, it.code, grant);
     setDraft({ ...draft, permissions: perms });
   }
 
@@ -99,7 +98,7 @@ export function RoleEditor({ role, users, permissionGroups, onSave, onDuplicate,
       </div>
       <div className="flex flex-col pt-4 px-5 pb-6 gap-5">
         <PermissionsCard key={role.id} groups={permissionGroups} permissions={draft.permissions}
-          onTogglePerm={togglePerm} onToggleGroup={toggleGroup} disabled={locked} />
+          locked={lockedPerms} onTogglePerm={togglePerm} onToggleGroup={toggleGroup} disabled={locked} />
 
         <Card>
           <CardHeader><CardTitle>Description</CardTitle></CardHeader>

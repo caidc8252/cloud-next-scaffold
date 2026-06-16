@@ -38,8 +38,8 @@ describe("rolesChanged", () => {
 });
 
 describe("canChangeRoles", () => {
-  it("requires the users.CHANGE_ROLE permission", () => {
-    expect(canChangeRoles(["users.UPD", "users.CHANGE_ROLE"])).toBe(true);
-    expect(canChangeRoles(["users.UPD"])).toBe(false);
+  it("requires the users.changeRole permission", () => {
+    expect(canChangeRoles(["users.update", "users.changeRole"])).toBe(true);
+    expect(canChangeRoles(["users.update"])).toBe(false);
   });
 });

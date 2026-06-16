@@ -1,0 +1,41 @@
+{
+  "menu": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "system": "System",
+    "roles": "Roles",
+    "users": "Users"
+  },
+  "permission": {
+    "rolesView": "View Roles",
+    "rolesViewDesc": "View role list and details",
+    "rolesAdd": "Create Role",
+    "rolesAddDesc": "Create new role",
+    "rolesUpdate": "Edit Role",
+    "rolesUpdateDesc": "Edit role name, description, permissions",
+    "rolesDelete": "Delete Role",
+    "rolesDeleteDesc": "Delete non-builtin role",
+    "rolesDuplicate": "Duplicate Role",
+    "rolesDuplicateDesc": "Copy an existing role",
+    "usersView": "View Users",
+    "usersViewDesc": "View user list and details",
+    "usersAdd": "Create User",
+    "usersAddDesc": "Create user (direct mode)",
+    "usersInvite": "Invite User",
+    "usersInviteDesc": "Invite user (email mode)",
+    "usersUpdate": "Edit User",
+    "usersUpdateDesc": "Edit user display name, email, remark",
+    "usersLock": "Lock User",
+    "usersLockDesc": "Lock / unlock user account",
+    "usersResetPassword": "Reset Password",
+    "usersResetPasswordDesc": "Force-reset user password",
+    "usersChangeRole": "Change Role",
+    "usersChangeRoleDesc": "Change user's assigned role"
+  },
+  "role": {
+    "adminPresetAdmin": "Administrator",
+    "adminPresetAdminDesc": "Built-in administrator role",
+    "adminOperator": "Operator",
+    "adminOperatorDesc": "Read-only operator role"
+  }
+}

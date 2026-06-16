@@ -25,7 +25,7 @@
   - 权限判断要尽量贴近实际页面和数据入口
 - 权限模型（roleId 驱动）：会话权限 = 所绑角色的权限码并集（预置通配管理员角色 roleId 1/101 → 注入当前 party 的 scope）再 ∩ party scope
   - party scope = `resolvePartyScope(contractTypes)` = 当前 party 有效契约可达菜单声明的全部权限码
-  - 角色两类：**编码角色**（roleId ≤ 300，定义在 `apps/*/manifest/_roles.map.ts`，只读、不入库）+ **DB PRIVATE 角色**（roleId ≥ 1001，`sys_role` 表）
+  - 角色两类：**编码角色**（roleId ≤ 1000，定义在 `apps/*/manifest/_roles.map.ts`，只读、不入库）+ **DB PRIVATE 角色**（roleId ≥ 1001，`sys_role` 表）
   - `authorizingType` 字段保留作展示标志，**不再驱动权限**（管理员靠绑定 Administrator 预置角色获得 scope）
 - 如果要新增细粒度权限，保持这条链路一致：
   - 在 `apps/<app>/manifest/_menu.map.ts` 给对应菜单加 permission code，跑 `pnpm gen:manifest`

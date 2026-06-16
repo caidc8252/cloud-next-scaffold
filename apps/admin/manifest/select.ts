@@ -15,19 +15,13 @@ export type MenuTreeNode = {
 export type PermissionGroup = {
   menuCode: string;
   menuTitle: string;
-  items: { code: string; label: string; desc: string }[];
+  items: { code: string; label: string; desc: string; require: string | null }[];
 };
 
-/** "users.VIEW" -> "Users View"。仅在 permission 未给 label 时兜底。 */
-function labelFromCode(code: string): string {
-  return code
-    .split(/[.:]/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(" ");
-}
-
-/** 按菜单分组的权限目录（角色编辑器 / ADMIN 展开用）。只含带权限的菜单。 */
+/**
+ * 按菜单分组的权限目录（角色编辑器 / ADMIN 展开用）。只含带权限的菜单。
+ * label/desc 为 i18n key（相对 coc），原样透传由展示端 t() 翻译；require 供 UI 链式联动。
+ */
 export function selectPermissionGroups(menus: MenuEntry[]): PermissionGroup[] {
   return menus
     .filter((m) => (m.permissions?.length ?? 0) > 0)
@@ -36,8 +30,9 @@ export function selectPermissionGroups(menus: MenuEntry[]): PermissionGroup[] {
       menuTitle: m.menuTitle,
       items: (m.permissions ?? []).map((p) => ({
         code: p.code,
-        label: p.label ?? labelFromCode(p.code),
+        label: p.label ?? p.code,
         desc: p.desc ?? "",
+        require: p.require ?? null,
       })),
     }));
 }

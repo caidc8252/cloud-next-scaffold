@@ -5,6 +5,9 @@ import type { MenuEntry, RoleDef } from "./types.ts";
 const CODE_ROLE_MIN = 1;
 const CODE_ROLE_MAX = 300;
 
+// 权限码规范：<域>.<动作> 全小写 camel，单个点分隔。挡住 UPPER_SNAKE / 冒号等历史写法。
+const PERMISSION_CODE_RE = /^[a-z][a-zA-Z0-9]*\.[a-z][a-zA-Z0-9]*$/;
+
 export type ValidateOptions = {
   /** 合法契约码清单（不含 `*`）。提供时校验每个 menu 的 contractTypes 都在清单内。 */
   contractTypes?: readonly string[];
@@ -31,6 +34,21 @@ function detectCycle(menus: MenuEntry[]): void {
   }
 }
 
+// require 链禁止成环（保证授权 UI 链式展开有限）。
+function detectRequireCycle(menus: MenuEntry[]): void {
+  const reqOf = new Map<string, string | null>();
+  for (const m of menus) for (const p of m.permissions ?? []) reqOf.set(p.code, p.require ?? null);
+  for (const [start] of reqOf) {
+    const seen = new Set<string>();
+    let cur: string | null = start;
+    while (cur != null) {
+      if (seen.has(cur)) fail(`permission require chain has a cycle at "${start}"`);
+      seen.add(cur);
+      cur = reqOf.get(cur) ?? null;
+    }
+  }
+}
+
 /**
  * 聚合菜单池的完整性校验（全局，跨 app 已拍平成一份）。任一项不满足即抛错。
  * - menuCode / permissionCode 全局唯一
@@ -46,6 +64,9 @@ export function validateMenus(menus: MenuEntry[], opts: ValidateOptions = {}): v
   const menuCodes = new Set<string>();
   const permissionCodes = new Set<string>();
   const childCount = new Map<string, number>();
+  // require 边（from 依赖 to）+ code→所属菜单：等权限码池建完后统一校验存在性 / 同菜单。
+  const requireEdges: { from: string; to: string; menu: string }[] = [];
+  const codeToMenu = new Map<string, string>();
 
   for (const m of menus) {
     if (menuCodes.has(m.menuCode)) fail(`duplicate menuCode "${m.menuCode}"`);
@@ -62,8 +83,13 @@ export function validateMenus(menus: MenuEntry[], opts: ValidateOptions = {}): v
     }
 
     for (const p of m.permissions ?? []) {
+      if (!PERMISSION_CODE_RE.test(p.code)) {
+        fail(`permission code "${p.code}" bad format (expected lowercase camel <domain>.<action>)`);
+      }
       if (permissionCodes.has(p.code)) fail(`duplicate permissionCode "${p.code}"`);
       permissionCodes.add(p.code);
+      codeToMenu.set(p.code, m.menuCode);
+      if (p.require != null) requireEdges.push({ from: p.code, to: p.require, menu: m.menuCode });
     }
 
     if (m.parentMenuCode) {
@@ -81,7 +107,18 @@ export function validateMenus(menus: MenuEntry[], opts: ValidateOptions = {}): v
     }
   }
 
+  // require 目标：必须存在、且与依赖方同菜单（不可跨菜单）。
+  for (const e of requireEdges) {
+    if (!permissionCodes.has(e.to)) {
+      fail(`permission "${e.from}" require target "${e.to}" not found`);
+    }
+    if (codeToMenu.get(e.to) !== e.menu) {
+      fail(`permission "${e.from}" require "${e.to}" is cross-menu (must be in menu "${e.menu}")`);
+    }
+  }
+
   detectCycle(menus);
+  detectRequireCycle(menus);
 }
 
 export type ValidateRolesOptions = {

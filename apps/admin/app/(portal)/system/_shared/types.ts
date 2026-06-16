@@ -2,6 +2,7 @@ export type PermissionItem = {
   code: string;
   label: string;
   desc: string;
+  require: string | null;
 };
 
 export type PermissionGroup = {

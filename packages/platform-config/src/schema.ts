@@ -7,6 +7,7 @@ const menuPermissionSchema = z.object({
   code: z.string().min(1),
   label: z.string().min(1).optional(),
   desc: z.string().optional(),
+  require: z.string().min(1).nullable().optional(),
 });
 
 const menuEntrySchema = z.object({
@@ -30,6 +31,7 @@ export const appManifestSchema = z.object({
 const roleDefSchema = z.object({
   roleId: z.number().int().positive(),
   roleName: z.string().min(1),
+  remark: z.string().min(1),
   permissionCodes: z.array(z.string().min(1)),
 });
 

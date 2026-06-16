@@ -7,12 +7,12 @@ import { updateUser } from "@/service/users/server/users.service";
 import { withApiHandler } from "@/lib/api-handler";
 
 /**
- * 更新某运营人员在当前 partner 下的 remark 与/或角色。需要 users.UPD;
- * 改角色额外需要 users.CHANGE_ROLE(service 内做范围校验),受保护用户只能改 remark。
+ * 更新某运营人员在当前 partner 下的 remark 与/或角色。需要 users.update;
+ * 改角色额外需要 users.changeRole(service 内做范围校验),受保护用户只能改 remark。
  */
 export const PUT = withApiHandler(
   async (req: Request, { params }: { params: Promise<{ userId: string }> }) => {
-    const session = await assertPermissions({ all: ["users.UPD"] });
+    const session = await assertPermissions({ all: ["users.update"] });
     const { userId: rawId } = await params;
     const userId = Number(rawId);
     if (!Number.isFinite(userId)) throw new BusinessError(ERR_INVALID_ID);

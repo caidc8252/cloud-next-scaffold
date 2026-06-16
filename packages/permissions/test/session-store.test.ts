@@ -33,7 +33,7 @@ const snapshot: Omit<Session, "loginAt" | "expireAt"> = {
   contractTypes: ["ADMIN"],
   authorizingType: "ADMIN",
   roles: [{ roleId: 1, roleName: "Administrator", roleType: "GLOBAL" }],
-  permissions: ["roles.VIEW", "users.VIEW"],
+  permissions: ["roles.view", "users.view"],
   partners: [
     { partyId: 9, partyName: "Acme", authorizingType: "ADMIN", status: "ACTIVE", authorizingFrom: null, authorizingTo: null },
     { partyId: 10, partyName: "Beta", authorizingType: "NORMAL", status: "ACTIVE", authorizingFrom: null, authorizingTo: null },
@@ -62,7 +62,7 @@ describe("sessionStore", () => {
     expect(stored).toMatchObject({
       userId: 7,
       currentPartyId: 9,
-      permissions: ["roles.VIEW", "users.VIEW"],
+      permissions: ["roles.view", "users.view"],
       mfaPassed: true,
     });
     expect(stored.partners).toHaveLength(2);
@@ -79,7 +79,7 @@ describe("sessionStore", () => {
   it("read() returns the stored session, or null when absent", async () => {
     const { sid } = await sessionStore.create(snapshot);
     const read = await sessionStore.read(sid);
-    expect(read).toMatchObject({ userId: 7, permissions: ["roles.VIEW", "users.VIEW"] });
+    expect(read).toMatchObject({ userId: 7, permissions: ["roles.view", "users.view"] });
     expect(await sessionStore.read("missing")).toBeNull();
   });
 
@@ -100,7 +100,7 @@ describe("sessionStore", () => {
     await sessionStore.update(sid, { ...snapshot, loginAt: partial.loginAt });
     const full = (await sessionStore.read(sid))!;
     expect(full.currentPartyId).toBe(9);
-    expect(full.permissions).toEqual(["roles.VIEW", "users.VIEW"]);
+    expect(full.permissions).toEqual(["roles.view", "users.view"]);
     expect(full.loginAt).toBe(partial.loginAt);
   });
 

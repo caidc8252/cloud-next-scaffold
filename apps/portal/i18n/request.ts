@@ -7,6 +7,8 @@ import type { Locale } from "@cloud/i18n";
 export default createI18nRequestConfig({
   loadMessages: async (locale: Locale) => {
     const messages = (await import(`./messages/${locale}.json`)).default;
-    return messages;
+    // coc 命名空间：菜单 / 权限 / 角色文案（gen:manifest 全量并集产物）。
+    const coc = (await import(`@/manifest/_generated/i18n/${locale}.json`)).default;
+    return { ...messages, coc };
   },
 });

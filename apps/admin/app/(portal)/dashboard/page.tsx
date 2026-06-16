@@ -8,6 +8,10 @@ export default async function DashboardPage() {
   // dashboard 为登录可见页（菜单无 permissions），守卫用 requireSession（不挂具体权限码）。
   const session = await requireSession();
   const t = await getTranslations("dashboard");
+  const tc = await getTranslations("coc");
+  // 死写角色（roleId ≤ 1000，含预留区间）名称是 coc i18n key → 翻译；DB 动态角色（≥1001）是用户字面量 → 原样。
+  const roleLabel = (r: { roleId: number; roleName: string }) =>
+    r.roleId <= 1000 ? tc(r.roleName) : r.roleName;
 
   return (
     <PageBody>
@@ -38,7 +42,7 @@ export default async function DashboardPage() {
             <Card>
               <CardHeader>
                 <CardDescription>{t("roles")}</CardDescription>
-                <CardTitle>{session.roles.map((r) => r.roleName).join(", ")}</CardTitle>
+                <CardTitle>{session.roles.map(roleLabel).join(", ")}</CardTitle>
               </CardHeader>
             </Card>
           </div>

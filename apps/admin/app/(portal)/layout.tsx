@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { Layout, Sidebar, type SidebarSection } from "@cloud/ui/components/layout";
 import { SidebarProvider, SIDEBAR_COOKIE } from "@cloud/ui";
 import { requireSession } from "@cloud/permissions/server";
+import { getTranslations } from "@cloud/i18n/server";
 import { getSessionMenus } from "@/lib/session-menus";
 import { UserMenu } from "./_components/user-menu";
 import { getMenuIcon } from "./_components/menu-icon";
@@ -88,9 +89,11 @@ export default async function PortalLayout({
   const cookieStore = await cookies();
   const defaultCollapsed = cookieStore.get(SIDEBAR_COOKIE)?.value === "1";
 
+  // menuTitle 是 coc 命名空间下的 i18n key，侧边栏在此翻译。
+  const tc = await getTranslations("coc");
   const menus: Menu[] = (await getSessionMenus()).map((m) => ({
     id: m.menuId,
-    label: m.menuTitle,
+    label: tc(m.menuTitle),
     path: m.path,
     icon: m.icon ?? "layout-dashboard",
     parentMenuId: m.parentMenuId,

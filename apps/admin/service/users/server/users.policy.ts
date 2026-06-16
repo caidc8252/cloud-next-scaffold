@@ -30,7 +30,7 @@ export function rolesChanged(currentRoleIds: number[], requestedRoleIds: number[
   );
 }
 
-/** 改角色需要 users.CHANGE_ROLE（在已具备 users.UPD 的基础上的范围校验）。 */
+/** 改角色需要 users.changeRole（在已具备 users.update 的基础上的范围校验）。 */
 export function canChangeRoles(permissions: readonly string[]): boolean {
-  return hasPermissions(permissions, { all: ["users.CHANGE_ROLE"] });
+  return hasPermissions(permissions, { all: ["users.changeRole"] });
 }
