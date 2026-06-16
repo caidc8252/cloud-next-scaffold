@@ -10,7 +10,7 @@ const { kvStore, kvMock, cookieJar, cookieStore, redirectMock } = vi.hoisted(() 
     cookieJar,
     kvMock: {
       get: vi.fn(async (key: string) => (kvStore.has(key) ? kvStore.get(key) : null)),
-      set: vi.fn(async (key: string, value: unknown, _ttl?: number) => {
+      set: vi.fn(async (key: string, value: unknown) => {
         kvStore.set(key, value);
       }),
       del: vi.fn(async (key: string) => {

@@ -3,7 +3,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
 export default function ForbiddenPage() {
   return (
     <main className="login-screen">
-      <Card className="login-card" style={{ maxWidth: 480 }}>
+      <Card className="login-card max-w-120">
         <CardHeader className="login-card__body">
           <div className="login-grid">
             <CardTitle>Access denied</CardTitle>

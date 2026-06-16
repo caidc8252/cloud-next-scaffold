@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
-import { Button, Card, PageBody } from "@cloud/ui";
+import { Button, Card, CardContent, PageBody } from "@cloud/ui";
 import { useTranslations } from "@cloud/i18n/client";
 import type { Notice } from "@/service/notification/types";
 import { useNotifications } from "../../_components/notifications-provider";
@@ -79,7 +79,8 @@ export function NotificationDetail({ notice, currentPartyName }: { notice: Notic
         </div>
       </div>
 
-      <Card elevation={1} className="mt-4 max-w-4xl p-5">
+      <Card elevation={1} className="mt-4 max-w-4xl">
+        <CardContent>
         {payload.detail ? (
           <p className="text-sm leading-relaxed text-content-secondary">
             {payload.detail}
@@ -132,6 +133,7 @@ export function NotificationDetail({ notice, currentPartyName }: { notice: Notic
             )}
           </div>
         )}
+        </CardContent>
       </Card>
     </PageBody>
   );

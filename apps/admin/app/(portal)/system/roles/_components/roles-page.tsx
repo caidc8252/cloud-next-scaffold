@@ -138,7 +138,7 @@ export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesP
               <Input prefix={<Search className="size-4" />} placeholder="Search roles..." value={query}
                 onChange={(e) => setQuery(e.target.value)} inputSize="md" />
             </div>
-            <div className="flex max-h-[calc(100dvh-9rem)] flex-col overflow-auto">
+            <div className="flex max-h-dvh-9rem flex-col overflow-auto">
               {filtered.map((r) => (
                 <RoleListItem key={r.id} role={r} active={r.id === selectedId} onClick={() => setSelectedId(r.id)} />
               ))}

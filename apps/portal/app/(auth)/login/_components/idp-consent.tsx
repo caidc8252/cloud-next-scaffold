@@ -24,8 +24,9 @@ function AccountRow({
     <Button
       variant="outline"
       block
+      size="auto"
       onClick={onClick}
-      className="h-auto justify-start gap-3 px-3 py-2.5 font-normal"
+      className="justify-start gap-3 px-3 py-2.5 font-normal"
     >
       <Avatar size="md">
         <AvatarFallback
@@ -106,8 +107,9 @@ export function IdpConsent({
             <Button
               variant="outline"
               block
+              size="auto"
               onClick={() => onChoose(rows[0])}
-              className="h-auto justify-start gap-3 border-dashed px-3 py-2.5 font-normal"
+              className="justify-start gap-3 border-dashed px-3 py-2.5 font-normal"
             >
               <Avatar size="md">
                 <AvatarFallback className="bg-surface-3 text-content-tertiary">
@@ -125,7 +127,7 @@ export function IdpConsent({
           })}
         </p>
         <div className="mt-3.5">
-          <Button variant="link" onClick={onCancel} className="h-auto p-0 text-sm">
+          <Button variant="link" onClick={onCancel} className="text-sm">
             {t("cancel")}
           </Button>
         </div>

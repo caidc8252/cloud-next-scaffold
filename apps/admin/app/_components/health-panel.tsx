@@ -46,7 +46,7 @@ export function HealthPanel() {
         <CardTitle>Health Check</CardTitle>
       </CardHeader>
       <CardContent>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div className="flex items-center gap-3 flex-wrap">
           <Badge tone={phase === "success" ? "success" : phase === "error" ? "error" : "warning"}>
             {phase}
           </Badge>

@@ -4,7 +4,7 @@ import { z } from "zod";
 
 /** POST /api/auth/password —— email + RSA 密文密码。 */
 export const loginSchema = z.object({
-  email: z.string().trim().email(),
+  email: z.string().trim().pipe(z.email()),
   encryptedPassword: z.string().min(1),
 });
 

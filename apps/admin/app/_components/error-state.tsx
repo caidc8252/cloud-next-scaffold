@@ -30,8 +30,8 @@ export function ErrorState({
   homeHref = "/",
 }: ErrorStateProps) {
   return (
-    <div className="flex min-h-[60vh] items-center justify-center p-6">
-      <Card style={{ maxWidth: 480, width: "100%" }}>
+    <div className="flex min-h-60vh items-center justify-center p-6">
+      <Card className="w-full max-w-120">
         <CardContent className="grid gap-4 py-8 text-center">
           <div className="flex justify-center text-content-tertiary">
             <AlertTriangle size={40} strokeWidth={1.5} />

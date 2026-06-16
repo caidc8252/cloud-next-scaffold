@@ -8,7 +8,7 @@ const { store, kvMock } = vi.hoisted(() => {
     store,
     kvMock: {
       get: vi.fn(async (key: string) => (store.has(key) ? store.get(key) : null)),
-      set: vi.fn(async (key: string, value: unknown, _ttl?: number) => {
+      set: vi.fn(async (key: string, value: unknown) => {
         store.set(key, value);
       }),
       del: vi.fn(async (key: string) => {

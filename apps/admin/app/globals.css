@@ -12,6 +12,16 @@ body {
   box-sizing: border-box;
 }
 
+/* Viewport-relative list-pane heights with no semantic-token or spacing-scale
+   equivalent; kept exact (the lint guardrail bans them as arbitrary className
+   values, so they live here as named utilities). */
+@utility min-h-60vh {
+  min-height: 60vh;
+}
+@utility max-h-dvh-9rem {
+  max-height: calc(100dvh - 9rem);
+}
+
 .login-screen {
   min-height: 100vh;
   display: grid;

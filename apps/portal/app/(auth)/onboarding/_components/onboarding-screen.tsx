@@ -69,7 +69,7 @@ export function OnboardingScreen({ token, currentUser }: { token: string; curren
 
   return (
     <div className="pep-fade flex min-h-screen flex-col bg-surface-3">
-      <header className="flex h-[60px] items-center gap-3 border-b border-line-subtle bg-surface-2 px-6">
+      <header className="flex h-15 items-center gap-3 border-b border-line-subtle bg-surface-2 px-6">
         <PepLogo size={26} sub={tb("newland")} />
         <div className="flex-1" />
         {showExit ? (

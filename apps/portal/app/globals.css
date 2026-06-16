@@ -12,6 +12,29 @@ body {
   box-sizing: border-box;
 }
 
+/* Bespoke login / marketing layout measures with no semantic-token or spacing-
+   scale equivalent (text-measure widths in ch, the brand panel's % width).
+   Kept exact to preserve the design — the lint guardrail bans these as
+   arbitrary className values, so they live here as named utilities. */
+@utility w-46pct {
+  width: 46%;
+}
+@utility max-w-14ch {
+  max-width: 14ch;
+}
+@utility max-w-44ch {
+  max-width: 44ch;
+}
+@utility max-w-46ch {
+  max-width: 46ch;
+}
+@utility max-w-56ch {
+  max-width: 56ch;
+}
+@utility max-w-60ch {
+  max-width: 60ch;
+}
+
 /* ── Effects the token/utility layer can't express cleanly ───────────────
    Per the ui skill, static visuals stay as Tailwind semantic classes in JSX;
    only genuine effects (gradients, keyframes, blur, OTP spacing) live here,

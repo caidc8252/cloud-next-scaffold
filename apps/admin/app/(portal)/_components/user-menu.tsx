@@ -18,6 +18,7 @@ import {
 import {
   Avatar,
   AvatarFallback,
+  Button,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -67,11 +68,13 @@ function MenuRow({
   onClick: () => void;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="auto"
       onClick={onClick}
       className={cn(
-        "flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors",
+        "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left font-normal whitespace-normal transition-colors",
         danger ? "hover:bg-error-bg" : "hover:bg-surface-hover",
       )}
     >
@@ -92,21 +95,33 @@ function MenuRow({
       {trailing && (
         <span className="flex flex-none items-center gap-1 text-xs text-content-tertiary">{trailing}</span>
       )}
-    </button>
+    </Button>
   );
 }
 
-function SubHeader({ title, onBack }: { title: string; onBack: () => void }) {
+// Sub-view header: a back button and the section title share one row.
+function ViewHeader({
+  title,
+  backLabel,
+  onBack,
+}: {
+  title: ReactNode;
+  backLabel: string;
+  onBack: () => void;
+}) {
   return (
-    <div className="flex items-center gap-2 px-1 pb-1">
-      <button
+    <div className="flex items-center gap-1.5 px-1 pb-1.5">
+      <Button
         type="button"
+        variant="ghost"
+        size="icon-sm"
+        aria-label={backLabel}
         onClick={onBack}
-        className="flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-content-secondary transition-colors hover:bg-surface-hover hover:text-content-primary"
+        className="text-content-secondary hover:text-content-primary"
       >
-        <ChevronLeft size={14} />
-        {title}
-      </button>
+        <ChevronLeft size={15} />
+      </Button>
+      <span className="text-sm font-semibold">{title}</span>
     </div>
   );
 }
@@ -125,10 +140,12 @@ function OptionRow({
   onClick: () => void;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="auto"
       onClick={onClick}
-      className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-surface-hover"
+      className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left font-normal whitespace-normal transition-colors hover:bg-surface-hover"
     >
       <span className="flex size-6 flex-none items-center justify-center rounded-md bg-surface-3 text-content-secondary">
         {icon}
@@ -138,7 +155,7 @@ function OptionRow({
         {sub && <span className="text-xs text-content-tertiary">{sub}</span>}
       </span>
       {selected && <Check size={15} className="flex-none text-primary" />}
-    </button>
+    </Button>
   );
 }
 
@@ -189,13 +206,15 @@ export function UserMenu({ account, name, email }: UserMenuProps) {
       <Popover open={open} onOpenChange={openChange}>
         <PopoverTrigger
           render={
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="auto"
               aria-label={rail ? t("menu.aria", { name }) : undefined}
               className={
                 rail
-                  ? "flex w-full cursor-pointer justify-center rounded-lg p-1.5 transition-colors hover:bg-surface-hover aria-expanded:bg-surface-hover"
-                  : "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-surface-hover aria-expanded:bg-surface-hover"
+                  ? "flex w-full justify-center rounded-lg p-1.5 font-normal transition-colors hover:bg-surface-hover aria-expanded:bg-surface-hover"
+                  : "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left font-normal transition-colors hover:bg-surface-hover aria-expanded:bg-surface-hover"
               }
             >
               <Avatar size="md">
@@ -210,7 +229,7 @@ export function UserMenu({ account, name, email }: UserMenuProps) {
                   <ChevronRight size={12} className="shrink-0 text-content-tertiary" />
                 </>
               )}
-            </button>
+            </Button>
           }
         />
         <PopoverContent
@@ -289,8 +308,7 @@ export function UserMenu({ account, name, email }: UserMenuProps) {
 
           {view === "theme" && (
             <div className="p-2">
-              <SubHeader title={t("common.back")} onBack={() => setView("main")} />
-              <div className="px-1 pb-1 text-sm font-semibold">{t("menu.theme")}</div>
+              <ViewHeader title={t("menu.theme")} backLabel={t("common.back")} onBack={() => setView("main")} />
               {(["light", "dark", "system"] as ThemePref[]).map((opt) => (
                 <OptionRow
                   key={opt}
@@ -306,8 +324,7 @@ export function UserMenu({ account, name, email }: UserMenuProps) {
 
           {view === "lang" && (
             <div className="p-2">
-              <SubHeader title={t("common.back")} onBack={() => setView("main")} />
-              <div className="px-1 pb-1 text-sm font-semibold">{t("menu.language")}</div>
+              <ViewHeader title={t("menu.language")} backLabel={t("common.back")} onBack={() => setView("main")} />
               {locales.map((l) => (
                 <OptionRow
                   key={l}

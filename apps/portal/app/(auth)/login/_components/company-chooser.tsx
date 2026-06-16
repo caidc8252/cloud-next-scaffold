@@ -41,8 +41,9 @@ export function CompanyChooser({
             key={c.id}
             variant="outline"
             block
+            size="auto"
             onClick={() => onSelect(c.id)}
-            className="h-auto justify-start gap-3 px-3 py-3 font-normal"
+            className="justify-start gap-3 px-3 py-3 font-normal"
           >
             <span
               className="flex size-9 shrink-0 items-center justify-center rounded-lg text-xs font-semibold text-white"

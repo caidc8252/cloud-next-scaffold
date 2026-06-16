@@ -58,11 +58,13 @@ function StatCard({
   label,
   value,
   description,
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- back-compat alias, resolved into `description` below
   sub,
   trend,
   icon,
   variant = "default",
   selected,
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- back-compat alias, resolved into `selected` below
   active,
   onClick,
   children,

@@ -26,28 +26,28 @@ export const companySelectSchema = z.object({
   companyId: z.string().min(1),
 });
 
-export const emailOnlySchema = z.object({ email: z.string().trim().email() });
+export const emailOnlySchema = z.object({ email: z.string().trim().pipe(z.email()) });
 
 export const verifyCodeSchema = z.object({
-  email: z.string().trim().email(),
+  email: z.string().trim().pipe(z.email()),
   code: z.string().regex(/^\d{6}$/),
 });
 
 export const resetPasswordSchema = z.object({
-  email: z.string().trim().email(),
+  email: z.string().trim().pipe(z.email()),
   code: z.string().regex(/^\d{6}$/),
   password: z.string().min(12),
 });
 
 export const onboardingSigninSchema = z.object({
   token: z.string().min(1),
-  email: z.string().trim().email(),
+  email: z.string().trim().pipe(z.email()),
   password: z.string().min(6),
 });
 
 export const onboardingRegisterSchema = z.object({
   token: z.string().min(1),
-  email: z.string().trim().email(),
+  email: z.string().trim().pipe(z.email()),
   loginName: z.string().min(1),
   displayName: z.string().trim().min(1),
   country: z.string().min(2),
@@ -55,7 +55,7 @@ export const onboardingRegisterSchema = z.object({
 
 export const onboardingAcceptSchema = z.object({
   token: z.string().min(1),
-  email: z.string().trim().email(),
+  email: z.string().trim().pipe(z.email()),
   name: z.string().trim().min(1),
   viaExisting: z.boolean(),
 });

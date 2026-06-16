@@ -4,7 +4,7 @@ import { z } from "zod";
 
 /** POST /api/auth/password —— email + RSA 密文密码。 */
 export const loginSchema = z.object({
-  email: z.string().trim().email(),
+  email: z.string().trim().pipe(z.email()),
   encryptedPassword: z.string().min(1),
   // 仅 onboarding 用：认证成功后建 portal 会话并跳回此站内路径（限 /onboarding 前缀，防开放重定向）。
   returnTo: z.string().regex(/^\/onboarding(\/|\?|$)/).optional(),

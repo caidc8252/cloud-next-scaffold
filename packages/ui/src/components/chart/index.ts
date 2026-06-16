@@ -87,7 +87,6 @@ export {
   PolarAngleAxis,
   PolarRadiusAxis,
   // shared
-  Cell,
   Label,
   LabelList,
   Rectangle,

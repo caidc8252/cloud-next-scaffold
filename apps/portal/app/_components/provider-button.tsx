@@ -25,7 +25,7 @@ export function ProviderButton({
       block
       disabled={disabled}
       onClick={onClick}
-      className="h-[46px] justify-start gap-3 px-3.5 font-normal"
+      className="h-11.5 justify-start gap-3 px-3.5 font-normal"
     >
       <span className="flex w-5 shrink-0 items-center justify-center">
         <ProviderMark id={id} />

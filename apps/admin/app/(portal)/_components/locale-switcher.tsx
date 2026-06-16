@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Globe } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger, MenuItem } from "@cloud/ui/components/ui";
+import { Button, Popover, PopoverContent, PopoverTrigger, MenuItem } from "@cloud/ui/components/ui";
 import { useLocale } from "@cloud/i18n/client";
 import { locales, localeLabels, type Locale } from "@cloud/i18n";
 import { setLocaleAction } from "@cloud/i18n/actions";
@@ -37,14 +37,16 @@ export function LocaleSwitcher() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         render={
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             aria-label="Select language"
             disabled={pending}
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-content-secondary transition-colors hover:bg-surface-hover hover:text-content-primary aria-expanded:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg text-content-secondary hover:text-content-primary aria-expanded:bg-surface-hover"
           >
             <Globe size={15} />
-          </button>
+          </Button>
         }
       />
       <PopoverContent
