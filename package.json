@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@10.18.3",
   "engines": {
-    "node": ">=20.19.0"
+    "node": "24.14.1"
   },
   "scripts": {
     "gen:manifest": "node scripts/generate-manifest-registry.mjs",
