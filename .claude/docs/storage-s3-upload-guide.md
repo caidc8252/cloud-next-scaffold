@@ -14,7 +14,7 @@
 - mutation 走 Route Handler，不用 Server Action。
 - route 只做 HTTP 适配；权限、业务范围、绑定策略放 service / policy。
 - 业务错误抛 `BusinessError` / `MiddlewareError`，成功响应走 `successResponse()` / `createdResponse()` / `noContentResponse()`。
-- 公开文件只允许真实图片，必须校验 PNG/JPEG/GIF/WebP/AVIF 等文件头签名，不能只信客户端传入的 `ContentType`；object key 必须在 `public/` 下。
+- 公开文件只允许真实图片，必须校验 PNG/JPEG/GIF/WebP/AVIF 等文件头签名，不能只信客户端传入的 `ContentType`；object key 必须在 `public/` 下，浏览器直传完成时还要把 S3 对象 `Content-Type` 纠正为真实图片类型。
 - 私有文件不要返回固定 URL；下载前先校验业务权限和业务对象归属，再用后端固定或推导的 PRIVATE profile 生成短期 signed URL。
 - 直传完成必须 `HeadObject` 成功后才写业务表；不要信任前端传来的最终 metadata。
 
@@ -186,7 +186,8 @@ sequenceDiagram
 4. 浏览器调用 `uploadFileToS3FromBrowser({ file, session })` 上传到 S3。
 5. 上传完成后调用业务域 complete 接口。
 6. complete 接口必须 `HeadObject`，以 S3 返回的 `sizeBytes`、`etag` 为准；PUBLIC 文件还必须读取对象前几个字节校验真实图片签名，不能只信 `ContentType`。
-7. service 根据业务规则写业务表字段。
+7. PUBLIC 文件如果真实图片类型和 S3 `HeadObject.ContentType` 不一致，helper 必须通过 S3 self-copy 改写对象 `Content-Type`，避免公开 URL 返回错误 MIME。
+8. service 根据业务规则写业务表字段。
 
 浏览器直传：
 
@@ -217,6 +218,7 @@ sequenceDiagram
   S3-->>Helper: sizeBytes/etag/lastModified
   Helper->>S3: GetObject Range bytes=0-31
   S3-->>Helper: 文件头字节
+  Helper->>S3: 必要时 self-copy 纠正 Content-Type
   Service->>Service: 校验目录/大小/真实文件类型
   Service->>DB: 按需写文件信息
   Service-->>API2: 业务 DTO
@@ -294,7 +296,7 @@ sequenceDiagram
 | `createProfileUploadSession` | 按后端 profile 创建浏览器直传 session | 先做业务权限校验；`credentials` 只给前端上传，不写业务表；普通业务不要暴露 `existingObjectKey` |
 | `uploadFileToS3Profile` | 按后端 profile 由服务端上传文件 | 返回 S3 对象信息，业务自己决定落哪些字段；普通业务不要暴露 `existingObjectKey` |
 | `getS3FileMetadata` | HeadObject 获取 S3 metadata | 私有文件下载前可调用；PUBLIC 文件不要只靠它判断真实类型 |
-| `getVerifiedS3FileMetadata` | HeadObject + profile 目录校验 + PUBLIC 图片文件头校验 | 浏览器直传 complete 写业务表前优先调用 |
+| `getVerifiedS3FileMetadata` | HeadObject + profile 目录校验 + PUBLIC 图片文件头校验 + 必要时纠正 S3 `Content-Type` | 浏览器直传 complete 写业务表前优先调用 |
 | `promoteTemporaryS3Object` | 复制 tmp 文件到正式 profile 并删除 tmp 原对象 | 传临时对象信息；图片场景传 `requireContentTypePrefix: "image/"`；正式 key 由后端随机生成 |
 | `createPrivateS3DownloadUrl` | 私有文件下载前校验 PRIVATE profile 目录、HeadObject 并生成短期 signed URL | 调用前必须完成业务权限和业务对象归属校验；profile 由后端固定或推导，不让前端决定 |
 
@@ -408,7 +410,7 @@ sequenceDiagram
 - 不把 signed URL 存入数据库或日志。
 - 不用裸 `objectKey` 为私有文件签名；必须带后端固定或推导的 PRIVATE profile，并校验 key 落在该 profile 目录。
 - 不在 `HeadObject` 失败时 fallback 到前端 metadata。
-- 不把 `HeadObject.ContentType` 当作 PUBLIC 文件的真实类型；PUBLIC 文件必须校验文件头签名。
+- 不把 `HeadObject.ContentType` 当作 PUBLIC 文件的真实类型；PUBLIC 文件必须校验文件头签名，并在不一致时改写 S3 对象 `Content-Type`。
 - 不把“菜单能看到”当作安全边界。
 - 不长期保留 `assertPermissions({ all: [] })` 这类空权限守卫。
 

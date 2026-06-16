@@ -494,6 +494,84 @@ describe("deleteS3Object", () => {
   });
 });
 
+describe("updateS3ObjectContentType", () => {
+  it("rewrites content type by self-copying the object metadata", async () => {
+    s3SendMock.mockResolvedValueOnce({
+      CopyObjectResult: {
+        ETag: '"updated-etag"',
+      },
+    });
+
+    const { updateS3ObjectContentType } = await import("../../src/server/s3.ts");
+    const storedObject = await updateS3ObjectContentType(BASE_CONFIG, {
+      objectKey: "public/applications/icons/icon.png",
+      contentType: "image/png",
+      sourceEtag: '"old-etag"',
+    });
+
+    expect(storedObject).toMatchObject({
+      bucket: "merchant-debug-bucket",
+      objectKey: "public/applications/icons/icon.png",
+      contentType: "image/png",
+      etag: '"updated-etag"',
+    });
+
+    const copyCommand = s3SendMock.mock.calls[0]?.[0] as {
+      input: Record<string, string>;
+    };
+    expect(copyCommand.input.Bucket).toBe("merchant-debug-bucket");
+    expect(copyCommand.input.Key).toBe("public/applications/icons/icon.png");
+    expect(copyCommand.input.CopySource).toBe(
+      "merchant-debug-bucket/public/applications/icons/icon.png",
+    );
+    expect(copyCommand.input.CopySourceIfMatch).toBe('"old-etag"');
+    expect(copyCommand.input.ContentType).toBe("image/png");
+    expect(copyCommand.input.MetadataDirective).toBe("REPLACE");
+  });
+
+  it("uses scoped read and write credentials when a role ARN is configured", async () => {
+    stsSendMock.mockResolvedValueOnce({
+      Credentials: {
+        AccessKeyId: "metadata-temp-ak",
+        SecretAccessKey: "metadata-temp-sk",
+        SessionToken: "metadata-temp-token",
+        Expiration: new Date("2026-05-21T16:00:00.000Z"),
+      },
+    });
+    s3SendMock.mockResolvedValueOnce({
+      CopyObjectResult: {
+        ETag: '"updated-etag"',
+      },
+    });
+
+    const { updateS3ObjectContentType } = await import("../../src/server/s3.ts");
+    await updateS3ObjectContentType(
+      {
+        ...BASE_CONFIG,
+        stsRoleArn: "arn:aws:iam::123456789012:role/merchant-storage",
+      },
+      {
+        objectKey: "public/applications/icons/icon.png",
+        contentType: "image/png",
+      },
+    );
+
+    const stsCommand = stsSendMock.mock.calls[0]?.[0] as { input: Record<string, string> };
+    expect(stsCommand.input.Policy).toContain("s3:GetObject");
+    expect(stsCommand.input.Policy).toContain("s3:PutObject");
+    expect(stsCommand.input.Policy).toContain(
+      "merchant-debug-bucket/public/applications/icons/icon.png",
+    );
+
+    const s3ClientInput = s3ClientInputs[0] as {
+      credentials?: {
+        accessKeyId?: string;
+      };
+    };
+    expect(s3ClientInput.credentials?.accessKeyId).toBe("metadata-temp-ak");
+  });
+});
+
 describe("createS3DownloadUrl", () => {
   it("creates a short-lived signed GET URL", async () => {
     const { createS3DownloadUrl } = await import("../../src/server/s3.ts");

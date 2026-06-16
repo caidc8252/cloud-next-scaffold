@@ -17,6 +17,6 @@
 - 私有文件不要返回固定 URL；业务下载接口先在具体业务 service 中根据业务表确认当前用户能访问该业务对象、文件确实属于该业务对象，再用后端固定或推导的 PRIVATE profile + `objectKey` 生成短期 signed URL
 - 生成下载链接前优先做 S3 `HeadObject` 校验，避免把用户直接带到 S3 XML 错误页；下载链接默认有效期是 5 分钟
 - 跨业务统一去重不再由平台提供；如需去重，业务表自行保存并查询 `contentHash + sizeBytes` 等字段
-- 公开文件只允许真实图片，且对象 key 必须落在 `public/` 前缀；不能只信客户端传入的 `ContentType`，必须校验 PNG/JPEG/GIF/WebP/AVIF 等文件头签名
+- 公开文件只允许真实图片，且对象 key 必须落在 `public/` 前缀；不能只信客户端传入的 `ContentType`，必须校验 PNG/JPEG/GIF/WebP/AVIF 等文件头签名，并在浏览器直传完成时把 S3 对象 `Content-Type` 纠正为真实图片类型
 - S3 bucket policy 只应对 `public/*` 开放匿名 `s3:GetObject`，不要公开整个 bucket；这只解决公开读取，不给应用身份增加上传权限
 - 应用使用的 AWS 身份或被 assume role 必须允许目标 prefix 的 `s3:PutObject`；私有下载和下载前校验还需要 `s3:GetObject`

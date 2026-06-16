@@ -11,6 +11,7 @@ import {
   getS3ObjectBytes,
   getS3ObjectMetadata,
   uploadFileToS3FromServer,
+  updateS3ObjectContentType,
 } from "@cloud/storage/server";
 import { getS3UploadConfig } from "./s3-upload-config";
 import {
@@ -224,6 +225,45 @@ async function resolveStoredObjectContentType(
   return detectedContentType;
 }
 
+async function normalizeStoredPublicObjectContentType(
+  metadata: S3ObjectMetadata,
+  profile: S3UploadProfileConfig,
+  abortSignal?: AbortSignal,
+): Promise<S3ObjectMetadata> {
+  const contentType = await resolveStoredObjectContentType(
+    profile,
+    metadata.objectKey,
+    metadata.contentType,
+    abortSignal,
+  );
+
+  if (
+    profile.visibility !== "PUBLIC" ||
+    metadata.contentType.trim().toLowerCase() === contentType.toLowerCase()
+  ) {
+    return {
+      ...metadata,
+      contentType,
+    };
+  }
+
+  await updateS3ObjectContentType(getS3UploadConfig(), {
+    objectKey: metadata.objectKey,
+    contentType,
+    sourceEtag: metadata.etag,
+    abortSignal,
+  });
+  const updatedMetadata = await getS3ObjectMetadata(getS3UploadConfig(), {
+    objectKey: metadata.objectKey,
+    abortSignal,
+  });
+
+  return {
+    ...updatedMetadata,
+    contentType,
+  };
+}
+
 export async function createProfileUploadSession(
   input: CreateProfileUploadSessionInput,
 ): Promise<S3UploadSession> {
@@ -278,17 +318,7 @@ export async function getVerifiedS3FileMetadata(
     objectKey: input.objectKey,
     abortSignal: input.abortSignal,
   });
-  const contentType = await resolveStoredObjectContentType(
-    profile,
-    input.objectKey,
-    metadata.contentType,
-    input.abortSignal,
-  );
-
-  return {
-    ...metadata,
-    contentType,
-  };
+  return normalizeStoredPublicObjectContentType(metadata, profile, input.abortSignal);
 }
 
 export async function promoteTemporaryS3Object(

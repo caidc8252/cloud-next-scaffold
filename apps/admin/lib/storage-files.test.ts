@@ -9,6 +9,7 @@ const getS3ObjectMetadataMock = vi.fn();
 const createS3DownloadUrlMock = vi.fn();
 const copyS3ObjectMock = vi.fn();
 const deleteS3ObjectMock = vi.fn();
+const updateS3ObjectContentTypeMock = vi.fn();
 
 vi.mock("server-only", () => ({}));
 
@@ -20,6 +21,7 @@ vi.mock("@cloud/storage/server", () => ({
   createS3DownloadUrl: createS3DownloadUrlMock,
   copyS3Object: copyS3ObjectMock,
   deleteS3Object: deleteS3ObjectMock,
+  updateS3ObjectContentType: updateS3ObjectContentTypeMock,
 }));
 
 vi.mock("./s3-upload-config", () => ({
@@ -150,8 +152,25 @@ describe("getVerifiedS3FileMetadata", () => {
       objectUrl: "https://bucket.s3.ap-southeast-1.amazonaws.com/public/applications/icons/icon.png",
       contentType: "image/png",
       sizeBytes: 123,
+      etag: '"old-etag"',
     });
     getS3ObjectBytesMock.mockResolvedValueOnce(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]));
+    updateS3ObjectContentTypeMock.mockResolvedValueOnce({
+      objectKey: "public/applications/icons/icon.png",
+      contentType: "image/jpeg",
+      etag: '"updated-etag"',
+    });
+    getS3ObjectMetadataMock.mockResolvedValueOnce({
+      bucket: "bucket",
+      regionId: "ap-southeast-1",
+      uploadUrl: "https://bucket.s3.ap-southeast-1.amazonaws.com",
+      objectKey: "public/applications/icons/icon.png",
+      objectUrl: "https://bucket.s3.ap-southeast-1.amazonaws.com/public/applications/icons/icon.png",
+      contentType: "image/jpeg",
+      sizeBytes: 123,
+      etag: '"updated-etag"',
+      lastModified: "2026-06-16T00:00:00.000Z",
+    });
 
     const { getVerifiedS3FileMetadata } = await import("./storage-files");
     const result = await getVerifiedS3FileMetadata({
@@ -166,7 +185,17 @@ describe("getVerifiedS3FileMetadata", () => {
         range: "bytes=0-31",
       }),
     );
+    expect(updateS3ObjectContentTypeMock).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        objectKey: "public/applications/icons/icon.png",
+        contentType: "image/jpeg",
+        sourceEtag: '"old-etag"',
+      }),
+    );
     expect(result.contentType).toBe("image/jpeg");
+    expect(result.etag).toBe('"updated-etag"');
+    expect(result.lastModified).toBe("2026-06-16T00:00:00.000Z");
   });
 
   it("rejects public metadata when S3 bytes are not a supported image", async () => {

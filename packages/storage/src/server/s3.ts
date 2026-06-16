@@ -61,6 +61,13 @@ export type GetS3ObjectBytesInput = {
   abortSignal?: AbortSignal;
 };
 
+export type UpdateS3ObjectContentTypeInput = {
+  objectKey: string;
+  contentType: string;
+  sourceEtag?: string;
+  abortSignal?: AbortSignal;
+};
+
 export type CreateS3DownloadUrlInput = {
   objectKey: string;
   filename?: string;
@@ -680,6 +687,50 @@ export async function getS3ObjectBytes(
   );
 
   return readS3BodyBytes(response.Body);
+}
+
+export async function updateS3ObjectContentType(
+  config: S3UploadConfig,
+  input: UpdateS3ObjectContentTypeInput,
+): Promise<S3StoredObject> {
+  const normalized = normalizeS3UploadConfig(config);
+  const objectKey = normalizeObjectKey(input.objectKey);
+  const contentType = input.contentType.trim();
+
+  if (!contentType) {
+    throw new Error("contentType must be a non-empty string.");
+  }
+
+  const scopedCredentials = normalized.stsRoleArn
+    ? await mintTemporaryCredentialsWithPolicy(
+        normalized,
+        createCopyScopedPolicy(normalized.bucket, objectKey, objectKey),
+      )
+    : undefined;
+  const client = scopedCredentials
+    ? createScopedS3Client(normalized, scopedCredentials)
+    : createS3Client(normalized);
+  const response = await client.send(
+    new CopyObjectCommand({
+      Bucket: normalized.bucket,
+      Key: objectKey,
+      CopySource: encodeCopySource(normalized.bucket, objectKey),
+      CopySourceIfMatch: input.sourceEtag,
+      ContentType: contentType,
+      MetadataDirective: "REPLACE",
+    }),
+    { abortSignal: input.abortSignal },
+  );
+
+  return {
+    bucket: normalized.bucket,
+    regionId: normalized.regionId,
+    uploadUrl: normalized.uploadUrl,
+    objectKey,
+    objectUrl: createObjectUrl(normalized.uploadUrl, objectKey),
+    contentType,
+    etag: response.CopyObjectResult?.ETag,
+  };
 }
 
 export async function createS3DownloadUrl(
