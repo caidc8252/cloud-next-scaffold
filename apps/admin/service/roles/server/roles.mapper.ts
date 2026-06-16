@@ -28,8 +28,8 @@ export function toClientRole(row: RoleRow, updaterName: string, operatorCount: n
     id: String(row.roleId),
     name: row.roleName,
     description: row.remark ?? "",
-    // 内置/通用角色由 roleId ≤ 300 派生（死写 GLOBAL，不入库）；DB 动态角色 ≥1001。
-    builtin: row.roleId <= 300,
+    // 内置/通用角色由 roleId ≤ 1000 派生（死写 GLOBAL，不入库）；DB 动态角色 ≥1001。
+    builtin: row.roleId <= 1000,
     operatorCount,
     permissions: extractPermissionCodes(row.permissionCodes),
     updatedAt: row.updTime.toISOString(),
@@ -37,12 +37,15 @@ export function toClientRole(row: RoleRow, updaterName: string, operatorCount: n
   };
 }
 
-/** 死写 GLOBAL 角色（代码注册表 RoleDef）→ VO。无 DB 行：builtin、只读、updatedBy=system。 */
+/**
+ * 死写 GLOBAL 角色（代码注册表 RoleDef）→ VO。无 DB 行：builtin、只读、updatedBy=system。
+ * name/description 为 coc i18n key（builtin 角色），由展示端（RSC 页面）按 locale 翻译。
+ */
 export function toClientCodeRole(def: RoleDef, operatorCount: number): Role {
   return {
     id: String(def.roleId),
     name: def.roleName,
-    description: "",
+    description: def.remark,
     builtin: true,
     operatorCount,
     permissions: [...def.permissionCodes],

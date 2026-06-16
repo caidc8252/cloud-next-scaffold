@@ -7,7 +7,7 @@ describe("validateMenus", () => {
       validateMenus(
         [
           { menuCode: "system", menuTitle: "System", parentMenuCode: null, path: null, contractTypes: [] },
-          { menuCode: "users", menuTitle: "Users", parentMenuCode: "system", path: "/system/users", contractTypes: ["ADMIN"], permissions: [{ code: "users.VIEW" }] },
+          { menuCode: "users", menuTitle: "Users", parentMenuCode: "system", path: "/system/users", contractTypes: ["ADMIN"], permissions: [{ code: "users.view" }] },
         ],
         { contractTypes: ["ADMIN", "ISO"] },
       ),
@@ -26,10 +26,10 @@ describe("validateMenus", () => {
   it("rejects duplicate permissionCode (even across different menus)", () => {
     expect(() =>
       validateMenus([
-        { menuCode: "a", menuTitle: "A", parentMenuCode: null, path: "/a", contractTypes: ["ADMIN"], permissions: [{ code: "x.VIEW" }] },
-        { menuCode: "b", menuTitle: "B", parentMenuCode: null, path: "/b", contractTypes: ["ADMIN"], permissions: [{ code: "x.VIEW" }] },
+        { menuCode: "a", menuTitle: "A", parentMenuCode: null, path: "/a", contractTypes: ["ADMIN"], permissions: [{ code: "x.view" }] },
+        { menuCode: "b", menuTitle: "B", parentMenuCode: null, path: "/b", contractTypes: ["ADMIN"], permissions: [{ code: "x.view" }] },
       ]),
-    ).toThrow(/duplicate permissionCode "x.VIEW"/);
+    ).toThrow(/duplicate permissionCode "x.view"/);
   });
 
   it("rejects a missing parent reference", () => {
@@ -93,25 +93,92 @@ describe("validateMenus", () => {
           parentMenuCode: null,
           path: "/a",
           contractTypes: [],
-          permissions: [{ code: "a.VIEW" }],
+          permissions: [{ code: "a.view" }],
         },
       ]),
     ).not.toThrow();
   });
 });
 
+describe("validateMenus — permission code format", () => {
+  it("rejects a code that is not lowercase camel <domain>.<action>", () => {
+    expect(() =>
+      validateMenus([
+        { menuCode: "m", menuTitle: "menu.m", parentMenuCode: null, path: "/m", contractTypes: ["ADMIN"], permissions: [{ code: "overview:view", label: "permission.x" }] },
+      ]),
+    ).toThrow(/code .*bad format/i);
+  });
+});
+
+describe("validateMenus — require", () => {
+  const base = (perms: { code: string; require?: string | null }[]) => [
+    {
+      menuCode: "m",
+      menuTitle: "menu.m",
+      parentMenuCode: null,
+      path: "/m",
+      contractTypes: ["ADMIN"],
+      permissions: perms.map((p) => ({ ...p, label: `permission.${p.code}` })),
+    },
+  ];
+
+  it("passes a valid same-menu require chain", () => {
+    expect(() =>
+      validateMenus(
+        base([
+          { code: "m.view", require: null },
+          { code: "m.add", require: "m.view" },
+          { code: "m.edit", require: "m.add" },
+        ]),
+      ),
+    ).not.toThrow();
+  });
+
+  it("rejects require pointing to a missing code", () => {
+    expect(() => validateMenus(base([{ code: "m.add", require: "m.ghost" }]))).toThrow(
+      /require .*m\.ghost.*not found/i,
+    );
+  });
+
+  it("rejects require pointing across menus", () => {
+    const menus = [
+      ...base([{ code: "m.view", require: null }]),
+      {
+        menuCode: "n",
+        menuTitle: "menu.n",
+        parentMenuCode: null,
+        path: "/n",
+        contractTypes: ["ADMIN"],
+        permissions: [{ code: "n.add", label: "permission.nAdd", require: "m.view" }],
+      },
+    ];
+    expect(() => validateMenus(menus)).toThrow(/cross-menu/i);
+  });
+
+  it("rejects a require cycle", () => {
+    expect(() =>
+      validateMenus(
+        base([
+          { code: "m.a", require: "m.b" },
+          { code: "m.b", require: "m.a" },
+        ]),
+      ),
+    ).toThrow(/cycle/i);
+  });
+});
+
 describe("validateRoles", () => {
   it("rejects a roleId outside the hardcoded 1–300 range (≥1001 is DB-only)", () => {
     expect(() =>
-      validateRoles([{ roleId: 1001, roleName: "Dyn", permissionCodes: [] }], { menuPermissionCodes: [] }),
+      validateRoles([{ roleId: 1001, roleName: "Dyn", remark: "Dyn", permissionCodes: [] }], { menuPermissionCodes: [] }),
     ).toThrow(/out of hardcoded range/);
   });
 
   it("rejects a role referencing an unknown permissionCode", () => {
     expect(() =>
-      validateRoles([{ roleId: 2, roleName: "Ops", permissionCodes: ["ghost.X"] }], {
-        menuPermissionCodes: ["users.VIEW"],
+      validateRoles([{ roleId: 2, roleName: "Ops", remark: "Ops", permissionCodes: ["ghost.x"] }], {
+        menuPermissionCodes: ["users.view"],
       }),
-    ).toThrow(/unknown permissionCode "ghost.X"/);
+    ).toThrow(/unknown permissionCode "ghost.x"/);
   });
 });

@@ -1,12 +1,5 @@
 import type { MenuEntry, RoleDef } from "./types.ts";
 import { validateMenus, validateRoles, type ValidateOptions } from "./validate.ts";
-import {
-  contractTypeGroup,
-  GROUP_ROLE_ID_RANGE,
-  isPresetAdminRole,
-  roleIdInGroupRange,
-  type PortalGroup,
-} from "./contract-group.ts";
 
 export type CreatePlatformConfigOptions = {
   /** 全局契约枚举（多 app 聚合并集）。用于校验每个菜单的 contractTypes，并由 getContractKeys 暴露。 */
@@ -65,26 +58,17 @@ export function createPlatformConfig(
     return all.filter((m) => contractMatch(m.contractTypes, wanted));
   }
 
-  // 给定契约 → 命中菜单声明的权限码（party scope 与预置角色「组权限」共用一处逻辑）。
+  // 给定契约 → 命中菜单声明的权限码（resolvePartyScope 的单一来源）。
   const collectCodes = (contract: string | string[]): string[] =>
     getMenus(contract).flatMap((m) => (m.permissions ?? []).map((p) => p.code));
 
-  // 预置通配管理员（isPresetAdminRole）：def.permissionCodes 为空（通配标记），构造期填充其所在组的
-  // 全部权限码（组契约类型 → 命中菜单的 code）。下游(会话/列表)一律 ∩ party scope，无需再特判通配。
-  const groupOrder = Object.keys(GROUP_ROLE_ID_RANGE) as PortalGroup[];
-  const filledRoles = roles.map((r) => {
-    if (!isPresetAdminRole(r.roleId)) return r;
-    const group = groupOrder.find((g) => roleIdInGroupRange(r.roleId, g));
-    if (!group) return r;
-    const groupContracts = contractKeys.filter((ct) => contractTypeGroup(ct) === group);
-    return { ...r, permissionCodes: [...new Set(collectCodes(groupContracts))] };
-  });
-  const roleById = new Map(filledRoles.map((r) => [r.roleId, r]));
+  // 角色按声明原样返回（预置超管也显式列全，不再构造期自动填充）。完整性由非阻断 check:roles 兜底。
+  const roleById = new Map(roles.map((r) => [r.roleId, r]));
 
   return {
     getMenus,
     getContractKeys: () => [...contractKeys],
-    getRoles: () => filledRoles.map((r) => ({ ...r, permissionCodes: [...r.permissionCodes] })),
+    getRoles: () => roles.map((r) => ({ ...r, permissionCodes: [...r.permissionCodes] })),
     resolveRolePermissions: (roleId: number) => {
       const role = roleById.get(roleId);
       return role ? [...role.permissionCodes] : undefined;

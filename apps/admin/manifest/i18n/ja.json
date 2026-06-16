@@ -1,0 +1,41 @@
+{
+  "menu": {
+    "home": "ホーム",
+    "dashboard": "ダッシュボード",
+    "system": "システム",
+    "roles": "ロール",
+    "users": "ユーザー"
+  },
+  "permission": {
+    "rolesView": "ロール閲覧",
+    "rolesViewDesc": "ロール一覧と詳細を閲覧",
+    "rolesAdd": "ロール作成",
+    "rolesAddDesc": "新規ロールを作成",
+    "rolesUpdate": "ロール編集",
+    "rolesUpdateDesc": "ロール名・説明・権限を編集",
+    "rolesDelete": "ロール削除",
+    "rolesDeleteDesc": "非組み込みロールを削除",
+    "rolesDuplicate": "ロール複製",
+    "rolesDuplicateDesc": "既存ロールを複製",
+    "usersView": "ユーザー閲覧",
+    "usersViewDesc": "ユーザー一覧と詳細を閲覧",
+    "usersAdd": "ユーザー作成",
+    "usersAddDesc": "ユーザーを直接作成",
+    "usersInvite": "ユーザー招待",
+    "usersInviteDesc": "メールでユーザーを招待",
+    "usersUpdate": "ユーザー編集",
+    "usersUpdateDesc": "表示名・メール・備考を編集",
+    "usersLock": "ユーザーロック",
+    "usersLockDesc": "ユーザーアカウントをロック / 解除",
+    "usersResetPassword": "パスワードリセット",
+    "usersResetPasswordDesc": "ユーザーのパスワードを強制リセット",
+    "usersChangeRole": "ロール変更",
+    "usersChangeRoleDesc": "ユーザーのロールを変更"
+  },
+  "role": {
+    "adminPresetAdmin": "管理者",
+    "adminPresetAdminDesc": "組み込み管理者ロール",
+    "adminOperator": "オペレーター",
+    "adminOperatorDesc": "読み取り専用オペレーターロール"
+  }
+}

@@ -7,11 +7,11 @@ import { regenerateInvite, parseInviteId } from "@/service/users/server/users.se
 import { withApiHandler } from "@/lib/api-handler";
 
 /**
- * 重新生成一条未过期邀请（换 token + 续期 + 重发）。id 形如 `invite-<operatorInviteId>`。需要 users.INVITE。
+ * 重新生成一条未过期邀请（换 token + 续期 + 重发）。id 形如 `invite-<operatorInviteId>`。需要 users.invite。
  */
 export const POST = withApiHandler(
   async (_req: Request, { params }: { params: Promise<{ userId: string }> }) => {
-    const session = await assertPermissions({ all: ["users.INVITE"] });
+    const session = await assertPermissions({ all: ["users.invite"] });
     const { userId: rawId } = await params;
     const inviteId = parseInviteId(rawId);
     if (!Number.isFinite(inviteId)) throw new BusinessError(ERR_INVALID_ID);

@@ -8,6 +8,7 @@
   },
   "scripts": {
     "gen:manifest": "node scripts/generate-manifest-registry.mjs",
+    "check:roles": "node scripts/check-preset-admin-coverage.mjs",
     "predev": "pnpm gen:manifest",
     "predev:admin": "pnpm gen:manifest",
     "predev:portal": "pnpm gen:manifest",

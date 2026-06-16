@@ -3,9 +3,9 @@ import { toClientRole, extractPermissionCodes } from "./roles.mapper";
 
 describe("extractPermissionCodes", () => {
   it("keeps only string entries from the permission_codes JSONB", () => {
-    expect(extractPermissionCodes(["users.VIEW", 1, null, "roles.ADD"])).toEqual([
-      "users.VIEW",
-      "roles.ADD",
+    expect(extractPermissionCodes(["users.view", 1, null, "roles.add"])).toEqual([
+      "users.view",
+      "roles.add",
     ]);
   });
 
@@ -23,7 +23,7 @@ function baseRow(overrides: Record<string, unknown> = {}) {
     remark: "ops team",
     updTime: new Date("2026-01-02T00:00:00.000Z"),
     updUserId: 1,
-    permissionCodes: ["users.VIEW"],
+    permissionCodes: ["users.view"],
     ...overrides,
   } as Parameters<typeof toClientRole>[0];
 }
@@ -37,12 +37,12 @@ describe("toClientRole", () => {
       description: "ops team",
       builtin: false,
       operatorCount: 4,
-      permissions: ["users.VIEW"],
+      permissions: ["users.view"],
       updatedBy: "admin",
     });
   });
 
-  it("flags builtin roles (roleId ≤ 300) and empty description", () => {
+  it("flags builtin roles (roleId ≤ 1000) and empty description", () => {
     const role = toClientRole(baseRow({ roleId: 1, remark: null }), "system", 0);
     expect(role.builtin).toBe(true);
     expect(role.description).toBe("");

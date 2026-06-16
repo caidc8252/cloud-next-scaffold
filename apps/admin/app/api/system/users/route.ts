@@ -8,18 +8,18 @@ import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * 当前 partner 下的运营人员列表(在册用户 + 待消费邀请合成的 PENDING 伪条目)。
- * 系统管理「用户」页加载,需要 users.VIEW。
+ * 系统管理「用户」页加载,需要 users.view。
  */
 export const GET = withApiHandler(async () => {
-  const session = await assertPermissions({ all: ["users.VIEW"] });
+  const session = await assertPermissions({ all: ["users.view"] });
   return successResponse(await listUsersAndInvites(session.currentPartyId));
 });
 
 /**
- * 邀请一名运营人员加入当前 partner(不预建用户,消费邀请时才建)。需要 users.INVITE。
+ * 邀请一名运营人员加入当前 partner(不预建用户,消费邀请时才建)。需要 users.invite。
  */
 export const POST = withApiHandler(async (req: Request) => {
-  const session = await assertPermissions({ all: ["users.INVITE"] });
+  const session = await assertPermissions({ all: ["users.invite"] });
 
   let raw: unknown;
   try {

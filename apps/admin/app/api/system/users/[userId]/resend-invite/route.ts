@@ -6,11 +6,11 @@ import { resendInvite, parseInviteId } from "@/service/users/server/users.servic
 import { withApiHandler } from "@/lib/api-handler";
 
 /**
- * 重发一条待消费邀请(续期 + resendCount+1)。id 形如 `invite-<operatorInviteId>`。需要 users.INVITE。
+ * 重发一条待消费邀请(续期 + resendCount+1)。id 形如 `invite-<operatorInviteId>`。需要 users.invite。
  */
 export const POST = withApiHandler(
   async (_req: Request, { params }: { params: Promise<{ userId: string }> }) => {
-    const session = await assertPermissions({ all: ["users.INVITE"] });
+    const session = await assertPermissions({ all: ["users.invite"] });
     const { userId: rawId } = await params;
     const inviteId = parseInviteId(rawId);
     if (!Number.isFinite(inviteId)) throw new BusinessError(ERR_INVALID_ID);

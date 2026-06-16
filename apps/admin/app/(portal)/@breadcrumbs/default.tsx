@@ -1,4 +1,5 @@
 import { requireSession } from "@cloud/permissions/server";
+import { getTranslations } from "@cloud/i18n/server";
 import { getSessionMenus } from "@/lib/session-menus";
 import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
 
@@ -164,9 +165,11 @@ import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
  */
 export default async function DefaultBreadcrumbs() {
   await requireSession();
+  // menuTitle 是 coc 命名空间下的 i18n key，面包屑在此翻译。
+  const tc = await getTranslations("coc");
   const menus = (await getSessionMenus()).map((m) => ({
     id: m.menuId,
-    label: m.menuTitle,
+    label: tc(m.menuTitle),
     path: m.path,
     parentMenuId: m.parentMenuId,
   }));

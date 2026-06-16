@@ -7,11 +7,11 @@ import { updateRole, deleteRole } from "@/service/roles/server/roles.service";
 import { withApiHandler } from "@/lib/api-handler";
 
 /**
- * 更新角色(名称 / 描述 / 权限)。需要 roles.UPD;内置角色仅权限可改,跨 partner 角色不可见。
+ * 更新角色(名称 / 描述 / 权限)。需要 roles.update;内置角色仅权限可改,跨 partner 角色不可见。
  */
 export const PUT = withApiHandler(
   async (req: Request, { params }: { params: Promise<{ roleId: string }> }) => {
-    const session = await assertPermissions({ all: ["roles.UPD"] });
+    const session = await assertPermissions({ all: ["roles.update"] });
     const { roleId: rawId } = await params;
     const roleId = Number(rawId);
     if (!Number.isFinite(roleId)) throw new BusinessError(ERR_INVALID_ID);
@@ -31,11 +31,11 @@ export const PUT = withApiHandler(
 );
 
 /**
- * 删除角色。需要 roles.DELETE;内置角色不可删,仍被用户绑定的角色不可删(409)。
+ * 删除角色。需要 roles.delete;内置角色不可删,仍被用户绑定的角色不可删(409)。
  */
 export const DELETE = withApiHandler(
   async (_request: Request, { params }: { params: Promise<{ roleId: string }> }) => {
-    const session = await assertPermissions({ all: ["roles.DELETE"] });
+    const session = await assertPermissions({ all: ["roles.delete"] });
     const { roleId: rawId } = await params;
     const roleId = Number(rawId);
     if (!Number.isFinite(roleId)) throw new BusinessError(ERR_INVALID_ID);

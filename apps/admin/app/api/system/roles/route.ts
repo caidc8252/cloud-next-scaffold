@@ -7,18 +7,18 @@ import { listRoles, createRole } from "@/service/roles/server/roles.service";
 import { withApiHandler } from "@/lib/api-handler";
 
 /**
- * 当前 partner 可见的角色列表(自有角色 + 全局角色,含绑定用户数)。需要 roles.VIEW。
+ * 当前 partner 可见的角色列表(自有角色 + 全局角色,含绑定用户数)。需要 roles.view。
  */
 export const GET = withApiHandler(async () => {
-  const session = await assertPermissions({ all: ["roles.VIEW"] });
+  const session = await assertPermissions({ all: ["roles.view"] });
   return successResponse(await listRoles(session.currentPartyId, session.contractTypes));
 });
 
 /**
- * 新建角色。需要 roles.ADD。
+ * 新建角色。需要 roles.add。
  */
 export const POST = withApiHandler(async (req: Request) => {
-  const session = await assertPermissions({ all: ["roles.ADD"] });
+  const session = await assertPermissions({ all: ["roles.add"] });
 
   let raw: unknown;
   try {

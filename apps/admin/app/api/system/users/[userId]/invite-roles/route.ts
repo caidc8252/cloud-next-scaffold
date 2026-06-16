@@ -8,11 +8,11 @@ import { withApiHandler } from "@/lib/api-handler";
 
 /**
  * 设置待消费邀请的预分配角色(邀请不是用户,角色落 sys_operator_invite.roles,不走用户 PUT)。
- * id 形如 `invite-<operatorInviteId>`。需要 users.CHANGE_ROLE。
+ * id 形如 `invite-<operatorInviteId>`。需要 users.changeRole。
  */
 export const PUT = withApiHandler(
   async (req: Request, { params }: { params: Promise<{ userId: string }> }) => {
-    const session = await assertPermissions({ all: ["users.CHANGE_ROLE"] });
+    const session = await assertPermissions({ all: ["users.changeRole"] });
     const { userId: rawId } = await params;
     const inviteId = parseInviteId(rawId);
     if (!Number.isFinite(inviteId)) throw new BusinessError(ERR_INVALID_ID);

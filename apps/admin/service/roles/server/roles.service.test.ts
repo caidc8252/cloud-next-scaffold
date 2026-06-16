@@ -60,15 +60,15 @@ beforeEach(() => {
 describe("listRoles", () => {
   it("merges in-scope coded roles (group gate) with DB roles, dropping DB roles with no in-scope permission", async () => {
     vi.mocked(getRoles).mockReturnValue([
-      // roleId 1 已由 getRoles 填成 ADMIN 组权限（含一个组外码 admin.ONLY，验证列表也 ∩ scope）。
-      { roleId: 1, roleName: "Administrator", permissionCodes: ["roles.VIEW", "users.VIEW", "admin.ONLY"] },
-      { roleId: 2, roleName: "Operator", permissionCodes: ["roles.VIEW"] }, // ADMIN 组
+      // roleId 1（预置超管）显式列出权限码（含一个组外码 admin.only，验证列表 ∩ scope 时被砍）。
+      { roleId: 1, roleName: "Administrator", permissionCodes: ["roles.view", "users.view", "admin.only"] },
+      { roleId: 2, roleName: "Operator", permissionCodes: ["roles.view"] }, // ADMIN 组
       { roleId: 101, roleName: "Customer Administrator", permissionCodes: [] }, // CUSTOMER 组
     ] as never);
-    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["roles.VIEW", "users.VIEW"]));
+    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["roles.view", "users.view"]));
     vi.mocked(repo.listRoles).mockResolvedValue([
-      roleRow({ roleId: 1001, roleName: "InScope", permissionCodes: ["users.VIEW"], updUserId: 9 }),
-      roleRow({ roleId: 1002, roleName: "OutOfScope", permissionCodes: ["ghost.X"] }),
+      roleRow({ roleId: 1001, roleName: "InScope", permissionCodes: ["users.view"], updUserId: 9 }),
+      roleRow({ roleId: 1002, roleName: "OutOfScope", permissionCodes: ["ghost.x"] }),
     ] as never);
     vi.mocked(repo.listPartnerRoleBindings).mockResolvedValue([{ roles: [{ roleId: 1001 }] }] as never);
     vi.mocked(repo.resolveUsernames).mockResolvedValue(new Map([[9, "carol"]]));
@@ -80,16 +80,16 @@ describe("listRoles", () => {
     expect(ids).toContain("1");
     expect(ids).toContain("2");
     expect(ids).not.toContain("101");
-    // DB 1001 有 users.VIEW ∈ scope → 列出；1002 仅 ghost.X ∉ scope → 排除。
+    // DB 1001 有 users.view ∈ scope → 列出；1002 仅 ghost.x ∉ scope → 排除。
     expect(ids).toContain("1001");
     expect(ids).not.toContain("1002");
 
-    // 通配预置管理员（roleId 1）：def.permissionCodes 为空，但 VO 应展示当前 party scope 全集。
+    // 预置超管（roleId 1）：显式列出的码经 ∩ party scope 后，VO 展示当前 scope 内的码。
     const admin = result.find((r) => r.id === "1")!;
-    expect(admin.permissions.slice().sort()).toEqual(["roles.VIEW", "users.VIEW"]);
-    // 非通配编码角色（Operator）仍展示自身权限码。
+    expect(admin.permissions.slice().sort()).toEqual(["roles.view", "users.view"]);
+    // 普通编码角色（Operator）仍展示自身权限码。
     const operator = result.find((r) => r.id === "2")!;
-    expect(operator.permissions).toEqual(["roles.VIEW"]);
+    expect(operator.permissions).toEqual(["roles.view"]);
 
     const inScope = result.find((r) => r.id === "1001")!;
     expect(inScope.operatorCount).toBe(1);
@@ -100,9 +100,9 @@ describe("listRoles", () => {
 describe("listAssignableRoles", () => {
   it("delegates to listRoles (same coded 组归属门 + DB scope 过滤口径)", async () => {
     vi.mocked(getRoles).mockReturnValue([
-      { roleId: 2, roleName: "Operator", permissionCodes: ["roles.VIEW"] },
+      { roleId: 2, roleName: "Operator", permissionCodes: ["roles.view"] },
     ] as never);
-    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["roles.VIEW"]));
+    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["roles.view"]));
     vi.mocked(repo.listRoles).mockResolvedValue([] as never);
     vi.mocked(repo.listPartnerRoleBindings).mockResolvedValue([] as never);
     vi.mocked(repo.resolveUsernames).mockResolvedValue(new Map());
@@ -115,15 +115,15 @@ describe("listAssignableRoles", () => {
 
 describe("createRole", () => {
   it("creates a partner-owned role with the given permissions", async () => {
-    vi.mocked(repo.createRole).mockResolvedValue(roleRow({ permissionCodes: ["users.VIEW"] }) as never);
+    vi.mocked(repo.createRole).mockResolvedValue(roleRow({ permissionCodes: ["users.view"] }) as never);
 
-    const role = await createRole(session, { name: "Ops", permissions: ["users.VIEW"] });
+    const role = await createRole(session, { name: "Ops", permissions: ["users.view"] });
 
     expect(role.operatorCount).toBe(0);
     expect(vi.mocked(repo.createRole).mock.calls[0][0]).toMatchObject({
       roleName: "Ops",
       partyId: 100,
-      permissionCodes: ["users.VIEW"],
+      permissionCodes: ["users.view"],
     });
   });
 });
@@ -131,7 +131,7 @@ describe("createRole", () => {
 describe("updateRole", () => {
   it("refuses to modify a preset (≤300) role before touching the repo", async () => {
     await expect(
-      updateRole(session, 1, { name: "x", permissions: ["roles.ADD"] }),
+      updateRole(session, 1, { name: "x", permissions: ["roles.add"] }),
     ).rejects.toMatchObject({ code: ERR_ROLE_UPDATE_BUILTIN });
     expect(repo.findRole).not.toHaveBeenCalled();
     expect(repo.updateRole).not.toHaveBeenCalled();
@@ -150,11 +150,11 @@ describe("updateRole", () => {
     vi.mocked(repo.updateRole).mockResolvedValue(roleRow({ roleId: 1001 }) as never);
     vi.mocked(repo.countRoleOperatorsInPartner).mockResolvedValue(2 as never);
 
-    const role = await updateRole(session, 1001, { name: "  Renamed  ", permissions: ["roles.ADD"] });
+    const role = await updateRole(session, 1001, { name: "  Renamed  ", permissions: ["roles.add"] });
 
     const data = vi.mocked(repo.updateRole).mock.calls[0][1] as Record<string, unknown>;
     expect(data.roleName).toBe("Renamed");
-    expect(data.permissionCodes).toEqual(["roles.ADD"]);
+    expect(data.permissionCodes).toEqual(["roles.add"]);
     expect(role.operatorCount).toBe(2);
   });
 });

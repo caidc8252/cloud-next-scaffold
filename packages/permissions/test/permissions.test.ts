@@ -76,7 +76,7 @@ describe("server permissions", () => {
       getSessionMock.mockResolvedValue(null);
       const { assertPermissions } = await import("../src/server/permissions.ts");
 
-      await expect(assertPermissions({ all: ["users.VIEW"] })).rejects.toEqual(
+      await expect(assertPermissions({ all: ["users.view"] })).rejects.toEqual(
         expect.objectContaining({
           name: "AuthzError",
           status: 401,
@@ -86,27 +86,27 @@ describe("server permissions", () => {
     });
 
     it("throws forbidden with missing permissions when the session lacks access", async () => {
-      getSessionMock.mockResolvedValue(activeSession(["users.VIEW"]));
+      getSessionMock.mockResolvedValue(activeSession(["users.view"]));
       const { assertPermissions } = await import("../src/server/permissions.ts");
 
       await expect(
-        assertPermissions({ all: ["users.VIEW", "users.UPD"], any: ["roles.VIEW", "roles.ADD"] }),
+        assertPermissions({ all: ["users.view", "users.update"], any: ["roles.view", "roles.add"] }),
       ).rejects.toEqual(
         expect.objectContaining({
           name: "AuthzError",
           status: 403,
           code: "forbidden",
-          missing: ["users.UPD", "roles.VIEW", "roles.ADD"],
+          missing: ["users.update", "roles.view", "roles.add"],
         }),
       );
     });
 
     it("returns the session when all permission checks pass", async () => {
-      const session = activeSession(["users.VIEW", "users.UPD"]);
+      const session = activeSession(["users.view", "users.update"]);
       getSessionMock.mockResolvedValue(session);
       const { assertPermissions } = await import("../src/server/permissions.ts");
 
-      await expect(assertPermissions({ all: ["users.VIEW"], any: ["users.UPD"] })).resolves.toBe(session);
+      await expect(assertPermissions({ all: ["users.view"], any: ["users.update"] })).resolves.toBe(session);
     });
   });
 
@@ -115,16 +115,16 @@ describe("server permissions", () => {
       getSessionMock.mockResolvedValue(null);
       const { requirePermissions } = await import("../src/server/permissions.ts");
 
-      await expect(requirePermissions({ all: ["users.VIEW"] })).rejects.toThrow(
+      await expect(requirePermissions({ all: ["users.view"] })).rejects.toThrow(
         "__REDIRECT__:/api/auth/logout",
       );
     });
 
     it("redirects to /403 when the session lacks permission", async () => {
-      getSessionMock.mockResolvedValue(activeSession(["users.VIEW"]));
+      getSessionMock.mockResolvedValue(activeSession(["users.view"]));
       const { requirePermissions } = await import("../src/server/permissions.ts");
 
-      await expect(requirePermissions({ all: ["users.UPD"] })).rejects.toThrow("__REDIRECT__:/403");
+      await expect(requirePermissions({ all: ["users.update"] })).rejects.toThrow("__REDIRECT__:/403");
     });
   });
 });

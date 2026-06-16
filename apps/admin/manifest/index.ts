@@ -12,7 +12,7 @@ const config = createPlatformConfig(MENUS, { contractTypes: CONTRACT_KEYS, roles
 // 按契约过滤菜单：不传 → 全部；传单个契约或契约数组 → 命中的菜单。
 export const getMenus = config.getMenus;
 export const getContractKeys = config.getContractKeys;
-// 死写角色（GLOBAL，roleId ≤ 300）：getRoles 取全部，resolveRolePermissions(roleId) 解析权限码。
+// 死写角色（GLOBAL，roleId ≤ 1000）：getRoles 取全部，resolveRolePermissions(roleId) 解析权限码。
 export const getRoles = config.getRoles;
 export const resolveRolePermissions = config.resolveRolePermissions;
 // party scope（会话与角色列表共用的单一来源）：当前契约可达菜单声明的全部权限码集合。

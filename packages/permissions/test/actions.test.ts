@@ -55,7 +55,7 @@ const snapshot: Omit<Session, "loginAt" | "expireAt"> = {
   contractTypes: ["ADMIN"],
   authorizingType: "ADMIN",
   roles: [],
-  permissions: ["roles.VIEW"],
+  permissions: ["roles.view"],
   partners: [
     {
       partyId: 9,
@@ -166,7 +166,7 @@ describe("session actions", () => {
 
     const after = await sessionStore.read(sid);
     expect(after?.currentPartyId).toBe(9);
-    expect(after?.permissions).toEqual(["roles.VIEW"]);
+    expect(after?.permissions).toEqual(["roles.view"]);
     expect(after?.loginAt).toBe(before?.loginAt);
   });
 

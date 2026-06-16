@@ -7,10 +7,10 @@ export function roleBelongsToPartner(rolePartyId: number | null, partyId: number
   return rolePartyId === null || rolePartyId === partyId;
 }
 
-// 死写 GLOBAL 角色占 roleId 1–300（不入库）；DB 动态 PRIVATE 角色 ≥1001。
-const CODE_ROLE_MAX = 300;
+// 死写 GLOBAL 角色占 roleId 1–1000（不入库）；DB 动态 PRIVATE 角色 ≥1001。
+const CODE_ROLE_MAX = 1000;
 
-/** 内置/通用角色：roleId ≤ 300（死写 GLOBAL，名称/描述只读、不可删除）。 */
+/** 内置/通用角色：roleId ≤ 1000（死写 GLOBAL，名称/描述只读、不可删除）。 */
 export function isBuiltinRole(roleId: number): boolean {
   return roleId <= CODE_ROLE_MAX;
 }

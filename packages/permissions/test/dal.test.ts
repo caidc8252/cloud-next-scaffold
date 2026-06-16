@@ -41,7 +41,7 @@ const fullSnapshot: Omit<Session, "loginAt" | "expireAt"> = {
   contractTypes: ["ADMIN"],
   authorizingType: "ADMIN",
   roles: [{ roleId: 3, roleName: "Admin", roleType: "GLOBAL" }],
-  permissions: ["users.VIEW", "roles.VIEW"],
+  permissions: ["users.view", "roles.view"],
   partners: [
     { partyId: 2, partyName: "Acme", authorizingType: "ADMIN", status: "ACTIVE", authorizingFrom: null, authorizingTo: null },
   ],
@@ -109,7 +109,7 @@ describe("getSession", () => {
       contractTypes: ["ADMIN"],
       authorizingType: "ADMIN",
       roles: [{ roleId: 3, roleName: "Admin", roleType: "GLOBAL" }],
-      permissions: ["users.VIEW", "roles.VIEW"],
+      permissions: ["users.view", "roles.view"],
     });
   });
 
