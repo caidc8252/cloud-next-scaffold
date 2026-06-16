@@ -8,10 +8,13 @@ import { cn } from "../../lib/utils"
 
 type StepState = NonNullable<VariantProps<typeof stepDotVariants>["state"]>
 
-// Circle that carries the step number, or a check once the step is completed.
+// Circle that carries the step number, the step's own icon, or a check once
+// completed. Unsized icons fall back to 14px (matches the CheckIcon glyph) and
+// inherit the per-state text color via currentColor — completed icons read
+// success green, active read primary-foreground, upcoming read muted.
 // completed -> success green (filled-soft), active -> filled primary, upcoming -> muted outline.
 const stepDotVariants = cva(
-  "flex size-8 shrink-0 items-center justify-center rounded-full border text-sm transition-colors",
+  "flex size-8 shrink-0 items-center justify-center rounded-full border text-sm transition-colors [&_svg:not([class*='size-'])]:size-3.5",
   {
     variants: {
       state: {
@@ -41,6 +44,10 @@ interface StepIndicatorStep {
   label: string
   // Optional small uppercase caption above the title (e.g. "Step 1").
   caption?: string
+  // Optional glyph shown inside the dot in place of the step number. When set,
+  // the icon persists across every state (completed shows the icon in success
+  // green, not the check). Keep the ordinal readable via `caption`.
+  icon?: React.ReactNode
 }
 
 interface StepIndicatorProps extends React.ComponentProps<"ol"> {
@@ -81,7 +88,9 @@ interface StepIndicatorProps extends React.ComponentProps<"ol"> {
 //
 // States derive from `current`: index < current -> completed (green + check),
 // index === current -> active (filled primary), index > current -> upcoming (muted).
-// `caption` is optional; omit it for title-only steps.
+// `caption` is optional; omit it for title-only steps. Give a step an `icon` to
+// replace its dot number with a glyph (it stays through the completed state in
+// success green) — keep the ordinal in `caption` since the number is dropped.
 //
 // Renders bare (just the row of dots + connectors) so it composes anywhere. Wrap it
 // yourself for the card look:
@@ -111,11 +120,12 @@ function StepIndicator({
           index < current ? "completed" : index === current ? "active" : "upcoming"
         const isLast = index === steps.length - 1
         const clickable = index <= maxNavigable
+        // Icon wins in every state (keeps per-step identity once completed);
+        // otherwise completed collapses to a check and the rest show the ordinal.
+        const dotGlyph = step.icon ?? (state === "completed" ? <CheckIcon size={14} /> : index + 1)
         const content = (
           <>
-            <span className={stepDotVariants({ state })}>
-              {state === "completed" ? <CheckIcon size={14} /> : index + 1}
-            </span>
+            <span className={stepDotVariants({ state })}>{dotGlyph}</span>
             <span className="flex flex-col leading-tight">
               {step.caption ? (
                 <small className="text-xs font-medium tracking-wide text-content-tertiary uppercase">
