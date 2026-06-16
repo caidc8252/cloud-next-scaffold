@@ -13,7 +13,7 @@ export function BackLink({ onClick, children }: { onClick: () => void; children:
       variant="link"
       onClick={onClick}
       iconLeft={<ChevronLeft size={14} />}
-      className="mb-4 h-auto justify-start gap-1.5 p-0 text-sm font-medium text-content-secondary hover:text-content-primary hover:no-underline"
+      className="mb-4 justify-start gap-1.5 text-sm font-medium text-content-secondary hover:text-content-primary hover:no-underline"
     >
       {children}
     </Button>
@@ -40,7 +40,7 @@ export function IconBadge({
     <span
       className={cn(
         "inline-flex items-center justify-center rounded-xl border",
-        size === 52 ? "h-[52px] w-[52px]" : "size-11",
+        size === 52 ? "size-13" : "size-11",
         BADGE_TONES[tone],
       )}
     >

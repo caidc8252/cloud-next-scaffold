@@ -18,11 +18,11 @@ const HIGHLIGHTS: { key: string; Icon: LucideIcon }[] = [
 function BrandPanel() {
   const t = useTranslations("portal.login.brand");
   return (
-    <aside className="pep-brand-panel relative hidden w-[46%] max-w-[620px] flex-col overflow-hidden p-12 text-white lg:flex">
+    <aside className="pep-brand-panel relative hidden w-46pct max-w-155 flex-col overflow-hidden p-12 text-white lg:flex">
       <div className="relative flex items-center justify-between">
         <PepLogo size={30} sub={t("sub")} onDark />
       </div>
-      <div className="relative flex max-w-[460px] flex-1 flex-col justify-center gap-7">
+      <div className="relative flex max-w-115 flex-1 flex-col justify-center gap-7">
         <h2 className="text-4xl font-semibold leading-tight tracking-tight text-balance">
           {t.rich("lead", { em: (c) => <em className="not-italic text-primary-300">{c}</em> })}
         </h2>
@@ -62,7 +62,7 @@ export function AuthShell({
     <div className="pep-fade flex min-h-screen">
       {showBrand ? <BrandPanel /> : null}
       <div className="relative flex flex-1 items-center justify-center bg-surface-1 p-6 sm:p-10">
-        <div className="w-full max-w-[420px]">{children}</div>
+        <div className="w-full max-w-105">{children}</div>
         {busy ? (
           <div
             role="status"

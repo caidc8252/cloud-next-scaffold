@@ -57,9 +57,10 @@ export function PartnersPageClient({ initialPartners }: { initialPartners: Accou
           <Button
             key={p.partyUserId}
             variant="ghost"
+            size="auto"
             onClick={() => onSelect(p)}
             className={cn(
-              "flex h-auto w-full cursor-pointer items-center gap-3.5 rounded-xl border bg-surface-2 px-4 py-3.5 text-left transition-colors hover:border-line-strong",
+              "flex w-full cursor-pointer items-center gap-3.5 rounded-xl border bg-surface-2 px-4 py-3.5 text-left transition-colors hover:border-line-strong",
               p.isCurrent ? "border-primary/40" : "border-line-default",
               p.locked && "opacity-70",
             )}

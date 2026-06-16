@@ -237,7 +237,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId, portalBas
               <Input prefix={<Search className="size-4" />} placeholder="Search by name, login or email…" value={query}
                 onChange={(e) => setQuery(e.target.value)} inputSize="md" />
             </div>
-            <div className="flex max-h-[calc(100dvh-9rem)] flex-col overflow-auto">
+            <div className="flex max-h-dvh-9rem flex-col overflow-auto">
               {filtered.length === 0 && (
                 <div className="px-4 py-8 text-center text-sm text-content-tertiary">
                   {query ? `No users match "${query}"` : "No users in this filter."}

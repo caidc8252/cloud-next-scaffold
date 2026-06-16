@@ -19,7 +19,7 @@ export function ObCard({
     <div
       className={cn(
         "pep-fade w-full rounded-2xl border border-line-default bg-surface-2 p-8 shadow-3",
-        width === "wide" ? "max-w-[960px]" : "max-w-[440px]",
+        width === "wide" ? "max-w-240" : "max-w-110",
         centered && "text-center",
       )}
     >

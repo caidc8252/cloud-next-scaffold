@@ -43,14 +43,15 @@ export function PasswordChangeFlow({
   const allOk = checks.every((c) => c.ok);
   const ptype = show ? "text" : "password";
   const eye = (
-    <button
+    <Button
       type="button"
+      variant="link"
       tabIndex={-1}
-      className="cursor-pointer text-xs text-content-secondary"
+      className="text-xs font-normal text-content-secondary hover:no-underline"
       onClick={() => setShow((s) => !s)}
     >
       {show ? t("password.hide") : t("password.show")}
-    </button>
+    </Button>
   );
 
   async function submit() {

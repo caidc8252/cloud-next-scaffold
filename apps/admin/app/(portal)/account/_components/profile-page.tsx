@@ -40,7 +40,7 @@ function FRow({
         <span className="text-sm font-medium text-content-primary">{label}</span>
         {value && <span className="truncate text-xs text-content-secondary">{value}</span>}
       </div>
-      <div className="w-[340px] flex-none">{control}</div>
+      <div className="w-85 flex-none">{control}</div>
     </div>
   );
 }

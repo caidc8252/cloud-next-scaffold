@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useRef, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 
 export type UseListFiltersOptions<T> = {
   // The initial value IS the "unfiltered" baseline: apply / clear reset to it, and
@@ -38,8 +38,8 @@ export function useListFilters<T extends Record<string, unknown>>(
 ): ListFilters<T> {
   const { onApply } = options
   // Freeze the first initial so the callbacks below don't rebuild when a caller passes an inline object.
-  const initialRef = useRef(options.initial)
-  const initial = initialRef.current
+  // Lazy useState (not a ref) so we never read a ref during render — the value is captured once and never updates.
+  const [initial] = useState(options.initial)
 
   const [draft, setDraftState] = useState<T>(initial)
   const [applied, setApplied] = useState<T>(initial)

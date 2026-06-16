@@ -103,13 +103,14 @@ export function IdentityChangeFlow({
           {t("identity.verifyOldDesc", { email: profile.email })}
         </p>
         {otpInput(currentCode, setCurrentCode)}
-        <button
+        <Button
           type="button"
-          className="cursor-pointer self-start text-xs text-primary hover:underline"
+          variant="link"
+          className="self-start text-xs font-normal text-primary"
           onClick={() => requestCode("EMAIL_CURRENT")}
         >
           {t("identity.resend")}
-        </button>
+        </Button>
       </div>
     );
     footer = (

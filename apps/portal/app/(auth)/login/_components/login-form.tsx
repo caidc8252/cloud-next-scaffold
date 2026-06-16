@@ -159,7 +159,7 @@ export function LoginForm({
               <Button
                 variant="link"
                 onClick={() => router.push("/forgot-password")}
-                className="h-auto p-0 text-xs"
+                className="text-xs"
               >
                 {t("forgot")}
               </Button>

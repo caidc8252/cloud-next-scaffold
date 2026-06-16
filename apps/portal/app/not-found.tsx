@@ -15,7 +15,7 @@ export default async function NotFound() {
         {t("code")}
       </div>
       <h1 className="mb-2 mt-4 text-2xl font-semibold tracking-tight">{t("title")}</h1>
-      <p className="mb-6 max-w-[44ch] text-content-secondary">{t("sub")}</p>
+      <p className="mb-6 max-w-44ch text-content-secondary">{t("sub")}</p>
       <div className="flex flex-wrap justify-center gap-3">
         {/* prefetch disabled: a hard-404 document is not a valid prefetch
             target, and Next's router otherwise retries it in a loop here. */}

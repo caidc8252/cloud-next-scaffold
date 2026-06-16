@@ -9,7 +9,7 @@ export const EMAIL_QUEUE_KEY = "mail:queue";
 const emailAddressSchema = z
   .string()
   .trim()
-  .email()
+  .pipe(z.email())
   .transform((value) => value.trim());
 
 // CID 内联图：content 里以 <img src="cid:{content_id}"> 引用。本仓暂不使用（模板无内联图），

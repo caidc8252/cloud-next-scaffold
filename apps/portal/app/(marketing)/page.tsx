@@ -64,19 +64,19 @@ export default async function HomePage() {
       </nav>
 
       {/* hero */}
-      <header className="mx-auto w-full max-w-[1100px] px-8 pb-16 pt-24 text-center">
+      <header className="mx-auto w-full max-w-275 px-8 pb-16 pt-24 text-center">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-line-default bg-surface-2 py-1.5 pl-2 pr-3 text-sm font-medium text-content-secondary shadow-1">
           <Badge tone="info" shape="pill" className="uppercase">
             {t("home.eyebrowTag")}
           </Badge>
           <span>{t("home.eyebrowText")}</span>
         </div>
-        <h1 className="mx-auto mb-6 max-w-[14ch] text-5xl font-semibold leading-none tracking-tight text-balance sm:text-6xl">
+        <h1 className="mx-auto mb-6 max-w-14ch text-5xl font-semibold leading-none tracking-tight text-balance sm:text-6xl">
           {t.rich("home.title", {
             em: (c) => <em className="not-italic text-primary-600">{c}</em>,
           })}
         </h1>
-        <p className="mx-auto mb-8 max-w-[56ch] text-lg leading-relaxed text-content-secondary text-pretty">
+        <p className="mx-auto mb-8 max-w-56ch text-lg leading-relaxed text-content-secondary text-pretty">
           {t("home.sub")}
         </p>
         <div className="flex flex-wrap justify-center gap-3">
@@ -108,7 +108,7 @@ export default async function HomePage() {
       </header>
 
       {/* core features */}
-      <section className="mx-auto w-full max-w-[1180px] px-8 pt-6">
+      <section className="mx-auto w-full max-w-295 px-8 pt-6">
         <div className="mb-7">
           <div className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-primary-600">
             {t("home.capabilitiesOverline")}
@@ -116,7 +116,7 @@ export default async function HomePage() {
           <h2 className="mb-2 text-3xl font-semibold tracking-tight">
             {t("home.capabilitiesTitle")}
           </h2>
-          <p className="max-w-[60ch] text-content-secondary">{t("home.capabilitiesLede")}</p>
+          <p className="max-w-60ch text-content-secondary">{t("home.capabilitiesLede")}</p>
         </div>
         <div className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-line-subtle bg-line-subtle sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map(({ key, Icon }) => (
@@ -134,7 +134,7 @@ export default async function HomePage() {
       </section>
 
       {/* brand / identity strip */}
-      <section className="mx-auto mt-12 w-full max-w-[1180px] px-8">
+      <section className="mx-auto mt-12 w-full max-w-295 px-8">
         <div className="mb-7">
           <div className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-primary-600">
             {t("home.brandOverline")}
@@ -162,11 +162,11 @@ export default async function HomePage() {
       </section>
 
       {/* CTA band */}
-      <section className="mx-auto mt-16 w-full max-w-[1180px] px-8">
+      <section className="mx-auto mt-16 w-full max-w-295 px-8">
         <div className="pep-cta-glow flex flex-wrap items-center justify-between gap-8 rounded-2xl bg-primary-700 p-11 text-white shadow-4">
           <div className="relative">
             <h2 className="mb-2 text-2xl font-semibold tracking-tight">{t("home.ctaBandTitle")}</h2>
-            <p className="max-w-[46ch] text-sm text-white/85">{t("home.ctaBandText")}</p>
+            <p className="max-w-46ch text-sm text-white/85">{t("home.ctaBandText")}</p>
           </div>
           <div className="relative flex flex-wrap gap-3">
             <Button
