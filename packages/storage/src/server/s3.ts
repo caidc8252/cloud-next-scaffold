@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import {
+  CopyObjectCommand,
+  DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
@@ -53,6 +55,19 @@ export type GetS3ObjectMetadataInput = {
   abortSignal?: AbortSignal;
 };
 
+export type GetS3ObjectBytesInput = {
+  objectKey: string;
+  range?: string;
+  abortSignal?: AbortSignal;
+};
+
+export type UpdateS3ObjectContentTypeInput = {
+  objectKey: string;
+  contentType: string;
+  sourceEtag?: string;
+  abortSignal?: AbortSignal;
+};
+
 export type CreateS3DownloadUrlInput = {
   objectKey: string;
   filename?: string;
@@ -64,6 +79,20 @@ export type CreateS3StoredObjectReferenceInput = {
   contentType?: string;
   sizeBytes?: number;
   etag?: string;
+};
+
+export type CopyS3ObjectInput = {
+  sourceObjectKey: string;
+  targetObjectKey: string;
+  contentType?: string;
+  sizeBytes?: number;
+  allowOverwrite?: boolean;
+  abortSignal?: AbortSignal;
+};
+
+export type DeleteS3ObjectInput = {
+  objectKey: string;
+  abortSignal?: AbortSignal;
 };
 
 const stsClientsByRegion = new Map<string, STSClient>();
@@ -78,10 +107,11 @@ const S3_UPLOAD_ACTIONS = [
   "s3:ListMultipartUploadParts",
 ] as const;
 const S3_READ_ACTIONS = ["s3:GetObject"] as const;
+const S3_COPY_WRITE_ACTIONS = ["s3:PutObject"] as const;
+const S3_DELETE_ACTIONS = ["s3:DeleteObject"] as const;
 
 function getServerProxyUrl(): string | undefined {
   return (
-    process.env.AWS_SDK_PROXY_URL?.trim() ||
     process.env.HTTPS_PROXY?.trim() ||
     process.env.https_proxy?.trim() ||
     process.env.HTTP_PROXY?.trim() ||
@@ -203,11 +233,7 @@ function createScopedSessionName(prefix: string): string {
   return `${trimmedPrefix}-${suffix}`;
 }
 
-function createScopedPolicy(
-  bucket: string,
-  objectKey: string,
-  actions: readonly string[],
-): string {
+function createScopedPolicy(bucket: string, objectKey: string, actions: readonly string[]): string {
   return JSON.stringify({
     Version: "2012-10-17",
     Statement: [
@@ -215,6 +241,28 @@ function createScopedPolicy(
         Effect: "Allow",
         Action: actions,
         Resource: [`arn:aws:s3:::${bucket}/${objectKey}`],
+      },
+    ],
+  });
+}
+
+function createCopyScopedPolicy(
+  bucket: string,
+  sourceObjectKey: string,
+  targetObjectKey: string,
+): string {
+  return JSON.stringify({
+    Version: "2012-10-17",
+    Statement: [
+      {
+        Effect: "Allow",
+        Action: S3_READ_ACTIONS,
+        Resource: [`arn:aws:s3:::${bucket}/${sourceObjectKey}`],
+      },
+      {
+        Effect: "Allow",
+        Action: S3_COPY_WRITE_ACTIONS,
+        Resource: [`arn:aws:s3:::${bucket}/${targetObjectKey}`],
       },
     ],
   });
@@ -281,8 +329,15 @@ async function mintTemporaryCredentials(
   objectKey: string,
   actions: readonly string[],
 ): Promise<S3StsCredentials> {
-  const client = createStsClient(config.regionId);
   const policy = createScopedPolicy(config.bucket, objectKey, actions);
+  return mintTemporaryCredentialsWithPolicy(config, policy);
+}
+
+async function mintTemporaryCredentialsWithPolicy(
+  config: NormalizedS3UploadConfig,
+  policy: string,
+): Promise<S3StsCredentials> {
+  const client = createStsClient(config.regionId);
   const sessionName = createScopedSessionName(config.stsSessionName);
 
   if (config.stsRoleArn) {
@@ -340,6 +395,55 @@ async function mintTemporaryCredentials(
     sessionToken: credentials.SessionToken,
     expiration: normalizeExpiration(credentials.Expiration),
   };
+}
+
+function encodeCopySource(bucket: string, objectKey: string): string {
+  const encodedKey = objectKey
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+
+  return `${bucket}/${encodedKey}`;
+}
+
+async function readS3BodyBytes(body: unknown): Promise<Uint8Array> {
+  if (!body) return new Uint8Array();
+
+  if (body instanceof Uint8Array) {
+    return body;
+  }
+
+  if (body instanceof ArrayBuffer) {
+    return new Uint8Array(body);
+  }
+
+  if (
+    typeof body === "object" &&
+    body !== null &&
+    "transformToByteArray" in body &&
+    typeof body.transformToByteArray === "function"
+  ) {
+    return await body.transformToByteArray();
+  }
+
+  if (
+    typeof body === "object" &&
+    body !== null &&
+    "arrayBuffer" in body &&
+    typeof body.arrayBuffer === "function"
+  ) {
+    return new Uint8Array(await body.arrayBuffer());
+  }
+
+  if (Symbol.asyncIterator in Object(body)) {
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of body as AsyncIterable<Uint8Array | Buffer | string>) {
+      chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : new Uint8Array(chunk));
+    }
+    return Buffer.concat(chunks);
+  }
+
+  throw new Error("Unsupported S3 object body.");
 }
 
 export function getS3ConfigSummary(config: S3UploadConfig): S3ConfigSummary {
@@ -460,6 +564,74 @@ export function createS3StoredObjectReference(
   };
 }
 
+export async function copyS3Object(
+  config: S3UploadConfig,
+  input: CopyS3ObjectInput,
+): Promise<S3StoredObject> {
+  const normalized = normalizeS3UploadConfig(config);
+  const sourceObjectKey = normalizeObjectKey(input.sourceObjectKey);
+  const targetObjectKey = normalizeObjectKey(input.targetObjectKey);
+  const contentType = input.contentType?.trim();
+
+  if (sourceObjectKey === targetObjectKey) {
+    throw new Error("sourceObjectKey and targetObjectKey must be different.");
+  }
+
+  const scopedCredentials = normalized.stsRoleArn
+    ? await mintTemporaryCredentialsWithPolicy(
+        normalized,
+        createCopyScopedPolicy(normalized.bucket, sourceObjectKey, targetObjectKey),
+      )
+    : undefined;
+  const client = scopedCredentials
+    ? createScopedS3Client(normalized, scopedCredentials)
+    : createS3Client(normalized);
+  const response = await client.send(
+    new CopyObjectCommand({
+      Bucket: normalized.bucket,
+      Key: targetObjectKey,
+      CopySource: encodeCopySource(normalized.bucket, sourceObjectKey),
+      ContentType: contentType || undefined,
+      IfNoneMatch: input.allowOverwrite ? undefined : "*",
+      MetadataDirective: contentType ? "REPLACE" : undefined,
+    }),
+    { abortSignal: input.abortSignal },
+  );
+
+  return {
+    bucket: normalized.bucket,
+    regionId: normalized.regionId,
+    uploadUrl: normalized.uploadUrl,
+    objectKey: targetObjectKey,
+    objectUrl: createObjectUrl(normalized.uploadUrl, targetObjectKey),
+    contentType: contentType || "application/octet-stream",
+    sizeBytes: input.sizeBytes,
+    etag: response.CopyObjectResult?.ETag,
+  };
+}
+
+export async function deleteS3Object(
+  config: S3UploadConfig,
+  input: DeleteS3ObjectInput,
+): Promise<void> {
+  const normalized = normalizeS3UploadConfig(config);
+  const objectKey = normalizeObjectKey(input.objectKey);
+  const scopedCredentials = normalized.stsRoleArn
+    ? await mintTemporaryCredentials(normalized, objectKey, S3_DELETE_ACTIONS)
+    : undefined;
+  const client = scopedCredentials
+    ? createScopedS3Client(normalized, scopedCredentials)
+    : createS3Client(normalized);
+
+  await client.send(
+    new DeleteObjectCommand({
+      Bucket: normalized.bucket,
+      Key: objectKey,
+    }),
+    { abortSignal: input.abortSignal },
+  );
+}
+
 export async function getS3ObjectMetadata(
   config: S3UploadConfig,
   input: GetS3ObjectMetadataInput,
@@ -490,6 +662,74 @@ export async function getS3ObjectMetadata(
     sizeBytes: response.ContentLength,
     etag: response.ETag,
     lastModified: response.LastModified?.toISOString(),
+  };
+}
+
+export async function getS3ObjectBytes(
+  config: S3UploadConfig,
+  input: GetS3ObjectBytesInput,
+): Promise<Uint8Array> {
+  const normalized = normalizeS3UploadConfig(config);
+  const objectKey = normalizeObjectKey(input.objectKey);
+  const scopedCredentials = normalized.stsRoleArn
+    ? await mintTemporaryCredentials(normalized, objectKey, S3_READ_ACTIONS)
+    : undefined;
+  const client = scopedCredentials
+    ? createScopedS3Client(normalized, scopedCredentials)
+    : createS3Client(normalized);
+  const response = await client.send(
+    new GetObjectCommand({
+      Bucket: normalized.bucket,
+      Key: objectKey,
+      Range: input.range,
+    }),
+    { abortSignal: input.abortSignal },
+  );
+
+  return readS3BodyBytes(response.Body);
+}
+
+export async function updateS3ObjectContentType(
+  config: S3UploadConfig,
+  input: UpdateS3ObjectContentTypeInput,
+): Promise<S3StoredObject> {
+  const normalized = normalizeS3UploadConfig(config);
+  const objectKey = normalizeObjectKey(input.objectKey);
+  const contentType = input.contentType.trim();
+
+  if (!contentType) {
+    throw new Error("contentType must be a non-empty string.");
+  }
+
+  const scopedCredentials = normalized.stsRoleArn
+    ? await mintTemporaryCredentialsWithPolicy(
+        normalized,
+        createCopyScopedPolicy(normalized.bucket, objectKey, objectKey),
+      )
+    : undefined;
+  const client = scopedCredentials
+    ? createScopedS3Client(normalized, scopedCredentials)
+    : createS3Client(normalized);
+  const response = await client.send(
+    new CopyObjectCommand({
+      Bucket: normalized.bucket,
+      Key: objectKey,
+      CopySource: encodeCopySource(normalized.bucket, objectKey),
+      CopySourceIfMatch: input.sourceEtag,
+      ContentType: contentType,
+      MetadataDirective: "REPLACE",
+    }),
+    { abortSignal: input.abortSignal },
+  );
+
+  return {
+    bucket: normalized.bucket,
+    regionId: normalized.regionId,
+    uploadUrl: normalized.uploadUrl,
+    objectKey,
+    objectUrl: createObjectUrl(normalized.uploadUrl, objectKey),
+    contentType,
+    etag: response.CopyObjectResult?.ETag,
   };
 }
 

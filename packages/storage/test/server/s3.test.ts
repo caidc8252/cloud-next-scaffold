@@ -15,6 +15,22 @@ vi.mock("@aws-sdk/client-s3", () => {
     }
   }
 
+  class CopyObjectCommand {
+    input: unknown;
+
+    constructor(input: unknown) {
+      this.input = input;
+    }
+  }
+
+  class DeleteObjectCommand {
+    input: unknown;
+
+    constructor(input: unknown) {
+      this.input = input;
+    }
+  }
+
   class PutObjectCommand {
     input: unknown;
 
@@ -41,6 +57,8 @@ vi.mock("@aws-sdk/client-s3", () => {
 
   return {
     S3Client,
+    CopyObjectCommand,
+    DeleteObjectCommand,
     GetObjectCommand,
     HeadObjectCommand,
     PutObjectCommand,
@@ -282,6 +300,31 @@ describe("getS3ObjectMetadata", () => {
   });
 });
 
+describe("getS3ObjectBytes", () => {
+  it("reads a byte range from the configured bucket", async () => {
+    s3SendMock.mockResolvedValueOnce({
+      Body: {
+        transformToByteArray: vi.fn(async () => new Uint8Array([0x89, 0x50, 0x4e, 0x47])),
+      },
+    });
+
+    const { getS3ObjectBytes } = await import("../../src/server/s3.ts");
+    const bytes = await getS3ObjectBytes(BASE_CONFIG, {
+      objectKey: "uploads/icon.png",
+      range: "bytes=0-31",
+    });
+
+    expect(Array.from(bytes)).toEqual([0x89, 0x50, 0x4e, 0x47]);
+
+    const getCommand = s3SendMock.mock.calls[0]?.[0] as {
+      input: Record<string, string>;
+    };
+    expect(getCommand.input.Bucket).toBe("merchant-debug-bucket");
+    expect(getCommand.input.Key).toBe("uploads/icon.png");
+    expect(getCommand.input.Range).toBe("bytes=0-31");
+  });
+});
+
 describe("createS3StoredObjectReference", () => {
   it("builds an object reference without calling S3", async () => {
     const { createS3StoredObjectReference } = await import("../../src/server/s3.ts");
@@ -302,6 +345,230 @@ describe("createS3StoredObjectReference", () => {
       etag: '"etag"',
     });
     expect(s3SendMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("copyS3Object", () => {
+  it("copies an object into a new key and returns the stored object reference", async () => {
+    s3SendMock.mockResolvedValueOnce({
+      CopyObjectResult: {
+        ETag: '"copy-etag"',
+      },
+    });
+
+    const { copyS3Object } = await import("../../src/server/s3.ts");
+    const storedObject = await copyS3Object(BASE_CONFIG, {
+      sourceObjectKey: "tmp/icon one.png",
+      targetObjectKey: "public/applications/icons/icon one.png",
+      contentType: "image/png",
+      sizeBytes: 2048,
+    });
+
+    expect(storedObject).toMatchObject({
+      bucket: "merchant-debug-bucket",
+      objectKey: "public/applications/icons/icon one.png",
+      objectUrl:
+        "https://merchant-debug-bucket.s3.ap-southeast-1.amazonaws.com/public/applications/icons/icon%20one.png",
+      contentType: "image/png",
+      sizeBytes: 2048,
+      etag: '"copy-etag"',
+    });
+
+    const copyCommand = s3SendMock.mock.calls[0]?.[0] as {
+      input: Record<string, string>;
+    };
+    expect(copyCommand.input.Bucket).toBe("merchant-debug-bucket");
+    expect(copyCommand.input.Key).toBe("public/applications/icons/icon one.png");
+    expect(copyCommand.input.CopySource).toBe("merchant-debug-bucket/tmp/icon%20one.png");
+    expect(copyCommand.input.IfNoneMatch).toBe("*");
+    expect(copyCommand.input.MetadataDirective).toBe("REPLACE");
+  });
+
+  it("uses scoped read and write credentials when a role ARN is configured", async () => {
+    stsSendMock.mockResolvedValueOnce({
+      Credentials: {
+        AccessKeyId: "copy-temp-ak",
+        SecretAccessKey: "copy-temp-sk",
+        SessionToken: "copy-temp-token",
+        Expiration: new Date("2026-05-21T14:00:00.000Z"),
+      },
+    });
+    s3SendMock.mockResolvedValueOnce({
+      CopyObjectResult: {
+        ETag: '"copy-etag"',
+      },
+    });
+
+    const { copyS3Object } = await import("../../src/server/s3.ts");
+    await copyS3Object(
+      {
+        ...BASE_CONFIG,
+        stsRoleArn: "arn:aws:iam::123456789012:role/merchant-storage",
+      },
+      {
+        sourceObjectKey: "tmp/icon.png",
+        targetObjectKey: "public/applications/icons/icon.png",
+        contentType: "image/png",
+      },
+    );
+
+    const stsCommand = stsSendMock.mock.calls[0]?.[0] as { input: Record<string, string> };
+    expect(stsCommand.input.Policy).toContain("s3:GetObject");
+    expect(stsCommand.input.Policy).toContain("s3:PutObject");
+    expect(stsCommand.input.Policy).toContain("merchant-debug-bucket/tmp/icon.png");
+    expect(stsCommand.input.Policy).toContain(
+      "merchant-debug-bucket/public/applications/icons/icon.png",
+    );
+
+    const s3ClientInput = s3ClientInputs[0] as {
+      credentials?: {
+        accessKeyId?: string;
+      };
+    };
+    expect(s3ClientInput.credentials?.accessKeyId).toBe("copy-temp-ak");
+  });
+
+  it("rejects copy operations that would overwrite the same key", async () => {
+    const { copyS3Object } = await import("../../src/server/s3.ts");
+
+    await expect(
+      copyS3Object(BASE_CONFIG, {
+        sourceObjectKey: "tmp/icon.png",
+        targetObjectKey: "tmp/icon.png",
+      }),
+    ).rejects.toThrow("sourceObjectKey and targetObjectKey must be different.");
+    expect(s3SendMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("deleteS3Object", () => {
+  it("deletes an object from the configured bucket", async () => {
+    s3SendMock.mockResolvedValueOnce({});
+
+    const { deleteS3Object } = await import("../../src/server/s3.ts");
+    await deleteS3Object(BASE_CONFIG, {
+      objectKey: "tmp/icon.png",
+    });
+
+    const deleteCommand = s3SendMock.mock.calls[0]?.[0] as {
+      input: Record<string, string>;
+    };
+    expect(deleteCommand.input.Bucket).toBe("merchant-debug-bucket");
+    expect(deleteCommand.input.Key).toBe("tmp/icon.png");
+  });
+
+  it("uses scoped delete credentials when a role ARN is configured", async () => {
+    stsSendMock.mockResolvedValueOnce({
+      Credentials: {
+        AccessKeyId: "delete-temp-ak",
+        SecretAccessKey: "delete-temp-sk",
+        SessionToken: "delete-temp-token",
+        Expiration: new Date("2026-05-21T15:00:00.000Z"),
+      },
+    });
+    s3SendMock.mockResolvedValueOnce({});
+
+    const { deleteS3Object } = await import("../../src/server/s3.ts");
+    await deleteS3Object(
+      {
+        ...BASE_CONFIG,
+        stsRoleArn: "arn:aws:iam::123456789012:role/merchant-storage",
+      },
+      {
+        objectKey: "tmp/icon.png",
+      },
+    );
+
+    const stsCommand = stsSendMock.mock.calls[0]?.[0] as { input: Record<string, string> };
+    expect(stsCommand.input.Policy).toContain("s3:DeleteObject");
+    expect(stsCommand.input.Policy).not.toContain("s3:GetObject");
+    expect(stsCommand.input.Policy).not.toContain("s3:PutObject");
+    expect(stsCommand.input.Policy).toContain("merchant-debug-bucket/tmp/icon.png");
+
+    const s3ClientInput = s3ClientInputs[0] as {
+      credentials?: {
+        accessKeyId?: string;
+      };
+    };
+    expect(s3ClientInput.credentials?.accessKeyId).toBe("delete-temp-ak");
+  });
+});
+
+describe("updateS3ObjectContentType", () => {
+  it("rewrites content type by self-copying the object metadata", async () => {
+    s3SendMock.mockResolvedValueOnce({
+      CopyObjectResult: {
+        ETag: '"updated-etag"',
+      },
+    });
+
+    const { updateS3ObjectContentType } = await import("../../src/server/s3.ts");
+    const storedObject = await updateS3ObjectContentType(BASE_CONFIG, {
+      objectKey: "public/applications/icons/icon.png",
+      contentType: "image/png",
+      sourceEtag: '"old-etag"',
+    });
+
+    expect(storedObject).toMatchObject({
+      bucket: "merchant-debug-bucket",
+      objectKey: "public/applications/icons/icon.png",
+      contentType: "image/png",
+      etag: '"updated-etag"',
+    });
+
+    const copyCommand = s3SendMock.mock.calls[0]?.[0] as {
+      input: Record<string, string>;
+    };
+    expect(copyCommand.input.Bucket).toBe("merchant-debug-bucket");
+    expect(copyCommand.input.Key).toBe("public/applications/icons/icon.png");
+    expect(copyCommand.input.CopySource).toBe(
+      "merchant-debug-bucket/public/applications/icons/icon.png",
+    );
+    expect(copyCommand.input.CopySourceIfMatch).toBe('"old-etag"');
+    expect(copyCommand.input.ContentType).toBe("image/png");
+    expect(copyCommand.input.MetadataDirective).toBe("REPLACE");
+  });
+
+  it("uses scoped read and write credentials when a role ARN is configured", async () => {
+    stsSendMock.mockResolvedValueOnce({
+      Credentials: {
+        AccessKeyId: "metadata-temp-ak",
+        SecretAccessKey: "metadata-temp-sk",
+        SessionToken: "metadata-temp-token",
+        Expiration: new Date("2026-05-21T16:00:00.000Z"),
+      },
+    });
+    s3SendMock.mockResolvedValueOnce({
+      CopyObjectResult: {
+        ETag: '"updated-etag"',
+      },
+    });
+
+    const { updateS3ObjectContentType } = await import("../../src/server/s3.ts");
+    await updateS3ObjectContentType(
+      {
+        ...BASE_CONFIG,
+        stsRoleArn: "arn:aws:iam::123456789012:role/merchant-storage",
+      },
+      {
+        objectKey: "public/applications/icons/icon.png",
+        contentType: "image/png",
+      },
+    );
+
+    const stsCommand = stsSendMock.mock.calls[0]?.[0] as { input: Record<string, string> };
+    expect(stsCommand.input.Policy).toContain("s3:GetObject");
+    expect(stsCommand.input.Policy).toContain("s3:PutObject");
+    expect(stsCommand.input.Policy).toContain(
+      "merchant-debug-bucket/public/applications/icons/icon.png",
+    );
+
+    const s3ClientInput = s3ClientInputs[0] as {
+      credentials?: {
+        accessKeyId?: string;
+      };
+    };
+    expect(s3ClientInput.credentials?.accessKeyId).toBe("metadata-temp-ak");
   });
 });
 

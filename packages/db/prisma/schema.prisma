@@ -10,8 +10,8 @@ datasource db {
 }
 
 // 说明（对齐系统 DB 脚本 Partner/Contract/Role/User/MFA/Invite）：
-// - 角色/权限关联用 JSONB 数组（sys_party_user.roles / sys_role.permission_codes），
-//   是 DB 约定「关联走关联表」的已批准例外，理由是反查频率低、读多写少，详见 CLAUDE.md。
+// - 读多写少、聚合入口明确、反查低频的关联可以用 JSONB 数组保存 id；
+//   例如 sys_party_user.roles / sys_role.permission_codes。详见 AGENTS.md。
 // - 契约类型为内联字符串枚举（应用层 zod 校验），不再有 sys_contract_define 表。
 // - CHECK / partial unique index / 触发器等 Prisma 表达不了的硬约束，统一由应用层（zod +
 //   service 事务）保证；upd_time 走 @updatedAt。详见 DEV_NOTE。
@@ -42,8 +42,6 @@ model SysParty {
   roles                SysRole[]
   operatorInvites      SysOperatorInvite[] @relation("invitedParty")
   invitesSentFromParty SysOperatorInvite[] @relation("inviterParty")
-  storageObjects       StorageObject[]
-  storageAttachments   StorageAttachment[]
   notices              SysNotice[]
 
   @@index([country], map: "idx_sys_party_country")
@@ -152,7 +150,6 @@ model SysUser {
   partyUsers           SysPartyUser[]
   mfaInfos               SysMfaInfo[]
   sentInvites            SysOperatorInvite[]
-  uploadedStorageObjects StorageObject[]
   notices                SysNotice[]
 
   @@index([email])
@@ -243,67 +240,6 @@ model SysOperatorInvite {
 }
 
 // 菜单与权限定义不入库，由各 apps/*/manifest + @cloud/platform-config 提供。
-
-// ─── storage_object ─────────────────────────────────────
-model StorageObject {
-  storageObjectId  String    @id @default(uuid()) @map("storage_object_id")
-  partyId         Int       @map("party_id")
-  uploaderUserId   Int       @map("uploader_user_id")
-  bucket           String    @db.VarChar(255)
-  regionId         String    @map("region_id") @db.VarChar(64)
-  objectKey        String    @map("object_key") @db.VarChar(1024)
-  objectUrl        String    @map("object_url") @db.VarChar(1200)
-  originalFilename String    @map("original_filename") @db.VarChar(255)
-  contentType      String    @map("content_type") @db.VarChar(255)
-  sizeBytes        BigInt    @map("size_bytes")
-  contentHash      String?   @map("content_hash") @db.VarChar(64)
-  visibility       String    @default("PRIVATE") @db.VarChar(20)
-  etag             String?   @db.VarChar(255)
-  status           String    @default("ACTIVE") @db.VarChar(20)
-  creTime          DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
-  creUserId        Int       @default(0) @map("cre_user_id")
-  updTime          DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
-  updUserId        Int       @default(0) @map("upd_user_id")
-  deletedAt        DateTime? @map("deleted_at") @db.Timestamp(3)
-
-  partner      SysParty           @relation(fields: [partyId], references: [partyId])
-  uploader    SysUser             @relation(fields: [uploaderUserId], references: [userId])
-  attachments StorageAttachment[]
-
-  @@unique([partyId, bucket, objectKey], map: "uk_storage_object_partner_bucket_key")
-  @@index([partyId, contentHash, sizeBytes, status], map: "idx_storage_object_partner_hash_size_status")
-  @@index([partyId, status, creTime(sort: Desc)], map: "idx_storage_object_partner_status_time")
-  @@index([uploaderUserId], map: "idx_storage_object_uploader")
-  @@map("storage_object")
-}
-
-// ─── storage_attachment ─────────────────────────────────
-model StorageAttachment {
-  storageAttachmentId String    @id @default(uuid()) @map("storage_attachment_id")
-  partyId            Int       @map("party_id")
-  storageObjectId     String    @map("storage_object_id")
-  subjectType         String    @map("subject_type") @db.VarChar(64)
-  subjectId           String    @map("subject_id") @db.VarChar(128)
-  purpose             String    @db.VarChar(64)
-  displayName         String?   @map("display_name") @db.VarChar(255)
-  sortNo              Int       @default(0) @map("sort_no")
-  isPrimary           Boolean   @default(false) @map("is_primary")
-  status              String    @default("ACTIVE") @db.VarChar(20)
-  creTime             DateTime  @default(now()) @map("cre_time") @db.Timestamp(3)
-  creUserId           Int       @default(0) @map("cre_user_id")
-  updTime             DateTime  @default(now()) @updatedAt @map("upd_time") @db.Timestamp(3)
-  updUserId           Int       @default(0) @map("upd_user_id")
-  deletedAt           DateTime? @map("deleted_at") @db.Timestamp(3)
-
-  partner        SysParty     @relation(fields: [partyId], references: [partyId])
-  storageObject StorageObject @relation(fields: [storageObjectId], references: [storageObjectId], onDelete: Cascade)
-
-  @@unique([partyId, storageObjectId, subjectType, subjectId, purpose], map: "uk_storage_attachment_object_subject")
-  @@index([partyId, subjectType, subjectId, purpose, status, sortNo], map: "idx_storage_attachment_subject")
-  @@index([storageObjectId], map: "idx_storage_attachment_object")
-  @@index([partyId, status, creTime(sort: Desc)], map: "idx_storage_attachment_partner_status_time")
-  @@map("storage_attachment")
-}
 
 // ─── sys_operation_log（操作日志，UUID 主键，只写不改）─────────────
 // 无 FK：append-only 审计，party_id / operator_user_id 仅冗余存值，不约束。
