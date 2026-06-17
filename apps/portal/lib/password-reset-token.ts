@@ -1,7 +1,7 @@
 import "server-only";
 
-import { randomBytes } from "node:crypto";
 import { kv } from "@cloud/cache";
+import { generateToken } from "@cloud/security/token";
 
 // 重置密码一次性 token。key/value 形状是与 admin（管理员触发签发）共享的跨 app 契约：
 // `pwreset:{token}` = { userId, source }；两 app 写同一约定、portal 消费。256-bit 不可猜、一次性。
@@ -14,7 +14,7 @@ const tokenKey = (token: string) => `pwreset:${token}`;
 
 /** 自助找回签发（TTL 60m）。 */
 export async function issueSelfServiceResetToken(userId: number): Promise<string> {
-  const token = randomBytes(32).toString("base64url");
+  const token = generateToken();
   await kv.set(
     tokenKey(token),
     { userId, source: "self-service" } satisfies ResetTokenEntry,

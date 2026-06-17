@@ -12,6 +12,7 @@
     "@cloud/cache": "workspace:*",
     "@cloud/config": "workspace:*",
     "@cloud/db": "workspace:*",
+    "@cloud/security": "workspace:*",
     "server-only": "catalog:"
   },
   "peerDependencies": {

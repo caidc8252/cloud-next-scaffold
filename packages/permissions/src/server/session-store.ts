@@ -1,7 +1,7 @@
 import "server-only";
 
-import { randomBytes } from "node:crypto";
 import { kv } from "@cloud/cache";
+import { generateToken } from "@cloud/security/token";
 
 // sid + Redis 会话快照存储。
 // cookie 只放不可猜的随机 sid（凭证 = 256-bit 随机 + 必须在 Redis 命中）；
@@ -61,7 +61,7 @@ export type ActiveSession = Session & {
 };
 
 const sessionKey = (sid: string) => `session:${sid}`;
-const generateSid = () => randomBytes(32).toString("base64url");
+const generateSid = () => generateToken();
 const computeExpireAt = () => Date.now() + SESSION_TTL_SECONDS * 1000;
 
 export const sessionStore = {

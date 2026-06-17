@@ -1,7 +1,7 @@
 import "server-only";
 
-import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
+import { generateToken } from "@cloud/security/token";
 import { kv } from "@cloud/cache";
 import {
   SID_COOKIE,
@@ -75,7 +75,7 @@ export async function createSessionHandoffToken(sid?: string): Promise<string | 
   const session = await sessionStore.read(currentSid);
   if (!session) return null;
 
-  const token = randomBytes(32).toString("base64url");
+  const token = generateToken();
   await kv.set(
     handoffKey(token),
     { sid: currentSid, createdAt: Date.now() } satisfies SessionHandoff,

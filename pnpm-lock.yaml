@@ -495,6 +495,9 @@ importers:
       '@cloud/db':
         specifier: workspace:*
         version: link:../db
+      '@cloud/security':
+        specifier: workspace:*
+        version: link:../security
       next:
         specifier: ^16.0.0
         version: 16.2.6(@babel/core@7.29.0)(@playwright/test@1.60.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
