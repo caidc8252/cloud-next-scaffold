@@ -40,6 +40,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **UI 页面样式**：portal 业务页（列表/新增/详情）只用 `@cloud/ui` 原语 + 语义/圆角 token，**不写任意值**字号/间距/宽高/颜色/圆角；选中态压过 hover、危险操作必带 danger 变体、icon-only 按钮只 `ghost`/`ghost-danger`；吸附到刻度不照搬原型像素。→ 写 portal 列表/新增/详情页前读 `.claude/docs/portal-page-style-spec.md`
 - **日志**：服务端打日志统一走 `@cloud/log` 的 `createLogger("<scope>")`，**不裸 `console.*`**；单一 JSON 行格式、`LOG_LEVEL` 控级；请求级 `traceId`/`seq` 由 `withApiHandler` 经 `AsyncLocalStorage` 自动携带，错误响应与日志共用同一 traceId。→ 打服务端日志前读 `.claude/docs/logging.md`
 - **站内通知**：给用户发站内通知统一走 `service/notification` 的服务端内部 `createNotice`（唯一生产者、不暴露建通知 API、跨 app 可写同 `sys_notice`），**不自己 `prisma.sysNotice.create`**；payload 四件套 `summary`+`detail`(均必含非空)/`fields[]`/`links[]`；`noticeType="<module>.<event>"`（module 前端派生不落库）；文本按**收件人 `sys_user.locale`** 渲染好再传（展示端不翻译）、`links.url` 生产者拼好；埋点在业务事件点 `try/catch` 调、**失败非阻断**。→ 发通知/接埋点前读 `.claude/docs/notice.md`
+- **配置归属**：按**来源**分层——env 来源进 `@cloud/config`（`getEnv` 单入口、server-only、zod 带约束、读一次缓存）；代码来源的惰性值跨 app 进 `packages/constants`、单 app 进 `apps/*/lib/constants`；带校验/生成/按上下文现算的**能力**进独立包（如 manifest）。**单一真源**不跨层抄默认值、密钥只进 env、有量纲必带单位。→ 新增/归类配置或常量前读 `.claude/docs/env-config.md` 与 `.claude/docs/constants.md`
+- **Redis key**：命名空间分配与 TTL 常量集中 `@cloud/cache/redis-core`（`REDIS_NS` 按业务域分组、值恒为 `<域>:<名>`、全小写 `:` 分隔；`TTL` 常量单位进名），**绝不硬编码前缀**、靠 import `REDIS_NS` + 一条唯一性 test 防撞；builder 贴调用方（公共消费进 `@cloud/permissions` 等公共包、单 app 留 app、无归属才进 `redis-core`），共享 key 的 builder + value 契约收口一个属主。→ 新增 Redis key 前读 `.claude/docs/redis-keys.md`
 
 ## 默认开发链路
 
