@@ -1,11 +1,11 @@
 import Redis from "ioredis";
-import { getEnv } from "@cloud/config";
+import { getConfig } from "@cloud/config";
 
 let client: Redis | null = null;
 
 export function getRedis(): Redis {
   if (!client) {
-    client = new Redis(getEnv().REDIS_URL, {
+    client = new Redis(getConfig().REDIS_URL, {
       lazyConnect: false,
       maxRetriesPerRequest: 3,
       enableReadyCheck: true,

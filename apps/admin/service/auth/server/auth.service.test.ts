@@ -33,8 +33,8 @@ vi.mock("@/lib/login-token", () => ({
 }));
 vi.mock("@cloud/security/server", () => ({ verifyPassword: vi.fn(), decryptRsaOaep: vi.fn() }));
 vi.mock("@cloud/config", () => ({
-  getAuthConfig: vi.fn(() => ({
-    rsaPrivateKey: { key: Buffer.from("ZGVy", "base64"), format: "der", type: "pkcs8" },
+  getConfig: vi.fn(() => ({
+    AUTH_LOGIN_RSA_PRIVATE_KEY: { key: Buffer.from("ZGVy", "base64"), format: "der", type: "pkcs8" },
   })),
 }));
 vi.mock("@cloud/permissions/server", () => ({ createSession: vi.fn(), updateSession: vi.fn() }));

@@ -1,4 +1,4 @@
-import { getEnv } from "@cloud/config";
+import { getConfig } from "@cloud/config";
 import { cookies } from "next/headers";
 import { Layout, Sidebar, type SidebarSection } from "@cloud/ui/components/layout";
 import { SidebarProvider, SIDEBAR_COOKIE } from "@cloud/ui";
@@ -84,7 +84,7 @@ export default async function PortalLayout({
   children: React.ReactNode;
   breadcrumbs: React.ReactNode;
 }) {
-  const env = getEnv();
+  const { app } = getConfig();
   const session = await requireSession();
   const cookieStore = await cookies();
   const defaultCollapsed = cookieStore.get(SIDEBAR_COOKIE)?.value === "1";
@@ -106,7 +106,7 @@ export default async function PortalLayout({
           sidebar={
           <Sidebar
             brand={{
-              title: env.NEXT_PUBLIC_APP_NAME,
+              title: app.name,
               subtitle: "Admin Scaffold",
             }}
             sections={buildSidebarSections(menus)}

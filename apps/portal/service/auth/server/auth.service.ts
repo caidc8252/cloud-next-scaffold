@@ -1,7 +1,7 @@
 import "server-only";
 
 import { verifyPassword, decryptRsaOaep } from "@cloud/security/server";
-import { getAuthConfig } from "@cloud/config";
+import { getConfig } from "@cloud/config";
 import { PASSWORD_POLICY, LOGIN_TIMESTAMP_WINDOW_MS } from "@cloud/constants";
 import { createSession, updateSession, createSessionHandoffToken } from "@cloud/permissions/server";
 import { BusinessError } from "@cloud/request";
@@ -76,7 +76,7 @@ async function establishSessionForReturn(
 }
 
 export async function login(input: LoginInput): Promise<LoginResult> {
-  const auth = getAuthConfig();
+  const rsaPrivateKey = getConfig().AUTH_LOGIN_RSA_PRIVATE_KEY;
   const now = new Date();
 
   const user = await authRepository.findUserByEmail(input.email);
@@ -92,7 +92,7 @@ export async function login(input: LoginInput): Promise<LoginResult> {
   let payload: { password: string; timestamp: number; nonce: string };
   try {
     payload = loginPayloadSchema.parse(
-      JSON.parse(decryptRsaOaep(input.encryptedPassword, auth.rsaPrivateKey)),
+      JSON.parse(decryptRsaOaep(input.encryptedPassword, rsaPrivateKey)),
     );
   } catch {
     throw new BusinessError(ERR_AUTH_ENCRYPTION_INVALID);
