@@ -30,11 +30,11 @@ index.ts
 export const REDIS_NS = {
   auth: {
     session:        "auth:session",
-    sessionHandoff: "auth:session-handoff",
-    loginMfa:       "auth:login-mfa",
-    loginNonce:     "auth:login-nonce",
+    sessionHandoff: "auth:session_handoff",
+    loginMfa:       "auth:login_mfa",
+    loginNonce:     "auth:login_nonce",
     // ≈ 72h 内未消费的重置请求数 ← 唯一会累积的大容量 key，容量评估只盯它
-    pwReset:        "auth:pwreset",
+    pwReset:        "auth:pw_reset",
     verify:         "auth:verify",
   },
   // device:   { ... },
@@ -42,7 +42,7 @@ export const REDIS_NS = {
 } as const;
 ```
 
-- **命名**：全小写、`:` 分隔、`<域>:<名>`。
+- **命名**：全小写、`:` 分隔域与名、`<域>:<名>`；**段内多词用 snake_case（下划线，不用连字符）**，如 `auth:login_mfa`、`auth:session_handoff`。
 - **容量注释**：只有**会累积的大容量 key** 才注，且写**量级公式**（`n × m`），不写会过期的精确值；短 TTL 自然过期的 key 不注。
 
 ## 四、ttl.ts：TTL 常量
@@ -60,7 +60,7 @@ export const TTL = {
 ```
 
 - **扁平、变量名带业务域前缀**（`AUTH_…`，与 `REDIS_NS` 同源对照：`REDIS_NS.auth.session` ↔ `TTL.AUTH_SESSION_SECONDS`）+ **单位进名**（`_SECONDS`）。
-- **同一个 key 可有多个 TTL**：TTL 是**写入时**的属性，不焊死在 key 上。如 `auth:pwreset` 同一 keyspace、同一消费者，按写入方 `source` 选不同 TTL。
+- **同一个 key 可有多个 TTL**：TTL 是**写入时**的属性，不焊死在 key 上。如 `auth:pw_reset` 同一 keyspace、同一消费者，按写入方 `source` 选不同 TTL。
 
 ## 五、builder 放哪（贴调用方）
 
@@ -80,7 +80,7 @@ await kv.set(sessionKey(sid), data, TTL.AUTH_SESSION_SECONDS);
 
 跨 app 共享的 key，**builder + value 契约**都定义一次、放共享属主（如 `@cloud/permissions`），各生产 / 消费方 import 同一份，避免「两边各抄一份、形状或 TTL 偷偷分叉」。
 
-`auth:pwreset` 拓扑（已确认）：admin 生产（`source:"admin"`，72h）、portal 生产（`source:"self-service"`，1h）、**portal 唯一消费**（凭 token 一次读）。所以 namespace **不能按用途拆**——消费者手里只有 token、不知 source，拆了就得多读：
+`auth:pw_reset` 拓扑（已确认）：admin 生产（`source:"admin"`，72h）、portal 生产（`source:"self-service"`，1h）、**portal 唯一消费**（凭 token 一次读）。所以 namespace **不能按用途拆**——消费者手里只有 token、不知 source，拆了就得多读：
 
 ```ts
 // @cloud/permissions —— key builder + value 契约 一处定义
