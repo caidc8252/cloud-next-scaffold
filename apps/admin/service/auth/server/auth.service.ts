@@ -2,6 +2,7 @@ import "server-only";
 
 import { verifyPassword, decryptRsaOaep } from "@cloud/security/server";
 import { getAuthConfig } from "@cloud/config";
+import { PASSWORD_POLICY, LOGIN_TIMESTAMP_WINDOW_MS } from "@cloud/constants";
 import { createSession, updateSession } from "@cloud/permissions/server";
 import { BusinessError } from "@cloud/request";
 import {
@@ -72,15 +73,15 @@ export async function login(input: LoginInput): Promise<LoginResult> {
     throw new BusinessError(ERR_AUTH_ENCRYPTION_INVALID);
   }
 
-  if (!isTimestampFresh(payload.timestamp, now.getTime(), auth.timestampWindowMs)) {
+  if (!isTimestampFresh(payload.timestamp, now.getTime(), LOGIN_TIMESTAMP_WINDOW_MS)) {
     throw new BusinessError(ERR_AUTH_REQUEST_EXPIRED);
   }
 
   if (!(await verifyPassword(user.passwordHash, payload.password))) {
     const update = computeFailureUpdate(
       user.passwordErrorTimes,
-      auth.maxPasswordErrorTimes,
-      auth.lockDurationMinutes,
+      PASSWORD_POLICY.maxErrorTimes,
+      PASSWORD_POLICY.lockDurationMinutes,
       now,
     );
     await authRepository.recordLoginFailure(user.userId, update);

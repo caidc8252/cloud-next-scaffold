@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getAuthConfig } from "@cloud/config";
+import { LOGIN_TIMESTAMP_WINDOW_MS } from "@cloud/constants";
 import { decryptRsaOaep } from "@cloud/security/server";
 import { BusinessError } from "@cloud/request";
 import { loginPayloadSchema } from "@/service/auth/schemas/auth.schema";
@@ -24,7 +25,7 @@ export async function decryptAndValidatePassword(
   } catch {
     throw new BusinessError(ERR_AUTH_ENCRYPTION_INVALID);
   }
-  if (!isTimestampFresh(payload.timestamp, now.getTime(), auth.timestampWindowMs)) {
+  if (!isTimestampFresh(payload.timestamp, now.getTime(), LOGIN_TIMESTAMP_WINDOW_MS)) {
     throw new BusinessError(ERR_AUTH_REQUEST_EXPIRED);
   }
   if (!(await consumeLoginNonce(payload.nonce))) {

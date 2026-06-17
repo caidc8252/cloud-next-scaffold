@@ -13,6 +13,7 @@
     "@cloud/api-kit": "workspace:*",
     "@cloud/cache": "workspace:*",
     "@cloud/config": "workspace:*",
+    "@cloud/constants": "workspace:*",
     "@cloud/db": "workspace:*",
     "@cloud/i18n": "workspace:*",
     "@cloud/log": "workspace:*",

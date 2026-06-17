@@ -5,7 +5,7 @@ import { Check, Shield } from "lucide-react";
 import { Button, Field, Input, Modal } from "@cloud/ui/components/ui";
 import { request } from "@cloud/request/client";
 import { toastError } from "@cloud/request/error-toast";
-import { PASSWORD_POLICY } from "@cloud/config/password-policy";
+import { PASSWORD_POLICY } from "@cloud/constants";
 import { useTranslations } from "@cloud/i18n/client";
 import { encryptLoginPassword } from "@/lib/login-crypto";
 

@@ -1,8 +1,8 @@
-import { PASSWORD_POLICY } from "@cloud/config/password-policy";
+import { PASSWORD_POLICY } from "@cloud/constants";
 
-// Client-safe password policy checks driven by the shared @cloud/config policy
-// (minLength etc.). The /password-policy entry is a plain constant module — no
-// server-only — so the checklist can run in the browser.
+// Client-safe password policy checks driven by the shared @cloud/constants policy
+// (minLength etc.). @cloud/constants is a plain constant module — no server-only —
+// so the checklist can run in the browser.
 export const PW_MIN = PASSWORD_POLICY.minLength;
 
 export function passwordChecks(pw: string) {

@@ -165,6 +165,9 @@ importers:
       '@cloud/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@cloud/constants':
+        specifier: workspace:*
+        version: link:../../packages/constants
       '@cloud/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -314,6 +317,9 @@ importers:
       '@cloud/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@cloud/constants':
+        specifier: workspace:*
+        version: link:../../packages/constants
       '@cloud/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -414,6 +420,8 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.4.3
+
+  packages/constants: {}
 
   packages/db:
     dependencies:

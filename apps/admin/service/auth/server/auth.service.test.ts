@@ -35,9 +35,6 @@ vi.mock("@cloud/security/server", () => ({ verifyPassword: vi.fn(), decryptRsaOa
 vi.mock("@cloud/config", () => ({
   getAuthConfig: vi.fn(() => ({
     rsaPrivateKey: { key: Buffer.from("ZGVy", "base64"), format: "der", type: "pkcs8" },
-    timestampWindowMs: 60_000,
-    maxPasswordErrorTimes: 6,
-    lockDurationMinutes: 30,
   })),
 }));
 vi.mock("@cloud/permissions/server", () => ({ createSession: vi.fn(), updateSession: vi.fn() }));
