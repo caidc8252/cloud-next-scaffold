@@ -9,8 +9,10 @@ export { enqueueEmailJob, MAX_PENDING_EMAIL_JOBS, type EnqueueEmailJobResult } f
 export {
   assertRecipientQuota,
   DEFAULT_RECIPIENT_THROTTLE,
+  LENIENT_RECIPIENT_THROTTLE,
   type RecipientThrottlePolicy,
 } from "./throttle.ts";
+export { EMAIL_RENDER_LOCALE, VERIFY_CODE_EXPIRES_MINUTES } from "./config.ts";
 export { escapeHtml } from "./escape.ts";
 export {
   renderAndEnqueue,
