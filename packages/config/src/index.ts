@@ -12,6 +12,8 @@ loadEnv({ path: path.resolve(here, "../../../.env") });
 const envSchema = z.object({
   NEXT_PUBLIC_APP_NAME: z.string().min(1),
   DATABASE_URL: z.string().min(1),
+  // 生产经 PgBouncer 的池化连接；运行时优先使用，缺省则回退 DATABASE_URL（见 @cloud/db）。
+  PGBOUNCER_DATABASE_URL: z.string().min(1).optional(),
   REDIS_URL: z.string().default("redis://localhost:6379"),
 });
 
