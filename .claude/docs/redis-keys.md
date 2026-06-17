@@ -2,10 +2,6 @@
 
 > 归属：Redis key 的**命名空间分配**与 **TTL 常量**集中在 `@cloud/cache` 的 `redis-core/`；**key builder 贴着调用方**。**新增任何 Redis key 前必读**（哪怕只是一行 `kv.set("...")`）。
 
-## 〇、现状与目标
-
-`redis-core/` 为**待建**模块；现有 key builder 散落在 `packages/permissions`、`apps/*/lib`，前缀大小写不一、`pwreset:` / `auth:login-mfa:` 在 admin 与 portal 各定义一遍。本文是**目标约定**，新代码按此写，旧代码逐步迁。
-
 ## 一、为什么集中
 
 admin / portal 共用一个 Redis（同 `REDIS_URL`），撞名风险真实存在。集中两样东西即可根治：**命名空间分配**（防撞）+ **TTL 常量**（统一维护、可审计）。**只集中这两样**，builder 仍贴调用方——不引入 factory，不加 env 段（环境隔离靠各环境独立 Redis 实例）。
