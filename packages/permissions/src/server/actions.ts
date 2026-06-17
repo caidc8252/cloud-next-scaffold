@@ -1,7 +1,8 @@
 import "server-only";
 
-import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
+import { generateToken } from "@cloud/security/token";
+import { REDIS_NS, TTL } from "@cloud/cache/redis-core";
 import { kv } from "@cloud/cache";
 import {
   SID_COOKIE,
@@ -14,8 +15,8 @@ import {
 // 这里只负责把 sid 写进 cookie、把快照落 / 删 Redis，不碰 manifest / DB。
 export type SessionSnapshotInput = Omit<Session, "loginAt" | "expireAt">;
 
-const HANDOFF_TTL_SECONDS = 60;
-const handoffKey = (token: string) => `session-handoff:${token}`;
+const HANDOFF_TTL_SECONDS = TTL.AUTH_SESSION_HANDOFF_SECONDS;
+const handoffKey = (token: string) => `${REDIS_NS.auth.sessionHandoff}:${token}`;
 
 type SessionHandoff = {
   sid: string;
@@ -75,7 +76,7 @@ export async function createSessionHandoffToken(sid?: string): Promise<string | 
   const session = await sessionStore.read(currentSid);
   if (!session) return null;
 
-  const token = randomBytes(32).toString("base64url");
+  const token = generateToken();
   await kv.set(
     handoffKey(token),
     { sid: currentSid, createdAt: Date.now() } satisfies SessionHandoff,

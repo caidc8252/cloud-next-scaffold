@@ -1,10 +1,11 @@
 import "server-only";
 
-import { randomBytes } from "node:crypto";
 import { kv } from "@cloud/cache";
+import { generateToken } from "@cloud/security/token";
+import { REDIS_NS, TTL } from "@cloud/cache/redis-core";
 
-const MFA_LOGIN_TTL_SECONDS = 300;
-const mfaLoginKey = (token: string) => `AUTH:LOGIN-MFA:${token}`;
+const MFA_LOGIN_TTL_SECONDS = TTL.AUTH_LOGIN_MFA_SECONDS;
+const mfaLoginKey = (token: string) => `${REDIS_NS.auth.loginMfa}:${token}`;
 
 export type MfaLoginEntry = { userId: number; returnTo?: string };
 
@@ -12,7 +13,7 @@ export type MfaLoginEntry = { userId: number; returnTo?: string };
 // 只允许换取一次 MFA 校验结果，避免把密码阶段和完整登录态混在一起。
 // returnTo（站内 onboarding 路径）随票据透传，使 MFA 通过后能跳回邀请页而非跨 host handoff。
 export async function createMfaLoginToken(userId: number, returnTo?: string): Promise<string> {
-  const token = randomBytes(32).toString("base64url");
+  const token = generateToken();
   await kv.set(mfaLoginKey(token), { userId, ...(returnTo ? { returnTo } : {}) }, MFA_LOGIN_TTL_SECONDS);
   return token;
 }

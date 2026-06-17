@@ -117,7 +117,7 @@ describe("getSession", () => {
     const sid = await seed(fullSnapshot);
     const { getSession } = await import("../src/server/dal.ts");
     await getSession();
-    expect(kvMock.expire).toHaveBeenCalledWith(`session:${sid}`, expect.any(Number));
+    expect(kvMock.expire).toHaveBeenCalledWith(`auth:session:${sid}`, expect.any(Number));
   });
 });
 

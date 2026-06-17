@@ -1,6 +1,6 @@
 import "server-only";
 
-import { randomBytes } from "node:crypto";
+import { generateToken } from "@cloud/security/token";
 import { AuthzError, type ActiveSession } from "@cloud/permissions/server";
 import { BusinessError } from "@cloud/request";
 import {
@@ -11,7 +11,7 @@ import {
   ERR_USER_NOT_FOUND,
   ERR_USER_PROTECTED,
 } from "@cloud/request/error-codes";
-import { INVITE_TTL_MS, INVITE_TOKEN_BYTES } from "@cloud/platform-config";
+import { INVITE_TTL_MS } from "@cloud/constants";
 import { createLogger } from "@cloud/log";
 import { getTranslations } from "@cloud/i18n/server";
 import { isLocale } from "@cloud/i18n";
@@ -75,7 +75,7 @@ export async function createInvite(session: ActiveSession, input: CreateInviteIn
 
   const roleIds = parseRoleIds(input.roleIds);
   const inviterName = session.displayName ?? "system";
-  const newToken = () => randomBytes(INVITE_TOKEN_BYTES).toString("base64url");
+  const newToken = () => generateToken();
   const expiresAt = new Date(now.getTime() + INVITE_TTL_MS);
 
   // 2) 同邮箱旧邀请：未过期→拒，已过期→覆盖，无→新建
@@ -241,7 +241,7 @@ export async function regenerateInvite(session: ActiveSession, inviteId: number)
   if (!invite) throw new BusinessError(ERR_USER_NO_PENDING_INVITE, 404);
 
   const updated = await usersRepository.updateInvite(invite.operatorInviteId, {
-    token: randomBytes(INVITE_TOKEN_BYTES).toString("base64url"),
+    token: generateToken(),
     expiresAt: new Date(Date.now() + INVITE_TTL_MS),
     updUserId: session.userId,
   });

@@ -1,15 +1,16 @@
 import "server-only";
 
-import { randomBytes } from "node:crypto";
 import { kv } from "@cloud/cache";
+import { generateToken } from "@cloud/security/token";
+import { REDIS_NS, TTL } from "@cloud/cache/redis-core";
 
 // admin 的公开登录路由已迁到 portal；该 helper 仍保留给 auth.service 顶层依赖，
 // 避免后台内 select-partner route 构建时因历史 login/MFA 编排导入失败。
-const MFA_LOGIN_TTL_SECONDS = 300;
-const mfaLoginKey = (token: string) => `AUTH:LOGIN-MFA:${token}`;
+const MFA_LOGIN_TTL_SECONDS = TTL.AUTH_LOGIN_MFA_SECONDS;
+const mfaLoginKey = (token: string) => `${REDIS_NS.auth.loginMfa}:${token}`;
 
 export async function createMfaLoginToken(userId: number): Promise<string> {
-  const token = randomBytes(32).toString("base64url");
+  const token = generateToken();
   await kv.set(mfaLoginKey(token), { userId }, MFA_LOGIN_TTL_SECONDS);
   return token;
 }
