@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@cloud/db";
 import type { Session, SessionPartyRef, SessionRole } from "@cloud/permissions/server";
+import { PRESET_ROLE_ID_MAX, DB_ROLE_ID_MIN } from "@cloud/platform-config";
 import { getRoles, resolvePartyScope, resolveRolePermissions } from "@/manifest";
 import {
   isAuthorizingWindowOpen,
@@ -76,9 +77,9 @@ async function buildCurrentContext(
   const authorizingType = normalizeAuthorizingType(partyUser.authorizingType);
 
   const roleIds = extractRoleIds(partyUser.roles);
-  // 角色解析分流：≤300 死写 GLOBAL（代码注册表）；≥1001 动态 PRIVATE（DB）。
-  const codeRoleIds = roleIds.filter((id) => id <= 300);
-  const dbRoleIds = roleIds.filter((id) => id >= 1001);
+  // 角色解析分流：≤PRESET_ROLE_ID_MAX 预置空间（代码注册表，getRoles 再过滤实际命中）；≥DB_ROLE_ID_MIN 动态 PRIVATE（DB）。
+  const codeRoleIds = roleIds.filter((id) => id <= PRESET_ROLE_ID_MAX);
+  const dbRoleIds = roleIds.filter((id) => id >= DB_ROLE_ID_MIN);
   const codeRoles = getRoles().filter((r) => codeRoleIds.includes(r.roleId));
   const dbRoles = dbRoleIds.length
     ? await prisma.sysRole.findMany({ where: { roleId: { in: dbRoleIds } } })

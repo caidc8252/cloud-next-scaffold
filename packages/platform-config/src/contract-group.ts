@@ -21,6 +21,14 @@ export const GROUP_ROLE_ID_RANGE: Record<PortalGroup, [number, number]> = {
   MERCHANT: [201, 300],
 };
 
+// 角色 ID 空间（预置 GLOBAL vs DB 动态 PRIVATE）的单一真源——替代散落各处的 1000/300/1001 魔法数。
+/** 预置/GLOBAL 角色 ID 上界：≤ 此即预置（不入库、内置只读、coc i18n 名）。1–300 当前分配在用、301–1000 预留缓冲。 */
+export const PRESET_ROLE_ID_MAX = 1000;
+/** 死写角色当前允许分配的上界（= GROUP_ROLE_ID_RANGE 上界 300）：manifest 校验只接受 1–此 的 roleId。 */
+export const PRESET_ROLE_ID_ALLOCATION_MAX = 300;
+/** DB 动态 PRIVATE 角色 ID 起点（DB 自增从此开始）。 */
+export const DB_ROLE_ID_MIN = PRESET_ROLE_ID_MAX + 1;
+
 const GROUP_PRIORITY: PortalGroup[] = ["ADMIN", "CUSTOMER", "MERCHANT"];
 
 /** 单个契约类型 → 组（未知类型 → null）。 */
