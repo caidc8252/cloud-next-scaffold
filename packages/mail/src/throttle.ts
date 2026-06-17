@@ -21,6 +21,14 @@ export const DEFAULT_RECIPIENT_THROTTLE: RecipientThrottlePolicy = {
   windowSeconds: 3600,
 };
 
+// 已认证 + 有权限 + 业务自带兜底（如 resendCount）的发送（如管理员发邀请）：仅冷却防连点，
+// 窗口上限放宽（≈不卡每小时）。
+export const LENIENT_RECIPIENT_THROTTLE: RecipientThrottlePolicy = {
+  cooldownSeconds: 60,
+  maxPerWindow: 1000,
+  windowSeconds: 3600,
+};
+
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }

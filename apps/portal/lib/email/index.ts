@@ -1,19 +1,19 @@
 import "server-only";
 
 import { getTranslations } from "@cloud/i18n/server";
-import { renderAndEnqueue, type EmailTranslate } from "@cloud/mail";
+import {
+  renderAndEnqueue,
+  type EmailTranslate,
+  EMAIL_RENDER_LOCALE,
+  VERIFY_CODE_EXPIRES_MINUTES,
+} from "@cloud/mail";
 import { verifyCodeTemplate, type VerifyCodeEmailVars, type VerifyCodeIntent } from "./verify-code.ts";
 import { passwordResetTemplate, type PasswordResetEmailVars } from "./password-reset.ts";
 
-// 邮件渲染语言现统一 en（与 @cloud/log / email-capability 决策一致）。
-const EMAIL_LOCALE = "en";
 // 重置链接落 portal（唯一重置页）；PORTAL_APP_URL 为部署 env，dev 默认 3100。
 const PORTAL_APP_URL = process.env.PORTAL_APP_URL ?? "http://localhost:3100";
-// 验证码邮件有效期（分钟）。verify-code 模板/发送器预留给 onboarding 换邮箱等验证码场景。
-const VERIFY_CODE_EXPIRES_MINUTES = 10;
-
 async function emailTranslate(): Promise<EmailTranslate> {
-  const t = await getTranslations({ locale: EMAIL_LOCALE });
+  const t = await getTranslations({ locale: EMAIL_RENDER_LOCALE });
   return (key, values) => t(key, values);
 }
 
