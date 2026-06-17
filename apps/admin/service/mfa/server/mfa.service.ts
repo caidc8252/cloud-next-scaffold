@@ -2,7 +2,7 @@ import "server-only";
 
 import { prisma } from "@cloud/db";
 import { encryptSecret, decryptSecret } from "@cloud/security/server";
-import { getAuthConfig } from "@cloud/config";
+import { getConfig } from "@cloud/config";
 import { PASSWORD_POLICY } from "@cloud/constants";
 import { generateTotpSecret, totpKeyUri, verifyTotp } from "@/lib/totp";
 import type { MfaStatus } from "@/app/(portal)/account/_shared/types";
@@ -17,7 +17,7 @@ import type { MfaStatus } from "@/app/(portal)/account/_shared/types";
 const MFA_TYPE = "TOTP";
 const MAX_FAIL = 10;
 
-const secretKey = () => getAuthConfig().aesSecretKey;
+const secretKey = () => getConfig().AUTH_AES_SECRET_KEY;
 const lockWindowMs = () => PASSWORD_POLICY.lockDurationMinutes * 60_000;
 
 export async function getMfaStatus(userId: number): Promise<MfaStatus> {

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getAuthConfig } from "@cloud/config";
+import { getConfig } from "@cloud/config";
 import { LOGIN_TIMESTAMP_WINDOW_MS } from "@cloud/constants";
 import { decryptRsaOaep } from "@cloud/security/server";
 import { BusinessError } from "@cloud/request";
@@ -18,10 +18,10 @@ export async function decryptAndValidatePassword(
   now: Date,
   weakCode: string,
 ): Promise<string> {
-  const auth = getAuthConfig();
+  const rsaPrivateKey = getConfig().AUTH_LOGIN_RSA_PRIVATE_KEY;
   let payload: { password: string; timestamp: number; nonce: string };
   try {
-    payload = loginPayloadSchema.parse(JSON.parse(decryptRsaOaep(encryptedPassword, auth.rsaPrivateKey)));
+    payload = loginPayloadSchema.parse(JSON.parse(decryptRsaOaep(encryptedPassword, rsaPrivateKey)));
   } catch {
     throw new BusinessError(ERR_AUTH_ENCRYPTION_INVALID);
   }

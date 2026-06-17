@@ -2,7 +2,7 @@ import "server-only";
 
 import { updateSession, type ActiveSession } from "@cloud/permissions/server";
 import { verifyPassword, hashPassword, decryptRsaOaep } from "@cloud/security/server";
-import { getAuthConfig, getEnv } from "@cloud/config";
+import { getConfig } from "@cloud/config";
 import { PASSWORD_POLICY, LOGIN_TIMESTAMP_WINDOW_MS } from "@cloud/constants";
 import { BusinessError } from "@cloud/request";
 import {
@@ -115,7 +115,7 @@ export async function changePassword(
   session: ActiveSession,
   input: ChangePasswordInput,
 ): Promise<{ changed: true }> {
-  const auth = getAuthConfig();
+  const rsaPrivateKey = getConfig().AUTH_LOGIN_RSA_PRIVATE_KEY;
   const now = Date.now();
   // 解密 + 结构校验只在 try 里;时间窗校验放到 try 外——否则 REQUEST_EXPIRED 的 throw
   // 会被本 try 的 catch 吞掉、误判成 ENCRYPTION_INVALID。
@@ -123,10 +123,10 @@ export async function changePassword(
   let next: { password: string; timestamp: number };
   try {
     cur = passwordPayloadSchema.parse(
-      JSON.parse(decryptRsaOaep(input.encryptedCurrentPassword, auth.rsaPrivateKey)),
+      JSON.parse(decryptRsaOaep(input.encryptedCurrentPassword, rsaPrivateKey)),
     );
     next = passwordPayloadSchema.parse(
-      JSON.parse(decryptRsaOaep(input.encryptedNewPassword, auth.rsaPrivateKey)),
+      JSON.parse(decryptRsaOaep(input.encryptedNewPassword, rsaPrivateKey)),
     );
   } catch {
     throw new BusinessError(ERR_AUTH_ENCRYPTION_INVALID);
@@ -246,7 +246,7 @@ export async function enrollMfa(
   session: ActiveSession,
 ): Promise<{ mfaInfoId: number; secret: string; otpauthUri: string }> {
   const user = await accountRepository.getUser(session.userId);
-  const result = await mfa.startEnrollment(session.userId, user.email, getEnv().NEXT_PUBLIC_APP_NAME);
+  const result = await mfa.startEnrollment(session.userId, user.email, getConfig().NEXT_PUBLIC_APP_NAME);
   return { mfaInfoId: result.mfaInfoId, secret: result.secret, otpauthUri: result.otpauthUri };
 }
 
