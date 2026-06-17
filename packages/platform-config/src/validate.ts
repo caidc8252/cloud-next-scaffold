@@ -1,9 +1,10 @@
 import type { MenuEntry, RoleDef } from "./types.ts";
+import { PRESET_ROLE_ID_ALLOCATION_MAX } from "./contract-group.ts";
 
 // 死写角色的 roleId 区间：1–300（1–100 admin / 101–200 customer / 201–300 merchant）。
 // ≥1001 属 DB 动态 PRIVATE，不得出现在代码注册表。
 const CODE_ROLE_MIN = 1;
-const CODE_ROLE_MAX = 300;
+const CODE_ROLE_MAX = PRESET_ROLE_ID_ALLOCATION_MAX;
 
 // 权限码规范：<域>.<动作> 全小写 camel，单个点分隔。挡住 UPPER_SNAKE / 冒号等历史写法。
 const PERMISSION_CODE_RE = /^[a-z][a-zA-Z0-9]*\.[a-z][a-zA-Z0-9]*$/;

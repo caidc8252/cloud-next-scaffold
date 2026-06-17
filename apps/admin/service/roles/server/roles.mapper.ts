@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { RoleDef } from "@cloud/platform-config";
+import { PRESET_ROLE_ID_MAX } from "@cloud/platform-config";
 import type { Role } from "@/app/(portal)/system/_shared/types";
 
 // Entity → VO 映射。权限码走 sys_role.permission_codes JSONB（List<string>）。
@@ -28,8 +29,8 @@ export function toClientRole(row: RoleRow, updaterName: string, operatorCount: n
     id: String(row.roleId),
     name: row.roleName,
     description: row.remark ?? "",
-    // 内置/通用角色由 roleId ≤ 1000 派生（死写 GLOBAL，不入库）；DB 动态角色 ≥1001。
-    builtin: row.roleId <= 1000,
+    // 内置/通用角色由 roleId ≤ PRESET_ROLE_ID_MAX 派生（死写 GLOBAL，不入库）；DB 动态角色 ≥ DB_ROLE_ID_MIN。
+    builtin: row.roleId <= PRESET_ROLE_ID_MAX,
     operatorCount,
     permissions: extractPermissionCodes(row.permissionCodes),
     updatedAt: row.updTime.toISOString(),
