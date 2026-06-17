@@ -6,7 +6,7 @@ import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, 
 import type { Role, User as UserType } from "@/app/(portal)/system/_shared/types";
 import { relTime, initials } from "@/app/(portal)/system/_shared/helpers";
 import { ConfirmModal } from "@/app/(portal)/system/_shared/confirm-modal";
-import { PASSWORD_POLICY } from "@cloud/config/password-policy";
+import { PASSWORD_POLICY } from "@cloud/constants";
 
 type UserDetailProps = {
   user: UserType;

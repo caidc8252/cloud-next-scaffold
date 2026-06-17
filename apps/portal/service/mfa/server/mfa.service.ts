@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@cloud/db";
 import { getAuthConfig } from "@cloud/config";
+import { PASSWORD_POLICY } from "@cloud/constants";
 import { decryptSecret } from "@cloud/security/server";
 import { verifyTotp } from "@/lib/totp";
 
@@ -9,7 +10,7 @@ const MFA_TYPE = "TOTP";
 const MAX_FAIL = 10;
 
 const secretKey = () => getAuthConfig().aesSecretKey;
-const lockWindowMs = () => getAuthConfig().lockDurationMinutes * 60_000;
+const lockWindowMs = () => PASSWORD_POLICY.lockDurationMinutes * 60_000;
 
 export type TotpVerifyResult = "ok" | "invalid" | "none" | "locked";
 

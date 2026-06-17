@@ -3,7 +3,7 @@ import "server-only";
 import { updateSession, type ActiveSession } from "@cloud/permissions/server";
 import { verifyPassword, hashPassword, decryptRsaOaep } from "@cloud/security/server";
 import { getAuthConfig, getEnv } from "@cloud/config";
-import { PASSWORD_POLICY } from "@cloud/config/password-policy";
+import { PASSWORD_POLICY, LOGIN_TIMESTAMP_WINDOW_MS } from "@cloud/constants";
 import { BusinessError } from "@cloud/request";
 import {
   ERR_ACCOUNT_EMAIL_INVALID,
@@ -132,8 +132,8 @@ export async function changePassword(
     throw new BusinessError(ERR_AUTH_ENCRYPTION_INVALID);
   }
   if (
-    !isTimestampFresh(cur.timestamp, now, auth.timestampWindowMs) ||
-    !isTimestampFresh(next.timestamp, now, auth.timestampWindowMs)
+    !isTimestampFresh(cur.timestamp, now, LOGIN_TIMESTAMP_WINDOW_MS) ||
+    !isTimestampFresh(next.timestamp, now, LOGIN_TIMESTAMP_WINDOW_MS)
   ) {
     throw new BusinessError(ERR_AUTH_REQUEST_EXPIRED);
   }

@@ -1,4 +1,4 @@
-import { PASSWORD_POLICY } from "@cloud/config/password-policy";
+import { PASSWORD_POLICY } from "@cloud/constants";
 
 // Pure password-policy helpers (no I/O) so they can be unit-tested and shared
 // between the change-password route and the client checklist.
