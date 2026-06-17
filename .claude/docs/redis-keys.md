@@ -49,17 +49,17 @@ export const REDIS_NS = {
 
 ```ts
 export const TTL = {
-  SESSION_SECONDS:         1800,        // 30m
-  SESSION_HANDOFF_SECONDS:   60,
-  LOGIN_MFA_SECONDS:        300,        // 5m
-  LOGIN_NONCE_SECONDS:      130,
-  PW_RESET_SELF_SECONDS:  60 * 60,      // 自助 1h
-  PW_RESET_ADMIN_SECONDS: 72 * 60 * 60, // 管理员代发 72h（业务要求）
-  VERIFY_CODE_SECONDS:      600,        // 10m
+  AUTH_SESSION_SECONDS:         1800,        // 30m
+  AUTH_SESSION_HANDOFF_SECONDS:   60,
+  AUTH_LOGIN_MFA_SECONDS:        300,        // 5m
+  AUTH_LOGIN_NONCE_SECONDS:      130,
+  AUTH_PW_RESET_SELF_SECONDS:  60 * 60,      // 自助 1h
+  AUTH_PW_RESET_ADMIN_SECONDS: 72 * 60 * 60, // 管理员代发 72h（业务要求）
+  AUTH_VERIFY_CODE_SECONDS:      600,        // 10m
 } as const;
 ```
 
-- 单位进名（`_SECONDS`）。
+- **扁平、变量名带业务域前缀**（`AUTH_…`，与 `REDIS_NS` 同源对照：`REDIS_NS.auth.session` ↔ `TTL.AUTH_SESSION_SECONDS`）+ **单位进名**（`_SECONDS`）。
 - **同一个 key 可有多个 TTL**：TTL 是**写入时**的属性，不焊死在 key 上。如 `auth:pwreset` 同一 keyspace、同一消费者，按写入方 `source` 选不同 TTL。
 
 ## 五、builder 放哪（贴调用方）
@@ -73,7 +73,7 @@ builder 是普通函数，引用 `REDIS_NS` + `TTL`：
 ```ts
 import { REDIS_NS, TTL } from "@cloud/cache/redis-core";
 const sessionKey = (sid: string) => `${REDIS_NS.auth.session}:${sid}`;
-await kv.set(sessionKey(sid), data, TTL.SESSION_SECONDS);
+await kv.set(sessionKey(sid), data, TTL.AUTH_SESSION_SECONDS);
 ```
 
 ## 六、共享 key：收口到一个属主
