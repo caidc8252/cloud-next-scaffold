@@ -56,7 +56,7 @@ describe("sessionStore", () => {
     expect(sid).toBeTruthy();
     expect(kvMock.set).toHaveBeenCalledTimes(1);
     const [key, value, ttl] = kvMock.set.mock.calls[0]!;
-    expect(key).toBe(`session:${sid}`);
+    expect(key).toBe(`auth:session:${sid}`);
     expect(ttl).toBe(SESSION_TTL_SECONDS);
     const stored = value as Session;
     expect(stored).toMatchObject({
@@ -107,13 +107,13 @@ describe("sessionStore", () => {
   it("touch() refreshes the TTL on the session key", async () => {
     const { sid } = await sessionStore.create(snapshot);
     await sessionStore.touch(sid);
-    expect(kvMock.expire).toHaveBeenCalledWith(`session:${sid}`, SESSION_TTL_SECONDS);
+    expect(kvMock.expire).toHaveBeenCalledWith(`auth:session:${sid}`, SESSION_TTL_SECONDS);
   });
 
   it("destroy() removes the session", async () => {
     const { sid } = await sessionStore.create(snapshot);
     await sessionStore.destroy(sid);
-    expect(kvMock.del).toHaveBeenCalledWith(`session:${sid}`);
+    expect(kvMock.del).toHaveBeenCalledWith(`auth:session:${sid}`);
     expect(await sessionStore.read(sid)).toBeNull();
   });
 });

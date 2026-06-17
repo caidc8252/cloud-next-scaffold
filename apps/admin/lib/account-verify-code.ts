@@ -2,13 +2,14 @@ import "server-only";
 
 import { randomInt } from "node:crypto";
 import { kv } from "@cloud/cache";
+import { REDIS_NS, TTL } from "@cloud/cache/redis-core";
 
 // 身份变更（改邮箱）的验证码：服务端生成、存 Redis 带 TTL、真校验。投递走 @cloud/mail
-// （见 lib/email.sendVerifyCodeEmail）。key 规则：ACCOUNT:VERIFY:{userId}:{purpose}。
+// （见 lib/email.sendVerifyCodeEmail）。key 规则：auth:verify:{userId}:{purpose}。
 export type VerifyPurpose = "EMAIL_CURRENT" | "EMAIL_NEW";
 
-const TTL_SECONDS = 600;
-const codeKey = (userId: number, purpose: VerifyPurpose) => `ACCOUNT:VERIFY:${userId}:${purpose}`;
+const VERIFY_CODE_TTL_SECONDS = TTL.AUTH_VERIFY_CODE_SECONDS;
+const codeKey = (userId: number, purpose: VerifyPurpose) => `${REDIS_NS.auth.verify}:${userId}:${purpose}`;
 
 type VerifyEntry = { code: string; newEmail?: string };
 
@@ -20,7 +21,7 @@ export async function issueVerifyCode(
 ): Promise<string> {
   const code = String(randomInt(100000, 1000000));
   const entry: VerifyEntry = { code, ...(meta?.newEmail ? { newEmail: meta.newEmail } : {}) };
-  await kv.set(codeKey(userId, purpose), entry, TTL_SECONDS);
+  await kv.set(codeKey(userId, purpose), entry, VERIFY_CODE_TTL_SECONDS);
   return code;
 }
 

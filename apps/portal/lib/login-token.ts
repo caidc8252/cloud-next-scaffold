@@ -2,9 +2,10 @@ import "server-only";
 
 import { kv } from "@cloud/cache";
 import { generateToken } from "@cloud/security/token";
+import { REDIS_NS, TTL } from "@cloud/cache/redis-core";
 
-const MFA_LOGIN_TTL_SECONDS = 300;
-const mfaLoginKey = (token: string) => `AUTH:LOGIN-MFA:${token}`;
+const MFA_LOGIN_TTL_SECONDS = TTL.AUTH_LOGIN_MFA_SECONDS;
+const mfaLoginKey = (token: string) => `${REDIS_NS.auth.loginMfa}:${token}`;
 
 export type MfaLoginEntry = { userId: number; returnTo?: string };
 

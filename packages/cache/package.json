@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./redis-core": "./src/redis-core/index.ts"
   },
   "dependencies": {
     "@cloud/config": "workspace:*",

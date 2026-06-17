@@ -2,6 +2,7 @@ import "server-only";
 
 import { cookies } from "next/headers";
 import { generateToken } from "@cloud/security/token";
+import { REDIS_NS, TTL } from "@cloud/cache/redis-core";
 import { kv } from "@cloud/cache";
 import {
   SID_COOKIE,
@@ -14,8 +15,8 @@ import {
 // 这里只负责把 sid 写进 cookie、把快照落 / 删 Redis，不碰 manifest / DB。
 export type SessionSnapshotInput = Omit<Session, "loginAt" | "expireAt">;
 
-const HANDOFF_TTL_SECONDS = 60;
-const handoffKey = (token: string) => `session-handoff:${token}`;
+const HANDOFF_TTL_SECONDS = TTL.AUTH_SESSION_HANDOFF_SECONDS;
+const handoffKey = (token: string) => `${REDIS_NS.auth.sessionHandoff}:${token}`;
 
 type SessionHandoff = {
   sid: string;

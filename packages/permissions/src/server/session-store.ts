@@ -2,6 +2,7 @@ import "server-only";
 
 import { kv } from "@cloud/cache";
 import { generateToken } from "@cloud/security/token";
+import { REDIS_NS, TTL } from "@cloud/cache/redis-core";
 
 // sid + Redis 会话快照存储。
 // cookie 只放不可猜的随机 sid（凭证 = 256-bit 随机 + 必须在 Redis 命中）；
@@ -13,7 +14,7 @@ import { generateToken } from "@cloud/security/token";
 
 export const SID_COOKIE = "sid";
 /** Redis 会话存活时长（秒），命中后滑动续期。 */
-export const SESSION_TTL_SECONDS = 1800;
+export const SESSION_TTL_SECONDS = TTL.AUTH_SESSION_SECONDS;
 /** sid cookie 的最长存活（秒）。比 Redis TTL 长，空闲超 TTL 即失效需重登。 */
 export const SID_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 12;
 
@@ -60,7 +61,7 @@ export type ActiveSession = Session & {
   authorizingType: "ADMIN" | "NORMAL";
 };
 
-const sessionKey = (sid: string) => `session:${sid}`;
+const sessionKey = (sid: string) => `${REDIS_NS.auth.session}:${sid}`;
 const generateSid = () => generateToken();
 const computeExpireAt = () => Date.now() + SESSION_TTL_SECONDS * 1000;
 
