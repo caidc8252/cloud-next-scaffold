@@ -2,6 +2,7 @@ import "server-only";
 
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createLogger, getTraceId, newTraceId } from "@cloud/log";
+import { defaultLocale } from "@cloud/i18n";
 import type { CursorPager, ErrorBody, ErrorParams, Pager, SuccessBody } from "./index.ts";
 import {
   ERR_BAD_REQUEST,
@@ -75,7 +76,7 @@ function interpolate(template: string, params?: ErrorParams): string {
 // 都没有（如 storage / database 等未注册的包外 code）才退回调用方显式传入的 message。
 // 最后用 params 做 {name} 占位插值。
 function resolveErrorMessage(code: string, fallback?: string, params?: ErrorParams): string {
-  const locale = localeStore.getStore() ?? "en";
+  const locale = localeStore.getStore() ?? defaultLocale;
   const template =
     lookupMessage(code, locale) ?? lookupMessage(code, "en") ?? fallback ?? "An error occurred.";
   return interpolate(template, params);

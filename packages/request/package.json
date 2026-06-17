@@ -12,6 +12,7 @@
     "./error-toast": "./src/error-toast.ts"
   },
   "dependencies": {
+    "@cloud/i18n": "workspace:*",
     "@cloud/log": "workspace:*",
     "client-only": "^0.0.1",
     "server-only": "^0.0.1"
