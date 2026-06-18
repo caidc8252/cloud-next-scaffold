@@ -84,7 +84,7 @@ export default async function PortalLayout({
   children: React.ReactNode;
   breadcrumbs: React.ReactNode;
 }) {
-  const { app } = getConfig();
+  const { NEXT_PUBLIC_APP_NAME } = getConfig();
   const session = await requireSession();
   const cookieStore = await cookies();
   const defaultCollapsed = cookieStore.get(SIDEBAR_COOKIE)?.value === "1";
@@ -106,7 +106,7 @@ export default async function PortalLayout({
           sidebar={
           <Sidebar
             brand={{
-              title: app.name,
+              title: NEXT_PUBLIC_APP_NAME,
               subtitle: "Admin Scaffold",
             }}
             sections={buildSidebarSections(menus)}
