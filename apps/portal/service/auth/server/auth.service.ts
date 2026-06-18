@@ -76,7 +76,7 @@ async function establishSessionForReturn(
 }
 
 export async function login(input: LoginInput): Promise<LoginResult> {
-  const rsaPrivateKey = getConfig().AUTH_LOGIN_RSA_PRIVATE_KEY;
+  const rsaPrivateKey = getConfig().NEXT_AUTH_LOGIN_RSA_PRIVATE_KEY;
   const now = new Date();
 
   const user = await authRepository.findUserByEmail(input.email);

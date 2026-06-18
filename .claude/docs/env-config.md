@@ -16,8 +16,8 @@ constants 见 `.claude/docs/constants.md`；Redis key 见 `.claude/docs/redis-ke
 **字段名一字不差对齐 env 变量名**——grep 一个 env 名即可定位 schema + 所有消费点。
 
 ```ts
-getConfig().AUTH_LOGIN_RSA_PRIVATE_KEY   // RSA 私钥（已解码成 DER 结构；键名对齐 env 源）
-getConfig().AUTH_AES_SECRET_KEY
+getConfig().NEXT_AUTH_LOGIN_RSA_PRIVATE_KEY   // RSA 私钥（已解码成 DER 结构；键名对齐 env 源）
+getConfig().NEXT_AUTH_AES_SECRET_KEY
 getConfig().REDIS_URL
 getConfig().NEXT_PUBLIC_APP_NAME
 ```
@@ -31,7 +31,8 @@ packages/config/src/
 ```
 
 - **公开字段扁平、= env 变量名**；内部仍按域惰性 parse + 缓存：取 `REDIS_URL` 只校验 cache schema，不会因 `AUTH_` 密钥缺失而失败；每域首次访问 parse 一次（改 env 要重启）。
-- **整形值**（如 RSA 私钥解码成 DER）在 `parseAuthConfig` 里做，键名仍对齐 env 源（`AUTH_LOGIN_RSA_PRIVATE_KEY`）。
+- **整形值**（如 RSA 私钥解码成 DER）在 `parseAuthConfig` 里做，键名仍对齐 env 源（`NEXT_AUTH_LOGIN_RSA_PRIVATE_KEY`）。
+- **app 互链基址**（`NEXT_PORTAL_URL` / `NEXT_ADMIN_URL` / `NEXT_CUSTOMER_URL` / `NEXT_MERCHANT_URL`）走 `resolveAppUrl(envKey, devFallback?)`：显式 env 优先（校验 http/https）→ 生产缺值硬抛 → 本地 dev 缺值兜底 `http://127.0.0.1:<port>`（merchant 无兜底）；跨 app 路由路径常量在 `@cloud/constants`。
 - **`db` 不在此**：`@cloud/db` 自己读 + 校验 `DATABASE_URL` / `PGBOUNCER_DATABASE_URL`。
 
 ## 三、新增一个 env 变量
@@ -47,7 +48,7 @@ packages/config/src/
 - 应用自有参数（认证 / 会话 / 应用地址）→ 加 **`NEXT_`** 前缀（`NEXT_AUTH_AES_SECRET_KEY`、`NEXT_SESSION_COOKIE_DOMAIN`、`NEXT_PORTAL_URL`）。
 - 公开且客户端要读 → `NEXT_PUBLIC_`（构建期内联语义，非「非敏感」；见 §五）。
 
-**config 字段名 = env 变量名**（含 shaped 值——解码后的 RSA 键名仍是 `AUTH_LOGIN_RSA_PRIVATE_KEY`），便于全局索引。**单位**：env 用友好单位（秒/分钟），整形时转内部基准（时间一律 ms），单位进 env key 名。
+**config 字段名 = env 变量名**（含 shaped 值——解码后的 RSA 键名仍是 `NEXT_AUTH_LOGIN_RSA_PRIVATE_KEY`），便于全局索引。**单位**：env 用友好单位（秒/分钟），整形时转内部基准（时间一律 ms），单位进 env key 名。
 
 ## 五、密钥与暴露面
 
@@ -64,6 +65,6 @@ packages/config/src/
 
 ## 待办
 
-- env 变量 `NEXT_` 改名（`PORTAL_APP_URL`→`NEXT_PORTAL_URL`、`AUTH_*`→`NEXT_AUTH_*` 等）：改部署变量名，单独 PR 协调部署。
-- 仍直接 `process.env` 读的应用值（`PORTAL_APP_URL` / `ADMIN_APP_URL` / `SESSION_COOKIE_DOMAIN`、email 的 `NEXT_PUBLIC_APP_NAME ?? "PEP"`）：待并入 `getConfig()`。
+- env 变量 `NEXT_` 改名剩余项：`SESSION_COOKIE_DOMAIN`→`NEXT_SESSION_COOKIE_DOMAIN`（改部署变量名，协调部署后再做）；app URL 与 `NEXT_AUTH_*` 已改完。
+- `SESSION_COOKIE_DOMAIN`（permissions）、email 的 `NEXT_PUBLIC_APP_NAME ?? "PEP"`：仍待并入 `getConfig()`。
 - `@cloud/db` / `@cloud/log` 直接读 env：capability-ownership 待议。

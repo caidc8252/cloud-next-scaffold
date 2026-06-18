@@ -115,7 +115,7 @@ export async function changePassword(
   session: ActiveSession,
   input: ChangePasswordInput,
 ): Promise<{ changed: true }> {
-  const rsaPrivateKey = getConfig().AUTH_LOGIN_RSA_PRIVATE_KEY;
+  const rsaPrivateKey = getConfig().NEXT_AUTH_LOGIN_RSA_PRIVATE_KEY;
   const now = Date.now();
   // 解密 + 结构校验只在 try 里;时间窗校验放到 try 外——否则 REQUEST_EXPIRED 的 throw
   // 会被本 try 的 catch 吞掉、误判成 ENCRYPTION_INVALID。

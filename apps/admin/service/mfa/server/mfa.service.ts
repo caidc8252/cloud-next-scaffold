@@ -17,7 +17,7 @@ import type { MfaStatus } from "@/app/(portal)/account/_shared/types";
 const MFA_TYPE = "TOTP";
 const MAX_FAIL = 10;
 
-const secretKey = () => getConfig().AUTH_AES_SECRET_KEY;
+const secretKey = () => getConfig().NEXT_AUTH_AES_SECRET_KEY;
 const lockWindowMs = () => PASSWORD_POLICY.lockDurationMinutes * 60_000;
 
 export async function getMfaStatus(userId: number): Promise<MfaStatus> {

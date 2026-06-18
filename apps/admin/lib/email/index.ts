@@ -14,7 +14,7 @@ import { verifyCodeTemplate, type VerifyCodeEmailVars, type VerifyCodeIntent } f
 import { passwordResetTemplate, type PasswordResetEmailVars } from "./password-reset.ts";
 
 // 业务侧薄发送器：拼 URL、定 locale、选 purpose/节流，再交 @cloud/mail 渲染入队。
-// onboarding 落在门户（唯一入口）；PORTAL_APP_URL 解析收口在 portal-routing。
+// onboarding 落在门户（唯一入口）；NEXT_PORTAL_URL 解析收口在 portal-routing。
 
 async function emailTranslate(): Promise<EmailTranslate> {
   // 显式 locale 取译者（按收件人语言，不依赖请求 cookie）。email.* 文案在 app i18n 注册。

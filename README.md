@@ -55,7 +55,7 @@ pnpm dev:admin        # 等价于 pnpm dev
 pnpm dev:portal
 ```
 
-打开 http://localhost:3100。登录入口是门户站内的 `/login`；登录成功后在 `/select-partner` 选择 partner（只有一个可选 partner 时自动跳过），portal 校验归属、生成完整权限 session 后直接跳到 `ADMIN_APP_URL`（默认就是 admin 的 http://localhost:3000）。admin 里登出也会跳回 portal 的 `/login`。
+打开 http://localhost:3100。登录入口是门户站内的 `/login`；登录成功后在 `/select-partner` 选择 partner（只有一个可选 partner 时自动跳过），portal 校验归属、生成完整权限 session 后直接跳到 `NEXT_ADMIN_URL`（默认就是 admin 的 http://localhost:3000）。admin 里登出也会跳回 portal 的 `/login`。
 
 > 本地跑通完整登录链路需要 **admin（:3000）和 portal（:3100）两个都起**：portal 负责登录与 partner 选择，admin 承载登录后的后台业务。只改后台代码时也可以只起 admin，但登录仍然走 portal。
 
