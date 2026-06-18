@@ -1,5 +1,7 @@
 import "server-only";
 
+import { getConfig } from "@cloud/config";
+import { PORTAL_ROUTE } from "@cloud/constants";
 import { getTranslations } from "@cloud/i18n/server";
 import {
   renderAndEnqueue,
@@ -10,8 +12,6 @@ import {
 import { verifyCodeTemplate, type VerifyCodeEmailVars, type VerifyCodeIntent } from "./verify-code.ts";
 import { passwordResetTemplate, type PasswordResetEmailVars } from "./password-reset.ts";
 
-// 重置链接落 portal（唯一重置页）；PORTAL_APP_URL 为部署 env，dev 默认 3100。
-const PORTAL_APP_URL = process.env.PORTAL_APP_URL ?? "http://localhost:3100";
 async function emailTranslate(): Promise<EmailTranslate> {
   const t = await getTranslations({ locale: EMAIL_RENDER_LOCALE });
   return (key, values) => t(key, values);
@@ -38,10 +38,12 @@ export async function sendResetLinkEmail(input: {
   token: string;
   expiresText: string;
 }): Promise<void> {
-  const resetUrl = `${PORTAL_APP_URL}/reset-password?token=${encodeURIComponent(input.token)}`;
+  // 重置链接落 portal（唯一重置页）；base 收口在 getConfig().NEXT_PORTAL_URL。
+  const resetUrl = new URL(PORTAL_ROUTE.resetPassword, getConfig().NEXT_PORTAL_URL);
+  resetUrl.searchParams.set("token", input.token);
   await renderAndEnqueue<PasswordResetEmailVars>({
     template: passwordResetTemplate,
-    vars: { resetUrl, expiresText: input.expiresText },
+    vars: { resetUrl: resetUrl.toString(), expiresText: input.expiresText },
     t: await emailTranslate(),
     receivers: [input.to],
     purpose: "password-reset",

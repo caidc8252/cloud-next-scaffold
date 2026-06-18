@@ -8,19 +8,19 @@ import {
 } from "./portal-routing.ts";
 
 function withPortalUrl<T>(value: string | undefined, fn: () => T): T {
-  const original = process.env.PORTAL_APP_URL;
+  const original = process.env.NEXT_PORTAL_URL;
   if (value === undefined) {
-    delete process.env.PORTAL_APP_URL;
+    delete process.env.NEXT_PORTAL_URL;
   } else {
-    process.env.PORTAL_APP_URL = value;
+    process.env.NEXT_PORTAL_URL = value;
   }
   try {
     return fn();
   } finally {
     if (original === undefined) {
-      delete process.env.PORTAL_APP_URL;
+      delete process.env.NEXT_PORTAL_URL;
     } else {
-      process.env.PORTAL_APP_URL = original;
+      process.env.NEXT_PORTAL_URL = original;
     }
   }
 }
@@ -28,8 +28,8 @@ function withPortalUrl<T>(value: string | undefined, fn: () => T): T {
 describe("portal routing", () => {
   it("uses the local portal default", () => {
     withPortalUrl(undefined, () => {
-      expect(getPortalLoginUrl()).toBe("http://localhost:3100/login");
-      expect(getPortalSelectPartnerUrl()).toBe("http://localhost:3100/select-partner");
+      expect(getPortalLoginUrl()).toBe("http://127.0.0.1:3100/login");
+      expect(getPortalSelectPartnerUrl()).toBe("http://127.0.0.1:3100/select-partner");
     });
   });
 
@@ -51,7 +51,7 @@ describe("portal routing", () => {
 
   it("exposes the portal origin for client-built links (no path)", () => {
     withPortalUrl(undefined, () => {
-      expect(getPortalBaseUrl()).toBe("http://localhost:3100");
+      expect(getPortalBaseUrl()).toBe("http://127.0.0.1:3100");
     });
     withPortalUrl("https://portal.example.com/base", () => {
       expect(getPortalBaseUrl()).toBe("https://portal.example.com");
@@ -60,7 +60,7 @@ describe("portal routing", () => {
 
   it("rejects non-http portal URLs", () => {
     withPortalUrl("javascript:alert(1)", () => {
-      expect(() => getPortalOnboardingUrl("tok")).toThrow("PORTAL_APP_URL must use http or https.");
+      expect(() => getPortalOnboardingUrl("tok")).toThrow("NEXT_PORTAL_URL must use http or https.");
     });
   });
 });

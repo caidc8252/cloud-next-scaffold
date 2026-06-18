@@ -18,7 +18,7 @@ export async function decryptAndValidatePassword(
   now: Date,
   weakCode: string,
 ): Promise<string> {
-  const rsaPrivateKey = getConfig().AUTH_LOGIN_RSA_PRIVATE_KEY;
+  const rsaPrivateKey = getConfig().NEXT_AUTH_LOGIN_RSA_PRIVATE_KEY;
   let payload: { password: string; timestamp: number; nonce: string };
   try {
     payload = loginPayloadSchema.parse(JSON.parse(decryptRsaOaep(encryptedPassword, rsaPrivateKey)));

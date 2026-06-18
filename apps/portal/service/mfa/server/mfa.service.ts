@@ -9,7 +9,7 @@ import { verifyTotp } from "@/lib/totp";
 const MFA_TYPE = "TOTP";
 const MAX_FAIL = 10;
 
-const secretKey = () => getConfig().AUTH_AES_SECRET_KEY;
+const secretKey = () => getConfig().NEXT_AUTH_AES_SECRET_KEY;
 const lockWindowMs = () => PASSWORD_POLICY.lockDurationMinutes * 60_000;
 
 export type TotpVerifyResult = "ok" | "invalid" | "none" | "locked";

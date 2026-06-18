@@ -19,8 +19,8 @@ pnpm --filter portal build && pnpm --filter portal start
 ```
 
 Requires the root `.env` used by the monorepo. Important values include
-`DATABASE_URL`, `REDIS_URL`, `ADMIN_APP_URL`, `NEXT_PUBLIC_AUTH_LOGIN_RSA_PUBLIC_KEY`,
-`AUTH_LOGIN_RSA_PRIVATE_KEY`, and `AUTH_AES_SECRET_KEY`.
+`DATABASE_URL`, `REDIS_URL`, `NEXT_ADMIN_URL`, `NEXT_PUBLIC_AUTH_LOGIN_RSA_PUBLIC_KEY`,
+`NEXT_AUTH_LOGIN_RSA_PRIVATE_KEY`, and `NEXT_AUTH_AES_SECRET_KEY`.
 
 ## Demo scenarios
 

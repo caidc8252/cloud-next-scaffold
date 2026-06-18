@@ -1,32 +1,21 @@
 import "server-only";
 
+import { resolveAppUrl } from "@cloud/config";
+import { CONSOLE_ROUTE } from "@cloud/constants";
 import type { PortalGroup } from "@cloud/platform-config";
 
-// 各 portal 组的 console 基址属部署配置，留 app env。merchant app 暂未建（无默认）。
-const DEFAULT_URL: Record<PortalGroup, string | undefined> = {
-  ADMIN: "http://localhost:3000",
-  CUSTOMER: "http://localhost:3200",
-  MERCHANT: undefined,
-};
-const ENV_KEY: Record<PortalGroup, string> = {
-  ADMIN: "ADMIN_APP_URL",
-  CUSTOMER: "CUSTOMER_APP_URL",
-  MERCHANT: "MERCHANT_APP_URL",
+// 各 portal 组 → 对应 console 的 (env key, 本地 dev 兜底)。基址解析（显式/兜底/生产硬抛/协议校验）
+// 收口在 @cloud/config 的 resolveAppUrl。MERCHANT app 未建（无兜底，缺值即抛）。
+const GROUP_APP: Record<PortalGroup, { envKey: string; devFallback?: string }> = {
+  ADMIN: { envKey: "NEXT_ADMIN_URL", devFallback: "http://127.0.0.1:3000" },
+  CUSTOMER: { envKey: "NEXT_CUSTOMER_URL", devFallback: "http://127.0.0.1:3200" },
+  MERCHANT: { envKey: "NEXT_MERCHANT_URL" },
 };
 
-function parseUrl(value: string, key: string): URL {
-  const url = new URL(value);
-  if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new Error(`${key} must use http or https.`);
-  }
-  return url;
-}
-
-/** 某 portal 组的 console 基址（env 优先，否则默认；都没有 → 抛错，如 merchant 未配置）。 */
+/** 某 portal 组的 console 基址（解析规则见 resolveAppUrl）。 */
 export function appUrlForGroup(group: PortalGroup): string {
-  const value = process.env[ENV_KEY[group]]?.trim() || DEFAULT_URL[group];
-  if (!value) throw new Error(`${ENV_KEY[group]} is not configured (no app for ${group} portal group).`);
-  return parseUrl(value, ENV_KEY[group]).toString();
+  const { envKey, devFallback } = GROUP_APP[group];
+  return resolveAppUrl(envKey, devFallback);
 }
 
 // 登录 / 选 Party 收尾的「落地 URL」唯一入口（会话架构方案 B：泛化 handoff）。
@@ -35,7 +24,7 @@ export function appUrlForGroup(group: PortalGroup): string {
 //（cookie options 在 @cloud/permissions）。切换点收口在此一处 + 那处 cookie 配置，业务调用方不动。
 export function entryUrlForParty(group: PortalGroup, handoffToken: string): string {
   const url = new URL(appUrlForGroup(group));
-  url.pathname = "/api/auth/session-handoff";
+  url.pathname = CONSOLE_ROUTE.sessionHandoff;
   url.search = "";
   url.searchParams.set("token", handoffToken);
   return url.toString();

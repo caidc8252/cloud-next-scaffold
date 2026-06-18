@@ -132,7 +132,7 @@ function requireEnv(name: string): string {
 function loadAesKey(keyBase64: string): Buffer {
   const key = Buffer.from(keyBase64, "base64");
   if (key.length !== 32) {
-    throw new Error("AUTH_AES_SECRET_KEY must decode to 32 bytes.");
+    throw new Error("NEXT_AUTH_AES_SECRET_KEY must decode to 32 bytes.");
   }
   return key;
 }
@@ -147,7 +147,7 @@ function encryptSecret(plaintext: string, keyBase64: string): string {
 
 loadRootEnv();
 requireEnv("DATABASE_URL");
-const aesSecretKey = requireEnv("AUTH_AES_SECRET_KEY");
+const aesSecretKey = requireEnv("NEXT_AUTH_AES_SECRET_KEY");
 
 const { prisma } = await import("../src/index.ts");
 
