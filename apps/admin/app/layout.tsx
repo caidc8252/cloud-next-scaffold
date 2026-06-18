@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const { app } = getConfig();
+  const { NEXT_PUBLIC_APP_NAME } = getConfig();
 
   // `<html lang>` 要反映实际 locale。不直接 import next-intl 的 getLocale，
   // 改用 @cloud/i18n 的 cookie 常量 + isLocale 自行收窄，与 request config 同源。
@@ -28,7 +28,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang={locale}>
-      <body data-app-name={app.name}>
+      <body data-app-name={NEXT_PUBLIC_APP_NAME}>
         {/* 走 cookie 不走 URL 路由、且无 next-intl middleware，provider 无法自动推断 locale，
             需显式传；timeZone / formats 由 server 端 request config 注入，messages 显式下传 */}
         <NextIntlClientProvider locale={locale} messages={messages} timeZone={timeZone}>
