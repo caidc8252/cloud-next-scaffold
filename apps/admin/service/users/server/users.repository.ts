@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@cloud/db";
+import { defaultLocale } from "@cloud/i18n";
 
 // 用户域数据访问。只做 prisma 查询 / 变更，无 session / 权限 / HTTP 感知；上层 service 负责编排。
 // 角色绑定走 sys_party_user.roles JSONB；邀请走 sys_operator_invite（无占位用户）。
@@ -115,8 +116,8 @@ export function deleteInvite(operatorInviteId: number) {
   return prisma.sysOperatorInvite.delete({ where: { operatorInviteId } });
 }
 
-/** 读取用户偏好语言（用于按收件人 locale 渲染通知文案）；无值时回退 "en"。 */
+/** 读取用户偏好语言（用于按收件人 locale 渲染通知文案）；无值时回退 defaultLocale。 */
 export async function findUserLocale(userId: number): Promise<string> {
   const u = await prisma.sysUser.findUnique({ where: { userId }, select: { locale: true } });
-  return u?.locale ?? "en";
+  return u?.locale ?? defaultLocale;
 }

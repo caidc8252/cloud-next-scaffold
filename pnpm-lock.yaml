@@ -516,6 +516,9 @@ importers:
 
   packages/request:
     dependencies:
+      '@cloud/i18n':
+        specifier: workspace:*
+        version: link:../i18n
       '@cloud/log':
         specifier: workspace:*
         version: link:../log
