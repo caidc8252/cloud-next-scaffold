@@ -4,7 +4,7 @@ import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon
 
 // Toast notification container. Place once in the root layout; call toast() anywhere to show a notification.
 // Theme auto-tracks the app's light/dark preference. Accepts all ToasterProps (position, duration, richColors, etc.).
-const TOAST_DURATION = 4_000
+const TOAST_DURATION = 2_500
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { preference: theme } = useTheme()

@@ -14,7 +14,9 @@
   "dependencies": {
     "@cloud/i18n": "workspace:*",
     "@cloud/log": "workspace:*",
+    "@cloud/ui": "workspace:*",
     "client-only": "^0.0.1",
+    "lucide-react": "catalog:",
     "server-only": "^0.0.1"
   },
   "peerDependencies": {
