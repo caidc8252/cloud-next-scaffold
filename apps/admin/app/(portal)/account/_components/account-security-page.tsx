@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { Shield } from "lucide-react";
 import { Badge, Button, Input, Modal, toast } from "@cloud/ui/components/ui";
-import { request } from "@cloud/request/client";
 import { toastError } from "@cloud/request/error-toast";
 import { useTranslations } from "@cloud/i18n/client";
+import { disableAccountMfa, getAccountSecurity } from "@/service/account/api";
 import type { AccountSecurity } from "@/app/(portal)/account/_shared/types";
 import { UPCard, UPHeader, UPRow } from "./up-chrome";
 import { PasswordChangeFlow } from "./password-change-flow";
@@ -35,7 +35,7 @@ export function AccountSecurityPageClient({ initialSecurity }: { initialSecurity
 
   async function refresh() {
     try {
-      const res = await request.get<AccountSecurity>("/api/account/mfa");
+      const res = await getAccountSecurity();
       setSecurity(res.data);
     } catch {
       // non-fatal; the page keeps the last known state
@@ -45,7 +45,7 @@ export function AccountSecurityPageClient({ initialSecurity }: { initialSecurity
   async function disable() {
     setDisabling(true);
     try {
-      const res = await request.post<AccountSecurity>("/api/account/mfa/disable", { code: disableCode.trim() });
+      const res = await disableAccountMfa({ code: disableCode.trim() });
       setSecurity(res.data);
       setDisableOpen(false);
       setDisableCode("");

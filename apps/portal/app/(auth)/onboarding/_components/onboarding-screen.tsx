@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Button, Spinner } from "@cloud/ui";
-import { request } from "@cloud/request/client";
+import { logout } from "@/service/auth/api";
+import { acceptOnboarding, getOnboardingInvite } from "@/service/onboarding/api";
 import { useTranslations } from "@cloud/i18n/client";
 import { PepLogo } from "@/app/_components/brand";
 import type { CurrentUser, InvitePublic } from "./types";
@@ -22,8 +23,7 @@ export function OnboardingScreen({ token, currentUser }: { token: string; curren
   const [invite, setInvite] = useState<InvitePublic | null>(null);
 
   useEffect(() => {
-    request
-      .get<{ invitation: InvitePublic }>(`/api/onboarding/invite?token=${encodeURIComponent(token)}`)
+    getOnboardingInvite(token)
       .then((res) => {
         setInvite(res.data.invitation);
         setStep("landing");
@@ -34,14 +34,14 @@ export function OnboardingScreen({ token, currentUser }: { token: string; curren
   const returnTo = `/onboarding?token=${encodeURIComponent(token)}`;
 
   async function joinAsCurrent() {
-    const res = await request.post<{ redirectTo: string }>("/api/onboarding/accept", { mode: "existing", token });
+    const res = await acceptOnboarding({ mode: "existing", token });
     window.location.assign(res.data.redirectTo);
   }
   function goLogin() {
     window.location.assign(`/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
   async function switchAccount() {
-    await request.post("/api/auth/logout").catch(() => {});
+    await logout().catch(() => {});
     goLogin();
   }
 

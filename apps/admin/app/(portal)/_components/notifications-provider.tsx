@@ -1,6 +1,11 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { request } from "@cloud/request/client";
+import {
+  getNoticeUnreadByParty,
+  getNoticeUnreadCount,
+  listNotice,
+  markNoticeRead,
+} from "@/service/notification/api";
 import type { Notice } from "@/service/notification/types";
 
 type Ctx = {
@@ -21,9 +26,9 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const refresh = useCallback(async () => {
     try {
       const [list, count, byParty] = await Promise.all([
-        request.get<{ items: Notice[] }>("/api/notifications", { query: { status: "UNREAD", page: 1, limit: 20 } }),
-        request.get<{ count: number }>("/api/notifications/unread-count"),
-        request.get<{ counts: Record<string, number> }>("/api/notifications/unread-by-party"),
+        listNotice({ status: "UNREAD", page: 1, limit: 20 }),
+        getNoticeUnreadCount(),
+        getNoticeUnreadByParty(),
       ]);
       setRecentUnread(list.data.items);
       setUnreadCount(count.data.count);
@@ -45,12 +50,12 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     const want = new Set(ids);
     setRecentUnread((p) => p.filter((n) => !want.has(n.id)));
     setUnreadCount((c) => Math.max(0, c - ids.length));
-    try { await request.post("/api/notifications/read", { ids }); } finally { refresh(); }
+    try { await markNoticeRead({ ids }); } finally { refresh(); }
   }, [refresh]);
 
   const markAllRead = useCallback(async () => {
     setRecentUnread([]); setUnreadCount(0);
-    try { await request.post("/api/notifications/read", { all: true }); } finally { refresh(); }
+    try { await markNoticeRead({ all: true }); } finally { refresh(); }
   }, [refresh]);
 
   return <NotificationsContext.Provider value={{ unreadCount, recentUnread, unreadByParty, markRead, markAllRead, refresh }}>{children}</NotificationsContext.Provider>;

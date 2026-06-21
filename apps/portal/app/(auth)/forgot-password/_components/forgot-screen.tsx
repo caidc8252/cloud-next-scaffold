@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Mail } from "lucide-react";
 import { Button, Field, Input } from "@cloud/ui";
-import { request, RequestError } from "@cloud/request/client";
+import { RequestError } from "@cloud/request/client";
+import { sendResetLink } from "@/service/forgot-password/api";
 import { useTranslations } from "@cloud/i18n/client";
 import { PepMark } from "@/app/_components/brand";
 import { AuthShell } from "@/app/_components/auth-shell";
@@ -30,7 +31,7 @@ export function ForgotScreen() {
     setBusy(true);
     try {
       // 防枚举：后端无论邮箱是否存在都返回 ok。
-      await request.post("/api/forgot-password/send-link", { email: email.trim() });
+      await sendResetLink({ email: email.trim() });
       setStage("sent");
     } catch (e) {
       setErr(e instanceof RequestError ? (e.body?.message ?? t("email.err")) : t("email.err"));

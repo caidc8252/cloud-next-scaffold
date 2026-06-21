@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { Building2, Check, ExternalLink, Lock } from "lucide-react";
 import { Button, Modal, toast } from "@cloud/ui/components/ui";
 import { cn } from "@cloud/ui";
-import { request } from "@cloud/request/client";
 import { toastError } from "@cloud/request/error-toast";
 import { useTranslations, useLocale } from "@cloud/i18n/client";
+import { selectPartner } from "@/service/auth/api";
 import type { AccountPartner } from "@/app/(portal)/account/_shared/types";
 import { useNotifications } from "@/app/(portal)/_components/notifications-provider";
 import { UPHeader } from "./up-chrome";
@@ -34,7 +34,7 @@ export function PartnersPageClient({ initialPartners }: { initialPartners: Accou
     if (!pending) return;
     setBusy(true);
     try {
-      await request.post("/api/auth/select-partner", { partyId: pending.partyId });
+      await selectPartner({ partyId: pending.partyId });
       router.replace("/");
       router.refresh();
     } catch (err) {

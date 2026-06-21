@@ -3,9 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@cloud/ui";
-import { request, RequestError } from "@cloud/request/client";
+import { RequestError } from "@cloud/request/client";
 import { useTranslations } from "@cloud/i18n/client";
-import type { Account, AuthBlockType, Company, LoginResult, MfaProfile, ProviderId, SsoTenant } from "@/lib/mock/types";
+import type { Account, AuthBlockType, Company, MfaProfile, ProviderId, SsoTenant } from "@/lib/mock/types";
+import {
+  getLoginChallenge,
+  loginWithOidc,
+  loginWithPassword,
+  selectLoginCompany,
+  verifyMfa as verifyMfaApi,
+} from "@/service/auth/api";
+import type { LoginResponse, PasswordLoginResponse } from "@/service/auth/types";
 import { AuthShell } from "@/app/_components/auth-shell";
 import { PROVIDERS } from "@/app/_components/provider-mark";
 import { encryptLoginPassword } from "@/lib/login-crypto";
@@ -19,19 +27,6 @@ type Step = "form" | "idp" | "mfa" | "company" | "blocked" | "nocompany";
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const deriveName = (email: string) =>
   (email.split("@")[0] || "operator").replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-
-type LoginResponse = LoginResult & { redirectTo?: string };
-type PasswordLoginResponse = {
-  redirectTo?: string;
-  mfaRequired?: boolean;
-  mfaToken?: string;
-};
-type MfaResponse =
-  | ({ redirectTo?: string } & Partial<{
-      status: "ok" | "company" | "wrong" | "blocked";
-      companies: Company[];
-      triesLeft: number;
-    }>);
 
 export function LoginScreen({ returnTo }: { returnTo?: string }) {
   const t = useTranslations("portal.login");
@@ -113,15 +108,13 @@ export function LoginScreen({ returnTo }: { returnTo?: string }) {
     setFormError(null);
     setBusy(t("busy.verifying"));
     try {
-      const challenge = await request.get<{ serverTimestamp: number; nonce: string }>(
-        "/api/auth/login-challenge",
-      );
+      const challenge = await getLoginChallenge();
       const encryptedPassword = await encryptLoginPassword(
         password,
         challenge.data.serverTimestamp,
         challenge.data.nonce,
       );
-      const res = await request.post<PasswordLoginResponse>("/api/auth/password", {
+      const res = await loginWithPassword({
         email,
         encryptedPassword,
         ...(returnTo ? { returnTo } : {}),
@@ -144,7 +137,7 @@ export function LoginScreen({ returnTo }: { returnTo?: string }) {
     setBusy(t("busy.returning", { provider: PROVIDERS[provider].label }));
     try {
       await delay(800);
-      const res = await request.post<LoginResponse>("/api/auth/oidc", {
+      const res = await loginWithOidc({
         provider,
         email: acct.email,
         name: acct.name,
@@ -162,7 +155,7 @@ export function LoginScreen({ returnTo }: { returnTo?: string }) {
   async function verifyMfa(code: string) {
     setMfaError(null);
     try {
-      const res = await request.post<MfaResponse>("/api/auth/mfa", { mfaToken: loginToken, code });
+      const res = await verifyMfaApi({ mfaToken: loginToken ?? "", code });
       const data = res.data;
       if (data.redirectTo && !data.status) return enterConsole(data.redirectTo);
       if (data.status === "ok") return enterConsole(data.redirectTo);
@@ -184,7 +177,7 @@ export function LoginScreen({ returnTo }: { returnTo?: string }) {
     setBusy(t("busy.entering"));
     try {
       await delay(500);
-      const res = await request.post<LoginResponse>("/api/auth/company", { loginToken, companyId });
+      const res = await selectLoginCompany({ loginToken, companyId });
       router.replace(res.data.redirectTo ?? "/select-partner");
       router.refresh();
     } catch {

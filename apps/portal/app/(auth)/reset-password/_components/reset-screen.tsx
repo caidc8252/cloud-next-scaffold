@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Lock } from "lucide-react";
 import { Button, Field, Input, Spinner } from "@cloud/ui";
-import { request, RequestError } from "@cloud/request/client";
+import { RequestError } from "@cloud/request/client";
+import { getLoginChallenge } from "@/service/auth/api";
+import { resetPassword, validateResetToken } from "@/service/forgot-password/api";
 import { useTranslations } from "@cloud/i18n/client";
 import { isPasswordValid, PW_MIN } from "@/lib/password-rules";
 import { encryptLoginPassword } from "@/lib/login-crypto";
@@ -26,8 +28,7 @@ export function ResetScreen({ token }: { token: string }) {
   const [err, setErr] = useState("");
 
   useEffect(() => {
-    request
-      .get<{ valid: boolean }>(`/api/reset-password/validate?token=${encodeURIComponent(token)}`)
+    validateResetToken(token)
       .then((res) => setStage(res.data.valid ? "form" : "invalid"))
       .catch(() => setStage("invalid"));
   }, [token]);
@@ -40,9 +41,9 @@ export function ResetScreen({ token }: { token: string }) {
     setErr("");
     setBusy(true);
     try {
-      const challenge = await request.get<{ serverTimestamp: number; nonce: string }>("/api/auth/login-challenge");
+      const challenge = await getLoginChallenge();
       const encryptedPassword = await encryptLoginPassword(pw, challenge.data.serverTimestamp, challenge.data.nonce);
-      await request.post("/api/reset-password", { token, encryptedPassword });
+      await resetPassword({ token, encryptedPassword });
       setStage("done");
     } catch (e) {
       setErr(e instanceof RequestError ? (e.body?.message ?? t("error")) : t("error"));

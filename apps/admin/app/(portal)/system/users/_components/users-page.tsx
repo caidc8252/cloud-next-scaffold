@@ -4,14 +4,22 @@ import { useState, useMemo } from "react";
 import { Search, Plus } from "lucide-react";
 import { toastError } from "@cloud/request/error-toast";
 import { Button, Card, Input, Modal, PageBody, PageHeader, Toggle, ToggleGroup, toast } from "@cloud/ui";
-import { request } from "@cloud/request/client";
+import {
+  cancelUserInvite,
+  createUser as createUserApi,
+  listUser,
+  lockUser,
+  regenerateUserInvite,
+  resendUserInvite,
+  resetUserPassword,
+  setUserInviteRoles,
+  updateUser,
+} from "@/service/users/api";
 import type { Role, User } from "@/app/(portal)/system/_shared/types";
 import { UserListItem } from "./user-list-item";
 import { UserDetail } from "./user-detail";
 import { PendingInviteDetail } from "./pending-invite-detail";
 import { NewUserModal } from "./new-user-modal";
-
-const API = "/api/system/users";
 
 type UsersPageProps = { initialUsers: User[]; initialRoles: Role[]; currentUserId: string; portalBaseUrl: string };
 type StatusFilter = "all" | "active" | "inactive" | "pending";
@@ -52,7 +60,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId, portalBas
   const cancelTarget = confirmCancelId ? users.find((u) => u.id === confirmCancelId) : null;
 
   async function refreshUsers() {
-    const res = await request.get<User[]>(API);
+    const res = await listUser();
     setUsers(res.data);
     setSelectedId((current) =>
       current && res.data.some((u) => u.id === current) ? current : (res.data[0]?.id ?? null),
@@ -61,7 +69,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId, portalBas
 
   async function update(next: User): Promise<boolean> {
     try {
-      const res = await request.put<User>(`${API}/${next.id}`, {
+      const res = await updateUser(next.id, {
         remark: next.remark,
         roleIds: next.roleIds,
       });
@@ -76,7 +84,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId, portalBas
 
   async function updateInviteRoles(next: User): Promise<boolean> {
     try {
-      const res = await request.put<User>(`${API}/${next.id}/invite-roles`, { roleIds: next.roleIds });
+      const res = await setUserInviteRoles(next.id, { roleIds: next.roleIds });
       setUsers((prev) => prev.map((u) => (u.id === next.id ? res.data : u)));
       toast.success("Invitation updated");
       return true;
@@ -88,7 +96,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId, portalBas
 
   async function createUser(draft: { email: string; roleIds: string[] }): Promise<boolean> {
     try {
-      const res = await request.post<User>(API, draft);
+      const res = await createUserApi(draft);
       setUsers((prev) => [res.data, ...prev]);
       setSelectedId(res.data.id);
       setShowNew(false);
@@ -104,7 +112,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId, portalBas
 
   async function toggleLock(user: User): Promise<boolean> {
     try {
-      const res = await request.post<User>(`${API}/${user.id}/lock`);
+      const res = await lockUser(user.id);
       setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
       toast.success(user.status === "INACTIVE" ? "User enabled" : "User disabled");
       return true;
@@ -116,7 +124,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId, portalBas
 
   async function resetPassword(user: User): Promise<boolean> {
     try {
-      const res = await request.post<User>(`${API}/${user.id}/reset-password`);
+      const res = await resetUserPassword(user.id);
       setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
       toast.success("Password reset link sent");
       return true;
@@ -128,7 +136,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId, portalBas
 
   async function cancelInvite(userId: string): Promise<boolean> {
     try {
-      await request.post(`${API}/${userId}/cancel-invite`);
+      await cancelUserInvite(userId);
       setUsers((prev) => prev.filter((u) => u.id !== userId));
       if (selectedId === userId) setSelectedId(null);
       toast.success("Invitation cancelled");
@@ -141,7 +149,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId, portalBas
 
   async function resendInvite(user: User): Promise<boolean> {
     try {
-      const res = await request.post<User>(`${API}/${user.id}/resend-invite`);
+      const res = await resendUserInvite(user.id);
       setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
       toast.success("Invitation resent");
       return true;
@@ -153,7 +161,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId, portalBas
 
   async function regenerateInvite(user: User): Promise<boolean> {
     try {
-      const res = await request.post<User>(`${API}/${user.id}/regenerate-invite`);
+      const res = await regenerateUserInvite(user.id);
       setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
       toast.success("Invitation regenerated");
       return true;
@@ -166,7 +174,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId, portalBas
   // Expired invite → re-send by re-creating (backend overwrites the expired row for the same email).
   async function reinviteExpired(user: User): Promise<boolean> {
     try {
-      const res = await request.post<User>(API, { email: user.inviteEmail, roleIds: user.roleIds });
+      const res = await createUserApi({ email: user.inviteEmail ?? user.email, roleIds: user.roleIds });
       setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
       setSelectedId(res.data.id);
       toast.success("Invitation re-sent");

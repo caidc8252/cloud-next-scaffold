@@ -13,14 +13,12 @@ import {
   PageHeader,
   toast,
 } from "@cloud/ui";
-import { request } from "@cloud/request/client";
+import { createRole as createRoleApi, deleteRole as deleteRoleApi, updateRole } from "@/service/roles/api";
 import type { Role, User, PermissionGroup } from "@/app/(portal)/system/_shared/types";
 import { RoleListItem } from "./role-list-item";
 import { RoleEditor } from "./role-editor";
 import { NewRoleModal } from "./new-role-modal";
 import { DuplicateRoleModal } from "./duplicate-role-modal";
-
-const API_BASE = "/api/system/roles";
 
 type RolesPageProps = {
   initialRoles: Role[];
@@ -45,7 +43,7 @@ export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesP
 
   async function update(next: Role): Promise<boolean> {
     try {
-      const res = await request.put<Role>(`${API_BASE}/${next.id}`, {
+      const res = await updateRole(next.id, {
         name: next.name,
         description: next.description,
         permissions: next.permissions,
@@ -62,7 +60,7 @@ export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesP
   async function createRole(draft: { name: string; description: string; baseId: string | null }): Promise<boolean> {
     const base = draft.baseId ? roles.find((r) => r.id === draft.baseId) : null;
     try {
-      const res = await request.post<Role>(API_BASE, {
+      const res = await createRoleApi({
         name: draft.name,
         description: draft.description,
         permissions: base ? base.permissions : [],
@@ -80,7 +78,7 @@ export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesP
 
   async function deleteRole(id: string): Promise<boolean> {
     try {
-      await request.delete(`${API_BASE}/${id}`);
+      await deleteRoleApi(id);
       setRoles((prev) => {
         const next = prev.filter((r) => r.id !== id);
         setSelectedId(next[0]?.id ?? null);
@@ -96,7 +94,7 @@ export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesP
 
   async function duplicate(source: Role, newName: string): Promise<boolean> {
     try {
-      const res = await request.post<Role>(API_BASE, {
+      const res = await createRoleApi({
         name: newName,
         description: source.description,
         permissions: source.permissions,

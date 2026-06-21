@@ -13,9 +13,9 @@ import {
   SelectValue,
   toast,
 } from "@cloud/ui/components/ui";
-import { request } from "@cloud/request/client";
 import { toastError } from "@cloud/request/error-toast";
 import { useTranslations } from "@cloud/i18n/client";
+import { updateAccountProfile } from "@/service/account/api";
 import type { AccountProfile, Country } from "@/app/(portal)/account/_shared/types";
 import { UPCard, UPHeader } from "./up-chrome";
 import { IdentityChangeFlow } from "./identity-change-flow";
@@ -80,7 +80,7 @@ export function ProfilePageClient({
     }
     setBusy(true);
     try {
-      const res = await request.patch<AccountProfile>("/api/account/profile", {
+      const res = await updateAccountProfile({
         nickName: draft.nickName.trim(),
         country: draft.country,
       });

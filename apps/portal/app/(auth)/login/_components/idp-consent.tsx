@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronRight, Lock, User } from "lucide-react";
 import { Avatar, AvatarFallback, Button } from "@cloud/ui";
-import { request } from "@cloud/request/client";
+import { getIdpAccounts } from "@/service/auth/api";
 import { useTranslations } from "@cloud/i18n/client";
 import type { Account, IdpAccount, ProviderId, SsoTenant } from "@/lib/mock/types";
 import { initials } from "@/lib/format";
@@ -64,8 +64,7 @@ export function IdpConsent({
 
   useEffect(() => {
     if (tenant) return; // enterprise: single account passed in
-    request
-      .get<{ accounts: IdpAccount[] }>(`/api/auth/idp-accounts?provider=${provider}`)
+    getIdpAccounts(provider)
       .then((res) => setAccounts(res.data.accounts))
       .catch(() => setAccounts([]));
   }, [provider, tenant]);

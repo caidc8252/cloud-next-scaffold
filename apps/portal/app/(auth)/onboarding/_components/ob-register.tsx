@@ -12,7 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@cloud/ui";
-import { request, RequestError } from "@cloud/request/client";
+import { RequestError } from "@cloud/request/client";
+import { getLoginChallenge } from "@/service/auth/api";
+import { acceptOnboarding } from "@/service/onboarding/api";
 import { useTranslations } from "@cloud/i18n/client";
 import { isPasswordValid, PW_MIN } from "@/lib/password-rules";
 import { encryptLoginPassword } from "@/lib/login-crypto";
@@ -50,9 +52,9 @@ export function ObRegister({
     setErr("");
     setBusy(true);
     try {
-      const ch = await request.get<{ serverTimestamp: number; nonce: string }>("/api/auth/login-challenge");
+      const ch = await getLoginChallenge();
       const encryptedPassword = await encryptLoginPassword(pw, ch.data.serverTimestamp, ch.data.nonce);
-      const res = await request.post<{ redirectTo: string }>("/api/onboarding/accept", {
+      const res = await acceptOnboarding({
         mode: "register",
         token,
         encryptedPassword,

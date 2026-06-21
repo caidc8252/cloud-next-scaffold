@@ -20,9 +20,10 @@ import {
   type TableColumn,
 } from "@cloud/ui";
 import { useTranslations } from "@cloud/i18n/client";
-import { request } from "@cloud/request/client";
 import { toastError } from "@cloud/request/error-toast";
+import { listNotice } from "@/service/notification/api";
 import type { Notice, NoticeStatus } from "@/service/notification/types";
+import type { ListNoticesQuery } from "@/service/notification/schemas/notification.schema";
 import { useNotifications } from "../../_components/notifications-provider";
 import { isUnread, useRelTime } from "../_lib/notice-meta";
 import { ModuleChip } from "./module-chip";
@@ -74,7 +75,7 @@ export function NotificationsPage({ currentPartyName }: { currentPartyName: stri
   // Server-side fetch: triggered by page, pageSize, or applied filters
   useEffect(() => {
     let alive = true;
-    const q = {
+    const q: ListNoticesQuery = {
       page,
       limit: pageSize,
       ...(applied.status !== "All" ? { status: applied.status } : {}),
@@ -84,7 +85,7 @@ export function NotificationsPage({ currentPartyName }: { currentPartyName: stri
     async function load() {
       setLoading(true);
       try {
-        const res = await request.get<{ items: Notice[] }>("/api/notifications", { query: q });
+        const res = await listNotice(q);
         if (!alive) return;
         setNotices(res.data.items);
         setTotal(res.total ?? 0);
