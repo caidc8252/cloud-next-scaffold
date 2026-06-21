@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button, Field, Input, Modal, toast } from "@cloud/ui/components/ui";
-import { request } from "@cloud/request/client";
 import { toastError } from "@cloud/request/error-toast";
 import { useTranslations } from "@cloud/i18n/client";
+import { changeAccountEmail, requestIdentityCode } from "@/service/account/api";
 import type { AccountProfile } from "@/app/(portal)/account/_shared/types";
 
 // Verified email change against the real endpoint. Codes are sent server-side
@@ -36,7 +36,7 @@ export function IdentityChangeFlow({
 
   async function requestCode(purpose: Purpose, newEmail?: string) {
     try {
-      await request.post("/api/account/identity/request-code", {
+      await requestIdentityCode({
         purpose,
         ...(newEmail ? { newEmail } : {}),
       });
@@ -66,7 +66,7 @@ export function IdentityChangeFlow({
   async function applyEmail() {
     setBusy(true);
     try {
-      const res = await request.patch<AccountProfile>("/api/account/email", {
+      const res = await changeAccountEmail({
         newEmail: newValue.trim(),
         currentCode: currentCode.trim(),
         newCode: newCode.trim(),

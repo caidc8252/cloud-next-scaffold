@@ -1,3 +1,7 @@
+// User / Role VO 已迁至各自 service 域；这里 re-export 保持既有导入点不变（类型 re-export 零运行时成本）。
+export type { User } from "@/service/users/types";
+export type { Role } from "@/service/roles/types";
+
 export type PermissionItem = {
   code: string;
   label: string;
@@ -9,40 +13,4 @@ export type PermissionGroup = {
   menuId: string;
   menuTitle: string;
   items: PermissionItem[];
-};
-
-export type Role = {
-  id: string;
-  name: string;
-  description: string;
-  builtin: boolean;
-  operatorCount: number;
-  permissions: string[];
-  updatedAt: string;
-  updatedBy: string;
-};
-
-export type User = {
-  id: string;
-  loginName: string;
-  displayName: string;
-  email: string;
-  country: string;
-  status: "ACTIVE" | "INACTIVE" | "PENDING";
-  lastLoginAt: string | null;
-  passwordChangedTimestamp: number;
-  passwordErrorTimes: number;
-  passwordErrorLockExpiredTimestamp: number | null;
-  remark: string;
-  createdAt: string;
-  updatedAt: string;
-  authorizingType: string;
-  roleIds: string[];
-  // Pending invite fields
-  invitedAt?: string;
-  invitedBy?: string;
-  inviteExpiresAt?: string;
-  inviteToken?: string;
-  inviteEmail?: string;
-  resendCount?: number;
 };

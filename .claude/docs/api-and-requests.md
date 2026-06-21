@@ -52,3 +52,49 @@
     - locale 由 `withApiHandler()` 在进 handler 前读 `LOCALE_COOKIE` 解析、用 `runWithLocale()` 注入请求级上下文；`errorResponse()` 等响应辅助保持同步，不在里面读 cookie
     - 没走 `withApiHandler()`（或非请求上下文）时 locale 回退英文
 - 不要把"前端看不到入口"当作接口安全前提
+
+## 客户端调用层
+
+> 归属：客户端（组件 / hook）怎么发起 HTTP 调用——调用收口、路径、类型、错误展示。**写客户端调接口前必读。**
+
+- 每个业务域把客户端调用收口到 `apps/<app>/service/<domain>/api.ts`（**非 server-only**）；**组件不裸调 `request.*`、不在调用点内联 `/api/...` 路径字面量**
+  - `service/<domain>/` 下只有 `api.ts` 与 `schemas/` 可被客户端 import；`server/` 等其余文件是 server-only，客户端不得 import
+- `api.ts` 只导出**具名函数**：不导出对象（`export const xxxApi = {...}` 会让整组函数一起进 chunk、破坏 tree-shaking）、不建跨域 `index.ts` 桶、调用方也不要 `import * as`
+  - 组件内常有同名 handler（如 `createUser` 包了 api 调用 + 乐观更新 + toast），与 api 函数撞名时**在 import 处 alias**（`import { createUser as createUserApi }`），不要为此改用 `import *`
+- **不写 `const BASE`**，每个函数写**全量路径**——一个函数自带完整 URL，好 grep、可直接复制
+- 命名 `<动词><实体>`，**实体一律单数**，复数 / 集合语义由动词表达；动词表固定，不要自由发挥（不写 `fetchUsers` / `getUserList`）：
+  - `getXxx(id)` 取单条；`listXxx(params?)` 取集合 / 分页；`createXxx(input)`；`updateXxx(id, input)`；`deleteXxx(id)`
+  - 超出 CRUD 的端点：**聚合读**用 `get<Entity><名>`（如 `getNoticeUnreadCount`、`getUnreadByParty`）；**领域动作**用 `<动作><Entity>`，动作动词取领域语义（`markNoticeRead` / `lockUser` / `resendUserInvite`）——动作动词不强求落在固定表内，但仍须**实体限定、防撞名**
+- 请求 / 响应类型从该域**共享类型源** import：优先 `service/<domain>/schemas/` 的 `z.infer`（就是 Route parse 用的那份，client / server 同源），已有 `types.ts` VO 的沿用；**禁止在组件里内联 `type XxxResponse`**
+- 函数**原样返回** `request.*` 的 envelope，调用点读 `.data`；列表的分页字段（`total` / `nextCursor` 等）与 `data` 同级，**不要在 `api.ts` 里 `.then(r => r.data)` 提前 unwrap**，否则列表拿不到分页
+- 错误展示：
+  - 默认 `toastError(err)`（`@cloud/request/error-toast`）弹瞬时 / 全局错误
+  - 需要内联渲染的错误（如表单下方红字），组件自行 `catch` 后 `setState`
+  - 需要按错误类型走不同分支时，判 `err.body?.code`（`ERR_*` 常量），**绝不判 `message`**（message 是随 i18n 变的展示文案）
+  - 后台静默刷新（轮询、挂载预取）可吞错，但 UI 必须降级可见（保留上次值 / 空态），不能转圈卡死
+  - 「会话失效类」401 的登出由包 + app 策略统一处理，**不在业务组件手写 401 跳转**（见上文）
+
+```ts
+// ❌ before：路径、类型、调用全散在组件里，每个组件各写一份
+const API_BASE = "/api/system/users";
+type UserResponse = { id: string; name: string };           // 内联重定义，与服务端脱钩
+const res = await request.get<UserResponse[]>(API_BASE);    // 调用点直连 request.*
+```
+
+```ts
+// ✅ after — apps/admin/service/users/api.ts：该域客户端调用的唯一出处
+import { request } from "@cloud/request/client";
+import type { UserVo, CreateUserInput, UpdateUserInput } from "./schemas/user.schema";
+
+export const getUser    = (id: string)              => request.get<UserVo>(`/api/system/users/${id}`);
+export const listUser   = ()                        => request.get<UserVo[]>("/api/system/users");
+export const createUser = (input: CreateUserInput)  => request.post<UserVo>("/api/system/users", input);
+export const updateUser = (id: string, input: UpdateUserInput) =>
+  request.put<UserVo>(`/api/system/users/${id}`, input);
+export const deleteUser = (id: string)              => request.delete(`/api/system/users/${id}`);
+
+// 组件：只 import 用到的，bundler drop 掉其余；类型 / 路径都不在这里出现
+import { listUser, updateUser } from "@/service/users/api";
+const res = await listUser();
+setUsers(res.data);
+```

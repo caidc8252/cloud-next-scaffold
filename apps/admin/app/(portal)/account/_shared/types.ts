@@ -1,25 +1,6 @@
-// Value-object types for the user "account" surface (profile, security/MFA,
-// partners). Field names mirror the Prisma model fields (see
-// docs/nextjs/portal/admin/user-panel/domain.md). Purely presentational values
-// with no column (e.g. password-expiry days, isCurrent, locked) are derived in
-// the mapper/UI, not stored.
-
-export type AccountProfile = {
-  userId: number;
-  nickName: string; // SysUser.nickName
-  email: string; // SysUser.email
-  country: string | null; // SysUser.country
-  passwordChangedTimestamp: string | null; // ISO; UI derives "expires in N days"
-};
-
-export type MfaStatus = "NONE" | "PENDING" | "ACTIVE";
-
-export type AccountSecurity = {
-  mfaEnable: boolean; // SysUser.mfaEnable
-  mfaStatus: MfaStatus; // derived from SysMfaInfo rows
-  passwordChangedTimestamp: string | null;
-  passwordExpiryDays: number; // PASSWORD_POLICY.expiryDays
-};
+// AccountProfile / AccountSecurity / MfaStatus VO 已迁至 service/account；这里 re-export 保持既有导入点不变（类型 re-export 零运行时成本）。
+// AccountPartner / Country 仍是本页 UI 用值对象，留在此处。
+export type { AccountProfile, AccountSecurity, MfaStatus } from "@/service/account/types";
 
 export type AccountPartner = {
   partyUserId: number; // SysPartyUser.partyUserId

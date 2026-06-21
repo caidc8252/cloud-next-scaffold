@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff, Info, Lock, Mail, ShieldCheck, TriangleAlert } from "lucide-react";
 import { Badge, Button, Input, Label } from "@cloud/ui";
-import { request } from "@cloud/request/client";
+import { getSsoDomains } from "@/service/auth/api";
 import { useTranslations } from "@cloud/i18n/client";
 import type { ProviderId, SsoTenant } from "@/lib/mock/types";
 import { PepMark } from "@/app/_components/brand";
@@ -40,8 +40,7 @@ export function LoginForm({
 
   // SSO domain registry — fetched once, resolved locally as the user types.
   useEffect(() => {
-    request
-      .get<{ tenants: SsoTenant[] }>("/api/auth/sso-domains")
+    getSsoDomains()
       .then((res) => setTenants(res.data.tenants))
       .catch(() => setTenants([]));
   }, []);

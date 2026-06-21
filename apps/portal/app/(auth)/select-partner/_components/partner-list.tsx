@@ -3,13 +3,10 @@
 import { useState } from "react";
 import { ArrowRight, Building2, Loader2 } from "lucide-react";
 import { Badge, Button } from "@cloud/ui";
-import { request, RequestError } from "@cloud/request/client";
+import { RequestError } from "@cloud/request/client";
 import { useTranslations } from "@cloud/i18n/client";
+import { selectPartner as selectPartnerApi } from "@/service/auth/api";
 import { isPartySelectable, type PartyChoice } from "@/service/auth/partner-choice";
-
-type SelectPartnerResponse = {
-  redirectTo: string;
-};
 
 export function PartnerList({ choices }: { choices: PartyChoice[] }) {
   const t = useTranslations("portal.partner");
@@ -29,9 +26,7 @@ export function PartnerList({ choices }: { choices: PartyChoice[] }) {
     setPendingId(partyId);
     setMessage(null);
     try {
-      const response = await request.post<SelectPartnerResponse>("/api/auth/select-partner", {
-        partyId,
-      });
+      const response = await selectPartnerApi({ partyId });
       window.location.assign(response.data.redirectTo);
     } catch (error) {
       setMessage(

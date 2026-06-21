@@ -3,16 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
 import { Button, Input, Modal } from "@cloud/ui/components/ui";
-import { request } from "@cloud/request/client";
 import { toastError } from "@cloud/request/error-toast";
 import { useTranslations } from "@cloud/i18n/client";
+import { activateAccountMfa, enrollAccountMfa } from "@/service/account/api";
+import type { EnrollData } from "@/service/account/types";
 import type { AccountSecurity } from "@/app/(portal)/account/_shared/types";
 import { QrCode } from "./qr-code";
 
 // MFA enrollment — used for both Enable (mfaEnable=false) and Reconfigure (active).
 // The server decides which based on mfaEnable; the `reconfigure` prop only tunes copy.
 //   enroll (creates/refreshes PENDING + secret) → scan QR / setup key → activate.
-type EnrollData = { mfaInfoId: number; secret: string; otpauthUri: string };
 type Step = "scan" | "confirm" | "done";
 
 export function MfaEnrollFlow({
@@ -42,8 +42,7 @@ export function MfaEnrollFlow({
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    request
-      .post<EnrollData>("/api/account/mfa/enroll")
+    enrollAccountMfa()
       .then((res) => setEnroll(res.data))
       .catch((e) => {
         toastError(e);
@@ -56,7 +55,7 @@ export function MfaEnrollFlow({
     if (!enroll) return;
     setBusy(true);
     try {
-      const res = await request.post<AccountSecurity>("/api/account/mfa/activate", {
+      const res = await activateAccountMfa({
         mfaInfoId: enroll.mfaInfoId,
         code: code.trim(),
       });
