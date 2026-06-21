@@ -222,20 +222,14 @@
   to   { transform: scaleX(0); }
 }
 
-/* Error toast: hover-to-show copy button pinned to toast top-right */
+/* Error toast: hover-to-show icon copy button pinned to toast top-right.
+   Visual chrome (size/radius/hover) comes from @cloud/ui buttonVariants(ghost/icon-xs);
+   this rule only positions it and reveals it on toast hover. */
 .cn-error-toast-copy {
-  @apply absolute right-2.5 top-2.5;
-  @apply px-2.5 py-0.5;
-  @apply rounded-md border text-xs font-medium leading-normal;
-  @apply text-content-secondary bg-surface-3 border-line-default;
-  @apply cursor-pointer z-10;
+  @apply absolute right-1.5 top-1.5 z-10;
   @apply opacity-0 pointer-events-none transition-opacity duration-150;
 }
 
 .cn-toast:hover .cn-error-toast-copy {
   @apply opacity-100 pointer-events-auto;
-}
-
-.cn-error-toast-copy:hover {
-  @apply bg-surface-hover text-content-primary;
 }

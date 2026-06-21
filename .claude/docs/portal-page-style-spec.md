@@ -190,3 +190,11 @@ Shell `Layout` 滚动区**无内边距**，页面自己留白。页面主体默�
 | 状态 | `Badge tone=… dot`；终态（Terminated / Expired）可叠 `opacity-70~80` + `line-through` |
 | 标签 | `Badge shape="tag"`（mono） |
 | 类目标签 | 类目色 token（teal / violet），非语义色 |
+
+---
+
+## 9. 侧边栏菜单 icon
+
+侧边栏三级模型（见 `app/(portal)/layout.tsx`）：L1 是分组标题（无 icon）、L2 是渲染为 sidebar item 的菜单项（**带 icon**）、L3 是 L2 下的嵌套子项（无 icon）。
+
+- **L2 必须有对应 icon（MUST）**：每个 L2 菜单在 `manifest/_menu.map.ts` 里声明的 `icon` 名，都必须在 `apps/admin/app/(portal)/_components/menu-icon.tsx` 的 `getMenuIcon` 里有匹配 case，**不能落到 `LayoutDashboard` 兜底**（兜底只是防御网，不是合法终态）。新增 / 调整 L2 时：先在 `_menu.map.ts` 定 `icon` 名，再在 `menu-icon.tsx` 补上对应 case（icon 取自 `lucide-react`），icon 语义应能区分、不与同级混淆。

@@ -522,9 +522,15 @@ importers:
       '@cloud/log':
         specifier: workspace:*
         version: link:../log
+      '@cloud/ui':
+        specifier: workspace:*
+        version: link:../ui
       client-only:
         specifier: ^0.0.1
         version: 0.0.1
+      lucide-react:
+        specifier: 'catalog:'
+        version: 0.552.0(react@19.2.4)
       next:
         specifier: ^16.0.0
         version: 16.2.6(@babel/core@7.29.0)(@playwright/test@1.60.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
