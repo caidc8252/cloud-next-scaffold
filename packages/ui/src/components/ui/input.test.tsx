@@ -38,6 +38,13 @@ describe("Input — TOMS v2.0 states", () => {
     expect(screen.getByPlaceholderText("q").className).toContain("read-only:bg-surface-3")
   })
 
+  it("neutralizes the browser autofill background on the base input", () => {
+    // 回归：base Input（非 InputGroup）也要带 autofill 修复，否则登录等直接用 <Input> 的
+    // 表单仍会被 Chrome 刷淡蓝底（见 input.tsx autofillFix 注释）。
+    render(<Input placeholder="q" />)
+    expect(screen.getByPlaceholderText("q").className).toContain("autofill:[transition:background-color_9999s]")
+  })
+
   it("with a prefix, the invalid ring is drawn only by the outer wrapper", () => {
     // 回归：prefix + invalid 时，外层容器画一圈错误 ring，内层 input 必须把自己的
     // aria-invalid ring/border 清掉，避免两层同心红 ring（见 input.tsx 注释）。

@@ -3,8 +3,10 @@
 import { Progress as ProgressPrimitive } from "@base-ui/react/progress"
 
 import { cn } from "../../lib/utils"
+import { type Tone } from "./_tone"
 
-type ProgressTone = "success" | "warning" | "error" | "info"
+// Progress has no "neutral" — omitting tone already yields the default brand color.
+type ProgressTone = Exclude<Tone, "neutral">
 
 const toneIndicatorMap: Record<ProgressTone, string> = {
   success: "bg-success",

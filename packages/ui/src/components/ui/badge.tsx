@@ -2,44 +2,19 @@
 
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
-import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "../../lib/utils"
+import { type Tone } from "./_tone"
 
-const badgeVariants = cva(
-  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
-        secondary:
-          "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
-        destructive:
-          "bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
-        outline:
-          "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
-        ghost:
-          "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  }
-)
+// Chip shell: shape / spacing / focus only. Color is driven entirely by `tone`.
+const badgeBase =
+  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&>svg]:pointer-events-none [&>svg]:size-3!"
 
-type BadgeTone = "neutral" | "success" | "warning" | "error" | "info"
+type BadgeTone = Tone
 type BadgeShape = "pill" | "tag"
 
-const toneVariantMap: Record<BadgeTone, "default" | "secondary" | "destructive" | "outline"> = {
-  neutral: "secondary",
-  success: "default",
-  warning: "outline",
-  error: "destructive",
-  info: "secondary",
-}
-
+// Semantic status color — the only color axis. `neutral` is the default. There is
+// no `variant`: status badges differ by tone, not by form (see ./_tone).
 const toneCssMap: Record<BadgeTone, string> = {
   neutral: "bg-surface-3 text-content-secondary border-line-default",
   success: "bg-success-bg text-success-strong border-success/25",
@@ -48,7 +23,7 @@ const toneCssMap: Record<BadgeTone, string> = {
   info:    "bg-info-bg text-info-strong border-info/25",
 }
 
-interface BadgeProps extends useRender.ComponentProps<"span">, VariantProps<typeof badgeVariants> {
+interface BadgeProps extends useRender.ComponentProps<"span"> {
   tone?: BadgeTone
   shape?: BadgeShape
   // Show a leading status dot. Color follows the text color (bg-current), so it
@@ -56,27 +31,25 @@ interface BadgeProps extends useRender.ComponentProps<"span">, VariantProps<type
   dot?: boolean
 }
 
-// Small inline label for status or category. tone: 'neutral'|'success'|'warning'|'error'|'info' maps to semantic colors.
-// Prefer tone over variant for status indicators (e.g. order state, health checks).
-// Set `dot` to prefix a small status dot in the current tone color.
+// Small inline label for status or category. Color is set entirely by `tone`
+// ('neutral'|'success'|'warning'|'error'|'info'), defaulting to neutral.
+// shape: 'pill' (default) | 'tag'. Set `dot` to prefix a small status dot.
 function Badge({
   className,
-  variant,
-  tone,
+  tone = "neutral",
   shape = "pill",
   dot,
   children,
   render,
   ...props
 }: BadgeProps) {
-  const resolvedVariant = variant ?? (tone ? toneVariantMap[tone] : "default")
   return useRender({
     defaultTagName: "span",
     props: mergeProps<"span">(
       {
         className: cn(
-          badgeVariants({ variant: resolvedVariant }),
-          tone && toneCssMap[tone],
+          badgeBase,
+          toneCssMap[tone],
           shape === "tag" && "rounded-sm font-mono",
           className,
         ),
@@ -92,9 +65,9 @@ function Badge({
     render,
     state: {
       slot: "badge",
-      variant: resolvedVariant,
+      tone,
     },
   })
 }
 
-export { Badge, badgeVariants, type BadgeShape, type BadgeTone }
+export { Badge, type BadgeShape, type BadgeTone }

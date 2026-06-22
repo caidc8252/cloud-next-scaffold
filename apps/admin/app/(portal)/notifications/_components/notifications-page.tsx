@@ -221,7 +221,7 @@ export function NotificationsPage({ currentPartyName }: { currentPartyName: stri
               value={draft.module}
               onValueChange={(v) => setDraft((d) => ({ ...d, module: v as ModuleFilter }))}
             >
-              <SelectTrigger size="default" className="w-44">
+              <SelectTrigger size="md" className="w-44">
                 <SelectValue>{(v) => moduleLabel(v as ModuleFilter)}</SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -237,7 +237,7 @@ export function NotificationsPage({ currentPartyName }: { currentPartyName: stri
               value={draft.status}
               onValueChange={(v) => setDraft((d) => ({ ...d, status: v as StatusFilter }))}
             >
-              <SelectTrigger size="default" className="w-40">
+              <SelectTrigger size="md" className="w-40">
                 <SelectValue>{(v) => statusLabel(v as StatusFilter)}</SelectValue>
               </SelectTrigger>
               <SelectContent>

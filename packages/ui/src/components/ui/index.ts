@@ -1,6 +1,7 @@
+export { type Tone } from './_tone'
 export { Button, buttonVariants } from './button'
 export { Combobox, type ComboboxOption, type ComboboxProps } from './combobox'
-export { Badge, badgeVariants, type BadgeShape, type BadgeTone } from './badge'
+export { Badge, type BadgeShape, type BadgeTone } from './badge'
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction, CardFooter } from './card'
 export { Field, type FieldProps } from './field'
 export { Input } from './input'
@@ -29,6 +30,7 @@ export {
   StatGrid,
   type StatCardProps as KpiTileProps,
   type StatCardProps,
+  type StatCardTone,
   type StatCardTrend,
   type StatCardVariant,
   type StatTrendDirection,

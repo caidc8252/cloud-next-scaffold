@@ -161,7 +161,7 @@ export function ListPageTemplate() {
                 placeholder="Search by name, address, license"
               />
               <Select value={filters.draft.contract} onValueChange={(v) => filters.setDraft("contract", String(v ?? "All"))}>
-                <SelectTrigger size="default" className="w-40">
+                <SelectTrigger size="md" className="w-40">
                   <SelectValue>{(v) => `Contract: ${String(v)}`}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>

@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { cn } from "../../lib/utils"
+import { type Tone } from "./_tone"
 
 // Single stat card (style-spec §4). Presentational leaf — the grid, the data
 // array, and any filter linkage live in the consuming page. A stat card can be
@@ -14,6 +15,11 @@ import { cn } from "../../lib/utils"
 // hover. Supply the standard label/value/description slots, or pass `children`
 // for a custom inner layout.
 
+// The value's semantic color. `tone` is the canonical prop; `neutral` is the
+// uncolored default. See ./_tone for the variant-vs-tone convention.
+type StatCardTone = Tone
+// Legacy value-color type behind the deprecated `variant` prop below. Values map
+// 1:1 to tone (`default` → `neutral`); new code uses `tone` / `StatCardTone`.
 type StatCardVariant = "default" | "success" | "warning" | "error"
 type StatTrendDirection = "up" | "down" | "flat"
 
@@ -30,6 +36,9 @@ interface StatCardProps {
   sub?: React.ReactNode
   trend?: StatCardTrend
   icon?: React.ReactNode
+  /** Semantic color for the value. Omit (or `neutral`) for the default text color. */
+  tone?: StatCardTone
+  /** @deprecated Use `tone`. Kept as an alias; `default` maps to `neutral`. */
   variant?: StatCardVariant
   selected?: boolean
   /** @deprecated Use selected. */
@@ -41,11 +50,18 @@ interface StatCardProps {
   className?: string
 }
 
-const valueVariantClass: Record<StatCardVariant, string> = {
-  default: "text-content-primary",
+const valueToneClass: Record<StatCardTone, string> = {
+  neutral: "text-content-primary",
   success: "text-success-strong",
   warning: "text-warning-strong",
   error: "text-error-strong",
+  info: "text-info-strong",
+}
+
+// `default` was the old name for the uncolored state; everything else is already
+// a valid Tone, so the deprecated variant maps straight through.
+function variantToTone(variant: StatCardVariant): StatCardTone {
+  return variant === "default" ? "neutral" : variant
 }
 
 const trendClass: Record<StatTrendDirection, string> = {
@@ -62,7 +78,9 @@ function StatCard({
   sub,
   trend,
   icon,
-  variant = "default",
+  tone,
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- back-compat alias, resolved into `tone` below
+  variant,
   selected,
   // eslint-disable-next-line @typescript-eslint/no-deprecated -- back-compat alias, resolved into `selected` below
   active,
@@ -73,6 +91,8 @@ function StatCard({
   const interactive = Boolean(onClick)
   const isSelected = selected ?? active ?? false
   const resolvedDescription = description ?? sub
+  // `tone` wins; fall back to the deprecated `variant`; default to neutral.
+  const resolvedTone: StatCardTone = tone ?? (variant ? variantToTone(variant) : "neutral")
 
   return (
     <div
@@ -121,7 +141,7 @@ function StatCard({
             <span
               className={cn(
                 "font-mono text-2xl font-semibold tracking-tight tabular-nums",
-                isSelected ? "text-primary-700" : valueVariantClass[variant],
+                isSelected ? "text-primary-700" : valueToneClass[resolvedTone],
               )}
             >
               {value}
@@ -163,6 +183,7 @@ export {
   StatCard,
   StatGrid,
   type StatCardProps,
+  type StatCardTone,
   type StatCardTrend,
   type StatCardVariant,
   type StatTrendDirection,

@@ -19,7 +19,7 @@ export interface ComboboxProps {
   searchPlaceholder?: string
   emptyText?: string
   disabled?: boolean
-  size?: "sm" | "default"
+  size?: "sm" | "md"
   invalid?: boolean
   /** Enable multi-select: value/onValueChange use string[]; picking toggles a value and keeps the popover open. */
   multiple?: boolean
@@ -27,7 +27,7 @@ export interface ComboboxProps {
 }
 
 // Searchable single-select dropdown. options: {value, label, disabled?}[] — filtered by label text.
-// invalid: red border/ring error state. size: 'sm'|'default' controls trigger height.
+// invalid: red border/ring error state. size: 'sm'|'md' controls trigger height; defaults to md.
 // Prefer over Select when the option list is long enough to benefit from a search box.
 //
 // Wraps base-ui's Combobox. `value` is normalized to `option | null` so the underlying Root is
@@ -40,7 +40,7 @@ function Combobox({
   searchPlaceholder = "Search…",
   emptyText = "",
   disabled,
-  size = "default",
+  size = "md",
   invalid,
   multiple,
   className,
@@ -75,7 +75,7 @@ function Combobox({
         disabled={disabled}
         aria-invalid={invalid || undefined}
         className={cn(
-          "flex w-full items-center justify-between gap-1.5 rounded-md border border-line-default bg-surface-2 pl-2.5 pr-2 text-sm whitespace-nowrap transition-colors outline-none select-none cursor-pointer hover:border-line-strong focus-visible:border-line-focus focus-visible:ring-2 focus-visible:ring-line-focus/30 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error-strong aria-invalid:ring-2 aria-invalid:ring-error/20 dark:bg-surface-3/30 data-[size=default]:h-control-md data-[size=sm]:h-control-sm data-placeholder:text-content-tertiary",
+          "flex w-full items-center justify-between gap-1.5 rounded-md border border-line-default bg-surface-2 pl-2.5 pr-2 text-sm whitespace-nowrap transition-colors outline-none select-none cursor-pointer hover:border-line-strong focus-visible:border-line-focus focus-visible:ring-2 focus-visible:ring-line-focus/30 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error-strong aria-invalid:ring-2 aria-invalid:ring-error/20 dark:bg-surface-3/30 data-[size=md]:h-control-md data-[size=sm]:h-control-sm data-placeholder:text-content-tertiary",
           className
         )}
       >
