@@ -1,6 +1,7 @@
 import * as React from "react"
 
 import { cn } from "../../lib/utils"
+import { autofillFix } from "./_field"
 
 interface TextareaProps extends React.ComponentProps<"textarea"> {
   showCount?: boolean
@@ -32,6 +33,7 @@ function Textarea({
       data-slot="textarea"
       className={cn(
         "flex field-sizing-content min-h-16 w-full rounded-md border border-line-default bg-surface-2 p-3 text-sm resize-y transition-colors outline-none placeholder:text-content-tertiary focus-visible:border-line-focus focus-visible:ring-2 focus-visible:ring-line-focus/30 disabled:cursor-not-allowed disabled:bg-surface-3 disabled:opacity-50 aria-invalid:border-error-strong aria-invalid:ring-2 aria-invalid:ring-error/20 dark:bg-surface-3/30 dark:disabled:bg-surface-3/80 dark:aria-invalid:border-error-strong/50 dark:aria-invalid:ring-error/40",
+        autofillFix,
         className
       )}
       maxLength={maxLength}

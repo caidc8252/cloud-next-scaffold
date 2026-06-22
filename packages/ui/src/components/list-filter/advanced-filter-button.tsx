@@ -33,7 +33,7 @@ export function AdvancedFilterButton({
       className={open ? "border-primary-500 bg-primary-50 text-primary-700" : undefined}
     >
       {t("advanced")}
-      {count > 0 && <Badge className="ml-1">{count}</Badge>}
+      {count > 0 && <Badge tone="info" className="ml-1">{count}</Badge>}
     </Button>
   )
 }

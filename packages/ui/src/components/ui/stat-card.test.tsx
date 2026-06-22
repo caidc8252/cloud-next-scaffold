@@ -21,18 +21,30 @@ describe("StatCard — TOMS stat-card scale", () => {
     expect(screen.getByText("42").className).toContain("tabular-nums")
   })
 
-  it("supports TOMS slots and variants", () => {
+  it("supports TOMS slots and tone coloring", () => {
     render(
       <StatCard
         label="Active"
         value={42}
         description="online now"
         trend={{ dir: "up", label: "+8%" }}
-        variant="success"
+        tone="success"
       />,
     )
     expect(screen.getByText("online now")).toBeTruthy()
     expect(screen.getByText("+8%").className).toContain("text-success-strong")
     expect(screen.getByText("42").className).toContain("text-success-strong")
+  })
+
+  it("still honors the deprecated `variant` alias (default → neutral)", () => {
+    const { rerender } = render(<StatCard label="A" value={7} variant="error" />)
+    expect(screen.getByText("7").className).toContain("text-error-strong")
+    rerender(<StatCard label="A" value={7} variant="default" />)
+    expect(screen.getByText("7").className).toContain("text-content-primary")
+  })
+
+  it("lets `tone` win over a conflicting `variant`", () => {
+    render(<StatCard label="A" value={9} variant="error" tone="success" />)
+    expect(screen.getByText("9").className).toContain("text-success-strong")
   })
 })

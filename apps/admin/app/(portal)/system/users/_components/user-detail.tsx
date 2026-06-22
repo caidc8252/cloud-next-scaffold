@@ -77,7 +77,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
               {user.displayName}
             </span>
             <Badge tone={disabled ? "error" : "success"} dot>{user.status}</Badge>
-            {draft.authorizingType === "ADMIN" && <Badge variant="outline" title="Implicit admin — bypasses role checks">ADMIN</Badge>}
+            {draft.authorizingType === "ADMIN" && <Badge tone="neutral" title="Implicit admin — bypasses role checks">ADMIN</Badge>}
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-xs text-content-secondary">
             <span className="inline-flex items-center gap-1"><User className="size-3.5" /> @{user.loginName}</span>
@@ -183,7 +183,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold text-content-primary flex items-center gap-2">
                       {r.name}
-                      {r.builtin && <Badge variant="outline">SYSTEM</Badge>}
+                      {r.builtin && <Badge tone="neutral">SYSTEM</Badge>}
                     </div>
                     <div className="text-xs text-content-tertiary mt-0.5">{r.description} · {r.permissions.length} perms</div>
                   </div>

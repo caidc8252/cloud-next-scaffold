@@ -79,7 +79,7 @@ export function RoleEditor({ role, users, permissionGroups, onSave, onDuplicate,
             <div className="flex items-center flex-wrap gap-2 mt-2 text-xs text-content-tertiary">
               <span>{role.operatorCount} operators assigned</span>
               <span className="opacity-50">·</span>
-              {role.builtin && <Badge variant="outline">SYSTEM</Badge>}
+              {role.builtin && <Badge tone="neutral">SYSTEM</Badge>}
             </div>
             <div className="text-xs text-content-tertiary mt-0.5">
               Updated {relTime(role.updatedAt)} by {role.updatedBy}

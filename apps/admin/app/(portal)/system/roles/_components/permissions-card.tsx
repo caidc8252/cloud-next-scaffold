@@ -147,7 +147,7 @@ export function PermissionsCard({
                         <div className="text-sm font-medium text-content-primary">{t(perm.label)}</div>
                         {perm.desc && <div className="text-xs text-content-tertiary">{t(perm.desc)}</div>}
                       </div>
-                      <Badge variant="outline" shape="tag" className="shrink-0">{perm.code}</Badge>
+                      <Badge tone="neutral" shape="tag" className="shrink-0">{perm.code}</Badge>
                     </div>
                     );
                   })}

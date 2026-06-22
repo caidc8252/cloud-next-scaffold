@@ -147,16 +147,8 @@ function InputGroupText({ className, ...props }: React.ComponentProps<"span">) {
   )
 }
 
-// Chrome 给被自动填充的 <input> 刷一层淡蓝背景，且只染 input 本身、不染 InputGroup 里的图标/按钮
-// addon（它们是 input 的兄弟节点）——于是整条出现两段色。
-// 不用「inset box-shadow 盖一层不透明底」：那会因为 input 比容器边框内沿略高、且自身是 rounded-none，
-// 白块盖住 InputGroup 的圆角边框、显得错位。改用「超长 transition」——Chrome 那次背景上色是一段过渡，
-// 把过渡时长拉到 9999s 让它永不可见，于是 input 保持透明、露出 InputGroup 自身背景，与未填充态完全
-// 一致，边框不受影响；再固定文字/光标色（dark 模式由 token 自适应）保证可读。
-const inputGroupAutofillFix =
-  "autofill:[transition:background-color_9999s] autofill:[-webkit-text-fill-color:var(--color-content-primary)] autofill:[caret-color:var(--color-content-primary)]"
-
 // Borderless input for inside InputGroup; strips its own border so the group border shows.
+// autofill 修复由它包裹的 base Input/Textarea 提供（见 _field.ts 的 autofillFix），这里不重复。
 function InputGroupInput({
   className,
   ...props
@@ -166,7 +158,6 @@ function InputGroupInput({
       data-slot="input-group-control"
       className={cn(
         "flex-1 rounded-none border-0 bg-transparent shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent",
-        inputGroupAutofillFix,
         className
       )}
       {...props}
@@ -184,7 +175,6 @@ function InputGroupTextarea({
       data-slot="input-group-control"
       className={cn(
         "flex-1 resize-none rounded-none border-0 bg-transparent py-2 shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent",
-        inputGroupAutofillFix,
         className
       )}
       {...props}
