@@ -65,12 +65,12 @@ export function PartnersPageClient({ initialPartners }: { initialPartners: Accou
               p.locked && "opacity-70",
             )}
           >
-            <div className="flex size-10 flex-none items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">
+            <div className="flex size-10 flex-none items-center justify-center rounded-lg bg-primary/10 text-md font-semibold text-primary">
               {initialOf(p.partyName)}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="truncate text-sm font-semibold text-content-primary">{p.partyName}</span>
+                <span className="truncate text-md font-semibold text-content-primary">{p.partyName}</span>
                 <span className="flex flex-wrap gap-1">
                   {p.contractTypes.length === 0 ? (
                     <span className="rounded border border-line-subtle bg-surface-3 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-content-tertiary">
@@ -137,7 +137,7 @@ export function PartnersPageClient({ initialPartners }: { initialPartners: Accou
           </div>
         }
       >
-        <p className="text-sm leading-relaxed text-content-secondary">
+        <p className="text-md leading-relaxed text-content-secondary">
           {pending ? t("partners.confirm.body", { name: pending.partyName }) : ""}
         </p>
       </Modal>

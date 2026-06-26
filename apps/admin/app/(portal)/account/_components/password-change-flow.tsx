@@ -84,7 +84,7 @@ export function PasswordChangeFlow({
   if (step === "verify-old") {
     body = (
       <div className="flex flex-col gap-3">
-        <p className="text-sm leading-relaxed text-content-secondary">{t("password.verifyOldDesc")}</p>
+        <p className="text-md leading-relaxed text-content-secondary">{t("password.verifyOldDesc")}</p>
         <Field label={t("password.currentLabel")}>
           <Input type={ptype} value={curPw} autoFocus suffix={eye} placeholder={t("password.currentPlaceholder")}
             onChange={(e) => setCurPw(e.target.value)} />
@@ -108,7 +108,7 @@ export function PasswordChangeFlow({
   } else if (step === "mfa") {
     body = (
       <div className="flex flex-col gap-3">
-        <p className="text-sm leading-relaxed text-content-secondary">{t("password.mfaDesc")}</p>
+        <p className="text-md leading-relaxed text-content-secondary">{t("password.mfaDesc")}</p>
         <Input inputSize="lg" inputMode="numeric" maxLength={6} value={mfaCode} autoFocus placeholder="000000"
           className="text-center font-mono text-lg tracking-widest"
           onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))} />
@@ -125,7 +125,7 @@ export function PasswordChangeFlow({
   } else if (step === "new") {
     body = (
       <div className="flex flex-col gap-3">
-        <p className="text-sm leading-relaxed text-content-secondary">{t("password.newDesc")}</p>
+        <p className="text-md leading-relaxed text-content-secondary">{t("password.newDesc")}</p>
         <Field label={t("password.newLabel")}>
           <Input type={ptype} value={newPw} autoFocus suffix={eye} placeholder={t("password.newLabel")}
             onChange={(e) => { setNewPw(e.target.value); setErr(""); }} />
@@ -157,7 +157,7 @@ export function PasswordChangeFlow({
         <span className="flex size-11 items-center justify-center rounded-full bg-success-bg text-success-strong">
           <Check size={22} />
         </span>
-        <p className="text-sm leading-relaxed text-content-secondary">{t("password.doneDesc")}</p>
+        <p className="text-md leading-relaxed text-content-secondary">{t("password.doneDesc")}</p>
       </div>
     );
     footer = (

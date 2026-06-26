@@ -13,7 +13,7 @@ export function BackLink({ onClick, children }: { onClick: () => void; children:
       variant="link"
       onClick={onClick}
       iconLeft={<ChevronLeft size={14} />}
-      className="mb-4 justify-start gap-1.5 text-sm font-medium text-content-secondary hover:text-content-primary hover:no-underline"
+      className="mb-4 justify-start gap-1.5 text-md font-medium text-content-secondary hover:text-content-primary hover:no-underline"
     >
       {children}
     </Button>
@@ -72,7 +72,7 @@ export function AuthLead({
       ) : null}
       <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
       {sub ? (
-        <p className="mt-1.5 text-sm leading-relaxed text-content-secondary text-pretty">{sub}</p>
+        <p className="mt-1.5 text-md leading-relaxed text-content-secondary text-pretty">{sub}</p>
       ) : null}
     </div>
   );

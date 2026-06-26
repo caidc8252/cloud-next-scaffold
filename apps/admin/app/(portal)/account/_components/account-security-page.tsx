@@ -129,7 +129,7 @@ export function AccountSecurityPageClient({ initialSecurity }: { initialSecurity
         }
       >
         <div className="flex flex-col gap-3">
-          <p className="text-sm leading-relaxed text-content-secondary">{t("security.disableModal.desc")}</p>
+          <p className="text-md leading-relaxed text-content-secondary">{t("security.disableModal.desc")}</p>
           <Input
             inputSize="lg"
             inputMode="numeric"

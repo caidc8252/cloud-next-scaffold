@@ -46,7 +46,7 @@ function DuplicateRoleModalBody({ source, onClose, onDuplicate }: DuplicateRoleM
         </Button>
       </div>}>
       <div className="space-y-3">
-        <p className="text-sm text-content-secondary">
+        <p className="text-md text-content-secondary">
           Create a copy of <strong>{source.name}</strong> with all its permissions.
         </p>
         <Field label="New role name" required>

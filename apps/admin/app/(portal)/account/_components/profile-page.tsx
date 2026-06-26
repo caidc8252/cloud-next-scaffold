@@ -37,7 +37,7 @@ function FRow({
   return (
     <div className="flex items-center justify-between gap-6 px-5 py-2.5">
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-sm font-medium text-content-primary">{label}</span>
+        <span className="text-md font-medium text-content-primary">{label}</span>
         {value && <span className="truncate text-xs text-content-secondary">{value}</span>}
       </div>
       <div className="w-85 flex-none">{control}</div>

@@ -115,7 +115,7 @@ export function RoleEditor({ role, users, permissionGroups, onSave, onDuplicate,
             <CardContent>
               <div className="space-y-2">
                 {assignedUsers.map((u) => (
-                  <div key={u.id} className="flex items-center gap-2 text-sm">
+                  <div key={u.id} className="flex items-center gap-2 text-md">
                     <span className="text-content-primary font-medium">{u.displayName || u.loginName}</span>
                     <span className="text-content-tertiary">{u.email}</span>
                   </div>
@@ -128,7 +128,7 @@ export function RoleEditor({ role, users, permissionGroups, onSave, onDuplicate,
 
       <ConfirmModal open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete role"
         onConfirm={onDelete} confirmLabel="Delete" loadingLabel="Deleting…" confirmVariant="danger">
-        <p className="text-sm text-content-secondary">
+        <p className="text-md text-content-secondary">
           Are you sure you want to delete <strong>{role.name}</strong>? This action cannot be undone.
         </p>
       </ConfirmModal>

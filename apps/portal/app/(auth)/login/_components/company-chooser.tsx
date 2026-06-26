@@ -39,7 +39,7 @@ export function CompanyChooser({
         {companies.map((c) => (
           <Button
             key={c.id}
-            variant="outline"
+            variant="secondary"
             block
             size="auto"
             onClick={() => onSelect(c.id)}
@@ -51,7 +51,7 @@ export function CompanyChooser({
             >
               {c.initials}
             </span>
-            <span className="flex-1 text-left text-sm font-semibold">{c.name}</span>
+            <span className="flex-1 text-left text-md font-semibold">{c.name}</span>
             <Badge tone="info">{c.contract}</Badge>
             <ChevronRight size={15} className="text-content-tertiary" />
           </Button>

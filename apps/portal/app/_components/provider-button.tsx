@@ -21,7 +21,7 @@ export function ProviderButton({
 }) {
   return (
     <Button
-      variant="outline"
+      variant="secondary"
       block
       disabled={disabled}
       onClick={onClick}
@@ -30,7 +30,7 @@ export function ProviderButton({
       <span className="flex w-5 shrink-0 items-center justify-center">
         <ProviderMark id={id} />
       </span>
-      <span className="flex flex-1 flex-col items-start text-left text-sm leading-tight">
+      <span className="flex flex-1 flex-col items-start text-left text-md leading-tight">
         <span>{label}</span>
         {sublabel ? <span className="text-xs text-content-tertiary">{sublabel}</span> : null}
       </span>

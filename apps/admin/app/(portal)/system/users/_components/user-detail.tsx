@@ -181,7 +181,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
                 <div key={r.id} className="flex items-center gap-3 px-5 py-3 border-b border-line-subtle last:border-b-0">
                   <Switch checked={on} onCheckedChange={() => toggleRole(r.id)} size="sm" disabled={isProtected || saving} />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-content-primary flex items-center gap-2">
+                    <div className="text-md font-semibold text-content-primary flex items-center gap-2">
                       {r.name}
                       {r.builtin && <Badge tone="neutral">SYSTEM</Badge>}
                     </div>
@@ -201,7 +201,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
           <Collapsible open={policyOpen} onOpenChange={setPolicyOpen} className="border-0 rounded-none bg-transparent">
             <CollapsibleTrigger className="px-5 py-3.5 hover:bg-surface-3">
               <div className="text-left">
-                <div className="text-sm font-semibold">Password policy</div>
+                <div className="text-md font-semibold">Password policy</div>
                 <p className="text-xs text-content-tertiary mt-0.5 font-normal">Platform-wide. Edit in System → Settings → Security.</p>
               </div>
             </CollapsibleTrigger>
@@ -221,10 +221,10 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
       {confirmReset && (
         <ConfirmModal open={confirmReset} onClose={() => setConfirmReset(false)} title="Send password reset link?"
           onConfirm={onResetPassword} confirmLabel="Send reset link" loadingLabel="Sending…" confirmVariant="primary">
-          <p className="text-sm text-content-secondary">
+          <p className="text-md text-content-secondary">
             A password-reset link will be emailed to <strong>{user.email}</strong>.
           </p>
-          <ul className="mt-3 pl-4 text-sm text-content-secondary list-disc space-y-1">
+          <ul className="mt-3 pl-4 text-md text-content-secondary list-disc space-y-1">
             <li>Valid for <strong>72 hours</strong></li>
             <li>Single use — link expires once {user.displayName} sets the new password</li>
             <li>They&apos;ll be asked to enter the new password twice for confirmation</li>
@@ -241,7 +241,7 @@ export function UserDetail({ user, users, roles, currentUserId, onSave, onResetP
           confirmLabel={disabled ? "Enable" : "Disable account"}
           loadingLabel={disabled ? "Enabling…" : "Disabling…"}
           confirmVariant={disabled ? "primary" : "danger"}>
-          <p className="text-sm text-content-secondary">
+          <p className="text-md text-content-secondary">
             {disabled
               ? <>Enable <strong>{user.displayName}</strong> — they will be able to access this organization immediately.</>
               : <>Disable <strong>{user.displayName}</strong>&apos;s access to this organization. Their roles and permissions will not be loaded.</>}
@@ -274,7 +274,7 @@ function PolicyRow({ icon, name, desc, val }: { icon: React.ReactNode; name: str
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-semibold text-content-primary">{name}</div>
+        <div className="text-md font-semibold text-content-primary">{name}</div>
         <div className="text-xs text-content-tertiary mt-0.5">{desc}</div>
       </div>
       <span className="text-xs font-semibold font-mono shrink-0 px-2.5 py-1 rounded-sm border border-primary/20 text-primary-700 bg-primary-50">

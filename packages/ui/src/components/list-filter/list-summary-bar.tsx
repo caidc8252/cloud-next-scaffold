@@ -41,7 +41,7 @@ export function ListSummaryBar({
         sticky && "sticky top-0 z-10",
       )}
     >
-      <div className="flex items-baseline gap-1 text-sm text-content-secondary">
+      <div className="flex items-baseline gap-1 text-md text-content-secondary">
         <span className="font-mono font-semibold text-content-primary tabular-nums">{total}</span>
         {label ? <span>{label}</span> : null}
       </div>

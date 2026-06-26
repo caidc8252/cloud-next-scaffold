@@ -22,7 +22,7 @@ function AccountRow({
 }) {
   return (
     <Button
-      variant="outline"
+      variant="secondary"
       block
       size="auto"
       onClick={onClick}
@@ -37,7 +37,7 @@ function AccountRow({
         </AvatarFallback>
       </Avatar>
       <span className="flex flex-1 flex-col items-start text-left">
-        <span className="text-sm font-semibold">{name}</span>
+        <span className="text-md font-semibold">{name}</span>
         <span className="text-xs text-content-tertiary">{email}</span>
       </span>
       <ChevronRight size={15} className="text-content-tertiary" />
@@ -86,7 +86,7 @@ export function IdpConsent({
         <div className="text-lg font-semibold tracking-tight">
           {tenant ? t("signIn") : t("chooseAccount")}
         </div>
-        <div className="mb-5 mt-1 text-sm text-content-secondary">
+        <div className="mb-5 mt-1 text-md text-content-secondary">
           {t.rich("continueTo", {
             target,
             b: (c) => <strong className="font-semibold text-content-primary">{c}</strong>,
@@ -104,7 +104,7 @@ export function IdpConsent({
           ))}
           {!tenant && rows.length > 0 ? (
             <Button
-              variant="outline"
+              variant="secondary"
               block
               size="auto"
               onClick={() => onChoose(rows[0])}
@@ -115,7 +115,7 @@ export function IdpConsent({
                   <User size={16} />
                 </AvatarFallback>
               </Avatar>
-              <span className="text-sm font-semibold">{t("useAnother")}</span>
+              <span className="text-md font-semibold">{t("useAnother")}</span>
             </Button>
           ) : null}
         </div>
@@ -126,7 +126,7 @@ export function IdpConsent({
           })}
         </p>
         <div className="mt-3.5">
-          <Button variant="link" onClick={onCancel} className="text-sm">
+          <Button variant="link" onClick={onCancel} className="text-md">
             {t("cancel")}
           </Button>
         </div>

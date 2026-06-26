@@ -76,3 +76,4 @@ test-results/
 .playwright-mcp/*
 
 docker-data/*
+.superpowers/

@@ -2,8 +2,8 @@
 
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { VirtualTable } from "../src/components/ui/virtual-table";
-import type { TableColumn } from "../src/components/ui/table";
+import { VirtualTable } from "../src/components/ui/recipes/virtual-table";
+import type { TableColumn } from "../src/components/ui/recipes/table";
 
 interface Row {
   id: number;

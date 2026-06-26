@@ -36,7 +36,7 @@ export function SignOutModal({ open, onCancel }: { open: boolean; onCancel: () =
         </div>
       }
     >
-      <p className="text-sm leading-relaxed text-content-secondary">{t("signOut.body")}</p>
+      <p className="text-md leading-relaxed text-content-secondary">{t("signOut.body")}</p>
       <div className="mt-3.5 flex items-start gap-2 rounded-lg border border-line-subtle bg-surface-3 px-3 py-2.5 text-xs text-content-tertiary">
         <Shield size={14} className="mt-0.5 flex-none" />
         <span>{t("signOut.note")}</span>

@@ -33,7 +33,7 @@ export function RoleListItem({ role, active, onClick }: RoleListItemProps) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <span className="min-w-0 truncate text-sm font-semibold text-content-primary">{role.name}</span>
+          <span className="min-w-0 truncate text-md font-semibold text-content-primary">{role.name}</span>
           {role.builtin && <Badge tone="neutral" className="shrink-0">SYSTEM</Badge>}
         </div>
         <div className="mt-0.5 text-xs text-content-tertiary text-left">{role.permissions.length} permissions</div>

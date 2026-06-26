@@ -155,7 +155,7 @@ export function NotificationsPage({ currentPartyName }: { currentPartyName: stri
       render: (n) => (
         <div className="min-w-0">
           <div
-            className={`truncate text-sm ${isUnread(n) ? "font-semibold text-content-primary" : "text-content-primary"}`}
+            className={`truncate text-md ${isUnread(n) ? "font-semibold text-content-primary" : "text-content-primary"}`}
           >
             {n.title}
           </div>
@@ -286,7 +286,7 @@ export function NotificationsPage({ currentPartyName }: { currentPartyName: stri
 
         <Card elevation={1} className="-mt-2">
           <div className="flex items-center justify-between gap-3 border-b border-line-subtle px-4 py-3">
-            <div className="text-sm text-content-secondary">
+            <div className="text-md text-content-secondary">
               <span className="font-mono font-semibold tabular-nums text-content-primary">
                 {total}
               </span>{" "}
@@ -310,7 +310,7 @@ export function NotificationsPage({ currentPartyName }: { currentPartyName: stri
             rowKey={(n) => n.id}
             onRowClick={open}
             empty={
-              <div className="py-12 text-center text-sm text-content-tertiary">
+              <div className="py-12 text-center text-md text-content-tertiary">
                 {t("list.emptyFiltered")}
               </div>
             }

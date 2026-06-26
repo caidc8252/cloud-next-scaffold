@@ -8,10 +8,14 @@
       }
     },
     "datePicker": {
+      "rangeStart": "開始",
+      "rangeEnd": "終了",
       "placeholder": {
         "date": "日付を選択",
         "range": "期間を選択",
-        "dateTime": "日付と時刻を選択"
+        "dateTime": "日付と時刻を選択",
+        "time": "時刻を選択",
+        "dateTimeRange": "日時の範囲を選択"
       },
       "presets": {
         "today": "今日",
@@ -29,7 +33,8 @@
       "first": "最初のページ",
       "prev": "前のページ",
       "next": "次のページ",
-      "last": "最後のページ"
+      "last": "最後のページ",
+      "pageOf": "{page} / {total} ページ"
     },
     "listFilter": {
       "search": "検索",

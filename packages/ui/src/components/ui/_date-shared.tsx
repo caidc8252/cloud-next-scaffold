@@ -42,7 +42,7 @@ function useDateFormat(kind: FormatKind, override?: string) {
 
 const triggerSizeClass: Record<"sm" | "md" | "lg", string> = {
   sm: "h-control-sm px-cx-sm text-xs",
-  md: "h-control-md px-cx-md text-sm",
+  md: "h-control-md px-cx-md text-md",
   lg: "h-control-lg px-cx-lg text-base",
 }
 
@@ -53,7 +53,7 @@ const triggerSizeClass: Record<"sm" | "md" | "lg", string> = {
 // 触发器外层只有一个无边框定位 div，单层 ring，无 Input 那种双层问题。
 function dateTriggerClass(size: "sm" | "md" | "lg", showClear: boolean): string {
   return cn(
-    "inline-flex w-full items-center gap-2 rounded-md border border-line-default bg-surface-2 transition-colors outline-none cursor-pointer hover:border-line-strong focus-visible:border-line-focus focus-visible:ring-2 focus-visible:ring-line-focus/30 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error-strong aria-invalid:ring-2 aria-invalid:ring-error/20 dark:aria-invalid:border-error-strong/50 dark:aria-invalid:ring-error/40",
+    "inline-flex w-full items-center gap-2 rounded-md border border-line-default bg-surface-2 transition-colors outline-none cursor-pointer hover:border-line-strong focus-visible:border-line-focus focus-visible:shadow-focus disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error-strong aria-invalid:ring-2 aria-invalid:ring-error/20 dark:aria-invalid:border-error-strong/50 dark:aria-invalid:ring-error/40",
     triggerSizeClass[size],
     showClear && "pr-7",
   )

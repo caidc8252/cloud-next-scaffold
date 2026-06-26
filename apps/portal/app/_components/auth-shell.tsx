@@ -33,7 +33,7 @@ function BrandPanel() {
                 <Icon size={16} />
               </span>
               <span className="flex flex-col">
-                <span className="text-sm font-semibold text-white/95">{t(`highlights.${key}.title`)}</span>
+                <span className="text-md font-semibold text-white/95">{t(`highlights.${key}.title`)}</span>
                 <span className="mt-0.5 text-xs leading-snug text-white/70">{t(`highlights.${key}.desc`)}</span>
               </span>
             </li>
@@ -70,7 +70,7 @@ export function AuthShell({
             className="pep-busy-overlay absolute inset-0 z-10 flex flex-col items-center justify-center gap-3.5"
           >
             <Spinner size="xl" />
-            <span className="text-sm font-medium text-content-secondary">{busy}</span>
+            <span className="text-md font-medium text-content-secondary">{busy}</span>
             <span className="sr-only">{t("processing")}</span>
           </div>
         ) : null}

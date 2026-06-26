@@ -6,8 +6,8 @@ import { usePathname } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { useSidebar } from '../../lib/sidebar'
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../ui/tooltip'
-import { HoverCard, HoverCardTrigger, HoverCardContent } from '../ui/hover-card'
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../ui/primitives/tooltip'
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '../ui/primitives/hover-card'
 
 export interface SidebarSubItem {
   href: string
@@ -40,7 +40,7 @@ export interface SidebarProps {
 }
 
 const itemBase =
-  'flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-fast cursor-pointer select-none w-full text-left'
+  'flex items-center gap-2.5 px-3 py-2 rounded-md text-md font-medium transition-colors duration-fast cursor-pointer select-none w-full text-left'
 const itemActive = 'bg-surface-2 text-content-primary shadow-1'
 const itemIdle = 'text-content-secondary hover:bg-surface-hover hover:text-content-primary'
 // Centered square used in the collapsed icon rail.
@@ -58,7 +58,7 @@ function NavSubItem({ href, label, active }: { href: string; label: string; acti
     <Link
       href={href}
       className={cn(
-        'relative flex items-center pl-5 pr-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-fast',
+        'relative flex items-center pl-5 pr-3 py-1.5 rounded-md text-md font-medium transition-colors duration-fast',
         active
           ? 'bg-surface-2 text-content-primary shadow-1'
           : 'text-content-tertiary hover:bg-surface-hover hover:text-content-primary',
@@ -120,7 +120,7 @@ function NavItemRow({
                   key={sub.href}
                   href={sub.href}
                   className={cn(
-                    'rounded-md px-2 py-1.5 text-sm',
+                    'rounded-md px-2 py-1.5 text-md',
                     matches(sub.href)
                       ? 'bg-surface-2 text-content-primary'
                       : 'text-content-secondary hover:bg-surface-hover hover:text-content-primary',

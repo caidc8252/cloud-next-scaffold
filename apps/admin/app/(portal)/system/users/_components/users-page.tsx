@@ -247,7 +247,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId, portalBas
             </div>
             <div className="flex max-h-dvh-9rem flex-col overflow-auto">
               {filtered.length === 0 && (
-                <div className="px-4 py-8 text-center text-sm text-content-tertiary">
+                <div className="px-4 py-8 text-center text-md text-content-tertiary">
                   {query ? `No users match "${query}"` : "No users in this filter."}
                 </div>
               )}
@@ -272,7 +272,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId, portalBas
                   onResetPassword={() => resetPassword(selected)} onToggleLock={() => toggleLock(selected)} />
               )
             ) : (
-              <div className="py-12 text-center text-sm text-content-tertiary">
+              <div className="py-12 text-center text-md text-content-tertiary">
                 Select a user.
               </div>
             )}
@@ -287,7 +287,7 @@ export function UsersPage({ initialUsers, initialRoles, currentUserId, portalBas
           <Button variant="ghost" disabled={cancelling} onClick={() => setConfirmCancelId(null)}>Keep invitation</Button>
           <Button variant="danger" loading={cancelling} onClick={confirmCancelInvite}>Cancel invitation</Button>
         </div>}>
-        <p className="text-sm text-content-secondary">
+        <p className="text-md text-content-secondary">
           This will permanently remove the pending invitation for{" "}
           <strong>{cancelTarget?.inviteEmail ?? cancelTarget?.email}</strong>.
           Pre-assigned roles will be discarded.

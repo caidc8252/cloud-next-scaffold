@@ -168,7 +168,7 @@ export function PendingInviteDetail({ user, roles, portalBaseUrl, onResend, onRe
             </div>
           </CardHeader>
           <CardContent>
-            <dl className="flex flex-col gap-3.5 text-sm">
+            <dl className="flex flex-col gap-3.5 text-md">
               <div className="flex gap-5">
                 <dt className="w-40 shrink-0 font-medium text-content-tertiary">Email</dt>
                 <dd className="min-w-0 flex-1 text-content-primary">{user.inviteEmail ?? user.email}</dd>
@@ -229,7 +229,7 @@ export function PendingInviteDetail({ user, roles, portalBaseUrl, onResend, onRe
                       }`}>
                         <Checkbox checked={on} onCheckedChange={() => toggleRole(r.id)} />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-semibold">{r.name}</div>
+                          <div className="text-md font-semibold">{r.name}</div>
                           <div className="text-xs text-content-tertiary">{r.description} · {r.permissions.length} perms</div>
                         </div>
                       </label>
@@ -247,7 +247,7 @@ export function PendingInviteDetail({ user, roles, portalBaseUrl, onResend, onRe
             ) : (
               <>
                 {invitedRoles.length === 0 && (
-                  <div className="px-4 py-8 text-center text-sm text-content-tertiary">No roles pre-assigned.</div>
+                  <div className="px-4 py-8 text-center text-md text-content-tertiary">No roles pre-assigned.</div>
                 )}
                 {invitedRoles.map((r) => (
                   <div key={r.id} className="flex items-center gap-3 px-5 py-3 border-b border-line-subtle last:border-b-0">
@@ -255,7 +255,7 @@ export function PendingInviteDetail({ user, roles, portalBaseUrl, onResend, onRe
                       <Shield size={13} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-content-primary">{r.name}</div>
+                      <div className="text-md font-semibold text-content-primary">{r.name}</div>
                       <div className="text-xs text-content-tertiary mt-0.5">{r.description} · {r.permissions.length} perms</div>
                     </div>
                   </div>
