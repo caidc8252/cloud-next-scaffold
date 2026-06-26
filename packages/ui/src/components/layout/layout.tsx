@@ -4,7 +4,7 @@ import * as React from 'react'
 import { usePathname } from 'next/navigation'
 import { cn } from '../../lib/utils'
 import { useSidebar } from '../../lib/sidebar'
-import { Sheet, SheetContent, SheetTitle } from '../ui/sheet'
+import { Sheet, SheetContent, SheetTitle } from '../ui/primitives/sheet'
 
 const SIDEBAR_WIDTH = 248
 const SIDEBAR_WIDTH_COLLAPSED = 56

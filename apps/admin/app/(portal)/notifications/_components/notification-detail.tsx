@@ -42,7 +42,7 @@ export function NotificationDetail({ notice, currentPartyName }: { notice: Notic
         >
           <ChevronLeft className="size-4" />
         </Button>
-        <div className="py-16 text-center text-sm text-content-tertiary">
+        <div className="py-16 text-center text-md text-content-tertiary">
           {t("detail.notFound")}
         </div>
       </PageBody>
@@ -73,7 +73,7 @@ export function NotificationDetail({ notice, currentPartyName }: { notice: Notic
             ) : null}
             <ModuleChip type={notice.type} />
           </div>
-          <div className="text-sm text-content-tertiary">
+          <div className="text-md text-content-tertiary">
             {payload.summary} · {relTime(notice.createdAt)} · {notice.belongToPartyId == null ? t("party.system") : currentPartyName}
           </div>
         </div>
@@ -82,7 +82,7 @@ export function NotificationDetail({ notice, currentPartyName }: { notice: Notic
       <Card elevation={1} className="mt-4 max-w-4xl">
         <CardContent>
         {payload.detail ? (
-          <p className="text-sm leading-relaxed text-content-secondary">
+          <p className="text-md leading-relaxed text-content-secondary">
             {payload.detail}
           </p>
         ) : null}
@@ -98,7 +98,7 @@ export function NotificationDetail({ notice, currentPartyName }: { notice: Notic
                   {tf.has(f.key) ? tf(f.key) : f.key}
                 </dt>
                 <dd
-                  className={`text-sm text-content-primary ${f.mono ? "font-mono tabular-nums" : ""}`}
+                  className={`text-md text-content-primary ${f.mono ? "font-mono tabular-nums" : ""}`}
                 >
                   {f.value}
                 </dd>

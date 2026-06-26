@@ -82,7 +82,7 @@ export function NotificationBell() {
       />
       <PopoverContent align="end" sideOffset={8} className="w-96 p-0">
         <PopoverHeader className="flex flex-row items-center gap-2 px-3 py-2 border-b border-line-subtle">
-          <PopoverTitle className="text-sm">{t("title")}</PopoverTitle>
+          <PopoverTitle className="text-md">{t("title")}</PopoverTitle>
           {unreadCount > 0 && (
             <span className="grid min-w-5 place-items-center rounded-full bg-primary-50 px-1.5 text-2xs font-semibold text-primary-700">
               {unreadCount}
@@ -104,7 +104,7 @@ export function NotificationBell() {
           {groups.length === 0 ? (
             <div className="flex flex-col items-center gap-1 px-3 py-10 text-center">
               <Bell className="size-7 text-content-tertiary" />
-              <div className="text-sm font-medium text-content-primary">
+              <div className="text-md font-medium text-content-primary">
                 {hasHistory ? t("empty.caughtUp") : t("empty.none")}
               </div>
               <div className="text-xs text-content-tertiary">
@@ -196,7 +196,7 @@ function BellRow({
         <div className="flex items-center gap-1.5">
           <span
             className={cn(
-              "truncate text-sm text-content-primary",
+              "truncate text-md text-content-primary",
               unread && "font-semibold",
             )}
           >

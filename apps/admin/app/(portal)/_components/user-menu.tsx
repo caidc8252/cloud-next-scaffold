@@ -87,7 +87,7 @@ function MenuRow({
         {icon}
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className={cn("text-sm font-medium", danger ? "text-error-strong" : "text-content-primary")}>
+        <span className={cn("text-md font-medium", danger ? "text-error-strong" : "text-content-primary")}>
           {label}
         </span>
         {sub && <span className="truncate text-xs text-content-tertiary">{sub}</span>}
@@ -121,7 +121,7 @@ function ViewHeader({
       >
         <ChevronLeft size={15} />
       </Button>
-      <span className="text-sm font-semibold">{title}</span>
+      <span className="text-md font-semibold">{title}</span>
     </div>
   );
 }
@@ -151,7 +151,7 @@ function OptionRow({
         {icon}
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="text-sm font-medium text-content-primary">{label}</span>
+        <span className="text-md font-medium text-content-primary">{label}</span>
         {sub && <span className="text-xs text-content-tertiary">{sub}</span>}
       </span>
       {selected && <Check size={15} className="flex-none text-primary" />}
@@ -246,7 +246,7 @@ export function UserMenu({ account, name, email }: UserMenuProps) {
                   {initials}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold text-content-primary">{name}</div>
+                  <div className="truncate text-md font-semibold text-content-primary">{name}</div>
                   <div className="truncate text-xs text-content-tertiary">{email}</div>
                 </div>
               </div>

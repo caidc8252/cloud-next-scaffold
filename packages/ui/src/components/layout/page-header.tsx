@@ -37,7 +37,7 @@ function PageHeader({
             {titleAdornment}
           </div>
           {description ? (
-            <p className="mt-1.5 max-w-3xl text-sm text-content-tertiary">{description}</p>
+            <p className="mt-1.5 max-w-3xl text-md text-content-tertiary">{description}</p>
           ) : null}
         </div>
         {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}

@@ -114,13 +114,13 @@ export function LoginForm({
           <div className="pep-fade">
             <div className="mb-2.5 flex items-center gap-3 rounded-lg border border-line-default bg-surface-3 p-3.5">
               <span
-                className="flex size-9 shrink-0 items-center justify-center rounded-md font-mono text-sm font-semibold text-white"
+                className="flex size-9 shrink-0 items-center justify-center rounded-md font-mono text-md font-semibold text-white"
                 style={{ background: tenant.accent }}
               >
                 {tenant.initials}
               </span>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold">{tenant.partner}</div>
+                <div className="text-md font-semibold">{tenant.partner}</div>
                 <div className="mt-0.5 flex items-center gap-1.5 text-xs text-content-tertiary">
                   <ShieldCheck size={11} /> {t("sso.via", { provider: PROVIDERS[tenant.idp].label })}
                 </div>

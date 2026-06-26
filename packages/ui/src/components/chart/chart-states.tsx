@@ -69,7 +69,7 @@ export function ChartEmpty({
       {...props}
     >
       {icon}
-      <b className="text-sm font-medium text-content-primary">{title}</b>
+      <b className="text-md font-medium text-content-primary">{title}</b>
       {description ? <span>{description}</span> : null}
     </div>
   )

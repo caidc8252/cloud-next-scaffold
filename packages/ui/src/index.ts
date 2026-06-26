@@ -1,5 +1,5 @@
-export * from "./components/ui/index"
-export * from "./components/layout/index"
+export * from "./components/ui"
+export * from "./components/layout"
 export { cn } from "./lib/utils"
 export { useTheme, ThemeProvider, type Theme } from "./lib/theme"
 export {
@@ -10,7 +10,7 @@ export {
 export { useIsMobile } from "./lib/use-is-mobile"
 export { SidebarProvider, useSidebar, type SidebarContextValue } from "./lib/sidebar"
 export { SIDEBAR_COOKIE } from "./lib/sidebar-cookie"
-export * from "./components/list-filter/index"
+export * from "./components/list-filter"
 export {
   useListFilters,
   type ListFilters,

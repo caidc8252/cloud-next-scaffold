@@ -56,7 +56,7 @@ export default async function SelectPartnerPage() {
           {choices.length ? (
             <PartnerList choices={choices} />
           ) : (
-            <p className="text-sm text-content-secondary">{t("empty")}</p>
+            <p className="text-md text-content-secondary">{t("empty")}</p>
           )}
         </CardContent>
       </Card>

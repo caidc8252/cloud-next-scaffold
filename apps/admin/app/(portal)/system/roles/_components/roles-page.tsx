@@ -147,7 +147,7 @@ export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesP
               <RoleEditor role={selected} users={users} permissionGroups={permissionGroups} onSave={update}
                 onDuplicate={() => setDuplicateSource(selected)} onDelete={() => deleteRole(selected.id)} />
             ) : (
-              <div className="py-12 text-center text-sm text-content-tertiary">
+              <div className="py-12 text-center text-md text-content-tertiary">
                 Select a role to edit
               </div>
             )}

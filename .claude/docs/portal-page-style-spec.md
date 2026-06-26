@@ -2,7 +2,7 @@
 
 > 归属：`@cloud/ui` 消费侧 portal 业务页（列表 / 新增 / 详情）的默认模式与设计约束。本文给约束与选型，不是像素级复刻清单——先判断页面任务，再选模式；旧页面逐步向底线收敛。**写 portal 页面前必读。**
 >
-> 三种页型有可编译样板（纯样式骨架、不进打包，可直接对照 / 拷贝）：[list-page](../../packages/ui/docs/examples/list-page.tsx) · [list-page-advanced-filter](../../packages/ui/docs/examples/list-page-advanced-filter.tsx) · [create-form](../../packages/ui/docs/examples/create-form.tsx) · [create-wizard](../../packages/ui/docs/examples/create-wizard.tsx) · [detail-page](../../packages/ui/docs/examples/detail-page.tsx)。
+> 三种页型有可编译样板（纯样式骨架、不进打包，可直接对照 / 拷贝）：[list-page](../../packages/ui/docs/examples/pattern/list-page.tsx) · [list-page-advanced-filter](../../packages/ui/docs/examples/pattern/list-page-advanced-filter.tsx) · [create-form](../../packages/ui/docs/examples/pattern/create-form.tsx) · [create-wizard](../../packages/ui/docs/examples/pattern/create-wizard.tsx) · [detail-page](../../packages/ui/docs/examples/pattern/detail-page.tsx)。
 ---
 
 ## 0. 约束、选型与偏离
@@ -11,7 +11,7 @@
 
 通用前提（MUST）：
 
-- 只用 `@cloud/ui` 原语 + 语义 token（`surface/content/line/success/warning/error/info` + 类目色 `teal/violet`）；不写 hex / OKLCH、不写任意值字号 / 间距 / 宽高 / 圆角（这些由原语自带，自定义只用 `rounded-*` / `--space-*` 等刻度类）；可点击元素必须 `cursor-pointer`。
+- 只用 `@cloud/ui` 原语 + 语义 token（`surface/content/line/success/warning/error/info`）；不写 hex / OKLCH、不写任意值字号 / 间距 / 宽高 / 圆角（这些由原语自带，自定义只用 `rounded-*` / `--space-*` 等刻度类）；可点击元素必须 `cursor-pointer`。
 - **吸附到刻度，不照搬原型像素。** 原型给的精确像素是*意图*，不是字面量；落在两个法定 token 之间就**就近吸附**，用原语 prop / 刻度类，绝不手写任意值（`max-w-[459px]`、`bg-[#…]`）。例：459px 弹窗 → `Modal size="md"`（480px 最近）。
 - **优先继承，按任务适配。** 默认先继承标准布局 / 密度；可调内容（文案、字段、出现哪些卡片 / 列），也可在任务明显不同时选本文其它模式；偏离仍须落在原语 + 语义 token + 既有刻度内，并按 §0.3 记录。
 
@@ -37,8 +37,7 @@
 颜色一律走语义工具类（`bg-surface-*` / `text-content-*` / `border-line-*` / `*-bg` / `*-strong` 等），禁裸 hex、裸 OKLCH、页面局部颜色变量，不自造灰。判断性约束：
 
 - 一屏只有一个 `variant="primary"` 主 CTA，次要动作不抢 primary。
-- `accent-*` 仅图表与 AI 强调，不做按钮 / 普通状态；`success/warning/error/info-*` 仅 Badge / Pill / 内联提示，不做装饰性页面底色。
-- 类目标签用 `teal-*` / `violet-*`（仅当语义色会误导时），不挪用语义色。
+- `accent-*` 仅图表与 AI 强调，不做按钮 / 普通状态；`success/warning/error/info-*` 仅 Badge / 内联提示，不做装饰性页面底色；Badge 语义 `tone` 只编码状态 / 严重度，信息 / 类目字段用 `neutral`（详见 §8）。
 - focus 由原语 / `shadow-focus` 提供，不可去掉。
 - portal 管理页不用渐变 / 装饰背景图；暗色由 `.dark` / `[data-theme="dark"]` 同名变量供给，不硬编码。
 
@@ -46,11 +45,9 @@
 
 ## 1. 页型骨架
 
-Shell `Layout` 滚动区**无内边距**，页面自己留白。页面主体默认用 `PageBody`：集中承载 page-level padding + block gap；padding 要挂别处时复用 `PAGE_BODY_PADDING_CLASS_NAME`。三种默认骨架（先按 §0 判断是否适用），完整可编译样式见对应 example：
+本节只锁两条 shell 不变量：① Shell `Layout` 滚动区**无内边距**，页面自己留白；② 页面主体默认走 `PageBody`（集中承载 page-level padding + block gap；padding 要挂别处时复用 `PAGE_BODY_PADDING_CLASS_NAME`），不手写页面级 padding。
 
-- **列表**：`PageHeader` + `PageBody`（条件区默认整组吸顶 §4 → 列表卡片 §5）。→ list-page.tsx
-- **单步表单**：`PageHeader sticky`（ghost Cancel + primary Submit）+ `PageBody` 内 `mx-auto max-w-3xl` 区块卡片列。→ create-form.tsx；多步向导 → create-wizard.tsx（§6）
-- **详情**：`Tabs > PageHeaderBand(tabs) > TabsContent`，`TabsContent` 用 `PAGE_BODY_PADDING_CLASS_NAME`。→ detail-page.tsx（§7）
+每种页型的外壳形状（list / detail / form / wizard 各自的 slot 组成与可编译骨架）以 `registry/blueprints.ts` 的 page blueprint + 其 `skeletonPath` 指向的可编译骨架为准——先按 §0 判断该用哪种、是否适用，再照骨架填槽，不在本文重列。
 
 ---
 
@@ -98,18 +95,16 @@ Shell `Layout` 滚动区**无内边距**，页面自己留白。页面主体默�
 
 - **导航型**（点击即离开本页的行 / 卡）：有悬停与按下反馈，不保留点亮态。
 - **可选 / 切换型**（点击后保持点亮）：用 `Toggle`（带选中态）或 `Button` 组件承载，不手搓"可点击 div"；选中态用主色调、且**压过悬停**——指针移上去不能闪回中性、被误读成取消选中（**硬规则：选中 ≠ hover**）。
-- **行内操作的悬停要与整行的悬停区分得开**，不能被行的悬停吞掉；操作点击不触发整行的跳转；危险操作仍走确认弹窗（§7.3）。
+- **行内操作的悬停要与整行的悬停区分得开**，不能被行的悬停吞掉；操作点击不触发整行的跳转；危险操作仍走确认弹窗。
 - **图标操作只有中性与危险两类**，不做填充 / 描边强调；够分量的操作带文字。**危险操作（删除 / 移除 / 撤销等）必须带 danger 语义**，靠变体本身表达，不手动染色。
 
 ---
 
 ## 4. 搜索栏与已应用筛选
 
-> **首选共享组件家族。** 新列表页用 `ListConditionBand` + `SearchInput` + `AppliedFilters` + `FilterChip` 配 `useListFilters`（draft / applied 状态机），分页配 `RichPagination`（偏移）或 `useCursorPagination`（游标）。条件带容器、搜索框、筛选反馈行与 chip 的样式都由这些组件自带——下面只讲消费侧仍要自己决定的几点：
+> **首选共享组件家族（红线）。** 列表条件区用 `ListConditionBand` + `SearchInput` + `AppliedFilters` + `FilterChip` 配 `useListFilters`（draft / applied 状态机），分页配 `RichPagination`（偏移）或 `useCursorPagination`（游标），页面只提供字段、不手搓条件区。
 
-- **是否吸顶**：`ListConditionBand` 默认 sticky（负边距 / z-index 自带）；短 / 嵌入 / 筛选为辅的列表传 `sticky={false}` 保持普通流式。
-- **下拉宽度**：工具栏里的 `Select` 用接近所需的刻度宽（`w-40` / `w-44` / `w-48`）。
-- **Search 提交按钮**（如用显式按钮）：`variant="secondary"` + Search 图标。
+样式与消费侧取舍（是否吸顶 `sticky` / 工具栏 `Select` 刻度宽 / 显式 Search 按钮 / 工具栏单行左对齐流）由 `registry` 的 `list-condition-block` rules + list-page 骨架收口，不在本文重列。
 
 ### 4.1 Advanced Filter Sheet（高级筛选抽屉）
 
@@ -119,11 +114,11 @@ Shell `Layout` 滚动区**无内边距**，页面自己留白。页面主体默�
 
 ## 5. 列表卡片
 
-结构 `Card elevation={1}` → 计数带 → `Table` → `RichPagination`，三段自带边框分隔，卡片不加 padding。配标准吸顶条件区时按 list-page.tsx 的 spacing recipe；非吸顶列表保持 `gap-6`。
+`Card elevation={1}` 包裹「计数带 → `Table` → `RichPagination`」三段（自带边框分隔，卡片不加 padding）。三段的填槽结构以 `registry` 的 `list-results-card-block` + list-page 骨架为准，卡片间距见 §3；下面只补 registry 未展开的列样式与红线。
 
 ### 5.1 计数带
 
-`flex items-center justify-between gap-3 border-b border-line-subtle px-4 py-3`——左侧计数文字与右侧动作槽**垂直居中对齐**（§3.1）。左 `text-sm text-content-secondary`，数字 `font-mono font-semibold tabular-nums text-content-primary`，有筛选追加 ` matching filters`（tertiary）；右动作槽（导出 `secondary sm`）。
+用 `ListSummaryBar`（`total` 计数 + `label` 文案 + 右侧 `actions` 槽，样式自带），别手写这条 bar。计数走 mono，`label` 有筛选时追加 ` matching filters`，动作槽放导出（`secondary sm`）等。sticky 列表把 `Table` 的 `stickyHeaderTop` 设为 `LIST_SUMMARY_BAR_HEIGHT`，列头才会紧贴 bar 底边吸顶。
 
 ### 5.2 表格
 
@@ -147,7 +142,7 @@ Shell `Layout` 滚动区**无内边距**，页面自己留白。页面主体默�
 
 ### 5.3 分页带（`RichPagination`）
 
-分页用 `RichPagination`。
+列表底部分页一律用 `RichPagination`（列表 footer 的唯一标准件，内部 page / size / range 自带），**别手搓** page / size / range footer。
 
 ---
 
@@ -187,9 +182,9 @@ Shell `Layout` 滚动区**无内边距**，页面自己留白。页面主体默�
 | 辅助说明 / 副行 | `text-xs` |
 | overline / 数据副注 | `text-2xs`，常配 `uppercase tracking-wider` |
 | 计数 / 日期 / 金额 | `font-mono tabular-nums` |
-| 状态 | `Badge tone=… dot`；终态（Terminated / Expired）可叠 `opacity-70~80` + `line-through` |
-| 标签 | `Badge shape="tag"`（mono） |
-| 类目标签 | 类目色 token（teal / violet），非语义色 |
+| 状态 / 严重度 | `Badge` 语义 `tone`（`success` / `warning` / `error` / `info`）+ `dot`，按状态值映射 |
+| 信息 / 类目 / 普通字段（非状态：计划档位 / 类型 / 类目 / 纯展示值等） | `Badge tone="neutral"`（默认）——**不得**借语义 tone 或类目色调色 / 区分，语义 tone 只留给状态 / 严重度 |
+| 标签 | `Badge shape="tag"`（mono，默认 `neutral`） |
 
 ---
 

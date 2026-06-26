@@ -38,7 +38,7 @@ export function ErrorState({
           </div>
           <div className="grid gap-2">
             <h2 className="text-lg font-semibold text-content-primary">{title}</h2>
-            <p className="text-sm text-content-secondary">{description}</p>
+            <p className="text-md text-content-secondary">{description}</p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2">
             {onRetry && retryLabel ? (
@@ -48,7 +48,7 @@ export function ErrorState({
             ) : null}
             {homeLabel ? (
               <form action={homeHref} method="GET">
-                <Button type="submit" variant="outline">
+                <Button type="submit" variant="secondary">
                   {homeLabel}
                 </Button>
               </form>

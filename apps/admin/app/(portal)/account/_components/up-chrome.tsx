@@ -23,7 +23,7 @@ export function UPHeader({
       </div>
       <div className="min-w-0 flex-1">
         <h1 className="text-2xl font-semibold tracking-tight text-content-primary">{title}</h1>
-        {sub && <p className="mt-1 text-sm leading-normal text-content-secondary">{sub}</p>}
+        {sub && <p className="mt-1 text-md leading-normal text-content-secondary">{sub}</p>}
       </div>
       {actions && <div className="flex flex-none items-center gap-2">{actions}</div>}
     </div>
@@ -59,7 +59,7 @@ export function UPCard({
           )}
         >
           <div className="min-w-0">
-            {title && <h3 className="text-sm font-semibold tracking-tight text-content-primary">{title}</h3>}
+            {title && <h3 className="text-md font-semibold tracking-tight text-content-primary">{title}</h3>}
             {sub && <p className="mt-1 text-xs leading-snug text-content-tertiary">{sub}</p>}
           </div>
           {action && <div className="flex-none">{action}</div>}
@@ -93,7 +93,7 @@ export function UPRow({
       )}
     >
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-content-primary">
+        <div className="flex flex-wrap items-center gap-2 text-md font-medium text-content-primary">
           {title}
         </div>
         {sub && <div className="mt-0.5 text-xs text-content-tertiary">{sub}</div>}

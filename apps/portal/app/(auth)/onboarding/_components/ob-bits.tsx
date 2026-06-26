@@ -42,11 +42,11 @@ export function EntRow({
 }) {
   return (
     <div className="flex items-center gap-3.5 rounded-lg border border-line-default bg-surface-3 p-3.5">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary-700 font-mono text-sm font-semibold text-white">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary-700 font-mono text-md font-semibold text-white">
         {tile}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-semibold">{name}</div>
+        <div className="text-md font-semibold">{name}</div>
         {sub ? <div className="mt-0.5 text-xs text-content-tertiary">{sub}</div> : null}
       </div>
       {trailing}

@@ -6,7 +6,7 @@ import { cn } from '../../lib/utils'
 import {
   Breadcrumb,
   BreadcrumbList,
-} from '../ui/breadcrumb'
+} from '../ui/primitives/breadcrumb'
 
 interface AppHeaderProps {
   /** Leading slot rendered before the breadcrumbs (e.g. a SidebarTrigger). */
@@ -42,7 +42,7 @@ function AppHeader({
       {onSearchClick !== undefined && (
         <button
           onClick={onSearchClick}
-          className="flex items-center gap-2 px-3 h-8 rounded-lg border border-line-default bg-surface-2 text-sm text-content-tertiary hover:bg-surface-hover hover:text-content-primary transition-colors cursor-pointer"
+          className="flex items-center gap-2 px-3 h-8 rounded-lg border border-line-default bg-surface-2 text-md text-content-tertiary hover:bg-surface-hover hover:text-content-primary transition-colors cursor-pointer"
         >
           <Search size={13} />
           <span>{searchPlaceholder}</span>

@@ -55,7 +55,7 @@ export function PermissionsCard({
     <Card>
       <div className="px-4 py-3 border-b border-line-subtle flex items-center justify-between">
         <div>
-          <div className="text-sm font-semibold text-content-primary">Permissions</div>
+          <div className="text-md font-semibold text-content-primary">Permissions</div>
           <div className="text-xs text-content-tertiary mt-0.5">
             <span className="font-medium text-content-secondary">{grantedCount}</span> granted
             <span className="mx-1">·</span>
@@ -144,7 +144,7 @@ export function PermissionsCard({
                       <Switch checked={grantedSet.has(perm.code)} onCheckedChange={() => onTogglePerm(perm.code)}
                         disabled={rowDisabled} size="sm" onClick={(e) => e.stopPropagation()} />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-content-primary">{t(perm.label)}</div>
+                        <div className="text-md font-medium text-content-primary">{t(perm.label)}</div>
                         {perm.desc && <div className="text-xs text-content-tertiary">{t(perm.desc)}</div>}
                       </div>
                       <Badge tone="neutral" shape="tag" className="shrink-0">{perm.code}</Badge>
@@ -157,7 +157,7 @@ export function PermissionsCard({
           );
         })}
         {filtered.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-content-tertiary">No permissions match your filter.</div>
+          <div className="px-4 py-8 text-center text-md text-content-tertiary">No permissions match your filter.</div>
         )}
       </div>
     </Card>

@@ -8,10 +8,14 @@
       }
     },
     "datePicker": {
+      "rangeStart": "Start",
+      "rangeEnd": "End",
       "placeholder": {
         "date": "Pick a date",
         "range": "Pick a range",
-        "dateTime": "Pick a date and time"
+        "dateTime": "Pick a date and time",
+        "time": "Pick a time",
+        "dateTimeRange": "Pick a date and time range"
       },
       "presets": {
         "today": "Today",
@@ -29,7 +33,8 @@
       "first": "First page",
       "prev": "Previous page",
       "next": "Next page",
-      "last": "Last page"
+      "last": "Last page",
+      "pageOf": "Page {page} of {total}"
     },
     "listFilter": {
       "search": "Search",

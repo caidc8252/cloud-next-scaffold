@@ -41,7 +41,7 @@ export function PartnerList({ choices }: { choices: PartyChoice[] }) {
   return (
     <div className="flex flex-col gap-2">
       {message ? (
-        <div className="rounded-md border border-error-500/20 bg-error-bg px-3 py-2 text-sm text-error-strong">
+        <div className="rounded-md border border-error-500/20 bg-error-bg px-3 py-2 text-md text-error-strong">
           {message}
         </div>
       ) : null}
@@ -55,7 +55,7 @@ export function PartnerList({ choices }: { choices: PartyChoice[] }) {
             key={choice.partyId}
             type="button"
             size="auto"
-            variant="outline"
+            variant="secondary"
             block
             disabled={!selectable || pendingId !== null}
             onClick={() => void selectPartner(choice.partyId)}
@@ -65,7 +65,7 @@ export function PartnerList({ choices }: { choices: PartyChoice[] }) {
               <Building2 size={18} />
             </span>
             <span className="min-w-0 flex-1 text-left">
-              <span className="block truncate text-sm font-semibold text-content-primary">
+              <span className="block truncate text-md font-semibold text-content-primary">
                 {choice.partyName}
               </span>
               {reason ? (

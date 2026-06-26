@@ -46,7 +46,7 @@ export default async function HomePage() {
           {NAV_LINKS.map((l) => (
             <span
               key={l}
-              className="rounded-md px-3 py-1.5 text-sm font-medium text-content-secondary"
+              className="rounded-md px-3 py-1.5 text-md font-medium text-content-secondary"
             >
               {t(`nav.${l}`)}
             </span>
@@ -65,7 +65,7 @@ export default async function HomePage() {
 
       {/* hero */}
       <header className="mx-auto w-full max-w-275 px-8 pb-16 pt-24 text-center">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-line-default bg-surface-2 py-1.5 pl-2 pr-3 text-sm font-medium text-content-secondary shadow-1">
+        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-line-default bg-surface-2 py-1.5 pl-2 pr-3 text-md font-medium text-content-secondary shadow-1">
           <Badge tone="info" shape="pill" className="uppercase">
             {t("home.eyebrowTag")}
           </Badge>
@@ -93,7 +93,7 @@ export default async function HomePage() {
             {t("home.ctaInvite")}
           </Button>
         </div>
-        <div className="mt-7 flex flex-wrap justify-center gap-5 text-sm text-content-tertiary">
+        <div className="mt-7 flex flex-wrap justify-center gap-5 text-md text-content-tertiary">
           <span className="inline-flex items-center gap-1.5">
             <span className="size-2.5 rounded-full bg-success-500" aria-hidden />
             {t("home.metaUptime")}
@@ -125,7 +125,7 @@ export default async function HomePage() {
                 <Icon size={20} />
               </span>
               <h3 className="mb-1.5 text-base font-semibold">{t(`home.features.${key}.title`)}</h3>
-              <p className="text-sm leading-relaxed text-content-secondary text-pretty">
+              <p className="text-md leading-relaxed text-content-secondary text-pretty">
                 {t(`home.features.${key}.desc`)}
               </p>
             </article>
@@ -151,7 +151,7 @@ export default async function HomePage() {
                 <Icon size={18} />
               </span>
               <div>
-                <h3 className="mb-1 text-sm font-semibold">{t(`home.brandStrip.${key}.title`)}</h3>
+                <h3 className="mb-1 text-md font-semibold">{t(`home.brandStrip.${key}.title`)}</h3>
                 <p className="text-xs leading-snug text-content-tertiary">
                   {t(`home.brandStrip.${key}.desc`)}
                 </p>
@@ -166,7 +166,7 @@ export default async function HomePage() {
         <div className="pep-cta-glow flex flex-wrap items-center justify-between gap-8 rounded-2xl bg-primary-700 p-11 text-white shadow-4">
           <div className="relative">
             <h2 className="mb-2 text-2xl font-semibold tracking-tight">{t("home.ctaBandTitle")}</h2>
-            <p className="max-w-46ch text-sm text-white/85">{t("home.ctaBandText")}</p>
+            <p className="max-w-46ch text-md text-white/85">{t("home.ctaBandText")}</p>
           </div>
           <div className="relative flex flex-wrap gap-3">
             <Button
@@ -183,7 +183,7 @@ export default async function HomePage() {
               render={<Link href="/onboarding" />}
               nativeButton={false}
               size="lg"
-              variant="outline"
+              variant="secondary"
               className="border-white/25 bg-white/10 text-white hover:bg-white/20"
             >
               {t("home.ctaBandInvite")}

@@ -95,7 +95,7 @@ export function NewUserModal({ open, onClose, onCreate, users, roles }: NewUserM
                 } ${on ? "bg-primary-50 border-primary/30" : "bg-surface-3 border-line-subtle"}`}>
                   <Checkbox checked={on} disabled={submitting} onCheckedChange={() => toggleRole(r.id)} />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold">{r.name}</div>
+                    <div className="text-md font-semibold">{r.name}</div>
                     <div className="text-xs text-content-tertiary">{r.description} · {r.permissions.length} perms</div>
                   </div>
                 </label>

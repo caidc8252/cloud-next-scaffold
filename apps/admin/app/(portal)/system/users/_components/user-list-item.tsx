@@ -56,7 +56,7 @@ export function UserListItem({ user, active, onClick, onResend, onCancel }: User
         {isPending ? <Mail size={14} /> : initials(displayName)}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 text-sm font-semibold text-content-primary">
+        <div className="flex items-center gap-2 text-md font-semibold text-content-primary">
           {isPending
             ? <span className="font-medium italic text-content-tertiary">{isExpired ? "Invitation expired" : "Invitation sent"}</span>
             : <span className="truncate">{displayName}</span>}

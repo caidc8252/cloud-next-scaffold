@@ -37,7 +37,7 @@ export default async function LockedPage() {
         </CardHeader>
         <CardContent className="login-card__body">
           {lockedPartyNames.length > 0 && (
-            <ul className="mb-4 pl-4 text-sm text-content-secondary list-disc space-y-1">
+            <ul className="mb-4 pl-4 text-md text-content-secondary list-disc space-y-1">
               {lockedPartyNames.map((name) => (
                 <li key={name}>{name}</li>
               ))}

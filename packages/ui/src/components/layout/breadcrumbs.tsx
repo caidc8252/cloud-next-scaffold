@@ -5,7 +5,7 @@ import {
   BreadcrumbLink,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '../ui/breadcrumb'
+} from '../ui/primitives/breadcrumb'
 
 export type BreadcrumbsItem = {
   label: React.ReactNode

@@ -80,12 +80,12 @@ export function MfaEnrollFlow({
   if (step === "scan") {
     body = (
       <div className="flex flex-col items-center gap-3">
-        <p className="self-stretch text-sm leading-relaxed text-content-secondary">{t("mfa.enroll.scanDesc")}</p>
+        <p className="self-stretch text-md leading-relaxed text-content-secondary">{t("mfa.enroll.scanDesc")}</p>
         {enroll ? <QrCode value={enroll.otpauthUri} /> : <div className="size-44 animate-pulse rounded-lg bg-surface-3" />}
         {enroll && (
           <div className="self-stretch rounded-lg bg-surface-3 px-3 py-2.5">
             <div className="text-xs text-content-tertiary">{t("mfa.enroll.setupKey")}</div>
-            <code className="font-mono text-sm tracking-wide text-content-primary">{enroll.secret}</code>
+            <code className="font-mono text-md tracking-wide text-content-primary">{enroll.secret}</code>
           </div>
         )}
       </div>
@@ -99,7 +99,7 @@ export function MfaEnrollFlow({
   } else if (step === "confirm") {
     body = (
       <div className="flex flex-col gap-3">
-        <p className="text-sm leading-relaxed text-content-secondary">{t("mfa.enroll.confirmDesc")}</p>
+        <p className="text-md leading-relaxed text-content-secondary">{t("mfa.enroll.confirmDesc")}</p>
         <Input
           inputSize="lg"
           inputMode="numeric"
@@ -126,7 +126,7 @@ export function MfaEnrollFlow({
         <span className="flex size-11 items-center justify-center rounded-full bg-success-bg text-success-strong">
           <Check size={22} />
         </span>
-        <p className="text-sm leading-relaxed text-content-secondary">{t("mfa.enroll.doneDesc")}</p>
+        <p className="text-md leading-relaxed text-content-secondary">{t("mfa.enroll.doneDesc")}</p>
       </div>
     );
     footer = <Button variant="primary" onClick={onClose}>{t("mfa.done")}</Button>;

@@ -5,9 +5,10 @@
 // (cat-1..6). The same input always yields the same bucket; different inputs
 // may collide onto the same bucket — an accepted trade-off for stable,
 // no-config tinting. The bucket → concrete class mapping lives with the
-// consumer (see <ColorTile>) so the literal Tailwind class names stay where the
-// scanner can find them. Consumed by <ColorTile> and available to any UI that
-// wants reproducible per-label colors without wiring a palette by hand.
+// consumer (see <ObjectTile>'s `auto` tone) so the literal Tailwind class names
+// stay where the scanner can find them. Consumed by <ObjectTile> and available
+// to any UI that wants reproducible per-label colors without wiring a palette by
+// hand.
 
 // Number of categorical buckets — matches the cat-1..6 soft token family.
 export const CATEGORICAL_COLOR_COUNT = 6

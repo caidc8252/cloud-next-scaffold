@@ -118,12 +118,12 @@
   --color-brand-mono-strong: oklch(14% 0.012 270);
   --color-brand-mono-soft:   oklch(28% 0.02  270);
 
-  /* ─── Radius ─── */
+  /* ─── Radius (DS 2.0 ladder — control 10 < inner/icon 12 < card 16 < modal 20) ─── */
   --radius-sm:   4px;
-  --radius-md:   6px;
-  --radius-lg:   8px;
-  --radius-xl:   12px;
-  --radius-2xl:  16px;
+  --radius-md:   10px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  20px;
   --radius-full: 9999px;
 
   /* ─── Shadows ─── */
@@ -141,11 +141,14 @@
   --shadow-row-selected: inset 2px 0 0 var(--color-primary-700);
   --shadow-sticky-col:   1px 0 0 var(--color-line-subtle);
 
-  /* ─── Type scale (overrides Tailwind defaults) ─── */
-  /* 2xs: overline/sub-caption size from the TOMS portal prototype (10.5–11px) */
-  --text-2xs: 11px;
+  /* ─── Type scale (DS 2.0 — even-number steps, no 11/13) ─── */
+  /* 2xs: dense overline / sub-caption, kept one step below xs for meta rows */
+  --text-2xs: 10px;
   --text-xs:  12px;
-  --text-sm:  13px;
+  /* sm — DEPRECATED: DS 2.0 dropped the 13px step, so `sm` now just aliases `md` (14).
+     Do NOT use `text-sm` in new code — use `text-md`. Kept defined only so any stray
+     ref still resolves to 14 instead of breaking. */
+  --text-sm:  14px;
   --text-md:  14px;
   --text-lg:  16px;
   --text-xl:  18px;
@@ -382,23 +385,24 @@
   --color-violet-500: oklch(70% 0.12 280);
   --color-violet-700: oklch(80% 0.10 280);
 
-  --color-surface-1:       oklch(15% 0.005 270);
-  --color-surface-2:       oklch(18% 0.006 270);
-  --color-surface-3:       oklch(13% 0.005 270);
-  --color-surface-hover:   oklch(22% 0.008 270);
-  --color-surface-active:  oklch(26% 0.01  270);
+  /* DS 2.0 dark: deeper surfaces, slightly dimmer text steps, hue 260 (Linear-style) */
+  --color-surface-1:       oklch(14% 0.003 260);
+  --color-surface-2:       oklch(17% 0.004 260);
+  --color-surface-3:       oklch(11% 0.003 260);
+  --color-surface-hover:   oklch(22% 0.006 260);
+  --color-surface-active:  oklch(26% 0.008 260);
   --color-surface-overlay: oklch(0% 0 0 / 0.55);
 
-  --color-content-primary:    oklch(96% 0.005 270);
-  --color-content-secondary:  oklch(74% 0.008 270);
-  --color-content-tertiary:   oklch(58% 0.008 270);
-  --color-content-disabled:   oklch(42% 0.008 270);
+  --color-content-primary:    oklch(94% 0.003 260);
+  --color-content-secondary:  oklch(66% 0.005 260);
+  --color-content-tertiary:   oklch(50% 0.005 260);
+  --color-content-disabled:   oklch(42% 0.008 260);
   --color-content-inverse:    oklch(18% 0.01  270);
   --color-content-on-primary: oklch(15% 0.01  270);
 
-  --color-line-subtle:  oklch(22% 0.006 270);
-  --color-line-default: oklch(28% 0.008 270);
-  --color-line-strong:  oklch(38% 0.01  270);
+  --color-line-subtle:  oklch(20% 0.006 260);
+  --color-line-default: oklch(24% 0.008 260);
+  --color-line-strong:  oklch(32% 0.01  260);
   --color-line-focus:   oklch(70% 0.13  262);
 
   --shadow-1: 0 0 0 1px oklch(0% 0 0 / 0.5);

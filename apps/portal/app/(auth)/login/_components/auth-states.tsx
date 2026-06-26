@@ -35,7 +35,7 @@ export function AuthBlocked({ type, onBack }: { type: AuthBlockType; onBack: () 
         sub={t(`${type}.body`)}
       />
       {isRate ? (
-        <div className="mt-1 inline-flex items-center gap-2 rounded-full border border-line-default bg-surface-3 px-3.5 py-2 text-sm text-content-secondary">
+        <div className="mt-1 inline-flex items-center gap-2 rounded-full border border-line-default bg-surface-3 px-3.5 py-2 text-md text-content-secondary">
           <Clock size={14} />
           <span className="font-mono font-semibold text-content-primary">
             {left > 0 ? mmss(left) : t("ratelimit.ready")}

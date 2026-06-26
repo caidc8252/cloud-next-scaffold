@@ -99,7 +99,7 @@ export function IdentityChangeFlow({
   if (step === "verify-old") {
     body = (
       <div className="flex flex-col gap-3">
-        <p className="text-sm leading-relaxed text-content-secondary">
+        <p className="text-md leading-relaxed text-content-secondary">
           {t("identity.verifyOldDesc", { email: profile.email })}
         </p>
         {otpInput(currentCode, setCurrentCode)}
@@ -124,7 +124,7 @@ export function IdentityChangeFlow({
   } else if (step === "new") {
     body = (
       <div className="flex flex-col gap-3">
-        <p className="text-sm leading-relaxed text-content-secondary">
+        <p className="text-md leading-relaxed text-content-secondary">
           {isEmail ? t("identity.newEmailDesc") : t("identity.newUsernameDesc")}
         </p>
         <Field label={isEmail ? t("identity.newEmailLabel") : t("identity.newUsernameLabel")}>
@@ -149,7 +149,7 @@ export function IdentityChangeFlow({
   } else {
     body = (
       <div className="flex flex-col gap-3">
-        <p className="text-sm leading-relaxed text-content-secondary">
+        <p className="text-md leading-relaxed text-content-secondary">
           {t("identity.verifyNewDesc", { email: newValue })}
         </p>
         {otpInput(newCode, setNewCode)}
