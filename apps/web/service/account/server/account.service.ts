@@ -33,7 +33,7 @@ import {
   issueVerifyCode,
 } from "@/lib/account-verify-code";
 import { sendVerifyCodeEmail } from "@/lib/email";
-import * as mfa from "@/service/mfa/server/mfa.service";
+import * as mfa from "@/modules/identity/mfa/server/mfa.public";
 import type {
   AccountProfile,
   AccountSecurity,

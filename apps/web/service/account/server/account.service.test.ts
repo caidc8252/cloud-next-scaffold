@@ -18,7 +18,7 @@ vi.mock("./account.repository", () => ({
   listPartyMemberships: vi.fn(),
   listActiveContractTypes: vi.fn(),
 }));
-vi.mock("@/service/mfa/server/mfa.service", () => ({
+vi.mock("@/modules/identity/mfa/server/mfa.public", () => ({
   verifyActiveTotp: vi.fn(),
   getMfaStatus: vi.fn(),
   startEnrollment: vi.fn(),
@@ -35,7 +35,7 @@ vi.mock("@/lib/session-snapshot", () => ({ buildSessionSnapshot: vi.fn().mockRes
 vi.mock("@cloud/permissions/server", () => ({ updateSession: vi.fn() }));
 
 import * as repo from "./account.repository";
-import * as mfa from "@/service/mfa/server/mfa.service";
+import * as mfa from "@/modules/identity/mfa/server/mfa.public";
 import { readVerifyCode, consumeVerifyCode, issueVerifyCode } from "@/lib/account-verify-code";
 import { sendVerifyCodeEmail } from "@/lib/email";
 import {

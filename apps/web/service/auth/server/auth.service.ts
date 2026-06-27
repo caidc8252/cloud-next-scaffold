@@ -27,7 +27,7 @@ import {
 import { createMfaLoginToken, readMfaLoginToken, deleteMfaLoginToken } from "@/lib/login-token";
 import { listPartyChoices } from "./partner-choices";
 import { isPartySelectable } from "@/service/auth/partner-choice";
-import * as mfa from "@/service/mfa/server/mfa.service";
+import * as mfa from "@/modules/identity/mfa/server/mfa.public";
 import { loginPayloadSchema, type LoginInput, type MfaVerifyInput } from "@/service/auth/schemas/auth.schema";
 import * as authRepository from "./auth.repository";
 

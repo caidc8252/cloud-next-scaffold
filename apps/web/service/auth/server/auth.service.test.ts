@@ -18,7 +18,7 @@ vi.mock("./auth.repository", () => ({
   listPartyMemberships: vi.fn(),
   findPartyMembership: vi.fn(),
 }));
-vi.mock("@/service/mfa/server/mfa.service", () => ({ verifyActiveTotp: vi.fn() }));
+vi.mock("@/modules/identity/mfa/server/mfa.public", () => ({ verifyActiveTotp: vi.fn() }));
 vi.mock("@/lib/session-snapshot", () => ({ buildSessionSnapshot: vi.fn() }));
 vi.mock("@/lib/login-checks", () => ({
   isAccountActive: vi.fn(),
@@ -42,7 +42,7 @@ vi.mock("./partner-choices", () => ({ listPartyChoices: vi.fn() }));
 
 import * as repo from "./auth.repository";
 import { listPartyChoices } from "./partner-choices";
-import * as mfa from "@/service/mfa/server/mfa.service";
+import * as mfa from "@/modules/identity/mfa/server/mfa.public";
 import { buildSessionSnapshot } from "@/lib/session-snapshot";
 import { isAccountActive, isLockActive, isTimestampFresh } from "@/lib/login-checks";
 import { createMfaLoginToken, readMfaLoginToken, deleteMfaLoginToken } from "@/lib/login-token";
