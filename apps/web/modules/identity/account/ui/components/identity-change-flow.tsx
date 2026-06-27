@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button, Field, Input, Modal, toast } from "@cloud/ui/components/ui";
 import { toastError } from "@cloud/request/error-toast";
 import { useTranslations } from "@cloud/i18n/client";
-import { changeAccountEmail, requestIdentityCode } from "@/service/account/api";
+import { changeAccountEmail, requestIdentityCode } from "@/modules/identity/account/client/account.api";
 import type { AccountProfile } from "@/app/(dashboard)/account/_shared/types";
 
 // Verified email change against the real endpoint. Codes are sent server-side

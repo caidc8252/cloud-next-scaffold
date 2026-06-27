@@ -5,8 +5,8 @@ import { Check } from "lucide-react";
 import { Button, Input, Modal } from "@cloud/ui/components/ui";
 import { toastError } from "@cloud/request/error-toast";
 import { useTranslations } from "@cloud/i18n/client";
-import { activateAccountMfa, enrollAccountMfa } from "@/service/account/api";
-import type { EnrollData } from "@/service/account/types";
+import { activateAccountMfa, enrollAccountMfa } from "@/modules/identity/account/client/account.api";
+import type { EnrollData } from "@/modules/identity/account/schema/account.types";
 import type { AccountSecurity } from "@/app/(dashboard)/account/_shared/types";
 import { QrCode } from "./qr-code";
 

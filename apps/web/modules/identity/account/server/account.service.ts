@@ -38,7 +38,7 @@ import type {
   AccountProfile,
   AccountSecurity,
   AccountPartner,
-} from "@/app/(dashboard)/account/_shared/types";
+} from "../schema/account.types";
 import type {
   ActivateMfaInput,
   ChangeEmailInput,
@@ -46,8 +46,8 @@ import type {
   DisableMfaInput,
   RequestCodeInput,
   UpdateProfileInput,
-} from "@/service/account/schemas/account.schema";
-import { passwordPayloadSchema } from "@/service/account/schemas/account.schema";
+} from "../schema/account.schema";
+import { passwordPayloadSchema } from "../schema/account.schema";
 import { toAccountProfile } from "./account.mapper";
 import * as accountRepository from "./account.repository";
 

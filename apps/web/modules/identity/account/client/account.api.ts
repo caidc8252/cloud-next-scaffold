@@ -2,7 +2,7 @@
 // account 域客户端调用出口：具名函数、全量路径；请求类型同源于 ./schemas，响应 VO 同源于 ./types。
 // MFA 端点在 /api/account/mfa/* 下、入参也在本域 schema，故归 account（不归 service/mfa 那个 server 能力）。
 import { request } from "@cloud/request/client";
-import type { AccountProfile, AccountSecurity, EnrollData } from "./types";
+import type { AccountProfile, AccountSecurity, EnrollData } from "../schema/account.types";
 import type {
   ActivateMfaInput,
   ChangeEmailInput,
@@ -10,7 +10,7 @@ import type {
   DisableMfaInput,
   RequestCodeInput,
   UpdateProfileInput,
-} from "./schemas/account.schema";
+} from "../schema/account.schema";
 
 export const updateAccountProfile = (input: UpdateProfileInput) =>
   request.patch<AccountProfile>("/api/account/profile", input);

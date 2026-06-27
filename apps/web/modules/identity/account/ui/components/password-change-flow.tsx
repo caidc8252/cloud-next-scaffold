@@ -6,7 +6,7 @@ import { Button, Field, Input, Modal } from "@cloud/ui/components/ui";
 import { toastError } from "@cloud/request/error-toast";
 import { PASSWORD_POLICY } from "@cloud/constants";
 import { useTranslations } from "@cloud/i18n/client";
-import { changeAccountPassword } from "@/service/account/api";
+import { changeAccountPassword } from "@/modules/identity/account/client/account.api";
 import { getServerTime } from "@/service/auth/api";
 import { encryptLoginPassword } from "@/lib/login-crypto";
 

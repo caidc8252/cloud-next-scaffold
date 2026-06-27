@@ -15,7 +15,7 @@ import {
 } from "@cloud/ui/components/ui";
 import { toastError } from "@cloud/request/error-toast";
 import { useTranslations } from "@cloud/i18n/client";
-import { updateAccountProfile } from "@/service/account/api";
+import { updateAccountProfile } from "@/modules/identity/account/client/account.api";
 import type { AccountProfile, Country } from "@/app/(dashboard)/account/_shared/types";
 import { UPCard, UPHeader } from "./up-chrome";
 import { IdentityChangeFlow } from "./identity-change-flow";

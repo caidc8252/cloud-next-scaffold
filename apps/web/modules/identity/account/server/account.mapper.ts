@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { AccountProfile } from "@/app/(dashboard)/account/_shared/types";
+import type { AccountProfile } from "../schema/account.types";
 
 // SysUser 行 → AccountProfile VO。字段名对齐 DB（nickName/country/...）。
 type ProfileRow = {
