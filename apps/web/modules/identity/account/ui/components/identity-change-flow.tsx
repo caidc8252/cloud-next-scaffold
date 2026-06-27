@@ -5,7 +5,7 @@ import { Button, Field, Input, Modal, toast } from "@cloud/ui/components/ui";
 import { toastError } from "@cloud/request/error-toast";
 import { useTranslations } from "@cloud/i18n/client";
 import { changeAccountEmail, requestIdentityCode } from "@/modules/identity/account/client/account.api";
-import type { AccountProfile } from "@/modules/identity/account/schema/account.types";
+import type { AccountProfile } from "../../schema/account.types";
 
 // Verified email change against the real endpoint. Codes are sent server-side
 // (delivered via a logged stub for now) and verified at apply time.

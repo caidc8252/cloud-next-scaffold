@@ -8,7 +8,7 @@ import { cn } from "@cloud/ui";
 import { toastError } from "@cloud/request/error-toast";
 import { useTranslations, useLocale } from "@cloud/i18n/client";
 import { selectPartner } from "@/modules/identity/auth/client/auth.api";
-import type { AccountPartner } from "@/modules/identity/account/schema/account.types";
+import type { AccountPartner } from "../../schema/account.types";
 import { useNotifications } from "@/app/(dashboard)/_components/notifications-provider";
 import { UPHeader } from "./up-chrome";
 

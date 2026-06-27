@@ -16,7 +16,7 @@ import {
 import { toastError } from "@cloud/request/error-toast";
 import { useTranslations } from "@cloud/i18n/client";
 import { updateAccountProfile } from "@/modules/identity/account/client/account.api";
-import type { AccountProfile, Country } from "@/modules/identity/account/schema/account.types";
+import type { AccountProfile, Country } from "../../schema/account.types";
 import { UPCard, UPHeader } from "./up-chrome";
 import { IdentityChangeFlow } from "./identity-change-flow";
 
