@@ -27,15 +27,23 @@
 - **forgot-password / onboarding** → 各自新模块 `identity/account-recovery`、`identity/onboarding`(纯模板应用,无 dedup,较低风险)。
 - **mfa**:portal 的登录期 verify 已被 `identity/mfa` 覆盖,删 portal 版。
 
-## 子阶段拆分(每段单独可跑、单独提交)
+## 子阶段拆分(已按依赖修订)
+
+> **依赖修订(关键)**:勘察后发现 onboarding/account-recovery **依赖共享登录基建**——
+> 页面用 nonce 版 `login-crypto` + `@/service/auth/api`;service 用 `auth.service`(如
+> `buildSessionAndRedirect`);并与 login 共享 `(auth)/_components/{card-bits,password-checklist}`。
+> 故 **"低风险模块先、auth 最后" 不成立**:登录基建是地基,必须先建。修订顺序如下。
 
 | 子阶段 | 内容 | 风险 |
 |---|---|---|
-| **1c-a 兼容地基** | portal-only lib → `web/lib`;逐个 diff 同名 lib,等价者标记弃用 portal 版 | 低 |
-| **1c-b onboarding** | `identity/onboarding` 模块 + 页面 `(portal)/onboarding` + api | 低(模板) |
-| **1c-c account-recovery** | `identity/account-recovery`(forgot + reset)+ 页面 + api | 低-中(共享 `_components`) |
-| **1c-d auth 合并** | portal 登录面并入 `identity/auth`(9 路由 + 登录服务 + nonce 链路);统一登录页;替换 admin `(public)/login`;reconcile `login-crypto`/`session-snapshot` | **高(登录关键)** |
+| **1c-a portal-only lib** | 无冲突的 portal-only lib(error-codes/messages、countries、format、schemas、password-input、platform-routing 等)→ `web/lib`,**随其消费者迁移时带入**(不空挂) | 低 |
+| **1c-b 登录基建(原 1c-d 核心)** | reconcile 分叉登录 lib(`login-crypto` nonce 版统一、`login-nonce`、`login-token`、`password-reset-token`、`password-rules`、`api-handler`、`session-snapshot`、`email`);portal 登录面 auth.service(login/verifyMfa/oidc/sso/idp/company/login-challenge/buildSessionAndRedirect)并入 `identity/auth`;9 个 auth 路由;统一登录页替换 admin `(public)/login`;迁共享 `(auth)/_components` | **高(登录关键)** |
+| **1c-c onboarding** | `identity/onboarding`(依赖 1c-b 的 auth.public + login-crypto)+ 页面 + api | 中 |
+| **1c-d account-recovery** | `identity/account-recovery`(forgot + reset)+ 页面 + api | 中 |
 | **1c-e 收尾** | marketing 页;`(public)`→`(portal)`;删 `apps/portal`;清 workspace/scripts/playwright/tsconfig/lockfile | 中 |
+
+**结论**:1c 的真正核心与地基是 **1c-b(登录基建 + auth 合并)**,且 onboarding/recovery 必须在其后。
+建议把 1c-b 当作一次**专注、带登录回归**的执行(行为分叉 + 登录关键),而非夹在中间快速带过。
 
 ## 需要你拍板的决策
 
