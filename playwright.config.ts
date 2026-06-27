@@ -29,7 +29,7 @@ export default defineConfig({
   // → 探测超时），改用 admin 的 `/api/health`（200）；portal `/` 直接 200。
   webServer: [
     {
-      command: "pnpm -F admin dev",
+      command: "pnpm -F web dev",
       url: `${ADMIN_URL}/api/health`,
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,

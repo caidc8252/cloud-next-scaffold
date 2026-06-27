@@ -1,5 +1,5 @@
 packages:
-  - "apps/admin"
+  - "apps/web"
   - "apps/portal"
   - "apps/customer"
   - "packages/api-kit"
