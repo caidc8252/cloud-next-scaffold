@@ -8,8 +8,8 @@ import {
   partnerToday,
   isContractEffective,
   isAuthorizingWindowOpen,
-} from "@/service/auth/server/contract-validity";
-import { selectApplicableRoles } from "@/service/auth/server/role-selection";
+} from "@/modules/identity/auth/server/auth.public";
+import { selectApplicableRoles } from "@/modules/identity/auth/server/auth.public";
 
 // 构建登录会话快照：读 DB（用户 / 公司关系 / 契约 / 角色），用 platform-config 按当前公司
 // 有效契约 + 角色/ADMIN 派生有效权限码。合同有效期 / 授权窗口在此（快照时）一次性校验。

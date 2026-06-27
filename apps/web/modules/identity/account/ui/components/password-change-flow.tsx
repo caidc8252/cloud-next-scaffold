@@ -7,7 +7,7 @@ import { toastError } from "@cloud/request/error-toast";
 import { PASSWORD_POLICY } from "@cloud/constants";
 import { useTranslations } from "@cloud/i18n/client";
 import { changeAccountPassword } from "@/modules/identity/account/client/account.api";
-import { getServerTime } from "@/service/auth/api";
+import { getServerTime } from "@/modules/identity/auth/client/auth.api";
 import { encryptLoginPassword } from "@/lib/login-crypto";
 
 // Real password change: re-auth current password + (step-up TOTP when MFA on) +

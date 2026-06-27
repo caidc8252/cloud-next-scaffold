@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { PartyChoice } from "@/service/auth/partner-choice";
+import type { PartyChoice } from "./partner-choice";
 import { partnerToday, isContractEffective } from "./contract-validity";
 import * as authRepository from "./auth.repository";
 

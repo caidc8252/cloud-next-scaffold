@@ -26,9 +26,9 @@ import {
 } from "@/lib/login-checks";
 import { createMfaLoginToken, readMfaLoginToken, deleteMfaLoginToken } from "@/lib/login-token";
 import { listPartyChoices } from "./partner-choices";
-import { isPartySelectable } from "@/service/auth/partner-choice";
+import { isPartySelectable } from "./partner-choice";
 import * as mfa from "@/modules/identity/mfa/server/mfa.public";
-import { loginPayloadSchema, type LoginInput, type MfaVerifyInput } from "@/service/auth/schemas/auth.schema";
+import { loginPayloadSchema, type LoginInput, type MfaVerifyInput } from "../schema/auth.schema";
 import * as authRepository from "./auth.repository";
 
 // auth 域业务编排：登录（含刷错锁 / RSA 解密 / MFA 分岔）、MFA 二次校验、选择公司。

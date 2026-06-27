@@ -7,7 +7,7 @@ import { Button, Modal, toast } from "@cloud/ui/components/ui";
 import { cn } from "@cloud/ui";
 import { toastError } from "@cloud/request/error-toast";
 import { useTranslations, useLocale } from "@cloud/i18n/client";
-import { selectPartner } from "@/service/auth/api";
+import { selectPartner } from "@/modules/identity/auth/client/auth.api";
 import type { AccountPartner } from "@/app/(dashboard)/account/_shared/types";
 import { useNotifications } from "@/app/(dashboard)/_components/notifications-provider";
 import { UPHeader } from "./up-chrome";
