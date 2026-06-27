@@ -1,6 +1,6 @@
 import { Ticket, Users, Package, Banknote, KeyRound, Bell, type LucideIcon } from "lucide-react";
 import { useFormatter } from "@cloud/i18n/client";
-import type { Notice } from "@/service/notification/types";
+import type { Notice } from "../schema/notification.types";
 
 /**
  * Module taxonomy → icon + colour, shared by the bell, the list and the detail.

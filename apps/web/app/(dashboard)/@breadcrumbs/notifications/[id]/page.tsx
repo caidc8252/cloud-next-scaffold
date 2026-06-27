@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "@cloud/i18n/server";
 import { Breadcrumbs } from "@cloud/ui/components/layout";
-import { loadNotice } from "@/app/(dashboard)/notifications/_server/loader";
+import { loadNotice } from "@/modules/system/notification/server/loader";
 
 /**
  * Breadcrumb slot for the notification detail. Renders

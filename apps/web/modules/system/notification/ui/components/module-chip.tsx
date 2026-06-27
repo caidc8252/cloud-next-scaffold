@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "@cloud/i18n/client";
-import { MODULE_META, moduleOf } from "../_lib/notice-meta";
+import { MODULE_META, moduleOf } from "../notice-meta";
 
 /** 模块 chip：按 noticeType 前缀派生图标/色/标签。 */
 export function ModuleChip({ type }: { type: string | null }) {

@@ -2,8 +2,8 @@
 import "server-only";
 import type { Pager } from "@cloud/request";
 import type { ActiveSession } from "@cloud/permissions/server";
-import type { Notice } from "../types";
-import { createNoticeInputSchema, type CreateNoticeInput, type ListNoticesQuery, type MarkReadBody } from "../schemas/notification.schema";
+import type { Notice } from "../schema/notification.types";
+import { createNoticeInputSchema, type CreateNoticeInput, type ListNoticesQuery, type MarkReadBody } from "../schema/notification.schema";
 import * as repo from "./notification.repository";
 import { toNotice } from "./notification.mapper";
 

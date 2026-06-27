@@ -21,11 +21,11 @@ import {
 } from "@cloud/ui";
 import { useTranslations } from "@cloud/i18n/client";
 import { toastError } from "@cloud/request/error-toast";
-import { listNotice } from "@/service/notification/api";
-import type { Notice, NoticeStatus } from "@/service/notification/types";
-import type { ListNoticesQuery } from "@/service/notification/schemas/notification.schema";
-import { useNotifications } from "../../_components/notifications-provider";
-import { isUnread, useRelTime } from "../_lib/notice-meta";
+import { listNotice } from "@/modules/system/notification/client/notification.api";
+import type { Notice, NoticeStatus } from "../../schema/notification.types";
+import type { ListNoticesQuery } from "../../schema/notification.schema";
+import { useNotifications } from "@/app/(dashboard)/_components/notifications-provider";
+import { isUnread, useRelTime } from "../notice-meta";
 import { ModuleChip } from "./module-chip";
 
 type ModuleFilter = "All" | "ticket" | "customer" | "app" | "order" | "account";
@@ -36,7 +36,7 @@ const EMPTY: Filters = { q: "", module: "All", status: "All" };
 const MODULES: Exclude<ModuleFilter, "All">[] = ["ticket", "customer", "app", "order", "account"];
 const STATUSES: NoticeStatus[] = ["UNREAD", "READ"];
 
-export function NotificationsPage({ currentPartyName }: { currentPartyName: string }) {
+export function NotificationsBoard({ currentPartyName }: { currentPartyName: string }) {
   const t = useTranslations("notifications");
   const router = useRouter();
   const relTime = useRelTime();

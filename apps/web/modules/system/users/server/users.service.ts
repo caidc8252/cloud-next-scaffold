@@ -24,7 +24,7 @@ import type {
   SetInviteRolesInput,
   UpdateUserInput,
 } from "../schema/users.schema";
-import { createNotice } from "@/service/notification/server/notification.service";
+import { createNotice } from "@/modules/system/notification/server/notification.public";
 import { toClientInvite, toClientUser } from "./users.mapper";
 import { canChangeRoles, isProtectedUser, isSelf, rolesChanged } from "./users.policy";
 import * as usersRepository from "./users.repository";

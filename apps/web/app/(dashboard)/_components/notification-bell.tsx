@@ -13,7 +13,7 @@ import {
   cn,
 } from "@cloud/ui";
 import { useTranslations } from "@cloud/i18n/client";
-import type { Notice } from "@/service/notification/types";
+import type { Notice } from "@/modules/system/notification/schema/notification.types";
 import { useNotifications } from "./notifications-provider";
 import {
   MODULE_META,
@@ -22,7 +22,7 @@ import {
   moduleOf,
   useRelTime,
   type NoticeGroup,
-} from "../notifications/_lib/notice-meta";
+} from "@/modules/system/notification/ui/notice-meta";
 
 /**
  * Notification bell button + popover (client component).

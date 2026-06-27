@@ -5,8 +5,8 @@ import {
   getNoticeUnreadCount,
   listNotice,
   markNoticeRead,
-} from "@/service/notification/api";
-import type { Notice } from "@/service/notification/types";
+} from "@/modules/system/notification/client/notification.api";
+import type { Notice } from "@/modules/system/notification/schema/notification.types";
 
 type Ctx = {
   unreadCount: number;

@@ -1,6 +1,6 @@
 // notification.scope.ts
 // 纯作用域 where-builder（无 Prisma 依赖，可脱离 DB 单测）。repository 复用之。
-import type { NoticeStatus } from "../types";
+import type { NoticeStatus } from "../schema/notification.types";
 
 export type NoticeScope = { userId: number; partyId: number };
 

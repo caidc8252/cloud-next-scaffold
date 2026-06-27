@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { Button, Card, CardContent, PageBody } from "@cloud/ui";
 import { useTranslations } from "@cloud/i18n/client";
-import type { Notice } from "@/service/notification/types";
-import { useNotifications } from "../../_components/notifications-provider";
-import { useRelTime, openNoticeLink } from "../_lib/notice-meta";
+import type { Notice } from "../../schema/notification.types";
+import { useNotifications } from "@/app/(dashboard)/_components/notifications-provider";
+import { useRelTime, openNoticeLink } from "../notice-meta";
 import { ModuleChip } from "./module-chip";
 
 /**

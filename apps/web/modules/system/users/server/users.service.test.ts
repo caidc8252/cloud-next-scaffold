@@ -30,14 +30,14 @@ vi.mock("./users.repository", () => ({
 }));
 vi.mock("@/lib/password-reset-token", () => ({ createPasswordResetToken: vi.fn() }));
 vi.mock("@/lib/email", () => ({ sendInviteEmail: vi.fn(), sendResetLinkEmail: vi.fn() }));
-vi.mock("@/service/notification/server/notification.service", () => ({ createNotice: vi.fn() }));
+vi.mock("@/modules/system/notification/server/notification.public", () => ({ createNotice: vi.fn() }));
 vi.mock("@cloud/i18n/server", () => ({ getTranslations: vi.fn(async () => (k: string) => k) }));
 vi.mock("@cloud/log", () => ({ createLogger: vi.fn(() => ({ warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() })) }));
 
 import * as repo from "./users.repository";
 import { createPasswordResetToken } from "@/lib/password-reset-token";
 import { sendInviteEmail, sendResetLinkEmail } from "@/lib/email";
-import { createNotice } from "@/service/notification/server/notification.service";
+import { createNotice } from "@/modules/system/notification/server/notification.public";
 import {
   cancelInvite,
   createInvite,

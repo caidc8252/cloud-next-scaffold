@@ -1,6 +1,6 @@
 // notification.mapper.ts
 import "server-only";
-import type { Notice, NoticePayload, NoticeStatus } from "../types";
+import type { Notice, NoticePayload, NoticeStatus } from "../schema/notification.types";
 
 // SysNotice 行 → Notice VO。本地结构化行类型（团队范式：mapper 不引 Prisma 模型类型，
 // 见 account.mapper 的 ProfileRow），只声明 mapper 实际读取的字段。

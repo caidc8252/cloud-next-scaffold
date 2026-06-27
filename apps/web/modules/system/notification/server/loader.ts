@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { requirePermissions } from "@cloud/permissions/server";
-import { getNoticeByIdScoped } from "@/service/notification/server/notification.service";
+import { getNoticeByIdScoped } from "./notification.service";
 
 /**
  * Request-cached single-notice loader. Shared by the detail page and the

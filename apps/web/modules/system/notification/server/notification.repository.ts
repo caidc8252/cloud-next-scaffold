@@ -2,7 +2,7 @@
 // 通知域数据访问（Prisma）。纯作用域 where-builder 拆到 notification.scope.ts（脱 DB 单测），此处复用并 re-export。
 import "server-only";
 import { prisma } from "@cloud/db";
-import type { NoticeStatus } from "../types";
+import type { NoticeStatus } from "../schema/notification.types";
 import { scopeWhere, unreadWhere, type NoticeScope } from "./notification.scope";
 
 export { scopeWhere, unreadWhere } from "./notification.scope";
