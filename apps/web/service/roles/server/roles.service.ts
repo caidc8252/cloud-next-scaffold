@@ -11,7 +11,7 @@ import {
 import { contractTypeGroup, roleIdInGroupRange } from "@cloud/platform-config";
 import { getRoles, resolvePartyScope } from "@/manifest";
 import { extractRoleIds } from "@/service/_shared/role-codes";
-import type { Role } from "@/app/(portal)/system/_shared/types";
+import type { Role } from "@/app/(dashboard)/system/_shared/types";
 import type { CreateRoleInput, UpdateRoleInput } from "@/service/roles/schemas/roles.schema";
 import { toClientRole, toClientCodeRole } from "./roles.mapper";
 import { isBuiltinRole, roleBelongsToPartner } from "./roles.policy";

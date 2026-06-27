@@ -5,7 +5,7 @@ import { encryptSecret, decryptSecret } from "@cloud/security/server";
 import { getConfig } from "@cloud/config";
 import { PASSWORD_POLICY } from "@cloud/constants";
 import { generateTotpSecret, totpKeyUri, verifyTotp } from "@/lib/totp";
-import type { MfaStatus } from "@/app/(portal)/account/_shared/types";
+import type { MfaStatus } from "@/app/(dashboard)/account/_shared/types";
 
 // MFA（TOTP）业务逻辑。account（启用/重配/关闭/改密 step-up）与 auth（登录二次校验）共用，
 // 故独立成 service/mfa，避免 auth → account 跨域依赖。

@@ -38,7 +38,7 @@ import type {
   AccountProfile,
   AccountSecurity,
   AccountPartner,
-} from "@/app/(portal)/account/_shared/types";
+} from "@/app/(dashboard)/account/_shared/types";
 import type {
   ActivateMfaInput,
   ChangeEmailInput,

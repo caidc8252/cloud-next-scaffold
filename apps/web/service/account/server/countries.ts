@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Country } from "@/app/(portal)/account/_shared/types";
+import type { Country } from "@/app/(dashboard)/account/_shared/types";
 
 // Country list for the profile editor. Ported verbatim from the prototype's
 // COUNTRIES table (code + display name + dial code). The name is demo data,
