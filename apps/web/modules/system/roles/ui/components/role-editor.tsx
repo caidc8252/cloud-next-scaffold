@@ -3,9 +3,11 @@
 import { useState, useMemo } from "react";
 import { Check, Copy, Trash2 } from "lucide-react";
 import { Badge, Button, Input, Textarea, Card, CardContent, CardHeader, CardTitle } from "@cloud/ui";
-import type { Role, User, PermissionGroup } from "@/app/(dashboard)/system/_shared/types";
-import { relTime } from "@/app/(dashboard)/system/_shared/helpers";
-import { ConfirmModal } from "@/app/(dashboard)/system/_shared/confirm-modal";
+import type { Role } from "@/modules/system/roles/server/roles.public";
+import type { User } from "@/modules/system/users/server/users.public";
+import type { PermissionGroup } from "@/lib/permission-catalog";
+import { relTime } from "@/lib/ui-format";
+import { ConfirmModal } from "@/lib/confirm-modal";
 import { PermissionsCard } from "./permissions-card";
 import { applyGrant, computeLocked } from "./require-chain";
 

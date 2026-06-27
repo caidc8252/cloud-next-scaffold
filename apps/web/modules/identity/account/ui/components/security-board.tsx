@@ -6,7 +6,7 @@ import { Badge, Button, Input, Modal, toast } from "@cloud/ui/components/ui";
 import { toastError } from "@cloud/request/error-toast";
 import { useTranslations } from "@cloud/i18n/client";
 import { disableAccountMfa, getAccountSecurity } from "@/modules/identity/account/client/account.api";
-import type { AccountSecurity } from "@/app/(dashboard)/account/_shared/types";
+import type { AccountSecurity } from "@/modules/identity/account/schema/account.types";
 import { UPCard, UPHeader, UPRow } from "./up-chrome";
 import { PasswordChangeFlow } from "./password-change-flow";
 import { MfaEnrollFlow } from "./mfa-enroll-flow";

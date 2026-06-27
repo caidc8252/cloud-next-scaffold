@@ -7,7 +7,7 @@ import { toastError } from "@cloud/request/error-toast";
 import { useTranslations } from "@cloud/i18n/client";
 import { activateAccountMfa, enrollAccountMfa } from "@/modules/identity/account/client/account.api";
 import type { EnrollData } from "@/modules/identity/account/schema/account.types";
-import type { AccountSecurity } from "@/app/(dashboard)/account/_shared/types";
+import type { AccountSecurity } from "@/modules/identity/account/schema/account.types";
 import { QrCode } from "./qr-code";
 
 // MFA enrollment — used for both Enable (mfaEnable=false) and Reconfigure (active).

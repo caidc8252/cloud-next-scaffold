@@ -1,6 +1,6 @@
 import "server-only";
 
-import { extractRoleIds } from "@/service/_shared/role-codes";
+import { extractRoleIds } from "@/lib/role-codes";
 import type { User } from "../schema/users.types";
 
 // Entity → VO 映射。角色绑定走 sys_party_user.roles JSONB（List<{roleId}>）；邀请走

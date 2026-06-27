@@ -14,7 +14,9 @@ import {
   toast,
 } from "@cloud/ui";
 import { createRole as createRoleApi, deleteRole as deleteRoleApi, updateRole } from "@/modules/system/roles/client/roles.api";
-import type { Role, User, PermissionGroup } from "@/app/(dashboard)/system/_shared/types";
+import type { Role } from "@/modules/system/roles/server/roles.public";
+import type { User } from "@/modules/system/users/server/users.public";
+import type { PermissionGroup } from "@/lib/permission-catalog";
 import { RoleListItem } from "./role-list-item";
 import { RoleEditor } from "./role-editor";
 import { NewRoleModal } from "./new-role-modal";

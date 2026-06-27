@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { relTime, hueFor } from "./helpers";
+import { relTime, hueFor } from "./ui-format";
 
 describe("relTime", () => {
   it("returns 'just now' for timestamps within 60s", () => {

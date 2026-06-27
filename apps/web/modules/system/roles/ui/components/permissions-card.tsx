@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { Search, ChevronDown, ChevronRight } from "lucide-react";
 import { Badge, Button, Card, Input, Switch } from "@cloud/ui";
 import { useTranslations } from "@cloud/i18n/client";
-import type { PermissionGroup } from "@/app/(dashboard)/system/_shared/types";
+import type { PermissionGroup } from "@/lib/permission-catalog";
 
 type PermissionsCardProps = {
   groups: PermissionGroup[];

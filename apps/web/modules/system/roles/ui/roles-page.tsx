@@ -3,8 +3,8 @@ import { getTranslations } from "@cloud/i18n/server";
 import { getMenus } from "@/manifest";
 import { selectPermissionGroups } from "@/manifest/select";
 import { listRoles } from "../server/roles.service";
-import { translateRoleLabels } from "@/app/(dashboard)/system/_shared/role-labels";
-import type { PermissionGroup } from "@/app/(dashboard)/system/_shared/types";
+import { translateRoleLabels } from "@/lib/role-labels";
+import type { PermissionGroup } from "@/lib/permission-catalog";
 import { RolesBoard } from "./components/roles-board";
 
 // 权限目录来自本平台 manifest（按当前公司持有的契约过滤）。

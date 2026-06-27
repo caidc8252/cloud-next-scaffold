@@ -15,7 +15,8 @@ import {
   setUserInviteRoles,
   updateUser,
 } from "@/modules/system/users/client/users.api";
-import type { Role, User } from "@/app/(dashboard)/system/_shared/types";
+import type { Role } from "@/modules/system/roles/server/roles.public";
+import type { User } from "@/modules/system/users/server/users.public";
 import { UserListItem } from "./user-list-item";
 import { UserDetail } from "./user-detail";
 import { PendingInviteDetail } from "./pending-invite-detail";

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { Mail, User, Clock, Shield, Copy, Pencil, AlertTriangle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle, Checkbox, toast } from "@cloud/ui";
-import type { Role, User as UserType } from "@/app/(dashboard)/system/_shared/types";
-import { fmtDateTime, relTime } from "@/app/(dashboard)/system/_shared/helpers";
+import type { Role } from "@/modules/system/roles/server/roles.public";
+import type { User as UserType } from "@/modules/system/users/server/users.public";
+import { fmtDateTime, relTime } from "@/lib/ui-format";
 
 type PendingInviteDetailProps = {
   user: UserType;

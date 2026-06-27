@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Mail, Shield, RefreshCw, X } from "lucide-react";
 import { Badge, Button, cn, type BadgeTone } from "@cloud/ui";
-import type { User } from "@/app/(dashboard)/system/_shared/types";
-import { relTime, initials } from "@/app/(dashboard)/system/_shared/helpers";
+import type { User } from "@/modules/system/users/server/users.public";
+import { relTime, initials } from "@/lib/ui-format";
 
 type UserListItemProps = {
   user: User;

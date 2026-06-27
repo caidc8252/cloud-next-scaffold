@@ -3,9 +3,10 @@
 import { useState, useMemo } from "react";
 import { User, Mail, Globe, Clock, Check, Shield, KeyRound, Copy, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle, Collapsible, CollapsibleContent, CollapsibleTrigger, Field, Input, Switch, Textarea } from "@cloud/ui";
-import type { Role, User as UserType } from "@/app/(dashboard)/system/_shared/types";
-import { relTime, initials } from "@/app/(dashboard)/system/_shared/helpers";
-import { ConfirmModal } from "@/app/(dashboard)/system/_shared/confirm-modal";
+import type { Role } from "@/modules/system/roles/server/roles.public";
+import type { User as UserType } from "@/modules/system/users/server/users.public";
+import { relTime, initials } from "@/lib/ui-format";
+import { ConfirmModal } from "@/lib/confirm-modal";
 import { PASSWORD_POLICY } from "@cloud/constants";
 
 type UserDetailProps = {

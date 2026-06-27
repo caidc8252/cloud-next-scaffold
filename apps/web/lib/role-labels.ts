@@ -1,4 +1,4 @@
-import type { Role } from "./types";
+import type { Role } from "@/modules/system/roles/server/roles.public";
 import { PRESET_ROLE_ID_MAX } from "@cloud/platform-config";
 
 // 死写 GLOBAL 角色（roleId ≤ 1000，含预留区间）的 name/description 是 coc i18n key，按 locale 翻译；

@@ -10,7 +10,7 @@ import {
 } from "@cloud/request/error-codes";
 import { contractTypeGroup, roleIdInGroupRange } from "@cloud/platform-config";
 import { getRoles, resolvePartyScope } from "@/manifest";
-import { extractRoleIds } from "@/service/_shared/role-codes";
+import { extractRoleIds } from "@/lib/role-codes";
 import type { Role } from "../schema/roles.types";
 import type { CreateRoleInput, UpdateRoleInput } from "../schema/roles.schema";
 import { toClientRole, toClientCodeRole } from "./roles.mapper";

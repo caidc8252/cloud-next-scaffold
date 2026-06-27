@@ -1,7 +1,7 @@
 import "server-only";
 
 import { hasPermissions } from "@cloud/permissions/server";
-import { normalizeRoleIds } from "@/service/_shared/role-codes";
+import { normalizeRoleIds } from "@/lib/role-codes";
 
 // 用户域的范围 / 实体保护规则（纯函数，便于单测）。粗粒度的 users.* 码校验仍在 route 用
 // assertPermissions 做；这里是「已具备粗粒度权限后，对具体目标用户的二层校验」。

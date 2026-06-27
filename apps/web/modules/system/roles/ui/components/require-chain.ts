@@ -1,4 +1,4 @@
-import type { PermissionItem } from "@/app/(dashboard)/system/_shared/types";
+import type { PermissionItem } from "@/lib/permission-catalog";
 
 // 同菜单内的 require 链工具：授权时连带前置、撤销时连带依赖、锁定被依赖的前置。
 // 纯函数，便于单测；UI（role-editor）据此联动勾选与禁用。

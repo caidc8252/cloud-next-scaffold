@@ -15,7 +15,7 @@ import { INVITE_TTL_MS } from "@cloud/constants";
 import { createLogger } from "@cloud/log";
 import { getTranslations } from "@cloud/i18n/server";
 import { isLocale } from "@cloud/i18n";
-import { extractRoleIds, parseRoleIds } from "@/service/_shared/role-codes";
+import { extractRoleIds, parseRoleIds } from "@/lib/role-codes";
 import type { User } from "../schema/users.types";
 import { createPasswordResetToken } from "@/lib/password-reset-token";
 import { sendInviteEmail, sendResetLinkEmail } from "@/lib/email";

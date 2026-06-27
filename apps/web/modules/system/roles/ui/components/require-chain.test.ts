@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { applyGrant, computeLocked } from "./require-chain";
-import type { PermissionItem } from "@/app/(dashboard)/system/_shared/types";
+import type { PermissionItem } from "@/lib/permission-catalog";
 
 const items: PermissionItem[] = [
   { code: "m.view", label: "", desc: "", require: null },

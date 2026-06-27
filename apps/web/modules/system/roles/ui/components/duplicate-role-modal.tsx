@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, Field, Input, Modal } from "@cloud/ui";
-import type { Role } from "@/app/(dashboard)/system/_shared/types";
+import type { Role } from "@/modules/system/roles/server/roles.public";
 
 type DuplicateRoleModalProps = {
   source: Role | null;
