@@ -21,16 +21,8 @@ describe("admin platform manifest", () => {
   });
 
   it("exposes the global contract union (across all apps)", () => {
-    // CONTRACT_KEYS 是各 app 声明 contractKeys 的全局并集（admin + customer）。
-    const expected = [
-      "ADMIN",
-      "MERCHANT",
-      "PLATFORM-CUSTOM",
-      "US-ISO",
-      "US-ISO-PILOT",
-      "US-ISV",
-      "US-ISV-PILOT",
-    ];
+    // CONTRACT_KEYS 是各 app 声明 contractKeys 的全局并集（当前仅 web）。
+    const expected = ["ADMIN", "MERCHANT", "US-ISO", "US-ISV"];
     expect(PLATFORM_CONTRACTS).toEqual(expected);
     expect(getContractKeys()).toEqual(expected);
   });
