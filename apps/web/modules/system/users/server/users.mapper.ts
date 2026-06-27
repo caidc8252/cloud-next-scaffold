@@ -1,7 +1,7 @@
 import "server-only";
 
 import { extractRoleIds } from "@/service/_shared/role-codes";
-import type { User } from "@/app/(dashboard)/system/_shared/types";
+import type { User } from "../schema/users.types";
 
 // Entity → VO 映射。角色绑定走 sys_party_user.roles JSONB（List<{roleId}>）；邀请走
 // sys_operator_invite（无占位用户）。密码历史走 sys_user.password_history JSONB；重置请求改

@@ -16,14 +16,14 @@ import { createLogger } from "@cloud/log";
 import { getTranslations } from "@cloud/i18n/server";
 import { isLocale } from "@cloud/i18n";
 import { extractRoleIds, parseRoleIds } from "@/service/_shared/role-codes";
-import type { User } from "@/app/(dashboard)/system/_shared/types";
+import type { User } from "../schema/users.types";
 import { createPasswordResetToken } from "@/lib/password-reset-token";
 import { sendInviteEmail, sendResetLinkEmail } from "@/lib/email";
 import type {
   CreateInviteInput,
   SetInviteRolesInput,
   UpdateUserInput,
-} from "@/service/users/schemas/users.schema";
+} from "../schema/users.schema";
 import { createNotice } from "@/service/notification/server/notification.service";
 import { toClientInvite, toClientUser } from "./users.mapper";
 import { canChangeRoles, isProtectedUser, isSelf, rolesChanged } from "./users.policy";

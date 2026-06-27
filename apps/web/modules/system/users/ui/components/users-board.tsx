@@ -14,17 +14,17 @@ import {
   resetUserPassword,
   setUserInviteRoles,
   updateUser,
-} from "@/service/users/api";
+} from "@/modules/system/users/client/users.api";
 import type { Role, User } from "@/app/(dashboard)/system/_shared/types";
 import { UserListItem } from "./user-list-item";
 import { UserDetail } from "./user-detail";
 import { PendingInviteDetail } from "./pending-invite-detail";
 import { NewUserModal } from "./new-user-modal";
 
-type UsersPageProps = { initialUsers: User[]; initialRoles: Role[]; currentUserId: string; portalBaseUrl: string };
+type UsersBoardProps = { initialUsers: User[]; initialRoles: Role[]; currentUserId: string; portalBaseUrl: string };
 type StatusFilter = "all" | "active" | "inactive" | "pending";
 
-export function UsersPage({ initialUsers, initialRoles, currentUserId, portalBaseUrl }: UsersPageProps) {
+export function UsersBoard({ initialUsers, initialRoles, currentUserId, portalBaseUrl }: UsersBoardProps) {
   const [users, setUsers] = useState(initialUsers);
   const roles = initialRoles;
 

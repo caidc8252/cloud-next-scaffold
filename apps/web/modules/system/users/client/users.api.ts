@@ -1,8 +1,8 @@
 // apps/admin/service/users/api.ts
 // 用户域客户端调用出口：具名函数、全量路径；请求类型同源于 ./schemas，响应 VO 同源于 ./types。
 import { request } from "@cloud/request/client";
-import type { User } from "./types";
-import type { CreateInviteInput, UpdateUserInput, SetInviteRolesInput } from "./schemas/users.schema";
+import type { User } from "../schema/users.types";
+import type { CreateInviteInput, UpdateUserInput, SetInviteRolesInput } from "../schema/users.schema";
 
 export const listUser = () => request.get<User[]>("/api/system/users");
 
