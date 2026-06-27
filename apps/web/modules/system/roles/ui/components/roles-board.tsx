@@ -13,20 +13,20 @@ import {
   PageHeader,
   toast,
 } from "@cloud/ui";
-import { createRole as createRoleApi, deleteRole as deleteRoleApi, updateRole } from "@/service/roles/api";
+import { createRole as createRoleApi, deleteRole as deleteRoleApi, updateRole } from "@/modules/system/roles/client/roles.api";
 import type { Role, User, PermissionGroup } from "@/app/(dashboard)/system/_shared/types";
 import { RoleListItem } from "./role-list-item";
 import { RoleEditor } from "./role-editor";
 import { NewRoleModal } from "./new-role-modal";
 import { DuplicateRoleModal } from "./duplicate-role-modal";
 
-type RolesPageProps = {
+type RolesBoardProps = {
   initialRoles: Role[];
   users?: User[];
   permissionGroups: PermissionGroup[];
 };
 
-export function RolesPage({ initialRoles, users = [], permissionGroups }: RolesPageProps) {
+export function RolesBoard({ initialRoles, users = [], permissionGroups }: RolesBoardProps) {
   const [roles, setRoles] = useState<Role[]>(initialRoles);
   const [selectedId, setSelectedId] = useState<string | null>(initialRoles[0]?.id ?? null);
   const [query, setQuery] = useState("");

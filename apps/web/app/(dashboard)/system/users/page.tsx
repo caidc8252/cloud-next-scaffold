@@ -1,7 +1,7 @@
 import { requirePermissions } from "@cloud/permissions/server";
 import { getTranslations } from "@cloud/i18n/server";
 import { listUsersAndInvites } from "@/service/users/server/users.service";
-import { listAssignableRoles } from "@/service/roles/server/roles.service";
+import { listAssignableRoles } from "@/modules/system/roles/server/roles.public";
 import { translateRoleLabels } from "@/app/(dashboard)/system/_shared/role-labels";
 import { getPortalBaseUrl } from "@/lib/portal-routing";
 import { UsersPage } from "@/app/(dashboard)/system/users/_components/users-page";

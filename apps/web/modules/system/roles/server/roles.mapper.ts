@@ -2,7 +2,7 @@ import "server-only";
 
 import type { RoleDef } from "@cloud/platform-config";
 import { PRESET_ROLE_ID_MAX } from "@cloud/platform-config";
-import type { Role } from "@/app/(dashboard)/system/_shared/types";
+import type { Role } from "../schema/roles.types";
 
 // Entity → VO 映射。权限码走 sys_role.permission_codes JSONB（List<string>）。
 // role 与 contract 解耦后 VO 不再有 contractType。
