@@ -20,8 +20,8 @@ import { isPasswordValid, PW_MIN } from "@/lib/password-rules";
 import { encryptLoginPassword } from "@/lib/login-crypto";
 import { COUNTRIES } from "@/lib/countries";
 import { initials } from "@/lib/format";
-import { AuthLead, BackLink, ErrorBanner } from "@/app/(public)/_components/card-bits";
-import { PasswordChecklist } from "@/app/(public)/_components/password-checklist";
+import { AuthLead, BackLink, ErrorBanner } from "@/app/(portal)/_components/card-bits";
+import { PasswordChecklist } from "@/app/(portal)/_components/password-checklist";
 import { EntRow, ObCard } from "./ob-bits";
 import type { InvitePublic } from "./types";
 

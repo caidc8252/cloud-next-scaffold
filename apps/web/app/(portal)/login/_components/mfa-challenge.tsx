@@ -6,7 +6,7 @@ import { Button, Field, Input } from "@cloud/ui";
 import { useTranslations } from "@cloud/i18n/client";
 import type { Account, MfaProfile } from "@/lib/auth-ui-types";
 import { AccountChip } from "@/app/_components/account-chip";
-import { AuthLead, BackLink, IconBadge } from "@/app/(public)/_components/card-bits";
+import { AuthLead, BackLink, IconBadge } from "@/app/(portal)/_components/card-bits";
 
 export function MfaChallenge({
   account,

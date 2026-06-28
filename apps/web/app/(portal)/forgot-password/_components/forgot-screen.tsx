@@ -9,7 +9,7 @@ import { sendResetLink } from "@/modules/identity/forgot-password/client/forgot.
 import { useTranslations } from "@cloud/i18n/client";
 import { PepMark } from "@/app/_components/brand";
 import { AuthShell } from "@/app/_components/auth-shell";
-import { AuthLead, BackLink, ErrorBanner, IconBadge } from "@/app/(public)/_components/card-bits";
+import { AuthLead, BackLink, ErrorBanner, IconBadge } from "@/app/(portal)/_components/card-bits";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 type Stage = "email" | "sent";

@@ -3,7 +3,7 @@
 import { ArrowRight, Check, X } from "lucide-react";
 import { Button } from "@cloud/ui";
 import { useTranslations } from "@cloud/i18n/client";
-import { AuthLead, IconBadge } from "@/app/(public)/_components/card-bits";
+import { AuthLead, IconBadge } from "@/app/(portal)/_components/card-bits";
 import { ObCard } from "./ob-bits";
 
 export function ObInvalid({ token, onHome }: { token: string; onHome: () => void }) {

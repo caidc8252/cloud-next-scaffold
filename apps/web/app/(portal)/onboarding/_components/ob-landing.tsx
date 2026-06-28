@@ -7,7 +7,7 @@ import { RequestError } from "@cloud/request/client";
 import { useFormatter, useTranslations } from "@cloud/i18n/client";
 import type { CurrentUser, InvitePublic } from "./types";
 import { initials } from "@/lib/format";
-import { AuthLead, Divider, ErrorBanner } from "@/app/(public)/_components/card-bits";
+import { AuthLead, Divider, ErrorBanner } from "@/app/(portal)/_components/card-bits";
 import { AccountRow, EntRow, ObCard } from "./ob-bits";
 
 export function ObLanding({

@@ -6,7 +6,7 @@ import { Button } from "@cloud/ui";
 import { useTranslations } from "@cloud/i18n/client";
 import type { Account, AuthBlockType } from "@/lib/auth-ui-types";
 import { AccountChip } from "@/app/_components/account-chip";
-import { AuthLead, IconBadge } from "@/app/(public)/_components/card-bits";
+import { AuthLead, IconBadge } from "@/app/(portal)/_components/card-bits";
 
 const mmss = (s: number) =>
   `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;

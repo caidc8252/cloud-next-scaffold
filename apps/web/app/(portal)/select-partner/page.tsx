@@ -8,7 +8,7 @@ import {
   getSession,
 } from "@cloud/permissions/server";
 import { AuthShell } from "@/app/_components/auth-shell";
-import { AuthLead, IconBadge } from "@/app/(public)/_components/card-bits";
+import { AuthLead, IconBadge } from "@/app/(portal)/_components/card-bits";
 import { resolvePortalGroup } from "@cloud/platform-config";
 import { entryUrlForParty } from "@/lib/platform-routing";
 import { listPartyChoices } from "@/modules/identity/auth/server/partner-choices";

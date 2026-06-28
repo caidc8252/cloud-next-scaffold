@@ -10,7 +10,7 @@ import type { ProviderId, SsoTenant } from "@/lib/auth-ui-types";
 import { PepMark } from "@/app/_components/brand";
 import { ProviderButton } from "@/app/_components/provider-button";
 import { PROVIDERS } from "@/app/_components/provider-mark";
-import { AuthLead, Divider, ErrorBanner } from "@/app/(public)/_components/card-bits";
+import { AuthLead, Divider, ErrorBanner } from "@/app/(portal)/_components/card-bits";
 import { validateLoginAccount } from "./login-account";
 
 const DEMO_ACCOUNTS = "locked@pep.io · ratelimited@pep.io · nocompany@pep.io · sms@pep.io · solo@pep.io";
