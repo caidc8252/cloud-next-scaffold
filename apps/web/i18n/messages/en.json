@@ -692,6 +692,31 @@
         "sub": "You're now a member of <b>{partner}</b>. We've recorded your sign-up time and the roles you accepted.",
         "enter": "Go to console"
       }
+    },
+    "resetPassword": {
+      "invalid": {
+        "title": "Reset link invalid",
+        "sub": "This password reset link is invalid or has expired. Request a new one to continue.",
+        "requestNew": "Request a new link"
+      },
+      "form": {
+        "eyebrow": "Reset password",
+        "title": "Set a new password",
+        "sub": "Choose a strong password you don’t use anywhere else.",
+        "newLabel": "New password",
+        "newPlaceholder": "At least {min} characters",
+        "confirmLabel": "Confirm password",
+        "confirmPlaceholder": "Repeat password",
+        "mismatch": "Passwords don’t match.",
+        "submit": "Update password",
+        "submitting": "Updating…"
+      },
+      "done": {
+        "title": "Password updated",
+        "sub": "Your password has been changed. Sign in with your new password.",
+        "signIn": "Go to sign in"
+      },
+      "error": "Couldn’t reset your password. Please try again."
     }
   }
 }

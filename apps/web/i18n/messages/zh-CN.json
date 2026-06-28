@@ -545,6 +545,31 @@
         "title": "欢迎加入 PEP，{name}。",
         "enter": "进入控制台"
       }
+    },
+    "resetPassword": {
+      "invalid": {
+        "title": "重置链接无效",
+        "sub": "该重置链接无效或已过期。请重新申请。",
+        "requestNew": "重新申请链接"
+      },
+      "form": {
+        "eyebrow": "重置密码",
+        "title": "设置新密码",
+        "sub": "请选择一个你未在别处使用过的强密码。",
+        "newLabel": "新密码",
+        "newPlaceholder": "至少 {min} 个字符",
+        "confirmLabel": "确认密码",
+        "confirmPlaceholder": "再次输入密码",
+        "mismatch": "两次密码不一致。",
+        "submit": "更新密码",
+        "submitting": "正在更新…"
+      },
+      "done": {
+        "title": "密码已更新",
+        "sub": "你的密码已修改，请用新密码登录。",
+        "signIn": "前往登录"
+      },
+      "error": "重置密码失败，请重试。"
     }
   }
 }
