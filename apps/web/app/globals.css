@@ -21,6 +21,24 @@ body {
 @utility max-h-dvh-9rem {
   max-height: calc(100dvh - 9rem);
 }
+@utility w-46pct {
+  width: 46%;
+}
+@utility max-w-14ch {
+  max-width: 14ch;
+}
+@utility max-w-44ch {
+  max-width: 44ch;
+}
+@utility max-w-46ch {
+  max-width: 46ch;
+}
+@utility max-w-56ch {
+  max-width: 56ch;
+}
+@utility max-w-60ch {
+  max-width: 60ch;
+}
 
 .login-screen {
   min-height: 100vh;
@@ -86,4 +104,50 @@ body {
   .login-screen {
     padding: 18px;
   }
+}
+
+@keyframes pep-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pep-fade {
+  animation: pep-fade 0.32s cubic-bezier(0.2, 0, 0, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pep-fade {
+    animation: none;
+  }
+}
+
+/* Dark indigo brand panel (login split layout) */
+.pep-brand-panel {
+  background:
+    radial-gradient(
+      700px 420px at 12% 0%,
+      color-mix(in oklch, var(--color-primary-500) 42%, transparent),
+      transparent 65%
+    ),
+    var(--color-primary-900);
+}
+
+/* In-place processing overlay over an auth screen */
+.pep-busy-overlay {
+  background: color-mix(in oklch, var(--color-surface-1) 80%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+/* OTP / verification code input */
+.pep-otp-input {
+  font-family: var(--font-family-mono, ui-monospace, monospace);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  text-align: center;
 }

@@ -1,17 +1,28 @@
 import { PASSWORD_POLICY } from "@cloud/constants";
 
-// Pure password-policy helpers (no I/O) so they can be unit-tested and shared
-// between the change-password route and the client checklist.
+// Client-safe password policy checks driven by the shared @cloud/constants policy
+// (minLength etc.). @cloud/constants is a plain constant module — no server-only —
+// so the checklist can run in the browser.
+export const PW_MIN = PASSWORD_POLICY.minLength;
+
+export function passwordChecks(pw: string) {
+  return {
+    length: pw.length >= PW_MIN,
+    upper: /[A-Z]/.test(pw),
+    lower: /[a-z]/.test(pw),
+    digit: /[0-9]/.test(pw),
+    symbol: /[^A-Za-z0-9]/.test(pw),
+  };
+}
+
+export function isPasswordValid(pw: string): boolean {
+  const c = passwordChecks(pw);
+  return c.length && c.upper && c.lower && c.digit && c.symbol;
+}
 
 /** Whether a candidate password satisfies the configured complexity policy. */
 export function meetsPasswordPolicy(password: string): boolean {
-  const p = PASSWORD_POLICY;
-  if (password.length < p.minLength) return false;
-  if (p.requireUpper && !/[A-Z]/.test(password)) return false;
-  if (p.requireLower && !/[a-z]/.test(password)) return false;
-  if (p.requireDigit && !/\d/.test(password)) return false;
-  if (p.requireSymbol && !/[^A-Za-z0-9]/.test(password)) return false;
-  return true;
+  return isPasswordValid(password);
 }
 
 /** The recent-hash window to check a new password against (current hash first). */

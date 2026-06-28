@@ -7,7 +7,7 @@ import { toastError } from "@cloud/request/error-toast";
 import { PASSWORD_POLICY } from "@cloud/constants";
 import { useTranslations } from "@cloud/i18n/client";
 import { changeAccountPassword } from "@/modules/identity/account/client/account.api";
-import { getServerTime } from "@/modules/identity/auth/client/auth.api";
+import { getLoginChallenge } from "@/modules/identity/auth/client/auth.api";
 import { encryptLoginPassword } from "@/lib/login-crypto";
 
 // Real password change: re-auth current password + (step-up TOTP when MFA on) +
@@ -61,10 +61,10 @@ export function PasswordChangeFlow({
     setErr("");
     setBusy(true);
     try {
-      const ts = (await getServerTime()).data.serverTimestamp;
+      const { serverTimestamp: ts, nonce } = (await getLoginChallenge()).data;
       const [encryptedCurrentPassword, encryptedNewPassword] = await Promise.all([
-        encryptLoginPassword(curPw, ts),
-        encryptLoginPassword(newPw, ts),
+        encryptLoginPassword(curPw, ts, nonce),
+        encryptLoginPassword(newPw, ts, nonce),
       ]);
       await changeAccountPassword({
         encryptedCurrentPassword,

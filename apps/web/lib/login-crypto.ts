@@ -4,10 +4,14 @@ import { encryptRsaOaep } from "@cloud/security/client";
 // encryptRsaOaep 接受裸 base64 DER 字符串，直接透传即可；与根 .env 的 NEXT_AUTH_LOGIN_RSA_PRIVATE_KEY 成对。
 const PUBLIC_KEY_DER_BASE64 = process.env.NEXT_PUBLIC_AUTH_LOGIN_RSA_PUBLIC_KEY;
 
-/** 用 env 注入的公钥加密 {password, timestamp}，输出 base64 密文。仅客户端调用。 */
-export async function encryptLoginPassword(password: string, timestamp: number): Promise<string> {
+/** 用 env 注入的公钥加密 {password, timestamp, nonce}，输出 base64 密文。仅客户端调用。 */
+export async function encryptLoginPassword(
+  password: string,
+  timestamp: number,
+  nonce: string,
+): Promise<string> {
   if (!PUBLIC_KEY_DER_BASE64) {
     throw new Error("Missing NEXT_PUBLIC_AUTH_LOGIN_RSA_PUBLIC_KEY");
   }
-  return encryptRsaOaep(JSON.stringify({ password, timestamp }), PUBLIC_KEY_DER_BASE64);
+  return encryptRsaOaep(JSON.stringify({ password, timestamp, nonce }), PUBLIC_KEY_DER_BASE64);
 }

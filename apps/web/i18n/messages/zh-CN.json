@@ -166,7 +166,9 @@
     "notFoundDescription": "你访问的页面不存在或已被移动。"
   },
   "account": {
-    "common": { "back": "返回" },
+    "common": {
+      "back": "返回"
+    },
     "menu": {
       "aria": "{name} 菜单",
       "profile": "我的资料",
@@ -215,10 +217,20 @@
     "security": {
       "title": "账号与安全",
       "sub": "登录凭证与多重验证",
-      "signin": { "title": "登录", "sub": "按公司策略，密码每 90 天轮换一次" },
-      "password": { "title": "密码", "metaUnknown": "按公司策略每 90 天轮换" },
+      "signin": {
+        "title": "登录",
+        "sub": "按公司策略，密码每 90 天轮换一次"
+      },
+      "password": {
+        "title": "密码",
+        "metaUnknown": "按公司策略每 90 天轮换"
+      },
       "changePassword": "更改密码",
-      "mfa": { "title": "多重验证（MFA）", "sub": "认证器应用在登录时提供第二重验证", "disabledToast": "已停用双重验证" },
+      "mfa": {
+        "title": "多重验证（MFA）",
+        "sub": "认证器应用在登录时提供第二重验证",
+        "disabledToast": "已停用双重验证"
+      },
       "authenticator": {
         "title": "认证器应用",
         "active": "已启用",
@@ -229,7 +241,10 @@
       "reconfigure": "重新配置",
       "disable": "停用",
       "enable": "启用",
-      "disableModal": { "title": "停用双重验证？", "desc": "输入认证器应用中的当前验证码以关闭双重验证。" }
+      "disableModal": {
+        "title": "停用双重验证？",
+        "desc": "输入认证器应用中的当前验证码以关闭双重验证。"
+      }
     },
     "mfa": {
       "cancel": "取消",
@@ -255,8 +270,189 @@
       "roleAccess": "基于角色的权限",
       "locked": "已锁定",
       "noContract": "无有效契约",
-      "confirm": { "title": "切换到 {name}？", "body": "将把当前公司切换为 {name}，工作区将重新加载。", "stay": "取消", "leave": "切换" },
-      "toast": { "locked": "访问已锁定 · {name}", "current": "你已在 {name} 中" }
+      "confirm": {
+        "title": "切换到 {name}？",
+        "body": "将把当前公司切换为 {name}，工作区将重新加载。",
+        "stay": "取消",
+        "leave": "切换"
+      },
+      "toast": {
+        "locked": "访问已锁定 · {name}",
+        "current": "你已在 {name} 中"
+      }
+    }
+  },
+  "portal": {
+    "brand": {
+      "console": "控制台",
+      "newland": "新大陆"
+    },
+    "login": {
+      "processing": "处理中",
+      "brand": {
+        "sub": "新大陆",
+        "lead": "用一个控制台管理你的<em>支付版图。</em>",
+        "status": "所有系统运行正常 · status.pep.io"
+      },
+      "title": "登录 PEP",
+      "subtitle": "{by} 合作伙伴控制台。",
+      "continueWith": "使用 <b>{provider}</b> 继续",
+      "ssoUnavailable": "第三方登录暂未开放。",
+      "dividerEmail": "或使用你的工作邮箱",
+      "emailLabel": "账号",
+      "emailPlaceholder": "name@company.com",
+      "passwordLabel": "密码",
+      "forgot": "忘记密码？",
+      "submit": "登录",
+      "invitedOnly": "仅限受邀操作员 ·",
+      "haveInvite": "有邀请？",
+      "togglePassword": "切换密码可见性",
+      "sso": {
+        "via": "通过 {provider} 单点登录",
+        "badge": "SSO",
+        "manages": "你的组织管理此登录方式。"
+      },
+      "errors": {
+        "AUTH_BAD_CREDENTIALS": "邮箱或密码不正确，请重试。",
+        "invalidEmail": "请输入有效的邮箱地址。",
+        "accountRequired": "请输入账号。",
+        "passwordMin": "密码至少需要 6 个字符。",
+        "generic": "登录失败，请重试。"
+      },
+      "idp": {
+        "chooseAccount": "选择一个账号",
+        "signIn": "登录",
+        "targetConsole": "PEP 合作伙伴控制台",
+        "secure": "安全",
+        "cancel": "取消"
+      },
+      "mfa": {
+        "back": "返回登录",
+        "eyebrow": "双重身份验证",
+        "title": "输入你的验证码",
+        "codeLabel": "验证码",
+        "hintDemo": "演示：输入任意 6 位数字即可继续。",
+        "errEnter": "请输入 6 位验证码。",
+        "errWrong": "验证码不正确，锁定前还可尝试 {count} 次。",
+        "resend": "重新发送",
+        "resendIn": "{seconds} 秒后重发",
+        "refresh": "验证码每 30 秒刷新",
+        "verify": "验证并继续"
+      },
+      "company": {
+        "back": "返回登录",
+        "eyebrow": "选择工作区",
+        "title": "选择一家公司",
+        "note": "每家公司独立界定你的角色范围。"
+      },
+      "blocked": {
+        "back": "返回登录",
+        "locked": {
+          "eyebrow": "账号已锁定",
+          "title": "你的账号已被锁定",
+          "contact": "联系管理员"
+        },
+        "ratelimit": {
+          "eyebrow": "尝试次数过多",
+          "title": "登录尝试次数过多",
+          "tryAgain": "重试",
+          "until": "后可重试",
+          "ready": "现在可以重试"
+        },
+        "mfa": {
+          "eyebrow": "验证已锁定",
+          "title": "验证已锁定",
+          "contact": "联系管理员"
+        }
+      },
+      "nocompany": {
+        "eyebrow": "无工作区",
+        "title": "没有可进入的公司",
+        "haveInvite": "我有邀请",
+        "back": "返回登录"
+      },
+      "busy": {
+        "verifying": "正在验证凭据…",
+        "verifyingCode": "正在验证你的验证码…",
+        "entering": "正在进入控制台…",
+        "returning": "正在从 {provider} 返回…"
+      }
+    },
+    "partner": {
+      "metadata": {
+        "title": "选择 partner - PEP Portal",
+        "description": "进入控制台前选择 partner 工作区。"
+      },
+      "eyebrow": "选择工作区",
+      "title": "选择 partner",
+      "description": "欢迎，{name}。请选择要进入的 partner 工作区。",
+      "empty": "当前账号没有可用的 partner 工作区。",
+      "badge": {
+        "admin": "管理员",
+        "normal": "用户"
+      },
+      "reason": {
+        "partnerDisabled": "Partner 已停用",
+        "userDisabled": "访问已停用",
+        "noContract": "无有效合同"
+      },
+      "defaultError": "无法选择该 partner，请重试。"
+    },
+    "forgot": {
+      "back": "返回登录",
+      "changeEmail": "更改邮箱",
+      "email": {
+        "eyebrow": "账号恢复",
+        "title": "重置密码",
+        "sub": "输入你账号的邮箱，我们会给你发送重置密码的链接。",
+        "label": "工作邮箱",
+        "send": "发送重置链接",
+        "sending": "正在发送…",
+        "err": "请输入有效的邮箱地址。"
+      },
+      "sent": {
+        "title": "请查收邮件",
+        "sub": "如果 {email} 存在对应账号，我们已发送重置密码的链接。"
+      },
+      "code": {
+        "eyebrow": "第 2 步，共 3 步",
+        "title": "输入验证码",
+        "label": "验证码",
+        "verify": "验证并继续",
+        "verifying": "正在验证…",
+        "resend": "重新发送",
+        "resendIn": "{seconds} 秒后重发",
+        "err": "请输入 6 位验证码。"
+      },
+      "reset": {
+        "eyebrow": "第 3 步，共 3 步",
+        "title": "设置新密码",
+        "newLabel": "新密码",
+        "newPlaceholder": "至少 {min} 个字符",
+        "confirmLabel": "确认密码",
+        "confirmPlaceholder": "再次输入密码",
+        "mismatch": "两次密码不一致。",
+        "update": "更新密码",
+        "updating": "正在更新…"
+      },
+      "rules": {
+        "length": "{min}+ 个字符",
+        "upper": "大写字母 (A-Z)",
+        "lower": "小写字母 (a-z)",
+        "digit": "数字 (0-9)",
+        "symbol": "符号 (@ # $)"
+      },
+      "done": {
+        "title": "密码已更新",
+        "sub": "你的密码已更改，请使用新凭据登录。",
+        "back": "返回登录"
+      }
+    },
+    "notFound": {
+      "code": "404",
+      "title": "找不到该页面",
+      "home": "返回首页",
+      "signIn": "前往登录"
     }
   }
 }

@@ -1,7 +1,11 @@
-import { redirect } from "next/navigation";
-import { getPortalLoginUrl } from "@/lib/portal-routing";
+import { LoginScreen } from "./_components/login-screen";
 
-export default function LoginPage() {
-  // 兼容旧链接：admin 不再承载登录表单，统一交给 portal 登录中心。
-  redirect(getPortalLoginUrl());
+// returnTo（限站内 /onboarding 前缀，后端再校验）：入驻页"我已有账号"跳来登录，成功后回跳本页。
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ returnTo?: string }>;
+}) {
+  const { returnTo } = await searchParams;
+  return <LoginScreen returnTo={returnTo} />;
 }

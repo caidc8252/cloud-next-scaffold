@@ -40,7 +40,18 @@ const nextConfig: NextConfig = {
   // dev 下 Codespaces 端口转发会让 localhost / 127.0.0.1 混用，放行两者的 dev 资源，
   // 避免 HMR 等被 cross-origin 拦截。仅影响开发态资源加载，不放宽生产安全。
   allowedDevOrigins,
-  transpilePackages: ["@cloud/config", "@cloud/db", "@cloud/i18n", "@cloud/request", "@cloud/security", "@cloud/ui"],
+  transpilePackages: [
+    "@cloud/api-kit",
+    "@cloud/cache",
+    "@cloud/config",
+    "@cloud/db",
+    "@cloud/i18n",
+    "@cloud/permissions",
+    "@cloud/platform-config",
+    "@cloud/request",
+    "@cloud/security",
+    "@cloud/ui",
+  ],
   experimental: {
     // 不要把 @cloud/i18n 放进来：它含 "use server"（setLocaleAction / setTimeZoneAction），
     // optimizePackageImports 重写 barrel 导入会让 server action 模块身份漂移、ID 对不上，

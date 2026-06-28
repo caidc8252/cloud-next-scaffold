@@ -166,7 +166,9 @@
     "notFoundDescription": "お探しのページは存在しないか、移動されました。"
   },
   "account": {
-    "common": { "back": "戻る" },
+    "common": {
+      "back": "戻る"
+    },
     "menu": {
       "aria": "{name} メニュー",
       "profile": "プロフィール",
@@ -215,10 +217,20 @@
     "security": {
       "title": "アカウントとセキュリティ",
       "sub": "サインイン認証情報と多要素認証",
-      "signin": { "title": "サインイン", "sub": "会社ポリシーにより、パスワードは 90 日ごとにローテーションされます" },
-      "password": { "title": "パスワード", "metaUnknown": "会社ポリシーにより 90 日ごとにローテーション" },
+      "signin": {
+        "title": "サインイン",
+        "sub": "会社ポリシーにより、パスワードは 90 日ごとにローテーションされます"
+      },
+      "password": {
+        "title": "パスワード",
+        "metaUnknown": "会社ポリシーにより 90 日ごとにローテーション"
+      },
       "changePassword": "パスワードを変更",
-      "mfa": { "title": "多要素認証", "sub": "認証アプリがサインイン時に第二要素を追加します", "disabledToast": "二要素認証を無効にしました" },
+      "mfa": {
+        "title": "多要素認証",
+        "sub": "認証アプリがサインイン時に第二要素を追加します",
+        "disabledToast": "二要素認証を無効にしました"
+      },
       "authenticator": {
         "title": "認証アプリ",
         "active": "有効",
@@ -229,7 +241,10 @@
       "reconfigure": "再設定",
       "disable": "無効化",
       "enable": "有効化",
-      "disableModal": { "title": "二要素認証を無効にしますか？", "desc": "認証アプリの現在のコードを入力して二要素認証をオフにします。" }
+      "disableModal": {
+        "title": "二要素認証を無効にしますか？",
+        "desc": "認証アプリの現在のコードを入力して二要素認証をオフにします。"
+      }
     },
     "mfa": {
       "cancel": "キャンセル",
@@ -255,8 +270,189 @@
       "roleAccess": "ロールベースのアクセス",
       "locked": "ロック中",
       "noContract": "有効な契約なし",
-      "confirm": { "title": "{name} に切り替えますか？", "body": "現在の会社を {name} に切り替え、ワークスペースを再読み込みします。", "stay": "キャンセル", "leave": "切り替え" },
-      "toast": { "locked": "アクセスがロックされています · {name}", "current": "すでに {name} にいます" }
+      "confirm": {
+        "title": "{name} に切り替えますか？",
+        "body": "現在の会社を {name} に切り替え、ワークスペースを再読み込みします。",
+        "stay": "キャンセル",
+        "leave": "切り替え"
+      },
+      "toast": {
+        "locked": "アクセスがロックされています · {name}",
+        "current": "すでに {name} にいます"
+      }
+    }
+  },
+  "portal": {
+    "brand": {
+      "console": "コンソール",
+      "newland": "Newland"
+    },
+    "login": {
+      "processing": "処理中",
+      "brand": {
+        "sub": "Newland",
+        "lead": "あなたの<em>決済基盤</em>を 1 つのコンソールで。",
+        "status": "すべてのシステムが正常 · status.pep.io"
+      },
+      "title": "PEP にサインイン",
+      "subtitle": "{by} のパートナーコンソール。",
+      "continueWith": "<b>{provider}</b> で続行",
+      "ssoUnavailable": "サードパーティログインは現在ご利用いただけません。",
+      "dividerEmail": "または業務用メールで",
+      "emailLabel": "アカウント",
+      "emailPlaceholder": "name@company.com",
+      "passwordLabel": "パスワード",
+      "forgot": "パスワードをお忘れですか？",
+      "submit": "サインイン",
+      "invitedOnly": "招待された担当者のみ ·",
+      "haveInvite": "招待がありますか？",
+      "togglePassword": "パスワード表示の切り替え",
+      "sso": {
+        "via": "{provider} 経由のシングルサインオン",
+        "badge": "SSO",
+        "manages": "このサインインは組織が管理しています。"
+      },
+      "errors": {
+        "AUTH_BAD_CREDENTIALS": "メールまたはパスワードが正しくありません。再試行してください。",
+        "invalidEmail": "有効なメールアドレスを入力してください。",
+        "accountRequired": "アカウントを入力してください。",
+        "passwordMin": "パスワードは 6 文字以上必要です。",
+        "generic": "サインインに失敗しました。再試行してください。"
+      },
+      "idp": {
+        "chooseAccount": "アカウントを選択",
+        "signIn": "サインイン",
+        "targetConsole": "PEP パートナーコンソール",
+        "secure": "安全",
+        "cancel": "キャンセル"
+      },
+      "mfa": {
+        "back": "サインインに戻る",
+        "eyebrow": "二要素認証",
+        "title": "確認コードを入力",
+        "codeLabel": "確認コード",
+        "hintDemo": "デモ：任意の 6 桁を入力すると続行します。",
+        "errEnter": "6 桁のコードを入力してください。",
+        "errWrong": "コードが正しくありません。ロックまであと {count} 回。",
+        "resend": "コードを再送",
+        "resendIn": "{seconds} 秒後に再送",
+        "refresh": "コードは 30 秒ごとに更新されます",
+        "verify": "確認して続行"
+      },
+      "company": {
+        "back": "サインインに戻る",
+        "eyebrow": "ワークスペースを選択",
+        "title": "会社を選択",
+        "note": "会社ごとに役割の範囲が独立しています。"
+      },
+      "blocked": {
+        "back": "サインインに戻る",
+        "locked": {
+          "eyebrow": "アカウントがロック",
+          "title": "アカウントがロックされています",
+          "contact": "管理者に連絡"
+        },
+        "ratelimit": {
+          "eyebrow": "試行回数が多すぎます",
+          "title": "サインイン試行が多すぎます",
+          "tryAgain": "再試行",
+          "until": "後に再試行可能",
+          "ready": "今すぐ再試行できます"
+        },
+        "mfa": {
+          "eyebrow": "確認がロック",
+          "title": "確認がロックされています",
+          "contact": "管理者に連絡"
+        }
+      },
+      "nocompany": {
+        "eyebrow": "ワークスペースなし",
+        "title": "入れる会社がありません",
+        "haveInvite": "招待があります",
+        "back": "サインインに戻る"
+      },
+      "busy": {
+        "verifying": "認証情報を確認中…",
+        "verifyingCode": "コードを確認中…",
+        "entering": "コンソールに入っています…",
+        "returning": "{provider} から戻っています…"
+      }
+    },
+    "partner": {
+      "metadata": {
+        "title": "partner を選択 - PEP Portal",
+        "description": "コンソールに入る前に partner ワークスペースを選択します。"
+      },
+      "eyebrow": "ワークスペースを選択",
+      "title": "partner を選択",
+      "description": "ようこそ、{name}。アクセスする partner ワークスペースを選択してください。",
+      "empty": "このアカウントには利用可能な partner ワークスペースがありません。",
+      "badge": {
+        "admin": "管理者",
+        "normal": "ユーザー"
+      },
+      "reason": {
+        "partnerDisabled": "Partner が無効です",
+        "userDisabled": "アクセスが無効です",
+        "noContract": "有効な契約がありません"
+      },
+      "defaultError": "partner を選択できませんでした。もう一度お試しください。"
+    },
+    "forgot": {
+      "back": "サインインに戻る",
+      "changeEmail": "メールを変更",
+      "email": {
+        "eyebrow": "アカウント回復",
+        "title": "パスワードをリセット",
+        "sub": "アカウントのメールアドレスを入力してください。パスワード再設定用のリンクをお送りします。",
+        "label": "業務用メール",
+        "send": "リセットリンクを送信",
+        "sending": "送信中…",
+        "err": "有効なメールアドレスを入力してください。"
+      },
+      "sent": {
+        "title": "メールをご確認ください",
+        "sub": "{email} のアカウントが存在する場合、パスワード再設定用のリンクを送信しました。"
+      },
+      "code": {
+        "eyebrow": "ステップ 2 / 3",
+        "title": "コードを入力",
+        "label": "確認コード",
+        "verify": "確認して続行",
+        "verifying": "確認中…",
+        "resend": "コードを再送",
+        "resendIn": "{seconds} 秒後に再送",
+        "err": "6 桁のコードを入力してください。"
+      },
+      "reset": {
+        "eyebrow": "ステップ 3 / 3",
+        "title": "新しいパスワードを設定",
+        "newLabel": "新しいパスワード",
+        "newPlaceholder": "{min} 文字以上",
+        "confirmLabel": "パスワードの確認",
+        "confirmPlaceholder": "もう一度入力",
+        "mismatch": "パスワードが一致しません。",
+        "update": "パスワードを更新",
+        "updating": "更新中…"
+      },
+      "rules": {
+        "length": "{min} 文字以上",
+        "upper": "大文字 (A-Z)",
+        "lower": "小文字 (a-z)",
+        "digit": "数字 (0-9)",
+        "symbol": "記号 (@ # $)"
+      },
+      "done": {
+        "title": "パスワードを更新しました",
+        "sub": "パスワードが変更されました。新しい認証情報でサインインしてください。",
+        "back": "サインインに戻る"
+      }
+    },
+    "notFound": {
+      "code": "404",
+      "title": "ページが見つかりません",
+      "home": "ホームに戻る",
+      "signIn": "サインインへ"
     }
   }
 }
