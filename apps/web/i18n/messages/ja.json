@@ -453,6 +453,98 @@
       "title": "ページが見つかりません",
       "home": "ホームに戻る",
       "signIn": "サインインへ"
+    },
+    "onboarding": {
+      "exit": "終了",
+      "back": "戻る",
+      "previous": "前へ",
+      "cancel": "キャンセル",
+      "backToLanding": "招待画面に戻る",
+      "previousStep": "前のステップ",
+      "invalid": {
+        "title": "招待が見つかりません",
+        "home": "ホームに戻る"
+      },
+      "landing": {
+        "eyebrow": "招待",
+        "title": "{partner} に参加",
+        "signedInAs": "現在のサインイン",
+        "current": "現在",
+        "useThis": "このアカウントで参加",
+        "signOutOther": "サインアウトして別アカウントを使用",
+        "registerNew": "新規アカウント登録",
+        "continueWith": "続行方法",
+        "signInExisting": "既存アカウントでサインイン",
+        "error": "問題が発生しました。もう一度お試しください。"
+      },
+      "signin": {
+        "step": "ステップ 1 / 2",
+        "title": "アカウントにサインイン",
+        "emailLabel": "メール",
+        "passwordLabel": "パスワード",
+        "passwordHint": "デモ：6 文字以上の任意。",
+        "signingIn": "サインイン中…",
+        "signIn": "サインイン"
+      },
+      "register": {
+        "title": "アカウントを作成",
+        "emailNote": "{email} で参加します",
+        "submit": "アカウントを作成して参加",
+        "submitting": "作成中…",
+        "error": "問題が発生しました。もう一度お試しください。",
+        "stepLabel": "登録 · ステップ {current} / {total}",
+        "steps": {
+          "email": "メール",
+          "newEmail": "新しいメール",
+          "verify": "確認",
+          "login": "ログイン名",
+          "password": "パスワード",
+          "country": "国",
+          "name": "名前"
+        },
+        "joining": "{partner} に参加",
+        "fromInvite": "招待から",
+        "customEmail": "別のメールを使用",
+        "custom": "カスタム",
+        "titleEmail": "メールを確認",
+        "titleName": "何とお呼びすればよいですか？",
+        "inviteTitle": "招待メールを使用",
+        "verified": "確認済み",
+        "customTitle": "別のメールを使用",
+        "newEmailLabel": "新しいメールアドレス",
+        "verifyLabel": "確認コード",
+        "verifyErr": "コードが無効です。123456 をお試しください。",
+        "resend": "コードを再送",
+        "resendIn": "{seconds} 秒後に再送",
+        "sending": "送信中…",
+        "verifying": "確認中…",
+        "sendCode": "コードを送信",
+        "loginLabel": "ログイン名を選択",
+        "loginPlaceholder": "例：kai.tanaka",
+        "passwordLabel": "パスワードを設定",
+        "confirmLabel": "パスワードの確認",
+        "confirmPlaceholder": "もう一度入力",
+        "mismatch": "パスワードが一致しません。",
+        "countryLabel": "所在地はどこですか？",
+        "displayLabel": "表示名",
+        "displayPlaceholder": "Kai Tanaka",
+        "continue": "続行",
+        "reviewConfirm": "確認して完了"
+      },
+      "confirm": {
+        "eyebrow": "最終ステップ",
+        "title": "{partner} に参加",
+        "preassigned": "事前割り当て：{roles}",
+        "joiningAs": "参加するアカウント",
+        "existing": "既存",
+        "new": "新規",
+        "decline": "辞退",
+        "authorize": "承認して参加"
+      },
+      "welcome": {
+        "title": "PEP へようこそ、{name} さん。",
+        "enter": "コンソールへ"
+      }
     }
   }
 }
