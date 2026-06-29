@@ -1,6 +1,6 @@
 # 单 app + modules 迁移 / CoC / 编排 —— 总体设计
 
-> 状态:Step 0 契约已定稿;Step 1 方向已定;Step 2/3 留骨架占位。
+> 状态:Step 0 契约已定稿;**Step 1 已完成**;Step 2/3 留骨架占位。当前分支:`feat/new-arch`。
 > 原则:**一步一步走,每步结束仓库都可编译、可启动、可跑测试。**
 
 ## 目标与哲学
@@ -18,7 +18,7 @@
 | 步骤 | 内容 | 产出 / 验收 |
 |---|---|---|
 | **Step 0** 锁定契约 | 定死目录形状、路由薄壳写法、portal/dashboard 映射、命名与边界规则 | 本文档 +(可选)1 个样例模块。**不碰存量,仓库照常可跑(仍 3 app)** |
-| **Step 1** 结构迁移 | admin→web、portal 解散并入、删 customer、lib 去重、存量按契约塞进 modules | **`web` 单 app 能 `next dev`、行为不变、typecheck/lint/单测/e2e 冒烟全绿** |
+| **Step 1** 结构迁移 ✅ | admin→web、portal 解散并入、删 customer、lib 去重、存量按契约塞进 modules | **`web` 单 app 能 `next dev`、行为不变、typecheck/lint/单测/e2e 冒烟全绿** |
 | **Step 2** CoC 声明系统 | 重设计 per-module manifest 采集/校验/codegen;文案下沉进模块 | 菜单/权限/角色由 manifest 投影;过程保持可跑 |
 | **Step 3** 项目编排系统 | 由 manifest 生成 app 薄壳与路径等 | AI 只写 manifest,路径由 codegen 生成 |
 
@@ -88,13 +88,30 @@ modules/<cat>/<mod>/
 - 全仓 **kebab-case** 文件名;分层服务用点段命名(`<mod>.service.ts` 等)。
 - 文件直接在 `ui/` 根放页面(不用 `ui/page/` 子目录);组件归 `ui/components/`。
 
+#### 例外：`(portal)` 前台页面不进 modules/ui
+
+`(portal)` 下的模块(auth、forgot-password、onboarding)是**认证 / 注册流程**,改动极低频且高度耦合 UI 状态机。这类模块的 UI 组件**保留在 `app/(portal)/<mod>/_components/` 内**,不迁进 `modules/ui/`。`page.tsx` 可含少量路由级逻辑(如 `getPartialSession()` redirect 检查)。
+
+跨 `(portal)` 页面共用的组件(如 `card-bits`、`password-checklist`)放 `app/(portal)/_components/`,不放 `@cloud/ui`(仅限 portal 上下文使用)。
+
+此规则不适用于 `(dashboard)` 后台模块——后台页面业务逻辑复杂、迭代频繁,**必须**走 `modules/<cat>/<mod>/ui/` + 薄壳。
+
 ### 6. 薄壳写法
+
+**`(dashboard)` 后台**——严格薄壳,零逻辑:
 ```txt
-app/(portal)/login/page.tsx     → export { LoginPage as default } from "@/modules/identity/auth/ui/login-page"
 app/(dashboard)/users/page.tsx  → export { UsersPage as default } from "@/modules/identity/users/ui/users-page"
 app/api/users/route.ts          → export { GET, POST } from "@/modules/identity/users/server/users.controller"
 ```
-薄壳零逻辑;`requirePermissions`/取数在模块的 page RSC 里;HTTP 适配在 controller 里。
+`requirePermissions`/取数在模块的 page RSC 里;HTTP 适配在 controller 里。
+
+**`(portal)` 前台**——允许路由级判断,UI 组件就近放 `_components/`:
+```txt
+app/(portal)/login/page.tsx     → RSC,做 getPartialSession() 检查后渲染 <LoginScreen />
+app/(portal)/login/_components/ → LoginScreen 及子组件(就近,不进 modules)
+app/api/auth/password/route.ts  → export { POST } from "@/modules/identity/auth/server/auth.controller"
+```
+controller 仍在模块里;只有 UI 层留在 route group 内。
 
 ### 7. 模块边界纪律
 
@@ -117,17 +134,22 @@ app/api/users/route.ts          → export { GET, POST } from "@/modules/identit
   - `auth.service.ts` 已分叉,**portal 反而更全**(login-challenge / oidc / sso / idp)→ 登录面以 portal 为准。
   - `mfa.service.ts` admin 更全(完整管理)、portal 只是登录期 verify 子集 → 后台面以 admin 为基,portal verify 作为其一个功能。
 
-### portal 解散落点(identity 域)
+### portal 解散落点(identity 域) — Step 1 实际结果
+
 ```txt
 modules/identity/
-  auth              # 登录/会话核心:吸收两边 auth API;去重 4 个同源文件收一份
-  mfa               # admin 完整版为基 + portal 登录期 verify
-  account-recovery  # forgot-password + reset-password(纯前台)→ 页面落 (portal)
-  onboarding        # 邀请接受/注册(纯前台)→ 页面落 (portal)
-  account  users  roles   # 后台面 → 页面落 (dashboard)
-modules/notification/...   # 后台通知
+  auth              # 登录/会话核心(已完成)
+  mfa               # MFA 管理 + 登录期 verify(已完成)
+  forgot-password   # 密码找回 + 重置(已完成;原设计名 account-recovery,实际更名)
+  onboarding        # 邀请接受/注册(已完成)
+  account           # 账户设置(已完成)
+  users             # 用户管理(已完成)
+  roles             # 角色管理(已完成)
+modules/system/
+  notification      # 站内通知(已完成)
 ```
-> 具体 cat/mod 完整划分、lib 去重清单,在 Step 1 执行时逐个定。
+
+> `forgot-password` 取代原设计中的 `account-recovery`——因 onboarding 已独立成模块,剩余职责仅限密码找回,直接按功能命名更精确。
 
 ### 为"可运行"而做的分阶澄清(关键)
 文案采集器是 Step 2 才建。若 Step 1 就把文案塞进模块、采集器还不存在,消息加载会断。故:
