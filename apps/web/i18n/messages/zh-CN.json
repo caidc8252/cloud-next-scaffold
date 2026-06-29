@@ -1,4 +1,5 @@
 {
+  "nav": { "home": "首页", "dashboard": "仪表盘" },
   "notifications": {
     "title": "通知",
     "markAllRead": "全部标为已读",

@@ -1,4 +1,5 @@
 {
+  "nav": { "home": "ホーム", "dashboard": "ダッシュボード" },
   "notifications": {
     "title": "通知",
     "markAllRead": "すべて既読にする",

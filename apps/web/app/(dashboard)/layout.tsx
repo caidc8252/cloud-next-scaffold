@@ -99,6 +99,16 @@ export default async function PortalLayout({
     parentMenuId: m.parentMenuId,
   }));
 
+  // dashboard 是 B 类(登录即看,不进 CoC 投影):固定直链置顶,文案走 app nav 命名空间。
+  const tn = await getTranslations("nav");
+  const sections: SidebarSection[] = [
+    {
+      label: tn("home"),
+      items: [{ href: "/dashboard", icon: getMenuIcon("layout-dashboard"), label: tn("dashboard") }],
+    },
+    ...buildSidebarSections(menus),
+  ];
+
   return (
     <SidebarProvider defaultCollapsed={defaultCollapsed}>
       <NotificationsProvider>
@@ -109,7 +119,7 @@ export default async function PortalLayout({
               title: NEXT_PUBLIC_APP_NAME,
               subtitle: "Admin Scaffold",
             }}
-            sections={buildSidebarSections(menus)}
+            sections={sections}
             footer={
               <UserMenu
                 account={session.email ?? ""}
