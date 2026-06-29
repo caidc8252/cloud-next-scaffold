@@ -13,8 +13,10 @@ export function emitRegistry(args: {
   contractScope: Record<string, string[]>;
   i18n: Record<string, unknown>;
   contractTypes: readonly string[];
+  contractTypesImport?: string;
 }): Record<string, string> {
   const { result, contractScope, i18n } = args;
+  const contractTypesImport = args.contractTypesImport ?? "../../catalog/contract-types.ts";
   const files: Record<string, string> = {};
 
   files["registry-types.generated.ts"] =
@@ -41,7 +43,7 @@ export function emitRegistry(args: {
   files["contract-scope.generated.ts"] =
     HEADER +
     '\nimport type { PermissionCode } from "./registry-types.generated.ts";\n' +
-    'import type { ContractType } from "../../catalog/contract-types.ts";\n\n' +
+    `import type { ContractType } from "${contractTypesImport}";\n\n` +
     "export const CONTRACT_SCOPE: Record<ContractType, PermissionCode[]> = " +
     JSON.stringify(contractScope, null, 2) +
     " as Record<ContractType, PermissionCode[]>;\n";

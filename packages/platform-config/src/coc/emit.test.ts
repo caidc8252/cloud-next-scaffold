@@ -34,4 +34,10 @@ describe("emitRegistry", () => {
     const b = emitRegistry({ result, contractScope, i18n: {}, contractTypes: ["ADMIN"] });
     expect(a).toEqual(b);
   });
+
+  it("uses a custom contractTypes import path when provided", () => {
+    const files = emitRegistry({ result, contractScope, i18n: {}, contractTypes: ["ADMIN"], contractTypesImport: "../catalog/contract-types.ts" });
+    expect(files["contract-scope.generated.ts"]).toContain('from "../catalog/contract-types.ts"');
+    expect(files["contract-scope.generated.ts"]).not.toContain('"../../catalog/contract-types.ts"');
+  });
 });
