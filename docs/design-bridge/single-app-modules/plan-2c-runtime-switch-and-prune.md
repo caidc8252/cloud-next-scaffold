@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- **行为不变**:这是搬运 + 改数据源,不改鉴权语义。ADMIN 仍靠预置管理员角色(roleId 1,列全部码)拿全量,**不引入** design §7 的 ADMIN-scope 旁路(那是行为变更)。
+- **C1–C5 行为不变**:搬运 + 改数据源,不改鉴权语义。**C6 是唯一有意行为变更**——落设计 §7 的 ADMIN-scope 结构性旁路(ADMIN 身份无视角色直取合同内全部权限,仍受合同闸门框住)。C6 放最后、独立验收,以免污染 C1–C5 的「行为不变」e2e。
 - **权限码 4 段**(`add`→`create`);守卫只改字符串,不改逻辑。
 - **i18n**:`coc` 命名空间路径 `_generated/i18n/{locale}.json` 不变(`i18n/request.ts:18` 不动);只是产出方从 `gen:manifest` 换成 `gen:coc`。`menu.home`/`menu.dashboard`(B 类)移到 app `messages` 的 `nav` 命名空间。
 - **生成物 gitignored、不提交**;`gen:coc` 已在 pre 钩子(2B)。
@@ -409,6 +409,88 @@ git commit -m "chore(web): 删旧 manifest 管线 + platform-config 死导出,ge
 
 ---
 
+## Task C6: ADMIN authorizingType 结构性旁路(★ 唯一有意行为变更)
+
+**Files:**
+- Modify: `apps/web/lib/session-snapshot.ts`(`buildCurrentContext`)
+- Modify: `apps/web/lib/session-snapshot.test.ts`(加 ADMIN 旁路用例)
+
+**Interfaces:** `buildCurrentContext` 的权限计算:`authorizingType === "ADMIN"` → `permissions = [...resolvePartyScope(contractTypes)]`(合同内全部,无视角色);`"NORMAL"` → 维持 `角色码 ∩ scope`。两路都 ⊆ scope(ADMIN 不绕合同闸门)。`session.roles` 展示不变。
+
+> 落设计 §7 的「★ 特殊逻辑门」。对已分全权预置角色的种子 ADMIN 结果不变(现有 e2e 不回归);差异只在「ADMIN 身份 + 受限角色」边角:旁路前拿交集、旁路后拿全 scope。
+
+- [ ] **Step 1: 写失败测试**(在 `session-snapshot.test.ts` 内,沿用既有 prisma mock 模式新增两例)
+
+断言要点:
+```ts
+// 同一 party(scope = 全部码),用户授权身份 ADMIN 但只绑只读角色(operator/roleId 2):
+//   旁路后 → snapshot.permissions 等于该 party scope 全集(含 create/delete 等)
+// 同条件但授权身份 NORMAL:
+//   → snapshot.permissions 仅为 操作员角色码 ∩ scope(view 类)
+const adminSnap = await buildSessionSnapshot(/* ADMIN 用户 */, partyId);
+expect(new Set(adminSnap!.permissions)).toEqual(new Set([...resolvePartyScope(adminSnap!.contractTypes)]));
+const normalSnap = await buildSessionSnapshot(/* NORMAL 用户,只读角色 */, partyId);
+expect(adminSnap!.permissions.length).toBeGreaterThan(normalSnap!.permissions.length);
+```
+(具体 mock 沿用文件内既有 `buildSessionSnapshot` 测试的 prisma stub 写法;`resolvePartyScope` 从 `@/manifest` import。)
+
+- [ ] **Step 2: 跑测试确认失败**
+
+Run: `node_modules/.bin/vitest run apps/web/lib/session-snapshot.test.ts`
+Expected: FAIL（当前 ADMIN 也走角色交集,受限角色 ADMIN 拿不到全 scope)
+
+- [ ] **Step 3: 改 `buildCurrentContext`**
+
+把现有
+```ts
+  const scope = resolvePartyScope(contractTypes);
+  const granted = new Set<string>();
+  for (const r of codeRoles) {
+    for (const code of resolveRolePermissions(r.roleId) ?? []) granted.add(code);
+  }
+  for (const role of applicableDb) {
+    for (const code of extractPermissionCodes(role.permissionCodes)) granted.add(code);
+  }
+  const permissions = [...granted].filter((code) => scope.has(code));
+```
+改为
+```ts
+  const scope = resolvePartyScope(contractTypes);
+  let permissions: string[];
+  if (authorizingType === "ADMIN") {
+    // ★ 设计 §7 结构旁路:ADMIN 身份直取合同内全部权限,无视分配角色(仍受合同闸门框住)。
+    permissions = [...scope];
+  } else {
+    const granted = new Set<string>();
+    for (const r of codeRoles) {
+      for (const code of resolveRolePermissions(r.roleId) ?? []) granted.add(code);
+    }
+    for (const role of applicableDb) {
+      for (const code of extractPermissionCodes(role.permissionCodes)) granted.add(code);
+    }
+    permissions = [...granted].filter((code) => scope.has(code));
+  }
+```
+(`authorizingType` 已在函数前部由 `normalizeAuthorizingType(partyUser.authorizingType)` 算出。)
+
+- [ ] **Step 4: 跑测试通过 + 全量**
+
+Run: `node_modules/.bin/vitest run apps/web/lib/session-snapshot.test.ts && pnpm test`
+Expected: 全绿(新增 ADMIN 旁路例通过;种子 ADMIN 结果不变)。
+
+- [ ] **Step 5: 设计稿 §7 标注「已实现」**
+
+`step2-coc-declaration-design.md` §7 的 ADMIN 分支旁注一句:已在 `session-snapshot.buildCurrentContext` 落地(C6),非仅靠预置角色等价。
+
+- [ ] **Step 6: 提交**
+
+```bash
+git add apps/web/lib/session-snapshot.ts apps/web/lib/session-snapshot.test.ts docs/design-bridge/single-app-modules/step2-coc-declaration-design.md
+git commit -m "feat(web): ADMIN authorizingType 结构性旁路直取合同内全部权限(设计 §7)"
+```
+
+---
+
 ## E2E Coverage
 
 C5 Step 7 是本相位**唯一也是关键**的 e2e 验收:登录→选公司→侧边栏投影、roles/users 页面与接口守卫(4 段码)、dashboard 直链可达。其余任务以单测 + tsc + lint 锁。若仓库 e2e 需 docker(见 `test:e2e:spec`),在能起依赖的环境跑;否则至少跑登录与 roles/users 守卫相关 spec。
@@ -416,7 +498,7 @@ C5 Step 7 是本相位**唯一也是关键**的 e2e 验收:登录→选公司→
 ## Self-Review
 
 - **Spec 覆盖**:设计 §7 运行时投影(createCocConfig 消费 CONTRACT_SCOPE/codeToMenu/buildMenuTree/resolvePartyScope/resolveRolePermissions)、§2 dashboard 转 B 类、§9 步骤 7/8/9(接 runtime、转 B 类、全绿门 + 删旧 monolith)。i18n 接管对应 §4.5 产物归位。
-- **行为不变论证**:session-snapshot/roles.service 逻辑零改(同名导出 + GlobalRole 字段兼容);ADMIN 仍由预置管理员角色(含全部码)拿全量,未引入 §7 旁路;守卫只改码字符串。唯一**有意**行为退化 = 权限目录去 `require` 链式联动(设计删 require)。
+- **行为论证**:C1–C5 行为不变(session-snapshot/roles.service 逻辑零改,同名导出 + GlobalRole 字段兼容;守卫只改码字符串)。**有意变更两处**:(1) 权限目录去 `require` 链式联动(设计删 require);(2) **C6** 落 §7 ADMIN 结构旁路——对种子全权 ADMIN 结果不变,仅「ADMIN+受限角色」边角从交集变全 scope。C6 排在 C1–C5 之后单独验收。
 - **顺序自洽/可编译**:C1 切 API(同任务内更新 session-menus/roles-page/mapper/select,删旧测试)→ C2 改码(纯字符串)→ C3 dashboard(C1 后 sidebar 缺 dashboard,补直链)→ C4 i18n 接管(C3 后 coc 不再需要 home/dashboard 文案)→ C5 删旧(确认无引用后)。每步末 tsc/test 绿。
 - **删除安全**:contract-group(含 PRESET_ROLE_ID_MAX/DB_ROLE_ID_MIN/contractTypeGroup/roleIdInGroupRange/resolvePortalGroup/isPresetAdminRole)经扫描确认被业务依赖,**保留**;仅删 createPlatformConfig/defineAppManifest/defineAppRoles/validateMenus/validateRoles 及随之失依赖的类型,删前 grep 校验(C5 Step 1/4)。
 - **Placeholder 扫描**:无 TODO;改动均给出精确 old→new 或完整代码。`MenuEntry`/`RoleDef` 的删与留由 C5 Step4 的 grep 结果决定(条件明确)。
