@@ -23,7 +23,7 @@ export function emitRegistry(args: {
   files["permission-registry.generated.ts"] =
     HEADER +
     '\nimport type { PermissionCode, MenuCode } from "./registry-types.generated.ts";\n\n' +
-    "export interface GeneratedPermissionEntry { code: PermissionCode; belongToMenuCode: MenuCode; label: string; desc: string; deprecated: boolean; }\n\n" +
+    "export interface GeneratedPermissionEntry { code: PermissionCode; belongToMenuCode: MenuCode; label: string; desc: string; }\n\n" +
     "export const PERMISSION_REGISTRY: Record<PermissionCode, GeneratedPermissionEntry> = " +
     JSON.stringify(result.permissionRegistry, null, 2) +
     " as Record<PermissionCode, GeneratedPermissionEntry>;\n\n" +

@@ -6,7 +6,6 @@ const permissionSchema = z.object({
   belongToMenuCode: z.string().min(1),
   label: z.string().min(1),
   desc: z.string().min(1),
-  deprecated: z.boolean().optional(),
 });
 
 const moduleSchema = z.object({

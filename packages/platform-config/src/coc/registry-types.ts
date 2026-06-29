@@ -8,7 +8,6 @@ export interface ModulePermissionDecl {
   belongToMenuCode: string; // 显式;guard 强制 == 本模块 menuCode == code 前两段
   label: string;            // i18n key
   desc: string;             // i18n key
-  deprecated?: boolean;
 }
 
 /** UI 模块唯一真源。无 contractTypes(合同归属在 catalog)、无 platform、无 require。 */
@@ -39,7 +38,6 @@ export interface GeneratedPermissionEntry {
   belongToMenuCode: string;
   label: string;
   desc: string;
-  deprecated: boolean;
 }
 
 /** 生成的菜单注册表条目(叶子 + 目录拍平;无 contractTypes)。 */
@@ -54,12 +52,10 @@ export interface GeneratedMenuEntry {
 
 export type GuardRule =
   | "duplicate-code"
-  | "deleted-without-deprecated"
   | "belongs-to-menu-rule"
   | "menu-code-required"
   | "parent-missing"
   | "catalog-ref-missing"
-  | "catalog-ref-deprecated"
   | "contract-menu-missing"
   | "contract-menu-not-leaf"
   | "dead-menu";
@@ -74,7 +70,7 @@ export interface RegistryDiagnostic {
 export interface RegistryResult {
   permissionRegistry: Record<string, GeneratedPermissionEntry>;
   menuRegistry: Record<string, GeneratedMenuEntry>;
-  permissionCodeUnion: string[]; // 排序;含 deprecated
+  permissionCodeUnion: string[]; // 排序
   menuCodeUnion: string[];       // 排序
   diagnostics: RegistryDiagnostic[];
 }

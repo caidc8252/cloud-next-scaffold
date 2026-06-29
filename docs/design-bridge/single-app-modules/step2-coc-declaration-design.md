@@ -247,22 +247,21 @@ web/manifest/index.ts(collected)
 - **两阶段**:先由 modules+menuTree 出 registry/types/menu-registry → 再读 catalog 校验 + 反推 contract-scope。
 - **有 error 不落盘**:任一 error 级诊断 → 不写 `*.generated.ts`,避免半截产物掩盖失败,脚本退出码 1。
 
-## 6. reconcile + 守门规则(Step 2 子集)
+## 6. 守门规则(纯快照,Step 2 子集)
 
-**reconcile(code 只增不删):** 读上一版生成结果作 `previous`;保留旧码、追加新码;消失的 real 码自动留存并标 `deprecated`。**动机**:护住 DB 里动态 PRIVATE 角色已引用的 `permissionCode`,删码会留空引用。
+**只投影当前快照:** `buildRegistry` 只吃当前声明,**无 `previous`、无 reconcile、无 `deprecated` 墓碑、无 `provisional`**。源里删掉一个码 → registry 里它就没了。「删码会不会孤立 DB 里动态 PRIVATE 角色已引用的 `permissionCode`」属于 **Step 3 工作流(编排/checkpoint)** 的职责,不在声明原语里兜底(避免为兜底而兜底;且生成物不入库、无持久 `previous` 可读,reconcile 本就跑不通)。
 
 **Guards(error 级,除非注明):**
 1. 重复 real `permission_code` → 失败。
 2. `belongToMenuCode` 必须非空、存在于 menu-registry、且 `== 本模块 menuCode`(== code 前两段)。
 3. A 类模块(有 permissions)必须声明 `menuCode`;B 类不得声明权限码。
-4. `catalog/roles.ts` 引用的码必须**存在且未 deprecated**(逼出"先撤引用再删码"两步)。
+4. `catalog/roles.ts` 引用的码必须**存在**(`catalog-ref-missing`)。
 5. `catalog/contract-types.ts` 引用的 menuCode 必须存在,且**只能是叶子菜单**(不得引用目录节点)。
 6. `menu-tree` 里每个 `parentMenuCode` 必须存在;无环。
-7. real 码消失却无显式 `deprecated` → 失败(reconcile 仍留存标废弃)。
-8. `packages/*` 不得 import `apps/*`(eslint flat-config region)。
-9. **warn**:模块声明了 menuCode 却无任何合同引用它 → 死菜单警告(fail-closed,非阻断)。
+7. `packages/*` 不得 import `apps/*`(eslint flat-config region)。
+8. **warn**:模块声明了 menuCode 却无任何合同引用它 → 死菜单警告(fail-closed,非阻断)。
 
-> provisional 相关的"重复豁免/stub-vs-real diff"(参考库 guard 7/8)**推迟到 Step 3**。
+> reconcile / `deprecated` / `provisional` / stub-vs-real diff 等「跨代记忆」机制全部**推迟到 Step 3 工作流**,不进 Step 2 原语。
 
 ## 7. 运行时投影(`createPlatformConfig` 消费,链路语义不变)
 

@@ -36,12 +36,4 @@ describe("buildRegistry", () => {
     const r = buildRegistry({ modules: [{ ...roles, parentMenuCode: "ghost" }], menuTree });
     expect(r.diagnostics.some((d) => d.rule === "parent-missing")).toBe(true);
   });
-
-  it("retains a vanished real code as deprecated and flags deleted-without-deprecated", () => {
-    const prev = buildRegistry({ modules: [roles], menuTree });
-    const r = buildRegistry({ modules: [{ ...roles, permissions: [] }], menuTree, previous: prev });
-    expect(r.permissionRegistry["system.roles.role.view"]!.deprecated).toBe(true);
-    expect(r.permissionCodeUnion).toContain("system.roles.role.view");
-    expect(r.diagnostics.some((d) => d.rule === "deleted-without-deprecated")).toBe(true);
-  });
 });

@@ -11,9 +11,6 @@ export function validateCatalog(args: {
   const missingRole = roleCodes.filter((c) => !result.permissionRegistry[c]);
   if (missingRole.length) out.push({ level: "error", rule: "catalog-ref-missing", message: `catalog/roles.ts references absent permission_code(s): ${missingRole.join(", ")}.`, codes: missingRole });
 
-  const deprecatedRole = roleCodes.filter((c) => result.permissionRegistry[c]?.deprecated);
-  if (deprecatedRole.length) out.push({ level: "error", rule: "catalog-ref-deprecated", message: `catalog/roles.ts references deprecated permission_code(s): ${deprecatedRole.join(", ")}.`, codes: deprecatedRole });
-
   const missingMenu = contractMenus.filter((m) => !result.menuRegistry[m]);
   if (missingMenu.length) out.push({ level: "error", rule: "contract-menu-missing", message: `catalog/contract-types.ts references absent menu_code(s): ${missingMenu.join(", ")}.`, codes: missingMenu });
 
