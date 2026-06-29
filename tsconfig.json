@@ -15,7 +15,7 @@
     "jsx": "react-jsx",
     "incremental": true,
     "paths": {
-      "@/*": ["./apps/admin/*"],
+      "@/*": ["./apps/web/*"],
       "@cloud/api-kit": ["./packages/api-kit/src/index.ts"],
       "@cloud/cache": ["./packages/cache/src/index.ts"],
       "@cloud/config": ["./packages/config/src/index.ts"],
