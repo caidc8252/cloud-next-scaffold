@@ -2,8 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 import { getSession } from "@cloud/permissions/server";
-import { getMenus } from "@/manifest";
-import { selectVisibleMenuTree, type MenuTreeNode } from "@/manifest/select";
+import { buildMenuTree, type MenuTreeNode } from "@/manifest";
 
 // 菜单不再存进会话快照，由本平台 manifest + 当前权限现算。
 // 输出扁平结构（menuId 用字符串 menuCode），保持侧边栏 / 面包屑既有消费形状。
@@ -20,7 +19,7 @@ function flatten(nodes: MenuTreeNode[], parentMenuId: string | null, out: Sideba
   for (const node of nodes) {
     out.push({
       menuId: node.menuCode,
-      menuTitle: node.menuTitle,
+      menuTitle: node.title,
       path: node.path,
       icon: node.icon,
       sort: node.order,
@@ -34,7 +33,6 @@ function flatten(nodes: MenuTreeNode[], parentMenuId: string | null, out: Sideba
 export const getSessionMenus = cache(async (): Promise<SidebarMenu[]> => {
   const session = await getSession();
   if (!session) return [];
-  const menus = getMenus(session.contractTypes);
-  const tree = selectVisibleMenuTree(menus, session.permissions);
+  const tree = buildMenuTree(session.permissions);
   return flatten(tree, null, []);
 });

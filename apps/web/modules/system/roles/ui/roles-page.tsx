@@ -1,6 +1,5 @@
 import { requirePermissions } from "@cloud/permissions/server";
 import { getTranslations } from "@cloud/i18n/server";
-import { getMenus } from "@/manifest";
 import { selectPermissionGroups } from "@/manifest/select";
 import { listRoles } from "../server/roles.service";
 import { translateRoleLabels } from "@/lib/role-labels";
@@ -9,12 +8,7 @@ import { RolesBoard } from "./components/roles-board";
 
 // 权限目录来自本平台 manifest（按当前公司持有的契约过滤）。
 function loadPermissionGroups(contractTypes: string[]): PermissionGroup[] {
-  const menus = getMenus(contractTypes);
-  return selectPermissionGroups(menus).map((group) => ({
-    menuId: group.menuCode,
-    menuTitle: group.menuTitle,
-    items: group.items,
-  }));
+  return selectPermissionGroups(contractTypes);
 }
 
 export async function RolesPage() {
