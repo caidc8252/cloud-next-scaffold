@@ -12,7 +12,7 @@ function loadPermissionGroups(contractTypes: string[]): PermissionGroup[] {
 }
 
 export async function RolesPage() {
-  const session = await requirePermissions({ all: ["roles.view"] });
+  const session = await requirePermissions({ all: ["system.roles.role.view"] });
   const tc = await getTranslations("coc");
   const initialRoles = translateRoleLabels(
     await listRoles(session.currentPartyId, session.contractTypes),

@@ -39,7 +39,7 @@ describe("rolesChanged", () => {
 
 describe("canChangeRoles", () => {
   it("requires the users.changeRole permission", () => {
-    expect(canChangeRoles(["users.update", "users.changeRole"])).toBe(true);
-    expect(canChangeRoles(["users.update"])).toBe(false);
+    expect(canChangeRoles(["system.users.user.update", "system.users.user.changeRole"])).toBe(true);
+    expect(canChangeRoles(["system.users.user.update"])).toBe(false);
   });
 });

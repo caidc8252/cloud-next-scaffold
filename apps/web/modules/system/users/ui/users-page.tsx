@@ -7,7 +7,7 @@ import { getPortalBaseUrl } from "@/lib/portal-routing";
 import { UsersBoard } from "./components/users-board";
 
 export async function UsersPage() {
-  const session = await requirePermissions({ all: ["users.view"] });
+  const session = await requirePermissions({ all: ["system.users.user.view"] });
   const partyId = session.currentPartyId;
   const tc = await getTranslations("coc");
   const [initialUsers, assignableRoles] = await Promise.all([
