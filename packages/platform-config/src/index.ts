@@ -22,3 +22,4 @@ export {
   resolvePortalGroup,
   roleIdInGroupRange,
 } from "./contract-group.ts";
+export * from "./coc/index.ts";
