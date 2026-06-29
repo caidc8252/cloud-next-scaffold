@@ -123,7 +123,7 @@ describe("buildSessionSnapshot", () => {
     expect(snap?.partners[0].authorizingTo).toBe("2026-12-31T00:00:00.000Z");
   });
 
-  // —— 权限推导（roleId 驱动，去 ADMIN 分支）——
+  // —— 权限推导（NORMAL 走 roleId ∩ scope;ADMIN 走 §7 结构旁路直取 scope）——
 
   it("resolves a preset admin role uniformly (filled group perms ∩ scope; no special-case)", async () => {
     vi.mocked(prisma.sysUser.findUnique).mockResolvedValue(ACTIVE_USER as never);
@@ -179,7 +179,7 @@ describe("buildSessionSnapshot", () => {
     expect(snap?.permissions).toEqual(["users.view"]);
   });
 
-  it("no longer grants all scope to an authorizingType=ADMIN user without a preset role", async () => {
+  it("grants an authorizingType=ADMIN user the full party scope regardless of assigned role (§7 bypass)", async () => {
     vi.mocked(prisma.sysUser.findUnique).mockResolvedValue(ACTIVE_USER as never);
     vi.mocked(prisma.sysPartyUser.findMany).mockResolvedValue([
       partyUser({ roles: [{ roleId: 1001 }], authorizingType: "ADMIN" }),
@@ -192,7 +192,24 @@ describe("buildSessionSnapshot", () => {
 
     const snap = await buildSessionSnapshot(1, 100, NOW);
 
-    // 旧模型会因 ADMIN 拿到整个 scope（含 roles.view）；新模型只给角色自身码 ∩ scope。
+    // ★ ADMIN 结构旁路:无视所分角色(只 users.view)直取合同内全部权限(仍 ⊆ scope)。
+    expect(snap?.permissions.slice().sort()).toEqual(["roles.view", "users.view"]);
+  });
+
+  it("a NORMAL user with the same limited role gets only role ∩ scope (contrast to ADMIN bypass)", async () => {
+    vi.mocked(prisma.sysUser.findUnique).mockResolvedValue(ACTIVE_USER as never);
+    vi.mocked(prisma.sysPartyUser.findMany).mockResolvedValue([
+      partyUser({ roles: [{ roleId: 1001 }], authorizingType: "NORMAL" }),
+    ] as never);
+    vi.mocked(prisma.sysPartyContract.findMany).mockResolvedValue([VALID_CONTRACT] as never);
+    vi.mocked(prisma.sysRole.findMany).mockResolvedValue([
+      dbRole({ permissionCodes: ["users.view"] }),
+    ] as never);
+    vi.mocked(resolvePartyScope).mockReturnValue(new Set(["users.view", "roles.view"]));
+
+    const snap = await buildSessionSnapshot(1, 100, NOW);
+
+    // NORMAL 不旁路:只拿角色自身码 ∩ scope。
     expect(snap?.permissions).toEqual(["users.view"]);
   });
 });

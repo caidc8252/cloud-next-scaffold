@@ -102,14 +102,20 @@ async function buildCurrentContext(
   // 权限按 roleId 统一解析（authorizingType 仅展示）：每个角色取自身权限码（预置通配角色的码已由
   // getRoles 在构造期填成所在组的全部权限），再一律 ∩ party scope。无需特判通配。
   const scope = resolvePartyScope(contractTypes);
-  const granted = new Set<string>();
-  for (const r of codeRoles) {
-    for (const code of resolveRolePermissions(r.roleId) ?? []) granted.add(code);
+  let permissions: string[];
+  if (authorizingType === "ADMIN") {
+    // ★ 设计 §7 结构旁路:ADMIN 身份直取合同内全部权限,无视分配角色(仍受合同闸门框住)。
+    permissions = [...scope];
+  } else {
+    const granted = new Set<string>();
+    for (const r of codeRoles) {
+      for (const code of resolveRolePermissions(r.roleId) ?? []) granted.add(code);
+    }
+    for (const role of applicableDb) {
+      for (const code of extractPermissionCodes(role.permissionCodes)) granted.add(code);
+    }
+    permissions = [...granted].filter((code) => scope.has(code));
   }
-  for (const role of applicableDb) {
-    for (const code of extractPermissionCodes(role.permissionCodes)) granted.add(code);
-  }
-  const permissions = [...granted].filter((code) => scope.has(code));
 
   return { partyName: partyUser.partner.partyName, contractTypes, authorizingType, roles, permissions };
 }

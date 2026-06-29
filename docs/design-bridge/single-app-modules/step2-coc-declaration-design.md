@@ -263,18 +263,20 @@ web/manifest/index.ts(collected)
 
 > reconcile / `deprecated` / `provisional` / stub-vs-real diff 等「跨代记忆」机制全部**推迟到 Step 3 工作流**,不进 Step 2 原语。
 
-## 7. 运行时投影(`createPlatformConfig` 消费,链路语义不变)
+## 7. 运行时投影(`createCocConfig` 消费,链路语义不变)
+
+> 已落地(2C):`manifest/index.ts` 用 `createCocConfig` 暴露 `resolvePartyScope/resolveRolePermissions/buildMenuTree`;ADMIN 结构旁路在 `lib/session-snapshot.ts` 的 `buildCurrentContext`(C6)实现,非仅靠预置全权角色等价。
 
 ```ts
-// web/manifest/runtime.ts
-const config = createPlatformConfig({ MENU_REGISTRY, PERMISSION_REGISTRY, CONTRACT_SCOPE, codeToMenu, GLOBAL_ROLES });
+// manifest/index.ts
+const config = createCocConfig({ menuRegistry: MENU_REGISTRY, contractScope: CONTRACT_SCOPE, globalRoles: GLOBAL_ROLES, codeToMenu });
 export const { resolveRolePermissions, resolvePartyScope, buildMenuTree } = config;
 ```
 
 ```text
 permissionScope = ⋃_{c ∈ 当前party.合同} CONTRACT_SCOPE[c]
 
-if authorizingType === "ADMIN":                          // ★ 特殊逻辑门
+if authorizingType === "ADMIN":                          // ★ 特殊逻辑门(C6 已实现)
     effective = permissionScope                          // 直接全拿当前 party 合同内全部权限(仍受合同硬闸门框住)
 else /* NORMAL */:
     roleGranted = ⋃ resolveRolePermissions(roleId)       // 角色并集
