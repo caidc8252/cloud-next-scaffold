@@ -2,7 +2,7 @@
 // 调 @cloud/platform-config 2A 原语 buildRegistry/validateCatalog/deriveContractScope/emitRegistry,
 // 仅产 4 个 .generated.ts 到 apps/web/manifest/_generated/(本相位不产 i18n,留 2C)。
 // 有 error 诊断 → 拒写、退出码 1。产物 gitignored、由 pre 钩子重建、运行时无人消费(旧 apps.ts 仍驱动)。
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 // 直接读包源(脚本从仓库根运行,根不依赖 @cloud/*,bare specifier 解析不到);
@@ -59,8 +59,33 @@ for (const [name, content] of Object.entries(emitted)) {
   tsCount += 1;
 }
 
+// 5. i18n:各模块 i18n + catalog i18n,按 locale 深合并 → _generated/i18n/<locale>.json(coc 命名空间)。
+//    接管旧 gen:manifest 的 i18n 产出;不含 menu.home/dashboard(B 类已移 app nav 命名空间)。
+const LOCALES = ["en", "zh-CN", "ja"];
+const mergeInto = (t, s) => {
+  for (const k of Object.keys(s)) {
+    if (s[k] && typeof s[k] === "object" && !Array.isArray(s[k])) t[k] = mergeInto(t[k] ?? {}, s[k]);
+    else t[k] = s[k];
+  }
+  return t;
+};
+const loadDefault = async (f) => (existsSync(f) ? (await import(pathToFileURL(f).href)).default ?? null : null);
+
+const i18nDir = join(outDir, "i18n");
+mkdirSync(i18nDir, { recursive: true });
+for (const locale of LOCALES) {
+  const merged = {};
+  for (const m of modules) {
+    const data = await loadDefault(join(webDir, "modules", m.moduleCategory, m.moduleName, "i18n", `${locale}.ts`));
+    if (data) mergeInto(merged, data);
+  }
+  const cat = await loadDefault(join(webDir, "manifest", "catalog", "i18n", `${locale}.ts`));
+  if (cat) mergeInto(merged, cat);
+  writeFileSync(join(i18nDir, `${locale}.json`), JSON.stringify(merged, null, 2) + "\n", "utf8");
+}
+
 console.log(
-  `[gen:coc] wrote ${tsCount} .generated.ts; ` +
+  `[gen:coc] wrote ${tsCount} .generated.ts + ${LOCALES.length} i18n locale(s); ` +
     `${result.permissionCodeUnion.length} permission code(s), ${result.menuCodeUnion.length} menu code(s); ` +
     `${diagnostics.length - errors.length} warning(s).`,
 );

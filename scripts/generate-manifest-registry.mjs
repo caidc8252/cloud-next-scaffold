@@ -129,13 +129,7 @@ for (const appName of targetApps) {
   const generatedDir = join(appsDir, appName, "manifest", "_generated");
   mkdirSync(generatedDir, { recursive: true });
   writeFileSync(join(generatedDir, "apps.ts"), content, "utf8");
-
-  // coc 文案产物（全量并集，按 locale 拆文件，request.ts 挂到 coc 命名空间）。
-  const i18nDir = join(generatedDir, "i18n");
-  mkdirSync(i18nDir, { recursive: true });
-  for (const locale of LOCALES) {
-    writeFileSync(join(i18nDir, `${locale}.json`), JSON.stringify(cocByLocale[locale], null, 2) + "\n", "utf8");
-  }
+  // i18n 产出已由 gen:coc 接管(coc 命名空间),此处不再写。
 }
 
 console.log(
