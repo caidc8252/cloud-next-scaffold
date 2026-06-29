@@ -39,7 +39,7 @@ export function toClientRole(row: RoleRow, updaterName: string, operatorCount: n
 }
 
 /**
- * 死写 GLOBAL 角色（代码注册表 RoleDef）→ VO。无 DB 行：builtin、只读、updatedBy=system。
+ * 死写 GLOBAL 角色（代码注册表 GlobalRole）→ VO。无 DB 行：builtin、只读、updatedBy=system。
  * name/description 为 coc i18n key（builtin 角色），由展示端（RSC 页面）按 locale 翻译。
  */
 export function toClientCodeRole(def: GlobalRole, operatorCount: number): Role {
