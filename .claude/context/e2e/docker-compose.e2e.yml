@@ -1,0 +1,31 @@
+# next-kit:e2e-bootstrap v14
+services:
+  postgres-e2e:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: e2e
+      POSTGRES_PASSWORD: e2e
+      POSTGRES_DB: e2e
+    ports:
+      - "${E2E_PG_HOST_PORT:-5434}:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U e2e -d e2e"]
+      interval: 1s
+      timeout: 5s
+      retries: 30
+  redis-e2e:
+    # The team's login is gated on Redis: single-use login nonce, the session
+    # store, and the cross-host session-handoff token all live here. Without it
+    # an authenticated journey can't sign in (or mint a session).
+    image: redis:7-alpine
+    ports:
+      - "${E2E_REDIS_HOST_PORT:-6380}:6379"
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 5s
+      retries: 30

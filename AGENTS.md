@@ -48,6 +48,7 @@ Next.js（App Router）**大单体** `apps/web` + `@cloud/*` 参考骨架 + `.cl
 5. **`commons` 是叶子层**：通用模块、纯技术、无自有菜单、不受合同闸门、**不反调业务模块**。
 6. **所有业务数据访问必经租户上下文**：API 路由经 `withApiHandler` 绑 `tenantCtx`；RSC 页面自己 `tenantCtx.run({partyId})`。读路径靠 L3 RLS（`@cloud/db`），不靠手写 where。
 7. **业务表必含 `party_id uuid` + index**（schema CI）。
+8. **跨模块前向声明（Step-3 脚手架）**：引用另一模块尚未声明的权限码 → 写同级 stub `modules/<cat>/<mod>.stub.ts`（partial `defineModule`，只声明所引用的码），`gen:coc` 聚合进 `PermissionCode`；**业务码禁止 import `*.stub`**（eslint 守门）；目标模块声明该码后删 stub（`duplicate-code` 守门抓残留）。类型/函数跨模块走 `server/<mod>.public` / `client/<mod>.api` 窄面（见 `server-layering`），禁止深 import。
 
 ## 命令速查（验证 / 运行）
 ```
@@ -61,7 +62,7 @@ pnpm test:e2e           # 端到端：docker compose 起 e2e pg/redis + db push/
 ```
 
 ## 脚手架工作流（skills）
-脚手架把"一个飞书开发任务"从开工到收尾串成 5 个 skill，**单活跃任务锁**落在 `.work/workbench.json`（结构见 `.work/workbench.schema.json`），同一时间只允许一个活跃任务（空 `{}` = 无活跃任务）。
+脚手架把"一个飞书开发任务"从开工到收尾串成 6 个 skill（+ 人工触发的 `/fix`），**单活跃任务锁**落在 `.work/workbench.json`（结构见 `.work/workbench.schema.json`），同一时间只允许一个活跃任务（空 `{}` = 无活跃任务）。
 
 **前置 / 约定：**
 - **飞书 MCP**：`/sync`、`/start-work` 依赖飞书 MCP（FeiShu Project MCP）；字段/节点/角色 key 与每机搭建步骤一律以 `.claude/feishu/feishu.config.json` 为准（不得编造）。**未配置则二者取不到数据**。
@@ -73,7 +74,8 @@ pnpm test:e2e           # 端到端：docker compose 起 e2e pg/redis + db push/
 2. **`/start-work {task编号}`** — 校验唯一活跃任务锁 → 飞书按编号拉任务信息 → 基于最新 `develop` 建/切 `feature/task-{task编号}` → 全部成功才写 `workbench.json.current_task` + `start_time`。
 3. **`/logic-groom`**（捕获模式）— 随时把零散的需求/实现逻辑/UI 碎片**只追加**进 `.work/logics/<cat>/<name>/<name>.groom.md`（`待处理`），持续到 `/submit-work` 关闭。只捕获，不分析。
 4. **`/logic-analyze`** — 读「需求 specs + 原型 + 数据模型 + 现有代码 + groom 碎片」，把「两份真理都没说、但写代码必须知道」的实现逻辑沉淀成 `logic.md`（经 `ledger.mjs` 渲染，是交给编码的唯一交接物），并回写 workbench 文档基线。**只读** `apps/web/commons/<mod>/overview.md` 与各模块 `overview.md` 做全局认识——这些 `overview.md` 由专门的 **commons 维护 skill** 生成/维护（建设中），`/logic-analyze` 不写入它们。
-5. **`/submit-work`** — groom 残留闸门（有未消费碎片则拦截）→ 提交代码 → 询问是否对三仓（本代码仓 + 两文档仓）的 `feature/task-*` 开 PR 到 `develop`（默认不提交）→ 清空 `workbench.json` 释放活跃任务锁。
+5. **`/coding`** — 消费 `logic.md`，起 superpowers 流水线（`writing-plans → executing-plans`）生成/改模块（`gen:coc` + 测试全绿）；流水线 review 的 findings → 人工触发 **`/fix`**（先记录、再批量 `systematic-debugging`，只改 author-owned 模块文件）。不回写飞书、不开 PR（那是 `/submit-work`）。
+6. **`/submit-work`** — groom 残留闸门（有未消费碎片则拦截）→ 提交代码 → 询问是否对三仓（本代码仓 + 两文档仓）的 `feature/task-*` 开 PR 到 `develop`（默认不提交）→ 清空 `workbench.json` 释放活跃任务锁。
 
 > `logic.md` / `logic.items.json` / `<name>.groom.md` 是**模块级累积**，跨 task 保留；`/submit-work` 只清 `workbench.json`。台账只经 `ledger.mjs` 改，**任何人（含 skill）不手改** `logic.md` / `logic.items.json`。
 
