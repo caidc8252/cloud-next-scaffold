@@ -101,10 +101,9 @@ if (cmd === 'init') {
     for (const d of x.deps) if (!ids.has(d)) problems.push(`L-${x.id} 依赖不存在的 L-${d}`)
     if (x.supersedes != null && !ids.has(x.supersedes)) problems.push(`L-${x.id} 取代不存在的 L-${x.supersedes}`)
   }
+  // 待实现/需返工 都是交给 coding 的合法交接态,不拦;只拦 blocked(缺契约,没法交接)。
   const blocked = db.items.filter(x => x.status === 'blocked').map(x => 'L-' + x.id)
-  const rework = db.items.filter(x => x.status === '需返工').map(x => 'L-' + x.id)
   if (blocked.length) problems.push('存在 blocked 条目: ' + blocked.join(', '))
-  if (rework.length) problems.push('存在 需返工 条目: ' + rework.join(', '))
   if (problems.length) { console.error('FINALIZE FAIL:\n - ' + problems.join('\n - ')); process.exit(1) }
   console.log('FINALIZE OK')
 } else {

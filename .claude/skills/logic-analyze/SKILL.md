@@ -76,10 +76,10 @@ description: /logic-analyze —— 针对当前活跃任务,读取需求 specs +
    - `ledger.mjs meta <dir>` ← 写 task/各 commit/groom/code_exists/mode。
    - `ledger.mjs digest <dir>` ← 写本轮 Δ（瞬态，覆盖）。
    - `ledger.mjs add <dir>` ← 每条已澄清逻辑落成 `L-n`（含 `type/source/anchors/judge/desc`，必要时 `deps/supersedes`）。
-     - **supersede**：新差异推翻旧条目时给 `supersedes:<旧id>`——助手会把旧条目自动标 `作废`（若旧条目已被 coding 标 `已处理` 则标 `需返工`，提示回滚）。
+     - **supersede**：新差异推翻旧条目时给 `supersedes:<旧id>`——助手会把旧条目自动标 `作废`（若旧条目已被 coding 标 `已处理` 则标 `需返工`，提示回滚）。`需返工` 作为交接信号交给 coding，由 coding 回滚后置 `作废`（属 coding 回写职责，logic-analyze 不消化）。
    - 回写 groom：碎片 `待处理→已整理`、问题账给终态（groom 为 markdown，本 skill 直接编辑其表格）。
 8. **回写 workbench 基线（仅成功时）**：`docs_flash_time` + 三个 `*_docs` = Step 1 抓的 commit 信息（符合 `.work/workbench.schema.json`）。**中止/阻塞则不推进基线**（下轮重算这段差异）。不碰 `current_task/start_time`。
-9. **finalize 闸门**：`ledger.mjs finalize <dir>`（依赖/取代链完整、无遗留 blocked/需返工）**且** groom 全部碎片=已整理、问题账无"待处理"。不过 → 不算完成，回去处理。
+9. **finalize 闸门**：`ledger.mjs finalize <dir>`（依赖/取代链完整、无遗留 `blocked`）**且** groom 全部碎片=已整理、问题账无"待处理"。`待实现`/`需返工` 是交给 coding 的合法交接态，**不拦**（`blocked` 才是"缺契约、没法交接"）。不过 → 不算完成，回去处理。
 
 ## 关键规则
 
