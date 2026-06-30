@@ -100,22 +100,22 @@ Prisma 7 使用 `packages/db/prisma.config.ts` 作为 CLI 配置入口，Prisma 
 ### 核心表关系
 
 ```
-Entity ──┬── EntityContract ── ContractDefine ── Menu ── Permission
-         ├── EntityUser ── User
-         └── Role ── RolePermission ── Permission
-              └── UserRole（entity + user + role 三方关联）
+Entity ──┬── EntityContract（合同：决定该 Entity 解锁哪些 CoC 菜单 / 权限）
+         ├── EntityUser ── User   （authorizingType: NORMAL / ADMIN）
+         └── Role（PRIVATE，permission_codes JSONB）── UserRole（entity + user + role）
 ```
+
+> 菜单 / 权限 / GLOBAL 角色**不在数据库**：由 CoC 声明系统生成（零 DB，无 `sys_menu` / `sys_permission`），见 `.claude/docs/coc-declaration.md`。DB 只存 Entity / 合同 / 用户 / 关联 / PRIVATE 角色。
 
 ### 关键概念
 
 | 概念           | 说明                                                                                   |
 | -------------- | -------------------------------------------------------------------------------------- |
-| Entity         | 组织/租户。用户通过 EntityUser 关联到 Entity                                           |
-| ContractDefine | 合同类型，决定该 Entity 可使用哪些菜单和权限                                           |
-| EntityUser     | 用户与组织的关联，包含 `authorizingType`（NORMAL/ADMIN）和 `status`（ACTIVE/INACTIVE） |
-| Role           | 角色，归属于 Entity，通过 RolePermission 关联权限                                      |
-| Permission     | 权限码，关联到 Menu                                                                    |
-| Menu           | 菜单树，归属于 ContractDefine                                                          |
+| Entity         | 组织/租户(party)。用户通过 EntityUser 关联到 Entity                                    |
+| EntityContract | 该 Entity 持有的合同；合同决定 CoC 里解锁哪些叶子菜单 / 权限码（即 party scope）         |
+| EntityUser     | 用户与组织的关联，含 `authorizingType`（NORMAL/ADMIN）和 `status`（ACTIVE/INACTIVE）   |
+| Role           | 角色。GLOBAL（roleId ≤ 1000）由 CoC 死写不入库；PRIVATE（≥ 1001）入 `sys_role`、权限码存 `permission_codes` JSONB |
+| 菜单 / 权限    | **CoC 声明、零 DB**（见 `.claude/docs/coc-declaration.md`），不是数据库表              |
 
 ### 两种锁定机制
 
@@ -126,8 +126,8 @@ Entity ──┬── EntityContract ── ContractDefine ── Menu ── P
 
 当 `EntityUser.authorizingType = ADMIN` 时：
 
-- 自动获取该 Entity 合同下的所有权限，无需配置角色
-- 角色仍正常加载但不影响权限
+- 有效权限 = 整个 party scope（合同解锁的全部 CoC 权限码），无视所绑角色（§7 结构旁路）
+- 角色仍正常加载用于展示，但不参与 ADMIN 的权限计算
 - 管理员不能对 ADMIN 用户执行停用、重置密码、角色变更等操作，只能修改备注
 
 ## 登录与鉴权
@@ -145,9 +145,9 @@ Entity ──┬── EntityContract ── ContractDefine ── Menu ── P
 
 核心实现：`packages/permissions/src/server/*`
 
-`apps/admin/lib/auth.ts` 当前只保留兼容导出，内部转发到 `@cloud/permissions/server`，避免应用侧相对路径 import 一次性大面积改动。
+登录态 / 守卫一律从 `@cloud/permissions/server` 直接引入，不在业务里写很深的相对路径。
 
-- `getSession()` — 获取完整会话（含 entity、roles、permissions、menus），未登录返回 null
+- `getSession()` — 获取完整会话（含 party、roles、permissions、contractTypes），未登录返回 null（菜单不在会话里，运行时现算）
 - `getPartialSession()` — 获取部分会话（仅用户信息），用于 Entity 选择页和锁定页
 - `requireSession()` — 要求完整登录态，根据失败原因跳转不同页面
 - `createSession(userId, entityId)` — 创建 session，entityId 可为 null（部分 session）
@@ -158,18 +158,21 @@ Session 内包含的数据：
 
 ```typescript
 {
-  id, username, displayName, email, status,
-  entity: { entityId, entityName, contractDefineCode },
+  userId, displayName, email,
+  currentPartyId, partyName, contractTypes: string[],
+  authorizingType: "ADMIN" | "NORMAL" | null,
   roles: SessionRole[],
-  permissions: string[],    // 权限码数组
-  menus: SessionMenu[]      // 菜单树
+  permissions: string[],     // 已算好的有效权限码（菜单不在会话里）
+  partners: SessionPartyRef[] // 可切换的公司列表
 }
 ```
 
-权限聚合路径：
+有效权限计算（切公司时算好、写进会话，见 `apps/web/lib/session-snapshot.ts`）：
 
-- 普通用户：`UserRole → Role → RolePermission → Permission`
-- ADMIN 用户：直接加载 ContractDefine 下所有 Permission
+- `party scope` = 当前 Entity 有效合同解锁的全部 CoC 权限码并集
+- NORMAL 用户：所绑角色权限码并集 **∩** party scope
+- ADMIN 用户：**整个 party scope**（§7 结构旁路，无视角色）
+- 菜单不入会话：运行时由 `getSessionMenus` / `buildMenuTree` 按有效权限现算
 
 ### 权限判断
 
@@ -188,10 +191,10 @@ checker.hasAll(["user.read", "user.write"]); // AND
 import { requirePermissions, assertPermissions } from "@cloud/permissions/server";
 
 // page / layout
-const session = await requirePermissions({ all: ["users.VIEW"] });
+const session = await requirePermissions({ all: ["system.users.user.view"] });
 
 // route handler
-const session = await assertPermissions({ any: ["roles.VIEW", "roles.UPD"] });
+const session = await assertPermissions({ any: ["system.roles.role.view", "system.roles.role.update"] });
 ```
 
 前端如果已经拿到权限数组，也可以通过 `@cloud/permissions/client` 做 UI 级权限判断：
@@ -220,7 +223,7 @@ export function UsersActions({ permissions }: { permissions: string[] }) {
 
 ### 客户端会话失效自动登出
 
-服务端守卫（`requireSession` / `requirePermissions`）在 401 时会 `redirect("/api/auth/logout")`；客户端的 API 调用也有对称行为。`@cloud/request/client` 在收到 401 时会回调应用注册的处理器，由 [apps/admin/lib/session-expiry.ts](apps/admin/lib/session-expiry.ts) 判断——只有「会话失效类」错误码（`"unauthenticated"` / `ERR_UNAUTHORIZED` / `ERR_AUTH_NOT_AUTHENTICATED`）才整页跳 `/api/auth/logout`（清残留 cookie → portal `/login`）。portal 登录页的凭证错误 `ERR_AUTH_INVALID_CREDENTIALS` 也是 401，但不在白名单，不会把登录失败误判为会话过期。
+服务端守卫（`requireSession` / `requirePermissions`）在 401 时会 `redirect("/api/auth/logout")`；客户端的 API 调用也有对称行为。`@cloud/request/client` 在收到 401 时会回调应用注册的处理器，由 [apps/web/lib/session-expiry.ts](apps/web/lib/session-expiry.ts) 判断——只有「会话失效类」错误码（`"unauthenticated"` / `ERR_UNAUTHORIZED` / `ERR_AUTH_NOT_AUTHENTICATED`）才整页跳 `/api/auth/logout`（清残留 cookie → portal `/login`）。portal 登录页的凭证错误 `ERR_AUTH_INVALID_CREDENTIALS` 也是 401，但不在白名单，不会把登录失败误判为会话过期。
 
 机制在包（`setUnauthorizedHandler`，不认识任何 app 路由），策略在 app，通过根 layout 里的 `UnauthorizedRedirect` 组件注册一次。业务组件正常 `catch` + `toastError` 即可，不需要、也不应该自己写 401 跳转。
 
@@ -367,14 +370,14 @@ export function Example() {
 }
 ```
 
-`apps/admin` 已接通 i18n，对应四件套（接入新应用时照此补齐，缺一不可）：
+`apps/web` 已接通 i18n，对应四件套（接入新应用时照此补齐，缺一不可）：
 
-1. [next.config.ts](apps/admin/next.config.ts) 用 `createNextIntlPlugin("./i18n/request.ts")` 包裹配置；
-2. [apps/admin/i18n/request.ts](apps/admin/i18n/request.ts) 调 `createI18nRequestConfig({ loadMessages })`，`loadMessages(locale)` 动态 import `i18n/messages/<locale>.json`；
-3. [apps/admin/app/layout.tsx](apps/admin/app/layout.tsx) 包一层 `NextIntlClientProvider`，且 `<html lang>` 用 cookie + `isLocale` 读实际 locale，不硬编码；
+1. [next.config.ts](apps/web/next.config.ts) 用 `createNextIntlPlugin("./i18n/request.ts")` 包裹配置；
+2. [apps/web/i18n/request.ts](apps/web/i18n/request.ts) 调 `createI18nRequestConfig({ loadMessages })`，`loadMessages(locale)` 动态 import `i18n/messages/<locale>.json`；
+3. [apps/web/app/layout.tsx](apps/web/app/layout.tsx) 包一层 `NextIntlClientProvider`，且 `<html lang>` 用 cookie + `isLocale` 读实际 locale，不硬编码；
 4. Provider 树内挂 `TimeZoneInit`（首屏同步浏览器时区），切语言入口 `LocaleSwitcher` 放在 portal header。
 
-文案放在 [apps/admin/i18n/messages/](apps/admin/i18n/messages/)，`en.json` 为基底，`zh-CN.json` / `ja.json` 只写差异。当前只落了 `@cloud/ui` 日期组件需要的 `ui.datePicker.*`；新增业务文案按模块往对应 namespace 补即可。现有页面的英文硬编码尚未逐条迁移到 message（独立任务，不影响 i18n 链路本身）。
+文案放在 [apps/web/i18n/messages/](apps/web/i18n/messages/)，`en.json` 为基底，`zh-CN.json` / `ja.json` 只写差异。当前只落了 `@cloud/ui` 日期组件需要的 `ui.datePicker.*`；新增业务文案按模块往对应 namespace 补即可。现有页面的英文硬编码尚未逐条迁移到 message（独立任务，不影响 i18n 链路本身）。
 
 ## 用户管理
 
@@ -516,7 +519,7 @@ const { items, pager } = buildCursorPage({ rows, limit, query, total, idOf: (m) 
 return successResponse(items.map(toRow), pager);
 ```
 
-客户端用 `apps/admin/lib/use-cursor-pagination.ts` 的 `useCursorPagination()`，**原样回传服务端给的游标 + 方向，绝不从行 id 自己拼游标，也不缓存历史游标**：
+客户端用 `apps/web/lib/use-cursor-pagination.ts` 的 `useCursorPagination()`，**原样回传服务端给的游标 + 方向，绝不从行 id 自己拼游标，也不缓存历史游标**：
 
 ```tsx
 "use client";
@@ -592,7 +595,7 @@ if (!email) {
 }
 ```
 
-未预期异常统一交给 `apps/admin/lib/api-handler.ts`（通用骨架与本栈默认错误映射在 `@cloud/api-kit`，这里只注入 config 组装出 `withApiHandler` / `handleApiError`）。默认用 `withApiHandler()` 包裹整个 handler，不要在每个文件里手写 `try / catch`：
+未预期异常统一交给 `apps/web/lib/api-handler.ts`（通用骨架与本栈默认错误映射在 `@cloud/api-kit`，这里只注入 config 组装出 `withApiHandler` / `handleApiError`）。默认用 `withApiHandler()` 包裹整个 handler，不要在每个文件里手写 `try / catch`：
 
 ```ts
 import { withApiHandler } from "@/lib/api-handler";
@@ -600,7 +603,7 @@ import { assertPermissions } from "@cloud/permissions/server";
 import { successResponse, badRequestResponse } from "@cloud/request/server";
 
 export const POST = withApiHandler(async (req: Request) => {
-  const session = await assertPermissions({ all: ["users.LOCK"] });
+  const session = await assertPermissions({ all: ["system.users.user.lock"] });
   // 业务校验错误仍然显式返回
   if (!ok) return badRequestResponse(ERR_INVALID_ID, "Invalid user ID.");
   // 业务逻辑
