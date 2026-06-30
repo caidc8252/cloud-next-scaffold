@@ -29,7 +29,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 下面每条是**绝不能违反**的铁律；「怎么做」的完整规格在对应 doc，**动手前先读**。
 
-- **服务端分层**：业务逻辑落 `service/<domain>/`，route 只做 HTTP 适配，不直接 `import @cloud/db` / `*.repository` / `*.mapper`；`_server/` 是历史遗留，见到顺手迁 `service/`；页面保持薄、默认 RSC（有交互才加 `"use client"`）、取数调 service。→ 写 service/route/页面取数前读 `.claude/docs/server-layering.md`
+- **服务端分层**：业务逻辑落 `modules/<cat>/<mod>/server/`（`controller`→`service`→`policy`/`repository`/`mapper`），`app/api/**/route.ts` 只是薄壳 re-export 模块 controller，controller 才是 HTTP 适配、不直接 `import @cloud/db` / `*.repository` / `*.mapper`；schema/类型在 `<mod>/schema/`、客户端 api 在 `<mod>/client/`、跨模块走 `<mod>.public.ts`；页面保持薄、默认 RSC（有交互才加 `"use client"`）、取数调 service。→ 写 controller/service/页面取数前读 `.claude/docs/server-layering.md`
 - **接口与请求**：**不用 Server Action**，一切 mutation 走 Route Handler；业务错误一律 `throw BusinessError`（带 `PMMNNN` 码）/ `MiddlewareError`，**不裸 `throw new Error("文本")`**；成功走 `successResponse()`/`createdResponse()`，204 用 `noContentResponse()`；默认 `withApiHandler()` 兜底；错误码是协议、message 是展示；客户端调用一律走每域 `service/<domain>/api.ts` 具名函数（不裸调 `request.*`、不内联路径/类型）。→ 写接口/改请求响应/分页前读 `.claude/docs/api-and-requests.md`
 - **i18n**：所有用户可见文案走 message、**禁止硬编码**；统一走 `@cloud/i18n`，禁止直接 import `next-intl`；`en`/`zh-CN`/`ja` 同步补齐，`en` 为基底。→ 新增/改文案前读 `.claude/docs/i18n.md`
 - **鉴权与权限**：前端只是体验层，**读写保护必须落服务端守卫**；route 用 `assertPermissions()`，page/layout 用 `requirePermissions()`，范围校验落 service/policy；菜单不写死、由 CoC 按用户有效权限投影（见下条）。→ 接登录态/权限前读 `.claude/docs/auth-permissions.md`
