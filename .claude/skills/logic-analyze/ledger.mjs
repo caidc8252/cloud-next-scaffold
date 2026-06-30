@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // logic-analyze 的「确定性台账助手」(路线乙)。
-// 真相在 <dir>/logic.items.json;logic.md / logic.archive.md 由本助手渲染产出,任何人都不手改。
+// 真相在 <dir>/logic.items.json;logic.md 由本助手渲染产出,任何人都不手改。
 // 判断(分析缺口、提炼逻辑、跟操作员澄清)留在 SKILL 散文里;本助手只负责机械记账:
-//   发号、翻状态、保留未消费条目(永不删)、取代/作废、归档、渲染、finalize 检查。
+//   发号、翻状态、保留未消费条目(永不删)、取代/作废、渲染、finalize 检查。
 // 纯 Node ESM,无第三方依赖,无需构建:  node ledger.mjs <cmd> <dir> [...]
 import fs from 'node:fs'
 import path from 'node:path'
@@ -12,7 +12,7 @@ const TYPES = ['接口落点', '持久化', '外部/异步', '跨制品冲突', 
 
 const dir = process.argv[3]
 const cmd = process.argv[2]
-if (!cmd) die('usage: node ledger.mjs <init|meta|digest|notes|add|status|list|archive|render|finalize> <dir> [...]')
+if (!cmd) die('usage: node ledger.mjs <init|meta|digest|add|status|list|render|finalize> <dir> [...]')
 
 function die(msg, code = 1) { console.error('ledger: ' + msg); process.exit(code) }
 function now() {
@@ -39,9 +39,7 @@ function blankDb(category, name) {
     module: { category, name },
     meta: { task: '', updated: '', specs: '', prototype: '', data_model: '', groom: '无', code_exists: false, mode: '首次(无基线,全量)' },
     digest: { mode: '首次', rows: [] },       // §1 瞬态,每轮重算
-    notes: [],                                 // §2 注意事项
-    items: [],                                 // §3 持久台账
-    archive: [],                               // 已归档(已处理且稳定)
+    items: [],                                 // §2 持久台账
     next_id: 1
   }
 }
@@ -59,9 +57,6 @@ if (cmd === 'init') {
 } else if (cmd === 'digest') {
   const db = load(dir); db.digest = JSON.parse(readStdin() || '{}'); db.meta.updated = now(); save(dir, db)
   console.log('digest updated')
-} else if (cmd === 'notes') {
-  const db = load(dir); db.notes = JSON.parse(readStdin() || '[]'); db.meta.updated = now(); save(dir, db)
-  console.log('notes updated')
 } else if (cmd === 'add') {
   const db = load(dir)
   const it = JSON.parse(readStdin() || '{}')
@@ -84,7 +79,7 @@ if (cmd === 'init') {
   const id = Number(process.argv[4]), st = process.argv[5], by = process.argv[6]
   if (!st || !STATUSES.includes(st)) die(`status: usage status <dir> <id> <${STATUSES.join('|')}> [bySupersedeId]`)
   const db = load(dir)
-  const it = db.items.find(x => x.id === id) || db.archive.find(x => x.id === id)
+  const it = db.items.find(x => x.id === id)
   if (!it) die('status: no L-' + id)
   it.status = st
   if (st === '作废' && by) it.superseded_by = Number(by)
@@ -94,21 +89,14 @@ if (cmd === 'init') {
   const db = load(dir); const filter = process.argv[4]
   const rows = db.items.filter(x => !filter || x.status === filter)
   for (const x of rows) console.log(`L-${x.id}\t${x.status}\t${x.type}\t${x.desc.slice(0, 60)}`)
-  console.log(`-- ${rows.length} item(s)${filter ? ' [' + filter + ']' : ''}; archived ${db.archive.length}`)
-} else if (cmd === 'archive') {
-  const db = load(dir)
-  const move = db.items.filter(x => x.status === '已处理')
-  db.items = db.items.filter(x => x.status !== '已处理')
-  db.archive.push(...move)
-  db.meta.updated = now(); save(dir, db)
-  console.log(`archived ${move.length} 已处理 item(s)`)
+  console.log(`-- ${rows.length} item(s)${filter ? ' [' + filter + ']' : ''}`)
 } else if (cmd === 'render') {
   render(dir, load(dir)); console.log('rendered')
 } else if (cmd === 'finalize') {
   const db = load(dir)
   const problems = []
   // 完整性:依赖存在、取代链一致、blocked/需返工 提示
-  const ids = new Set([...db.items, ...db.archive].map(x => x.id))
+  const ids = new Set(db.items.map(x => x.id))
   for (const x of db.items) {
     for (const d of x.deps) if (!ids.has(d)) problems.push(`L-${x.id} 依赖不存在的 L-${d}`)
     if (x.supersedes != null && !ids.has(x.supersedes)) problems.push(`L-${x.id} 取代不存在的 L-${x.supersedes}`)
@@ -123,14 +111,14 @@ if (cmd === 'init') {
   die('unknown command: ' + cmd)
 }
 
-// ---------- renderer: logic.items.json -> logic.md / logic.archive.md ----------
+// ---------- renderer: logic.items.json -> logic.md ----------
 function render(d, db) {
   const m = db.meta, mod = db.module
   const L = []
   L.push(`# Logic: ${mod.category}/${mod.name}`)
   L.push(`> 由 /logic-analyze 生成(经 ledger.mjs 渲染,勿手改) | task: ${m.task || '-'} | 更新时间: ${m.updated || '-'}`)
   L.push(`> 本文件是 /logic-analyze → /coding 的唯一交接物。只装「specs(业务)与原型(展现)都没说、但写代码必须知道」的实现逻辑;不复述业务。`)
-  L.push(`> 消费:coding 逐条消费 §3 的 L-n,经 ledger.mjs 把「状态」由 待实现 改为 已处理;未消费条目永不被覆盖。`)
+  L.push(`> 消费:coding 逐条消费 §2 的 L-n,经 ledger.mjs 把「状态」由 待实现 改为 已处理;未消费条目永不被覆盖。`)
   L.push(`> 基线:权威 commit 游标在 .work/workbench.json;本文件 commit 只是给人/coding 看的快照。`)
   L.push('')
   L.push('## 0. 溯源 & 上下文')
@@ -150,21 +138,11 @@ function render(d, db) {
     db.digest.rows.forEach((r, i) => L.push(`| Δ-${i + 1} | ${r.source || ''} | ${r.range || ''} | ${r.change || ''} | ${r.conclusion || ''} |`))
   }
   L.push('')
-  L.push('## 2. 注意事项（coding 必读,非消费条目）')
-  if (!db.notes || db.notes.length === 0) L.push('- 无')
-  else db.notes.forEach(n => L.push(`- ${n}`))
-  L.push('')
-  L.push('## 3. 逻辑条目（coding 消费台账｜持久、累积、带状态）')
+  L.push('## 2. 逻辑条目（coding 消费台账｜持久、累积、带状态）')
   L.push('> 状态: 待实现 | 已处理 | blocked | 需返工 | 作废。仅经 ledger.mjs 变更,勿手改。')
   if (db.items.length === 0) L.push('\n- 无')
   else for (const x of db.items) L.push('\n' + renderItem(x))
   fs.writeFileSync(path.join(d, 'logic.md'), L.join('\n') + '\n')
-
-  // archive
-  const A = [`# Logic Archive: ${mod.category}/${mod.name}`, '> 已处理且稳定的历史条目(由 ledger.mjs archive 移入)。', '']
-  if (db.archive.length === 0) A.push('- 无')
-  else for (const x of db.archive) A.push(renderItem(x) + '\n')
-  fs.writeFileSync(path.join(d, 'logic.archive.md'), A.join('\n') + '\n')
 }
 
 function renderItem(x) {

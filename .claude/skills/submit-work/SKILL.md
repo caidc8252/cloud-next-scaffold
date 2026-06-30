@@ -27,7 +27,7 @@ description: /submit-work —— 闭合 /start-work 开的活跃任务。检查 
    - **提交** → 对**三个仓库**各自的 `feature/task-<task_id>` 开 PR 到 `develop`：
      - **代码仓**（本仓库）—— 已在该分支，直接 PR。
      - **需求空间** `../pep-webapp-docs`、**数据模型空间** `../pep-data-model-docs`：
-       - **兜底 `/logic-analyze` 可能被跳过**：若该仓不在 `feature/task-<task_id>`（分支不存在则基于最新 `develop` 创建），先 checkout 到它；有未提交的回写改动 → `git add -A` + `commit`（信息含 `task_id`）。
+       - **兜底 `/logic-analyze` 可能被跳过**：本地无该仓 → 先按 `/logic-analyze` 路径约定表的 URL `git clone` 到 `../pep-webapp-docs` / `../pep-data-model-docs`；若该仓不在 `feature/task-<task_id>`（分支不存在则基于最新 `develop` 创建），先 checkout 到它；有未提交的回写改动 → `git add -A` + `commit`（信息含 `task_id`）。
        - 然后开 PR `feature/task-<task_id>` → `develop`。
      - 某仓库**确无任何改动**（feature 与 `develop` 无差异）→ **跳过并明确告知**（不静默吞掉）。
 

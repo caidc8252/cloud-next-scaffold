@@ -4,7 +4,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # AI 行为准则
 
-本文件是 AI 在本项目的**常驻**行为准则：哲学 + 目录地图 + 硬不变量 + 文档索引。深度细节按需读 `.claude/docs/*`（每条硬不变量都标了「动手前先读 X」）。
+本文件是 AI 在本项目的**常驻**行为准则：哲学 + 目录语义 + 铁律 + 脚手架工作流。深度规格按需查 `.claude/docs/*`（按主题分篇：`server-layering` / `api-and-requests` / `auth-permissions` / `coc-declaration` / `module-overview` / `i18n` / `storage-s3` / `logging` / `notice` / …）。
 
 ## 总则
 
@@ -15,19 +15,19 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## 这是什么
 Next.js（App Router）**大单体** `apps/web` + `@cloud/*` 参考骨架 + `.claude/` AI 脚手架。
 左侧菜单不写死，由"用户登录→选公司(Party)→角色×合同 交叉算出有效权限→投影菜单"得来。
-脚手架层（AI 逻辑）已**正式生产接入**：`/sync` 接真实飞书、`/start-work`/`/submit-work` 接真实文档 repo。
+脚手架层（AI 逻辑）已**正式生产接入**：`/sync`、`/start-work` 接真实飞书（FeiShu Project MCP）；`/logic-analyze`、`/submit-work` 接真实文档 repo（需求空间 + 数据模型空间）。完整链路见下方「脚手架工作流」。
 
 
 ## 目录语义（一句话职责）
 - 根目录只放 monorepo/构建配置与项目文档；`.next`/`node_modules`/产物/缓存/生成文件不手改、不作依赖。
-- `apps/web/modules/<cat>/<mod>/` — **AI 生成落点**，纯业务单元（`manifest.ts`+`server/`+`schemas/`+`ui/`）。
+- `apps/web/modules/<cat>/<mod>/` — **AI 生成落点**，纯业务单元（`manifest.ts`+`server/`+`schema/`+`client/`+`ui/`+`overview.md`）。各子目录分层见 `.claude/docs/server-layering.md`；`overview.md` 规约见 `.claude/docs/module-overview.md`。
+- `apps/web/commons/<mod>/` — **通用模块**，与 `modules/` **同级**；由 `modules/` 下模块**提升(promote)上来**的可复用单元（纯技术、无自有菜单、不受合同闸门、不反调业务模块）。详见 `apps/web/commons/README.md`。
 - `apps/web/app/` — **薄路由层**（page/route/layout）。只做 HTTP 适配，调 `modules` 的 service，不放厚业务逻辑。
-- `apps/web/manifest/` — CoC 声明与采集。
-- `apps/web/i18n/` - 全局文案 `i18n/messages`
-- `apps/web/manifest/catalog/{roles,contract-types}.ts` — **商业策略，非有明确指定，否则AI不轻易修改**。
+- `apps/web/manifest/` — CoC 声明与采集；生成物在 `manifest/_generated/`（`*.generated.ts` + i18n，由 `pnpm gen:coc` 产，勿手改）。
+- `apps/web/i18n/` — 全局文案 `i18n/messages`。
+- `apps/web/manifest/catalog/{roles,contract-types}.ts` — **商业策略，非有明确指定，否则 AI 不轻易修改**。
 - `e2e` 放端到端测试；单测/组件测试就近放；`scripts` 放仓库级脚本（只服务单包的放包内）。
-
-- `packages/*` — `@cloud/*` 基础设施（permissions/db/registry/request/...），只放项目级共享能力, **禁止 import `apps/`**。
+- `packages/*` — `@cloud/*` 基础设施（permissions/db/request/...），只放项目级共享能力，**禁止 import `apps/`**。
 
 
 ## 默认开发链路
@@ -43,27 +43,39 @@ Next.js（App Router）**大单体** `apps/web` + `@cloud/*` 参考骨架 + `.cl
 ## 铁律（违反 = 编译/CI/提交失败，不靠自觉）
 1. **写入口只在 route handler**（`app/api/*`）。禁用 server action（`'use server'`）。
 2. **`assertPermissions` 只用生成的 `PermissionCode` 类型，不用裸字符串** — 拼错/失效码当场编译报错。
-3. **`*.generated.ts` 与 seed 永不手改** — 改 `manifest.ts` 后跑 `pnpm codegen` 重生成。
+3. **`apps/web/manifest/_generated/*.generated.ts` 与 seed 永不手改** — 改 `manifest.ts` 后跑 `pnpm gen:coc` 重生成。
 4. **权限码只增不改**：删/改名要标 `@deprecated`（registry 守门）。
-5. **`common.*` 是叶子层**：纯技术、无菜单、不受合同闸门、**不反调业务模块**。
+5. **`commons` 是叶子层**：通用模块、纯技术、无自有菜单、不受合同闸门、**不反调业务模块**。
 6. **所有业务数据访问必经租户上下文**：API 路由经 `withApiHandler` 绑 `tenantCtx`；RSC 页面自己 `tenantCtx.run({partyId})`。读路径靠 L3 RLS（`@cloud/db`），不靠手写 where。
 7. **业务表必含 `party_id uuid` + index**（schema CI）。
-8. **完成判据不主观**：`/submit-work` 全绿 = 每条 `acceptance_criteria` 有绿色 verify 锚点 + lint/unit/e2e 通过（`green-gate.ts`）。
-9. **修复只在封闭枚举内**（`fix-map.ts` 的 `AREA_FIX_MAP` + 允许文件集）；越界或无法映射 → `blocked`，不自由发挥。
-10. **跨模块**：`/coding` 后置 checkpoint 校验引用的目标模块有契约；缺则 `blocked(missing-dependency-contract)`，不让 tsc 裸红（跨模块依赖检查点 + 前向声明 stub 物化，见 `.claude/scaffold/cross-module.ts`）。
 
 ## 命令速查（验证 / 运行）
 ```
-pnpm install && pnpm --filter @cloud/db exec prisma generate && pnpm codegen
-pnpm typecheck          # 11/11 项目
-pnpm test               # 全量（含 13 个真实 RLS e2e）
-pnpm --filter platform test demo   # 需求走查 7 用例
-# 本地全栈（Next.js 本地开发，零安装 DB；运行时鉴权/数据接入待转生产）：终端1 pnpm dev:db ；终端2 pnpm --filter platform dev → http://localhost:3000/login (demo/acme)
+pnpm install
+pnpm db:generate        # prisma generate（@cloud/db）
+pnpm gen:coc            # 生成 manifest/_generated/*.generated.ts + i18n（改 manifest.ts 后必跑；dev/build 已 pre-hook 自动跑）
+pnpm lint               # eslint（apps/web + packages/*）
+pnpm test               # vitest 单测/组件（--passWithNoTests）
+pnpm test:e2e           # 端到端：docker compose 起 e2e pg/redis + db push/seed + playwright（含 RLS 用例）
+# 本地全栈：先 pnpm db:setup（generate+push+seed，需本地 Postgres）→ pnpm dev:web → http://localhost:3000/login
 ```
 
-## 工作流约定
-- 脚手架状态机：`new → in-progress → fixing → submitted`，任意点可 `→ blocked`（经 `/unblock` 恢复，retry 有全局上限）。
-- 改动前若涉及框架约定，依据本文件铁律 + 命令/技能/scaffold 逻辑 + 代码关卡，不要凭记忆。
+## 脚手架工作流（skills）
+脚手架把"一个飞书开发任务"从开工到收尾串成 5 个 skill，**单活跃任务锁**落在 `.work/workbench.json`（结构见 `.work/workbench.schema.json`），同一时间只允许一个活跃任务（空 `{}` = 无活跃任务）。
+
+**前置 / 约定：**
+- **飞书 MCP**：`/sync`、`/start-work` 依赖飞书 MCP（FeiShu Project MCP）；字段/节点/角色 key 与每机搭建步骤一律以 `.claude/feishu/feishu.config.json` 为准（不得编造）。**未配置则二者取不到数据**。
+- **基线分支**：feature 分支基于 `develop`，PR 目标也是 `develop`。
+- **文档仓**（与本仓同级，缺失则自动 `git clone`）：需求空间 `../pep-webapp-docs`（specs + prototype，`Newland-Payment-Technology-US-Co-Ltd/pep-webapp-docs`）、数据模型空间 `../pep-data-model-docs`（`Newland-Payment-Technology-US-Co-Ltd/pep-data-model-docs`）。
+
+**链路：**
+1. **`/sync`**（只读，不写文件）— 展示「归我（FE 角色=当前飞书账号）且在 `NextJS开发(Claude)` 节点」的任务清单。
+2. **`/start-work {task编号}`** — 校验唯一活跃任务锁 → 飞书按编号拉任务信息 → 基于最新 `develop` 建/切 `feature/task-{task编号}` → 全部成功才写 `workbench.json.current_task` + `start_time`。
+3. **`/logic-groom`**（捕获模式）— 随时把零散的需求/实现逻辑/UI 碎片**只追加**进 `.work/logics/<cat>/<name>/<name>.groom.md`（`待处理`），持续到 `/submit-work` 关闭。只捕获，不分析。
+4. **`/logic-analyze`** — 读「需求 specs + 原型 + 数据模型 + 现有代码 + groom 碎片」，把「两份真理都没说、但写代码必须知道」的实现逻辑沉淀成 `logic.md`（经 `ledger.mjs` 渲染，是交给编码的唯一交接物），并回写 workbench 文档基线。**只读** `apps/web/commons/<mod>/overview.md` 与各模块 `overview.md` 做全局认识——这些 `overview.md` 由专门的 **commons 维护 skill** 生成/维护（建设中），`/logic-analyze` 不写入它们。
+5. **`/submit-work`** — groom 残留闸门（有未消费碎片则拦截）→ 提交代码 → 询问是否对三仓（本代码仓 + 两文档仓）的 `feature/task-*` 开 PR 到 `develop`（默认不提交）→ 清空 `workbench.json` 释放活跃任务锁。
+
+> `logic.md` / `logic.items.json` / `<name>.groom.md` 是**模块级累积**，跨 task 保留；`/submit-work` 只清 `workbench.json`。台账只经 `ledger.mjs` 改，**任何人（含 skill）不手改** `logic.md` / `logic.items.json`。
 
 ## 代码规范
 
