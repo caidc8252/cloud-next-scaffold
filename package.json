@@ -8,7 +8,6 @@
   },
   "scripts": {
     "gen:coc": "node scripts/generate-coc-registry.mjs",
-    "check:roles": "node scripts/check-preset-admin-coverage.mjs",
     "predev": "pnpm gen:coc",
     "predev:web": "pnpm gen:coc",
     "prebuild": "pnpm gen:coc",
