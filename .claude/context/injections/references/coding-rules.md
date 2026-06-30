@@ -1,1 +1,1 @@
-<!-- reserved: per-module depth/reference. Empty for now; extend as conventions grow. The cross-module stub logic lives in the injected `implementation.md`. -->
+<!-- Team-maintained index of this project's coding rules. Owned by the team, NOT the scaffold — the scaffold's implementation.md defers here and does not author or duplicate this content. Empty until the team populates it. -->
