@@ -22,10 +22,10 @@ You therefore **never `import` a stub** (eslint `no-stub-import`): the link is t
 
 The file's existence is a standing TODO with two readers:
 
-- **Owner** (`@stub-owner`) — the target module that must declare the code for real in its `manifest.ts`, then **delete the stub**.
-- **Dependant** (`@stub-consumer`) — the module relying on it now; safe to build against, but it vanishes when the owner ships.
+- **Owner** (`@stub-owner`) — the module that must declare the code for real in its `manifest.ts`. Doing so makes the stub redundant.
+- **Creator / dependant** (`@stub-consumer`) — the module that needed the code and wrote the stub; safe to build against now, and the one notified to remove the stub once the owner ships.
 
-`pnpm lint`'s `stub-notice` rule surfaces both from the header on every run — a `warn`, not a build failure (a stub is legitimately present mid-development). Removal is independently forced: once the owner declares the code, real + stub = duplicate → the coc `duplicate-code` gate fails the build.
+`pnpm lint`'s `stub-notice` rule surfaces both from the header on every run — a `warn`, not a build failure (a stub is legitimately present mid-development). Removal is independently forced: once the owner declares the code, real + stub = duplicate → the coc `duplicate-code` gate fails the build. Removal isn't pinned to one role — whoever hits the gate acts — but because a stub lives beside the owner's module, an AI/reviewer should **surface the stale stub for a human to delete**, not unilaterally edit another module's files.
 
 ## The `@stub-*` header
 
@@ -34,7 +34,7 @@ The file's existence is a standing TODO with two readers:
 | tag | value |
 |-----|-------|
 | `@stub-kind` | the token kind — `permission-code` today (the only codegen string-token the system aggregates from stubs) |
-| `@stub-owner` | `<cat>/<mod>` that must implement the code(s) and delete this stub |
+| `@stub-owner` | `<cat>/<mod>` that must declare the code(s) for real (which makes this stub redundant) |
 | `@stub-consumer` | `<cat>/<mod>` referencing the code(s) now (why the stub exists) |
 | `@stub-reason` | one line: what forces the reference before the owner ships |
 | `@stub-declares` | the forward-declared code(s), comma-separated |
@@ -50,8 +50,9 @@ The `@stub-*` header is identical for every kind; the body below is the **permis
  * STUB — temporary cross-module forward-declaration. NOT a real module; delete when real.
  *
  * Two-way notice (full legend: context/injections/references/cross-module-stub.md):
- *   ▸ OWNER     — must declare the real code in its manifest.ts, then delete this file.
- *   ▸ DEPENDANT — safe to build against now; this vanishes once the owner ships the real one.
+ *   ▸ OWNER     — must declare the real code in its manifest.ts; that makes this stub redundant.
+ *   ▸ CREATOR   — wrote this stub to unblock; remove it once the owner ships (it lives by the
+ *                 owner's module, so surface it for a human rather than deleting blind).
  *
  * @stub-kind        permission-code
  * @stub-owner       system/roles
@@ -92,4 +93,4 @@ export default defineModule({
 - `defineModule` is shape-complete (zod-validated): `title` / `parentMenuCode` / `entry.url` / `label` / `desc` must all be present, but only `permissions[].code` is load-bearing — the rest are throwaway placeholders the owner's real `manifest.ts` supersedes. Use the `stub.*` i18n namespace so they're obviously fake.
 - `menuCode` MUST equal the code prefix (`<cat>.<mod>`), and each permission's `belongToMenuCode` MUST equal `menuCode` — the coc belongs-to-menu guard errors otherwise.
 - Never `import` a `*.stub` (eslint `no-stub-import`).
-- Delete the stub the moment the owner declares the code for real — a stale one fails the coc `duplicate-code` build gate, and `stub-notice` keeps warning until it's gone.
+- Once the owner declares the code for real the stub is redundant and must go — a stale one fails the coc `duplicate-code` build gate, and `stub-notice` keeps warning until it's gone. Who removes it and the surface-to-human caveat → see *Two-way notice* above.

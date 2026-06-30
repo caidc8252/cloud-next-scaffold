@@ -24,6 +24,7 @@
 - `manifest.ts` declares `menuCode`, `parentMenuCode`, `entry.url`, `permissions[]`. **Does not declare `contractTypes`** — which menus each contract unlocks is human-owned in `apps/web/manifest/catalog/contract-types.ts` (`CONTRACT_MENUS`).
 - `manifest.ts` is source of truth; regen / `collect.ts` wiring / never-hand-edit mechanics → `references/coding-rules.md`.
 - `permissions[].code` is 4-segment `<cat>.<mod>.<fn>.<action>`. **Granularity = one code per indivisible capability**: ask "would a role ever be granted/revoked JUST this?" — yes → own code; no → fold in. A capability another module owns → reference that code, don't mint one. No code for backend-only steps or out-of-scope items.
+- **Inbound stubs (codes others forward-declared against you)** — before finalizing `permissions[]`, surface any `*.stub.ts` naming this module as `@stub-owner` (`pnpm lint`'s `stub-notice` lists every stub's owner). Each is a code another module is already building against and expects you to own — declare those for real here (legend → `references/cross-module-stub.md`).
 - Who may use which code is human-owned in `apps/web/manifest/catalog/roles.ts` — AI does not auto-fill it.
 - `commons/<mod>/` is the leaf layer: no `menuCode`/`parentMenuCode`, never calls a business module. See `.claude/docs/coc-declaration.md` for the full CoC how-to.
 

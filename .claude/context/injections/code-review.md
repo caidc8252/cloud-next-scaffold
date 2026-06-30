@@ -7,9 +7,11 @@ Review the diff against `references/coding-rules.md` — this project's coding r
 
 ## `*.stub` hygiene (cross-module forward declaration)
 
-- A `*.stub.ts` imported by code → block — stubs are build inputs for `gen:coc`, never imported (eslint `no-stub-import`).
-- A `*.stub.ts` still present after the owning module declares the code for real → flag — stale; the coc `duplicate-code` gate fires (real + stub = duplicate).
-- A `*.stub.ts` missing its required `@stub-owner`/`@stub-consumer`/`@stub-reason` header → flag (eslint `stub-notice` warns; legend + template → `references/cross-module-stub.md`).
+Review a `*.stub.ts` against its purpose — a throwaway forward-declaration carrying a two-way notice (*owner: declare this code for real*; *creator: delete it once they do*). Full convention → `references/cross-module-stub.md`.
+
+- **Imported by code → block.** A stub is a placeholder that's deleted when the owner ships — importing it binds you to something that will vanish. The reference must be the string code resolved through the generated `PermissionCode` union, never an `import` (eslint `no-stub-import`).
+- **Still present after the owner declared the real code → flag.** It's done its job; leaving it makes real + stub a duplicate (coc `duplicate-code` gate fires). Surface the stale stub for a human to delete rather than silently editing another module's file.
+- **Missing its `@stub-owner`/`@stub-consumer`/`@stub-reason` header → flag.** That header *is* the two-way notice; without it the stub is an anonymous orphan no one is told to implement or remove (eslint `stub-notice`; legend + template → `references/cross-module-stub.md`).
 
 ## Owner/party-scoped resource — authorization negatives
 

@@ -15,7 +15,7 @@ A row belongs to one party (party-scoping rule → `coding-rules.md`): prove the
 
 ## When you reference a permission code another module hasn't declared yet
 
-Forward-declare it with a colocated `modules/<cat>/<mod>.stub.ts` (partial `defineModule`, only the referenced code) so `gen:coc` aggregates it into `PermissionCode` and your reference compiles. Never `import` a stub; delete it once the owner declares the code for real. Header legend + copy-paste template + the gates that enforce all this → `references/cross-module-stub.md`. Types/functions cross modules via `*.public`/`*.api`, not a stub.
+Forward-declare it with a colocated `modules/<cat>/<mod>.stub.ts` (partial `defineModule`, only the referenced code) so `gen:coc` aggregates it into `PermissionCode` and your reference compiles. Never `import` a stub; once the owner declares the code for real the stub is stale — remove it (surface it for a human when it sits in another team's module). Header legend + copy-paste template + the gates that enforce all this → `references/cross-module-stub.md`. Types/functions cross modules via `*.public`/`*.api`, not a stub.
 
 ## When writing routes, middleware, or auth boundaries
 
