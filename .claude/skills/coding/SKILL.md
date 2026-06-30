@@ -6,6 +6,7 @@ disable-model-invocation: true
 
 # /coding
 
+- **Prototype work → `mock-app`, not here.** A prototype (foundation artifact / HTML prototype) → `mock-app` owns the prototype→Next transform. Come back to `/coding` only for the non-prototype logic it hands off.
 - Run `logic-analyze` → `logic.md`; plan from it.
 - `superpowers:writing-plans`, don't brainstorm. Tag each plan task with the `L-n` id(s) it satisfies.
 - Flip an `L-n`'s status only via `ledger.mjs status` — never hand-edit `logic.md`/`logic.items.json`. `dir = .work/logics/<cat>/<name>`.

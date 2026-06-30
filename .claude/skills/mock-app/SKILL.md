@@ -107,3 +107,14 @@ route handlers only. The reusable builder prompts live in
 **Cardinal rule —** a feature whose gate did not fire green, or whose
 unimplemented bucket the user has not ruled on, is **not done; it's blocked.**
 Stop and ask.
+
+## Handoff — after the human checks the frontend
+
+`mock-app` ships the prototype's UI + states + the parity-checked frame. It does
+**not** own the implementation logic the prototype can't show. So once the gate is
+green and **the human has eyeballed the running frontend**, suggest the handoff:
+
+> Frontend looks right? → `/logic-analyze` to sediment the implementation logic
+> into `logic.md`, then `/coding` to wire it up.
+
+Surface this as a suggestion, not an auto-jump.
