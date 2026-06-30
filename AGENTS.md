@@ -19,9 +19,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 先判断代码归属，再决定目录：产品业务优先落 `apps/*`；跨应用、跨业务可复用能力才沉淀 `packages/*`；不要在业务目录混放测试/脚本/配置。
 
-- `apps/admin`（后台管理，默认主应用）：登录前页面 `app/(public)`；后台页面 `app/(portal)`（大多数业务页默认加这）；API 路由 `app/api`（只做 HTTP 适配）；业务实现 `service/<domain>/`（schema/service/policy/repository/mapper 分层）；私有工具 `lib`；私有组件就近 `_components`；菜单 `manifest`；文案 `i18n/messages`。
-- `apps/portal`（对外门户，**不要放后台页面**）：认证 `app/(auth)`；控制台 `app/(console)`；官网/营销 `app/(marketing)`；其余目录约定同 admin。
-- 新增应用参考 `apps/admin` 结构（`app`/`service`/`lib`/`manifest`/`i18n/messages`），按职责裁剪，不另起不兼容约定。
+- `apps/web`（**唯一应用**，原 `apps/admin` + `apps/portal` 已合并)：登录前页面 `app/(portal)`；控制台业务页 `app/(dashboard)`（大多数业务页默认加这）；API 路由 `app/api`（只做 HTTP 适配）；**业务模块就近** `modules/<cat>/<mod>/`（`server`/`ui`/`client`/`schema` 分层 + CoC `manifest.ts` + 模块 `i18n`）；CoC 声明与采集 `manifest/`（含 `catalog/`、`menu-tree.ts`、`collect.ts`、生成物 `_generated/`）；私有工具 `lib`；私有组件就近 `_components`；全局文案 `i18n/messages`。
+- 新增应用参考 `apps/web` 结构（`app`/`modules`/`manifest`/`lib`/`i18n`），按职责裁剪，不另起不兼容约定。
 - `packages/*` 只放项目级共享能力，新增前先查现有导出避免重复造轮子：`ui`(共享UI/布局/主题) `request`(请求封装/响应辅助/错误码) `permissions`(登录态/守卫/上下文) `db`(Prisma/seed) `security`(哈希/加解密) `storage`(S3) `config`/`platform-config`(env/校验) `i18n`(locale/格式/cookie) `api-kit`(handler 骨架) `cache`。
 - `e2e` 放端到端测试；单测/组件测试就近放；`scripts` 放仓库级脚本（只服务单包的放包内）。
 - 根目录只放 monorepo/构建配置与项目文档；`.next`/`node_modules`/产物/缓存/生成文件不手改、不作依赖。
@@ -33,7 +32,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **服务端分层**：业务逻辑落 `service/<domain>/`，route 只做 HTTP 适配，不直接 `import @cloud/db` / `*.repository` / `*.mapper`；`_server/` 是历史遗留，见到顺手迁 `service/`；页面保持薄、默认 RSC（有交互才加 `"use client"`）、取数调 service。→ 写 service/route/页面取数前读 `.claude/docs/server-layering.md`
 - **接口与请求**：**不用 Server Action**，一切 mutation 走 Route Handler；业务错误一律 `throw BusinessError`（带 `PMMNNN` 码）/ `MiddlewareError`，**不裸 `throw new Error("文本")`**；成功走 `successResponse()`/`createdResponse()`，204 用 `noContentResponse()`；默认 `withApiHandler()` 兜底；错误码是协议、message 是展示；客户端调用一律走每域 `service/<domain>/api.ts` 具名函数（不裸调 `request.*`、不内联路径/类型）。→ 写接口/改请求响应/分页前读 `.claude/docs/api-and-requests.md`
 - **i18n**：所有用户可见文案走 message、**禁止硬编码**；统一走 `@cloud/i18n`，禁止直接 import `next-intl`；`en`/`zh-CN`/`ja` 同步补齐，`en` 为基底。→ 新增/改文案前读 `.claude/docs/i18n.md`
-- **鉴权与权限**：前端只是体验层，**读写保护必须落服务端守卫**；route 用 `assertPermissions()`，page/layout 用 `requirePermissions()`，范围校验落 service/policy；菜单走 role→permission→menu 链路。→ 接登录态/权限/菜单前读 `.claude/docs/auth-permissions.md`
+- **鉴权与权限**：前端只是体验层，**读写保护必须落服务端守卫**；route 用 `assertPermissions()`，page/layout 用 `requirePermissions()`，范围校验落 service/policy；菜单不写死、由 CoC 按用户有效权限投影（见下条）。→ 接登录态/权限前读 `.claude/docs/auth-permissions.md`
+- **CoC 声明系统**：菜单/权限/角色由各模块 `manifest.ts` 就近声明、`catalog/contract-types.ts` 合同闸门**单一真源**、权限码 **4 段** `<cat>.<mod>.<fn>.<action>`、**零 DB**、`gen:coc` 确定性生成、运行时 `createCocConfig` 按有效权限投影菜单(ADMIN authorizingType 结构旁路直取合同 scope)；**只投影当前快照**(无 reconcile/deprecated/provisional，那是 Step 3 工作流的事)。生成物 gitignored 不提交不手改。→ 新增/改权限/菜单/角色/合同闸门前读 `.claude/docs/coc-declaration.md`
 - **存储与 S3**：统一走 `@cloud/storage`，不在业务里 new AWS SDK；配置由业务侧注入、包不读 `.env`；项目不提供统一文件表，S3 返回的文件信息由各业务表按需保存；公开文件限 `public/` 前缀。→ 动 S3/上传下载前读 `.claude/docs/storage-s3.md`
 - **邮件**：发邮件统一走 `@cloud/mail` 推 Redis `mail:queue`（外部平台消费发信），不直接发信 / 不直接 `lpush`；`content` 极简 HTML 且变量 `escapeHtml`、`title` 纯文本；模板落各 app `lib/email/`、文案走 i18n `email.*`、译者 app 注入；队列背压 500 + 用户可触发邮件按收件人节流；包不读 env。→ 发邮件前读 `.claude/docs/email-capability.md`
 - **能力归属**：能力两端（client/server）不拆散、整体进同一包双入口；包只做纯能力、配置业务侧注入、不偷读 env；部署常量留 app。→ 抽包/调整能力归属前读 `.claude/docs/capability-ownership.md`
@@ -45,9 +45,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## 默认开发链路
 
-1. 在 `app/(portal)` 下新增页面
-2. 在 `packages/db/prisma/seed.ts` 或数据库里补齐菜单
-3. 判断页面是「只需登录」还是「需要明确权限」
+1. 在 `app/(dashboard)` 下新增页面（业务实现落 `modules/<cat>/<mod>/`）
+2. 权限化模块在 `modules/<cat>/<mod>/manifest.ts` 声明菜单 + 4 段权限码、`catalog/contract-types.ts` 挂合同闸门，跑 `pnpm gen:coc`（菜单零 DB，不改 seed）
+3. 判断页面是「只需登录」(B 类)还是「需要明确权限」(A 类)
 4. 页面分别接 `requireSession()` 或 `requirePermissions()`
 5. 在 `app/api/*` 下新增接口
 6. 接口优先用 `assertPermissions()` 做服务端权限守卫
