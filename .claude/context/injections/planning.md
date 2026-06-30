@@ -4,7 +4,7 @@
 ## Module unit
 - One module at `apps/web/modules/<cat>/<mod>/` with `manifest.ts` + `server/{controller,service,repository,mapper,policy,public}.ts` + `client/<mod>.api.ts` + `schema/` + `i18n/` + `ui/`. Routes are thin adapters in `apps/web/app/`; no business logic there. For depth see `.claude/docs/server-layering.md`.
 - The permission set is derived from the spec, not invented — a missing or ambiguous code is stop-and-ask, never an occasion to invent.
-- Cross-module references go only via another module's `*.public.ts` (server-to-server) or `*.api.ts` (client). A token not yet declared → forward-declare a colocated `modules/<cat>/<mod>.stub.ts`; plan the reference now, the stub is mechanical at impl time (see `implementation` injection). `pnpm gen:coc` aggregates stubs.
+- Cross-module references go only via another module's `*.public.ts` (server-to-server) or `*.api.ts` (client). A token not yet declared → forward-declare a colocated `modules/<cat>/<mod>.stub.ts`; plan the reference now, the stub is mechanical at impl time (see `implementation` injection; template + legend in `references/cross-module-stub.md`). `pnpm gen:coc` aggregates stubs.
 
 ## Component boundaries
 - UI specific to one module lives in `modules/<cat>/<mod>/ui/`. Cross-module pure-tech helpers belong in `apps/web/lib/` (or promoted to `apps/web/commons/<mod>/` when reused). Don't drop domain UI into lib "in case of reuse."

@@ -125,6 +125,19 @@ describe('nextKitGuardrail region coverage', () => {
     expect(Object.keys(plugin!.rules)).toContain('require-e2e-cell');
   });
 
+  it('exposes the stub-notice rule (warn) for *.stub.* files', () => {
+    type StubBlock = { files?: string[]; rules: Record<string, unknown>; plugins?: Record<string, { rules: Record<string, unknown> }> };
+    const block = (cfg() as StubBlock[]).find(b => b.rules['next-kit/stub-notice']);
+    expect(block).toBeDefined();
+    // warn, NOT error: a stub is legitimately present mid-development — it must
+    // announce itself via `pnpm lint` without failing the build.
+    expect(block!.rules['next-kit/stub-notice']).toBe('warn');
+    expect(block!.files?.some(f => f.includes('stub'))).toBe(true);
+    const plugin = block!.plugins!['next-kit'];
+    expect(plugin).toBeDefined();
+    expect(Object.keys(plugin!.rules)).toContain('stub-notice');
+  });
+
   it('exposes the error-code-module-collision rule for *-error-codes files', () => {
     type ECBlock = { files?: string[]; rules: Record<string, unknown>; plugins?: Record<string, { rules: Record<string, unknown> }> };
     const block = (cfg() as ECBlock[]).find(b => b.rules['next-kit/error-code-module-collision']);

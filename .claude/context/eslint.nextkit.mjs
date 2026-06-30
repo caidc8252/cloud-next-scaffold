@@ -154,7 +154,64 @@ const requireE2eCell = {
         };
   },
 };
-const nextKitPlugin = { meta: { name: 'eslint-plugin-next-kit', version: '0.0.0' }, rules: { 'require-e2e-cell': requireE2eCell } };
+// ---- custom rule: stub-notice ----------------------------------------------
+// A `*.stub.ts` is a temporary cross-module forward-declaration of a permission
+// code (AGENTS 铁律 #8): `gen:coc` globs it and injects a not-yet-declared code
+// into the generated PermissionCode union so a cross-module reference type-checks,
+// until the OWNING module declares that code for real — then the stub is deleted.
+// The file's existence is a standing two-audience TODO: the OWNER who must
+// implement it, and the DEPENDANT relying on it now. This rule surfaces that as a
+// `pnpm lint` notice (Claude runs lint during dev, so the reminder reaches it),
+// naming both from the @stub-* header so it's never anonymous, and nagging when the
+// header is incomplete so the notice can't be silent. Severity is `warn`, NOT
+// `error`: a stub is legitimately present mid-development, so it must announce
+// itself without failing the build. It self-clears when the file is gone (= the
+// real code landed; the coc `duplicate-code` gate independently forces removal).
+// Like require-e2e-cell, it asserts the PRESENCE/SHAPE of a comment, which
+// no-restricted-syntax cannot (comments aren't in the esquery AST).
+const STUB_FILE_RE = /\.stub\.[mc]?[jt]sx?$/;
+const REQUIRED_STUB_TAGS = ['owner', 'consumer', 'reason'];
+const stubTag = (text, name) => {
+  const m = text.match(new RegExp(`@stub-${name}[ \\t]+(\\S[^\\r\\n]*?)[ \\t]*$`, 'm'));
+  return m ? m[1].trim() : '';
+};
+const stubNotice = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'a *.stub.ts carries a complete @stub-* header and announces itself during lint until deleted' },
+    schema: [],
+    messages: {
+      present:
+        'STUB — owner `{{owner}}` must declare [{{declares}}] for real then delete this file ' +
+        '(needed now by `{{consumer}}`: {{reason}}). This notice clears when the stub is gone.',
+      incomplete:
+        'Stub header incomplete (missing {{missing}}). A *.stub.ts MUST name who owns it and why — ' +
+        'see context/injections/references/cross-module-stub.md.',
+    },
+  },
+  create(context) {
+    const file = context.filename ?? context.getFilename();
+    if (!STUB_FILE_RE.test(file)) return {};
+    const src = context.sourceCode ?? context.getSourceCode();
+    return {
+      Program(node) {
+        const header = src.getAllComments().map(c => c.value).join('\n');
+        const tags = Object.fromEntries(REQUIRED_STUB_TAGS.map(t => [t, stubTag(header, t)]));
+        const missing = REQUIRED_STUB_TAGS.filter(t => !tags[t]).map(t => `@stub-${t}`);
+        if (missing.length) {
+          context.report({ node, messageId: 'incomplete', data: { missing: missing.join(', ') } });
+          return;
+        }
+        context.report({
+          node,
+          messageId: 'present',
+          data: { owner: tags.owner, consumer: tags.consumer, reason: tags.reason, declares: stubTag(header, 'declares') || '…' },
+        });
+      },
+    };
+  },
+};
+const nextKitPlugin = { meta: { name: 'eslint-plugin-next-kit', version: '0.0.0' }, rules: { 'require-e2e-cell': requireE2eCell, 'stub-notice': stubNotice } };
 
 // ---- type-aware rules (no deprecated APIs) ---------------------------------
 // `@typescript-eslint/no-deprecated` needs TYPE information, so this is the one
@@ -201,6 +258,8 @@ export function nextKitGuardrail({
   routeHandlers = ['app/**/route.{ts,tsx,js,jsx}', 'src/app/**/route.{ts,tsx,js,jsx}'],
   middleware = ['middleware.{ts,tsx,js,jsx}', 'src/middleware.{ts,tsx,js,jsx}'],
   repository = ['**/*.repository.{ts,tsx,js,jsx}'],
+  // Cross-module forward-declaration stubs (extension-qualified per the glob note above).
+  stubFiles = ['**/*.stub.{ts,tsx,mts,cts,js,jsx}'],
   // Source dirs for type-aware linting (no-deprecated). Scoped, not bare **/*.ts,
   // so root config files / scripts (commonly outside the tsconfig) don't trip
   // projectService's hard "file not in project" error.
@@ -231,6 +290,9 @@ export function nextKitGuardrail({
 
     // ---- require-e2e-cell (route handlers + middleware carry an @e2e-cell marker) ----
     { files: [...routeHandlers, ...middleware], plugins: { 'next-kit': nextKitPlugin }, rules: { 'next-kit/require-e2e-cell': 'error' } },
+
+    // ---- stub-notice (a *.stub.ts announces itself + must carry a complete @stub-* header) ----
+    { files: stubFiles, plugins: { 'next-kit': nextKitPlugin }, rules: { 'next-kit/stub-notice': 'warn' } },
 
     // ---- type-aware: ban deprecated APIs (kit-delivered + active, not opt-in) ----
     ...typeAwareBlocks(typeAware),
