@@ -4,8 +4,7 @@
 
 ## 默认保留的基线能力
 
-- `apps/portal`：PEP 门户站和统一登录页
-- `apps/admin`：单个后台应用
+- `apps/web`：唯一应用（原 `apps/admin` + `apps/portal` 已合并）——登录前页 `app/(portal)` + 控制台 `app/(dashboard)`，业务实现在 `modules/<cat>/<mod>/`
 - `packages/ui`：基础 UI 组件与样式
 - `packages/request`：通用请求封装与错误码
 - `packages/api-kit`：API 兜底骨架与本栈默认错误映射（跨 app 复用）
@@ -15,51 +14,34 @@
 - `packages/db`：Prisma + PostgreSQL 数据层
 - `packages/security`：密码哈希、RSA 加解密
 - `packages/permissions`：权限判断 + 服务端登录态与前端权限 hook
-- `apps/admin/system`：系统管理页面组件（用户管理、角色管理）
+- `apps/web/modules/system/*`：系统管理模块（用户管理、角色管理）
 - API 统一错误响应、权限异常兜底、页面级错误边界
-- 登录页、登录态、Entity 选择页、锁定说明页
-- 完整的 Entity / 合同 / 用户 / 角色 / 权限 / 菜单 数据模型
+- 登录页、登录态、Partner 选择页、锁定说明页
+- Entity / 合同 / 用户 / 角色 数据模型 + CoC 声明的菜单 / 权限（零 DB 菜单）
 - 左侧菜单 + 顶部导航 layout
 - 默认管理员种子账号
 
 ## 启动当前仓库
 
-要求 Node.js `>=20.19.0`（Prisma 7 要求）。
-
-仓库有两个应用，本地各占一个端口：
-
-- **`apps/admin`** — 后台管理应用，跑在 **http://localhost:3000**
-- **`apps/portal`** — 门户站 + 统一登录页，跑在 **http://localhost:3100**
+要求 Node.js `>=20.19.0`（Prisma 7 要求）。单一应用 `apps/web`，本地跑在 **http://localhost:3000**。
 
 ### 一次性准备
 
 ```bash
 pnpm install
-cp .env.example .env                         # 根 .env：数据库 / 认证密钥 / Redis
-cp apps/admin/.env.example apps/admin/.env   # admin app 级变量（展示名等）
-docker compose up -d                         # 本地 PostgreSQL + Redis
-pnpm db:setup                                # generate + push + seed
+cp .env.example .env                       # 根 .env：数据库 / 认证密钥 / Redis
+cp apps/web/.env.example apps/web/.env     # web app 级变量（展示名等）
+docker compose up -d                       # 本地 PostgreSQL + Redis
+pnpm db:setup                              # generate + push + seed
 ```
 
-### 启动 admin（后台，:3000）
+### 启动开发服务器
 
 ```bash
-pnpm dev:admin        # 等价于 pnpm dev
+pnpm dev        # = pnpm dev:web，跑在 :3000
 ```
 
-打开 http://localhost:3000。未登录会被重定向到 portal 的登录页，所以本地完整体验需要同时起 portal。
-
-### 启动 portal（门户 + 统一登录，:3100）
-
-```bash
-pnpm dev:portal
-```
-
-打开 http://localhost:3100。登录入口是门户站内的 `/login`；登录成功后在 `/select-partner` 选择 partner（只有一个可选 partner 时自动跳过），portal 校验归属、生成完整权限 session 后直接跳到 `NEXT_ADMIN_URL`（默认就是 admin 的 http://localhost:3000）。admin 里登出也会跳回 portal 的 `/login`。
-
-> 本地跑通完整登录链路需要 **admin（:3000）和 portal（:3100）两个都起**：portal 负责登录与 partner 选择，admin 承载登录后的后台业务。只改后台代码时也可以只起 admin，但登录仍然走 portal。
-
-生产环境若 portal 与 admin 使用同一根域下的不同子域，需要配置 `SESSION_COOKIE_DOMAIN`，例如 `.example.com`，让两边共享 `sid` cookie。
+打开 http://localhost:3000。登录入口 `/login`（在 `app/(portal)` 内）；登录成功后在 `/select-partner` 选择 partner（只有一个可选时自动跳过），校验归属、生成完整权限 session 后进入控制台 `app/(dashboard)`。登出回到 `/login`。
 
 默认种子账号：
 
@@ -68,8 +50,7 @@ pnpm dev:portal
 
 ## 当前工作区
 
-- `apps/portal`
-- `apps/admin`
+- `apps/web`
 - `packages/api-kit`
 - `packages/config`
 - `packages/cache`
@@ -85,22 +66,16 @@ pnpm dev:portal
 
 ```txt
 apps/
-  portal/                 # PEP 门户站和统一登录页
+  web/                    # 唯一应用（原 admin + portal 合并）
     app/
-      (marketing)/        # 门户首页
-      (auth)/login/       # 登录页和 partner 选择
-    i18n/
-      messages/           # 门户站文案
-  admin/                  # 后台应用
-    app/
-      (public)/           # 登录前页面（login, select-entity, locked）
-      (portal)/           # 登录后页面（system/users, system/roles）
-      api/                # API 路由
-    lib/
-      auth.ts             # 鉴权兼容导出，实际实现位于 packages/permissions
-      user-mapper.ts      # 用户数据映射
-      role-mapper.ts      # 角色数据映射
-    system/               # 系统管理业务 UI（users, roles）
+      (portal)/           # 登录前页面（login, select-partner, onboarding, locked）
+      (dashboard)/        # 登录后控制台页面 + layout / 面包屑
+      api/                # API 路由（只做 HTTP 适配）
+      _components/        # app 级共享组件
+    modules/              # 业务模块 <cat>/<mod>/：server / ui / client / schema + CoC manifest.ts + i18n
+    manifest/             # CoC 声明与采集：menu-tree / collect / catalog / _generated（产物，gitignored）
+    lib/                  # app 私有工具（session-snapshot、session-menus 等）
+    i18n/messages/        # 全局文案
 packages/
   api-kit/                # API 兜底骨架 createApiHandler + 本栈默认错误映射
   cache/                  # Redis client + JSON KV cache
@@ -421,18 +396,18 @@ export function Example() {
 
 ### 页面放在哪里
 
-- 登录前页面放在 `apps/admin/app/(public)`
-- 登录后的后台页面放在 `apps/admin/app/(portal)`
-- API 路由放在 `apps/admin/app/api`
-- 共享服务端逻辑优先放在 `apps/admin/lib` 或 `packages/*`
+- 登录前页面放在 `apps/web/app/(portal)`
+- 登录后的控制台页面放在 `apps/web/app/(dashboard)`
+- API 路由放在 `apps/web/app/api`
+- 业务实现放在 `apps/web/modules/<cat>/<mod>/`；共享服务端逻辑放 `apps/web/lib` 或 `packages/*`
 
 ### 怎么加一个后台页面
 
-1. 在 `apps/admin/app/(portal)` 下创建新目录，例如 `reports/page.tsx`
+1. 在 `apps/web/app/(dashboard)` 下创建新目录，例如 `reports/page.tsx`
 2. 页面里调用 `requireSession()` 保护登录态
 
 ```tsx
-import { requireSession } from "../../lib/auth";
+import { requireSession } from "@cloud/permissions/server";
 
 export default async function ReportsPage() {
   const session = await requireSession();
@@ -440,20 +415,15 @@ export default async function ReportsPage() {
 }
 ```
 
-### 怎么加菜单
+### 怎么加菜单 / 权限
 
-菜单来自数据库 `sys_menu` 表，通过 Permission 关联到用户可见范围。
+菜单 / 权限 / 角色**不入库**（无 `sys_menu` / `sys_permission`），由 **CoC 声明系统**管理 —— 完整规约见 [.claude/docs/coc-declaration.md](.claude/docs/coc-declaration.md)。简述：
 
-添加方式：
+1. 在模块 `apps/web/modules/<cat>/<mod>/manifest.ts` 用 `defineModule` 声明 `menuCode` + 4 段权限码（`<cat>.<mod>.<fn>.<action>`）+ i18n 文案
+2. 在 `apps/web/manifest/catalog/contract-types.ts` 的 `CONTRACT_MENUS` 把该菜单挂到对应合同闸门
+3. 跑 `pnpm gen:coc`（生成 `manifest/_generated/*`；有 error 拒写）
 
-1. 修改 `packages/db/prisma/seed.ts`，执行 `pnpm db:seed`
-2. 或用 `pnpm db:studio` 直接改表
-
-菜单可访问的前提：
-
-- `path` 对应的页面已存在
-- 菜单关联了 Permission
-- 用户的角色包含该 Permission（或用户为 ADMIN 类型）
+菜单可见的前提：`path` 对应页面已存在；当前 party 的合同解锁了该菜单；当前会话命中其任一权限码（或 `authorizingType=ADMIN` 直取合同 scope）。
 
 ### 怎么请求接口
 
@@ -664,17 +634,17 @@ export const POST = withApiHandler(
 
 App Router 页面级兜底文件：
 
-- `apps/admin/app/(portal)/error.tsx`：后台页面渲染错误
-- `apps/admin/app/(public)/error.tsx`：登录前页面渲染错误
-- `apps/admin/app/global-error.tsx`：根布局级错误
-- `apps/admin/app/not-found.tsx`：404 页面
+- `apps/web/app/(dashboard)/error.tsx`：控制台页面渲染错误
+- `apps/web/app/(portal)/error.tsx`：登录前页面渲染错误
+- `apps/web/app/global-error.tsx`：根布局级错误
+- `apps/web/app/not-found.tsx`：404 页面
 
 当前 Next.js 16 错误边界组件使用 `unstable_retry()` 触发重试；新增或调整错误边界前先看 `node_modules/next/dist/docs/` 中对应文档。
 
 ### 典型开发流程
 
-1. 在 `app/(portal)` 下加页面
-2. 在 seed 或数据库里加菜单 + 权限
+1. 在 `app/(dashboard)` 下加页面（业务实现落 `modules/<cat>/<mod>/`）
+2. 权限化模块在 `manifest.ts` 声明菜单 + 权限码、`catalog/contract-types.ts` 挂合同闸门，跑 `pnpm gen:coc`（不改 seed）
 3. 用 `requireSession()` 或 `requirePermissions()` 保护页面
 4. 在 `app/api/*` 新增接口
 5. 在 route handler 里优先用 `assertPermissions()` 做接口权限校验
@@ -689,8 +659,10 @@ pnpm db:setup         # 初始化数据库（generate + push + seed）
 pnpm db:generate      # 生成 Prisma Client
 pnpm db:seed          # 执行种子数据
 pnpm db:studio        # 打开 Prisma Studio
+pnpm gen:coc          # 生成 CoC 菜单/权限注册表（已挂 predev/prebuild/pretest）
 pnpm lint             # ESLint 检查
 pnpm test             # 运行测试
+pnpm test:e2e         # 端到端测试
 pnpm exec tsc --noEmit  # TypeScript 类型检查
-pnpm --filter admin build # 构建 Admin 应用
+pnpm build:web        # 构建 web 应用
 ```
