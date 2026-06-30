@@ -66,6 +66,7 @@ description: /logic-analyze —— 针对当前活跃任务,读取需求 specs +
 ## Step 4 — 分析、澄清、沉淀（生成程序）
 
 1. **扫碎片**：取 groom `# 原始碎片` 中 `处理状态=待处理` 的，统合分析；有疑问 → 写入 groom `# 问题账`（来源 `groom#n`）。
+   - **碎片是 coding-review finding（既有 `L-n` 实现有缺陷）时**：定位对应 `L-n`，用 `supersedes:<旧id>` 落修正条目（助手自动把旧条目标 `需返工`，交 coding 回滚重做），**不新开与原 `L-n` 脱钩的需求条目**。
 2. **AI 分析缺口/冲突**：从 specs/原型/data-model/代码 找"两份真理都没说"的技术缺口与冲突 → 也写入 `# 问题账`（来源 `logic-analyze`）。
    - 若无 groom.md：创建仅含 `# 问题账` 的骨架 `<name>.groom.md`（`# 原始碎片` 区归 grooming skill，本 skill 不造碎片）。
 3. **增量差异**：非首次则结合代码整理 Step 1 的差异逻辑。
@@ -84,7 +85,7 @@ description: /logic-analyze —— 针对当前活跃任务,读取需求 specs +
 ## 关键规则
 
 - **锚点要细**：specs 指到 `R-n/P-n/SM-n` 并带依据 commit（`#R-2 @<commit>`）；原型指到**具体界面/区块**（如 `<name>.html#上传版本弹窗`）。**禁止让 coding 回读整份 html / 整个语料**——logic.md 是蒸馏交接物，coding 按锚点回读那一小片。
-- **字段级所有权/并发**：logic-analyze 重跑期间不可同时 coding。助手层面：`add/digest/meta` 归 logic-analyze；`status` 翻 `待实现↔已处理` 归 coding。谁都不手改渲染产物。
+- **字段级所有权/并发**：logic-analyze 重跑期间不可同时 coding。助手层面：`add/digest/meta` 归 logic-analyze；`status` 归 coding（`待实现↔已处理`，并按交接信号置 `作废`〔回滚 `需返工` 后〕/`blocked`〔缺契约〕）。谁都不手改渲染产物。
 - **生命周期**：`logic.md` 是**模块级、跨 task 累积**，**不随 `/submit-work` 清空**（submit 只清 workbench）；条目按状态(待实现/已处理/blocked/需返工/作废)长期留在台账。
 
 ## I/O contract
