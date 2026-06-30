@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { DEFAULT_TABLES_DIR } from '../paths'
+import { DEFAULT_TABLES_DIR, DEFAULT_UI_SRC } from '../paths'
 import { loadTable } from '../load-table'
 import { resolveDispositions } from '../resolve'
 import { loadExports } from '../cross-check'
@@ -9,7 +9,7 @@ import { parseArtifactBody } from '../parse-artifact'
 import { runGate } from '../gate'
 import { buildResidueReport } from '../residue'
 
-const UI_SRC = process.env.UI_SRC_DIR ?? '/workspaces/pep-webapp/packages/ui/src'
+const UI_SRC = process.env.UI_SRC_DIR ?? DEFAULT_UI_SRC
 
 function bannerVersion(html: string): string {
   const m = html.match(/<!--\s*foundation:\s*([^\s]+)/)
