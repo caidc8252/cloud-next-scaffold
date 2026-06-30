@@ -7,7 +7,7 @@
 
 ## What it is
 
-A `*.stub.ts` is a **temporary forward-declaration of a codegen-aggregated, string-referenced cross-module token** (AGENTS 铁律 #8). The mechanism is *not* permission-specific — it's defined by **how the token is referenced**: a stub is **never imported**, so it can only stand in for something a generated artifact resolves by string. **Permission codes are the only such token in the system today** (the flagship `@stub-kind`); any future generated, string-referenced registry plugs into the same machinery unchanged.
+A `*.stub.ts` is a **temporary forward-declaration of a codegen-aggregated, string-referenced cross-module token**. The mechanism is *not* permission-specific — it's defined by **how the token is referenced**: a stub is **never imported**, so it can only stand in for something a generated artifact resolves by string. **Permission codes are the only such token in the system today** (the flagship `@stub-kind`).
 
 Worked example (kind = `permission-code`): module A references a code that module B will own but hasn't declared yet, so A can't compile — the code isn't in the generated `PermissionCode` union. The stub injects it:
 
@@ -16,7 +16,7 @@ Worked example (kind = `permission-code`): module A references a code that modul
 
 You therefore **never `import` a stub** (eslint `no-stub-import`): the link is the generated union, not a module import. The build fails when the code is *missing from the union*, not when the stub is un-imported — the stub is what puts it there.
 
-**The boundary is physical, not a policy choice.** A stub can stand in only for a token referenced *by string and resolved through codegen* — because a never-imported file cannot supply anything that must be `import`ed. So import-referenced **types/functions** are out: they cross modules via `server/<mod>.public` / `client/<mod>.api` (see `coding-rules.md`), which must be real files. That edge is intrinsic to "never imported", not a narrowing of the stub concept. (If you ever want forward-declaration for an *imported* symbol too, that's a deliberately different mechanism — an importable, separately-reaped placeholder — not this stub.)
+**The boundary is physical, not a policy choice.** A stub can stand in only for a token referenced *by string and resolved through codegen* — because a never-imported file cannot supply anything that must be `import`ed. So import-referenced **types/functions** are out: they cross modules via `server/<mod>.public` / `client/<mod>.api` (see `coding-rules.md`), which must be real files.
 
 ## Two-way notice
 
@@ -33,7 +33,7 @@ The file's existence is a standing TODO with two readers:
 
 | tag | value |
 |-----|-------|
-| `@stub-kind` | the token kind — `permission-code` today (the only codegen string-token the system aggregates from stubs); reserved for future generated registries |
+| `@stub-kind` | the token kind — `permission-code` today (the only codegen string-token the system aggregates from stubs) |
 | `@stub-owner` | `<cat>/<mod>` that must implement the code(s) and delete this stub |
 | `@stub-consumer` | `<cat>/<mod>` referencing the code(s) now (why the stub exists) |
 | `@stub-reason` | one line: what forces the reference before the owner ships |

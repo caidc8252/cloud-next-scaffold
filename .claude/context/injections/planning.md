@@ -1,9 +1,11 @@
 <!-- scaffold:injection:planning -->
 # Planning a module — what to nail down
 
+> Code conventions live in `references/coding-rules.md`; plan within them. This file covers only the planning decisions a coding-rules pass doesn't make.
+
 ## Module unit
-- One module at `apps/web/modules/<cat>/<mod>/` with `manifest.ts` + `server/{controller,service,repository,mapper,policy,public}.ts` + `client/<mod>.api.ts` + `schema/` + `i18n/` + `ui/`. Routes are thin adapters in `apps/web/app/`; no business logic there. For depth see `.claude/docs/server-layering.md`.
-- The permission set is derived from the spec, not invented — a missing or ambiguous code is stop-and-ask, never an occasion to invent.
+- One module at `apps/web/modules/<cat>/<mod>/` with `manifest.ts` + `server/{controller,service,repository,mapper,policy,public}.ts` + `client/<mod>.api.ts` + `schema/` + `i18n/` + `ui/`. Layer-by-layer rules (incl. thin routes) → `references/coding-rules.md`.
+- The permission set is derived from the spec, not invented — a missing or ambiguous code is stop-and-ask.
 - Cross-module references go only via another module's `*.public.ts` (server-to-server) or `*.api.ts` (client). A token not yet declared → forward-declare a colocated `modules/<cat>/<mod>.stub.ts`; plan the reference now, the stub is mechanical at impl time (template + legend in `references/cross-module-stub.md`). `pnpm gen:coc` aggregates stubs.
 
 ## Component boundaries
@@ -12,7 +14,7 @@
 
 ## Routing
 - Authed portal pages → `apps/web/app/(portal)/`; pre-login pages → `app/(public)/`; route handlers → `app/api/`. A new navigable page = route dir + `page.tsx` under `(portal)`.
-- Mutations go to route handlers only (`app/api/*`). `'use server'` is banned — file-level and function-level.
+- Plan every mutation as an `app/api/*` route handler (no server actions). The ban + enforcement → `references/coding-rules.md`.
 
 ## A-class vs B-class (decide before touching manifest)
 - **A-class**: module has permission-gated UI → declare `manifest.ts` with `menuCode` + `permissions[]` → entry appears in left-nav via CoC projection.
@@ -20,10 +22,10 @@
 
 ## Menu and permissions (A-class only)
 - `manifest.ts` declares `menuCode`, `parentMenuCode`, `entry.url`, `permissions[]`. **Does not declare `contractTypes`** — which menus each contract unlocks is human-owned in `apps/web/manifest/catalog/contract-types.ts` (`CONTRACT_MENUS`).
-- After editing `manifest.ts`, add the module `import` to `apps/web/manifest/collect.ts` if new, then run `pnpm gen:coc` — never hand-edit `apps/web/manifest/_generated/*.generated.ts`.
+- `manifest.ts` is source of truth; regen / `collect.ts` wiring / never-hand-edit mechanics → `references/coding-rules.md`.
 - `permissions[].code` is 4-segment `<cat>.<mod>.<fn>.<action>`. **Granularity = one code per indivisible capability**: ask "would a role ever be granted/revoked JUST this?" — yes → own code; no → fold in. A capability another module owns → reference that code, don't mint one. No code for backend-only steps or out-of-scope items.
 - Who may use which code is human-owned in `apps/web/manifest/catalog/roles.ts` — AI does not auto-fill it.
-- `commons/<mod>/` is the leaf layer: no `menuCode`, no `belongToMenuCode`, never calls a business module. See `.claude/docs/coc-declaration.md` for the full CoC how-to.
+- `commons/<mod>/` is the leaf layer: no `menuCode`/`parentMenuCode`, never calls a business module. See `.claude/docs/coc-declaration.md` for the full CoC how-to.
 
 ## Shared packages
 - Which `@cloud/*` packages get touched? List them. Available: `api-kit`, `cache`, `config`, `constants`, `db`, `i18n`, `log`, `mail`, `permissions`, `platform-config`, `request`, `security`, `storage`, `ui`.
@@ -43,12 +45,12 @@ Pick the lowest rung that exercises real behavior:
 |---|---|
 | Pure function, Zod schema, service over an injected mock repo | Unit (Vitest, `pnpm test`) |
 | Service + real schema/policy, or repository against a real test DB | Integration (Vitest, `pnpm test`) |
-| Cross-party scoping (A's query excludes B's rows; A denied B's row) | Service/repository test asserting the `where: { partyId }` scope (Vitest) |
+| Cross-party scoping (see Authorization negatives below) | Service/repository test asserting the `where: { partyId }` scope (Vitest) |
 | Login / logout / role-gated redirect / full-stack page flow | e2e (Playwright spec under `e2e/`, `pnpm test:e2e`) |
 
 ### Authorization negatives (required for every owner-scoped table)
 
-Isolation is manual — there is no RLS. Every query/mutation is scoped by `session.currentPartyId` (`party_id` is `Int`). Plan these as acceptance tests the build must produce and pass, as Vitest service/repository tests:
+Plan these as required Vitest service/repository acceptance tests (tenancy mechanics → `references/coding-rules.md`):
 
 - **list scoping** — a query as party A returns only A's rows, never B's (assert contents, not status).
 - **resource denial** — a lookup of party B's row id while scoped to A returns empty/denied.
