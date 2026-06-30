@@ -165,13 +165,13 @@ import { PortalBreadcrumbs } from "../_components/portal-breadcrumbs";
  */
 export default async function DefaultBreadcrumbs() {
   await requireSession();
-  // menuTitle 是 coc 命名空间下的 i18n key，面包屑在此翻译。
+  // title 是 coc 命名空间下的 i18n key，面包屑在此翻译。
   const tc = await getTranslations("coc");
   const menus = (await getSessionMenus()).map((m) => ({
-    id: m.menuId,
-    label: tc(m.menuTitle),
+    id: m.menuCode,
+    label: tc(m.title),
     path: m.path,
-    parentMenuId: m.parentMenuId,
+    parentMenuId: m.parentMenuCode,
   }));
   return <PortalBreadcrumbs menus={menus} />;
 }

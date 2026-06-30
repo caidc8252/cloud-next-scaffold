@@ -1,3 +1,4 @@
+// CoC 运行时消费者:消费 _generated/* + catalog,经 createCocConfig 暴露给 app(@/manifest)。
 import { createCocConfig } from "@cloud/platform-config";
 import { MENU_REGISTRY } from "./_generated/menu-registry.generated.ts";
 import { codeToMenu } from "./_generated/permission-registry.generated.ts";

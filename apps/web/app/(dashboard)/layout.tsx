@@ -89,14 +89,14 @@ export default async function PortalLayout({
   const cookieStore = await cookies();
   const defaultCollapsed = cookieStore.get(SIDEBAR_COOKIE)?.value === "1";
 
-  // menuTitle 是 coc 命名空间下的 i18n key，侧边栏在此翻译。
+  // title 是 coc 命名空间下的 i18n key，侧边栏在此翻译。
   const tc = await getTranslations("coc");
   const menus: Menu[] = (await getSessionMenus()).map((m) => ({
-    id: m.menuId,
-    label: tc(m.menuTitle),
+    id: m.menuCode,
+    label: tc(m.title),
     path: m.path,
     icon: m.icon ?? "layout-dashboard",
-    parentMenuId: m.parentMenuId,
+    parentMenuId: m.parentMenuCode,
   }));
 
   // dashboard 是 B 类(登录即看,不进 CoC 投影):固定直链置顶,文案走 app nav 命名空间。

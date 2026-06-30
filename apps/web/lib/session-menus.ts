@@ -5,25 +5,25 @@ import { getSession } from "@cloud/permissions/server";
 import { buildMenuTree, type MenuTreeNode } from "@/manifest";
 
 // 菜单不再存进会话快照，由本平台 manifest + 当前权限现算。
-// 输出扁平结构（menuId 用字符串 menuCode），保持侧边栏 / 面包屑既有消费形状。
+// 扁平结构，沿用 CoC 术语 menuCode/title/parentMenuCode，保持侧边栏 / 面包屑消费形状。
 export type SidebarMenu = {
-  menuId: string;
-  menuTitle: string;
+  menuCode: string;
+  title: string;
   path: string | null;
   icon: string | null;
   sort: number;
-  parentMenuId: string | null;
+  parentMenuCode: string | null;
 };
 
-function flatten(nodes: MenuTreeNode[], parentMenuId: string | null, out: SidebarMenu[]): SidebarMenu[] {
+function flatten(nodes: MenuTreeNode[], parentMenuCode: string | null, out: SidebarMenu[]): SidebarMenu[] {
   for (const node of nodes) {
     out.push({
-      menuId: node.menuCode,
-      menuTitle: node.title,
+      menuCode: node.menuCode,
+      title: node.title,
       path: node.path,
       icon: node.icon,
       sort: node.order,
-      parentMenuId,
+      parentMenuCode,
     });
     if (node.children.length > 0) flatten(node.children, node.menuCode, out);
   }

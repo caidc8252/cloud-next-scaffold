@@ -9,17 +9,17 @@ import type { PermissionGroup } from "@/lib/permission-catalog";
 type PermissionsCardProps = {
   groups: PermissionGroup[];
   permissions: string[];
-  /** 被已授予后代「require」到的前置码：开关锁定、不可单独取消。 */
+  /** 锁定:不可切换的码(可选,开关禁用)。 */
   locked?: Set<string>;
   onTogglePerm: (code: string) => void;
-  onToggleGroup: (menuId: string, grant: boolean) => void;
+  onToggleGroup: (menuCode: string, grant: boolean) => void;
   disabled?: boolean;
 };
 
 export function PermissionsCard({
   groups, permissions, locked, onTogglePerm, onToggleGroup, disabled,
 }: PermissionsCardProps) {
-  // menuTitle / label / desc 是 coc 命名空间下的 i18n key，展示端翻译。
+  // title / label / desc 是 coc 命名空间下的 i18n key，展示端翻译。
   const t = useTranslations("coc");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "granted" | "available">("all");
@@ -44,11 +44,11 @@ export function PermissionsCard({
   const grantedCount = permissions.filter((p) => groups.some((g) => g.items.some((i) => i.code === p))).length;
   const availableCount = totalInScope - grantedCount;
   const hiddenCount = filter !== "all" ? totalInScope - filtered.reduce((n, g) => n + g.items.length, 0) : 0;
-  const allExpanded = filtered.length > 0 && filtered.every((g) => expanded.has(g.menuId));
+  const allExpanded = filtered.length > 0 && filtered.every((g) => expanded.has(g.menuCode));
 
   function toggleExpandAll() {
     if (allExpanded) setExpanded(new Set());
-    else setExpanded(new Set(filtered.map((g) => g.menuId)));
+    else setExpanded(new Set(filtered.map((g) => g.menuCode)));
   }
 
   return (
@@ -89,29 +89,29 @@ export function PermissionsCard({
 
       <div className="divide-y divide-line-subtle">
         {filtered.map((group) => {
-          const isOpen = expanded.has(group.menuId);
+          const isOpen = expanded.has(group.menuCode);
           const groupGranted = group.items.filter((p) => grantedSet.has(p.code)).length;
           const allGranted = groupGranted === group.items.length;
 
           return (
-            <div key={group.menuId}>
+            <div key={group.menuCode}>
               <div className="flex items-center w-full px-5 py-3 bg-surface-3 border-b border-line-subtle">
                 <div
                   role="button"
                   tabIndex={0}
                   aria-expanded={isOpen}
-                  aria-label={`${isOpen ? "Collapse" : "Expand"} ${t(group.menuTitle)}`}
+                  aria-label={`${isOpen ? "Collapse" : "Expand"} ${t(group.title)}`}
                   className="flex items-center flex-1 min-w-0 cursor-pointer"
                   onClick={() => {
                     const next = new Set(expanded);
-                    if (isOpen) next.delete(group.menuId); else next.add(group.menuId);
+                    if (isOpen) next.delete(group.menuCode); else next.add(group.menuCode);
                     setExpanded(next);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
                       const next = new Set(expanded);
-                      if (isOpen) next.delete(group.menuId); else next.add(group.menuId);
+                      if (isOpen) next.delete(group.menuCode); else next.add(group.menuCode);
                       setExpanded(next);
                     }
                   }}
@@ -119,11 +119,11 @@ export function PermissionsCard({
                   {isOpen
                     ? <ChevronDown size={14} className="text-content-tertiary mr-2 shrink-0" />
                     : <ChevronRight size={14} className="text-content-tertiary mr-2 shrink-0" />}
-                  <span className="flex-1 text-xs font-semibold tracking-wide uppercase text-content-secondary">{t(group.menuTitle)}</span>
+                  <span className="flex-1 text-xs font-semibold tracking-wide uppercase text-content-secondary">{t(group.title)}</span>
                   <span className="text-xs text-content-tertiary mr-3">{groupGranted}/{group.items.length}</span>
                 </div>
                 {!disabled && (
-                  <Button variant="ghost" size="xs" onClick={() => onToggleGroup(group.menuId, !allGranted)}>
+                  <Button variant="ghost" size="xs" onClick={() => onToggleGroup(group.menuCode, !allGranted)}>
                     {allGranted ? "Revoke all" : "Grant all"}
                   </Button>
                 )}
