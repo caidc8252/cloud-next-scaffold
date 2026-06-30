@@ -1,15 +1,16 @@
-// 新 CoC 生成脚本(与旧 generate-manifest-registry.mjs 并存)。读 apps/web/manifest/collect.ts →
-// 调 @cloud/platform-config 2A 原语 buildRegistry/validateCatalog/deriveContractScope/emitRegistry,
-// 仅产 4 个 .generated.ts 到 apps/web/manifest/_generated/(本相位不产 i18n,留 2C)。
-// 有 error 诊断 → 拒写、退出码 1。产物 gitignored、由 pre 钩子重建、运行时无人消费(旧 apps.ts 仍驱动)。
+// 唯一 CoC 生成脚本。读 apps/web/manifest/collect.ts → 调 @cloud/platform-config CoC 原语
+// buildRegistry/validateCatalog/validateGlobalRoles/deriveContractScope/emitRegistry,
+// 产 4 个 .generated.ts + 多 locale i18n 到 apps/web/manifest/_generated/。
+// 有 error 诊断 → 拒写、退出码 1。产物 gitignored、由 pre 钩子重建、不手改。
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 // 直接读包源(脚本从仓库根运行,根不依赖 @cloud/*,bare specifier 解析不到);
 // 只取 coc 子入口,避开旧导出。collect.ts 内的 @cloud/platform-config 由其所在 apps/web 解析,不受影响。
 import {
-  buildRegistry, deriveContractScope, emitRegistry, validateCatalog,
+  buildRegistry, deriveContractScope, emitRegistry, validateCatalog, validateGlobalRoles,
 } from "../packages/platform-config/src/coc/index.ts";
+import { PRESET_ROLE_ID_ALLOCATION_MAX } from "../packages/platform-config/src/contract-group.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const webDir = join(root, "apps", "web");
@@ -27,7 +28,10 @@ const roleCodes = [...new Set(globalRoles.flatMap((r) => r.permissionCodes))];
 const contractMenuRefs = [...new Set(Object.values(contractMenus).flat())];
 const catalogDiags = validateCatalog({ result, roleCodes, contractMenus: contractMenuRefs });
 
-const diagnostics = [...result.diagnostics, ...catalogDiags];
+// 2b. 预置 GLOBAL 角色 guard:roleId 必须在 [1, PRESET_ROLE_ID_ALLOCATION_MAX] 区间内且唯一。
+const roleDiags = validateGlobalRoles({ globalRoles, minId: 1, maxId: PRESET_ROLE_ID_ALLOCATION_MAX });
+
+const diagnostics = [...result.diagnostics, ...catalogDiags, ...roleDiags];
 for (const d of diagnostics) {
   const line = `[gen:coc] ${d.level} ${d.rule}: ${d.message}`;
   if (d.level === "error") console.error(line);
@@ -43,7 +47,7 @@ if (errors.length) {
 const contractScope = deriveContractScope(contractMenus, result);
 
 // 4. emit:catalog 在 manifest/catalog/、产物在 manifest/_generated/ → 传 ../catalog/contract-types.ts。
-//    本相位不产 i18n,跳过 i18n/* key。
+//    emit 自带的单份 i18n/en.json 跳过(下方按多 locale 自产)。
 const emitted = emitRegistry({
   result, contractScope, i18n: {}, contractTypes,
   contractTypesImport: "../catalog/contract-types.ts",
@@ -52,7 +56,7 @@ const outDir = join(webDir, "manifest", "_generated");
 mkdirSync(outDir, { recursive: true });
 let tsCount = 0;
 for (const [name, content] of Object.entries(emitted)) {
-  if (name.startsWith("i18n/")) continue; // i18n 留 2C 接管
+  if (name.startsWith("i18n/")) continue; // 跳过 emit 的单 i18n/en.json;多 locale 在下方自产
   const dest = join(outDir, name);
   mkdirSync(dirname(dest), { recursive: true });
   writeFileSync(dest, content, "utf8");

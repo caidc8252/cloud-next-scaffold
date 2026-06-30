@@ -58,7 +58,9 @@ export type GuardRule =
   | "catalog-ref-missing"
   | "contract-menu-missing"
   | "contract-menu-not-leaf"
-  | "dead-menu";
+  | "dead-menu"
+  | "role-id-out-of-range"
+  | "duplicate-role-id";
 
 export interface RegistryDiagnostic {
   level: "error" | "warning";
