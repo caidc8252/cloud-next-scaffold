@@ -46,8 +46,8 @@ Next.js（App Router）**大单体** `apps/web` + `@cloud/*` 参考骨架 + `.cl
 3. **`apps/web/manifest/_generated/*.generated.ts` 与 seed 永不手改** — 改 `manifest.ts` 后跑 `pnpm gen:coc` 重生成。
 4. **权限码只增不改**：删/改名要标 `@deprecated`（registry 守门）。
 5. **`commons` 是叶子层**：通用模块、纯技术、无自有菜单、不受合同闸门、**不反调业务模块**。
-6. **所有业务数据访问必经租户上下文**：API 路由经 `withApiHandler` 绑 `tenantCtx`；RSC 页面自己 `tenantCtx.run({partyId})`。读路径靠 L3 RLS（`@cloud/db`），不靠手写 where。
-7. **业务表必含 `party_id uuid` + index**（schema CI）。
+6. **业务数据访问按当前 party 手工限定**（无 RLS）：`@cloud/db` 只导出 `prisma`（无 `tenantCtx`/`withTenantTx`/`systemDb`）。每条查询/变更在 `where`（及 INSERT 的 data）里用会话 `currentPartyId`（`Int`）限定；`currentPartyId` 由 controller 从会话取出、显式传入 service/repository。RSC/页面经模块 service / `*.public` 取数，绝不直接调 `prisma`。
+7. **业务表必含 `party_id Int @map("party_id")` + index**；按 party 隔离的唯一约束用 `@@unique([partyId, <key>])`。
 8. **跨模块前向声明（Step-3 脚手架）**：引用另一模块尚未声明的权限码 → 写同级 stub `modules/<cat>/<mod>.stub.ts`（partial `defineModule`，只声明所引用的码），`gen:coc` 聚合进 `PermissionCode`；**业务码禁止 import `*.stub`**（eslint 守门）；目标模块声明该码后删 stub（`duplicate-code` 守门抓残留）。类型/函数跨模块走 `server/<mod>.public` / `client/<mod>.api` 窄面（见 `server-layering`），禁止深 import。
 
 ## 命令速查（验证 / 运行）
@@ -57,7 +57,7 @@ pnpm db:generate        # prisma generate（@cloud/db）
 pnpm gen:coc            # 生成 manifest/_generated/*.generated.ts + i18n（改 manifest.ts 后必跑；dev/build 已 pre-hook 自动跑）
 pnpm lint               # eslint（apps/web + packages/*）
 pnpm test               # vitest 单测/组件（--passWithNoTests）
-pnpm test:e2e           # 端到端：docker compose 起 e2e pg/redis + db push/seed + playwright（含 RLS 用例）
+pnpm test:e2e           # 端到端：docker compose 起 e2e pg/redis + db push/seed + playwright
 # 本地全栈：先 pnpm db:setup（generate+push+seed，需本地 Postgres）→ pnpm dev:web → http://localhost:3000/login
 ```
 
