@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { DEFAULT_TABLES_DIR, DEFAULT_UI_SRC } from '../paths'
+import { DEFAULT_TABLES_DIR, DEFAULT_UI_SRC, DEFAULT_OUT_DIR } from '../paths'
 import { loadTable } from '../load-table'
 import { resolveDispositions } from '../resolve'
 import { loadExports } from '../cross-check'
@@ -28,7 +28,7 @@ export function gateCmd(
     return 2
   }
   const tablesDir = opts.tablesDir ?? DEFAULT_TABLES_DIR
-  const outDir = opts.outDir ?? join(process.cwd(), 'out')
+  const outDir = opts.outDir ?? DEFAULT_OUT_DIR
 
   const html = readFileSync(artifactPath, 'utf8')
   const lines = html.split('\n')

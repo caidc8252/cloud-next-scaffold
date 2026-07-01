@@ -41,10 +41,9 @@ const NEXT_AUTH_PATTERN = { group: ['next-auth/*'], message: "Use @cloud/permiss
 const NEXT_INTL_PATTERN = { group: ['next-intl', 'next-intl/client'], message: 'Use @cloud/i18n (or @cloud/i18n/client for Client Components, @cloud/i18n/server for request config and server actions). Server Components may import getTranslations / getMessages from next-intl/server directly until @cloud/i18n/server re-exports them. Locales are ["en","zh-CN","ja"].' };
 const VALIDATORS_PATTERN = { group: ['yup', 'joi', 'valibot', 'superstruct'], message: 'Use Zod for all input validation.' };
 const EMOTION_PATTERN = { group: ['@emotion/*'], message: 'No CSS-in-JS. Use Tailwind utilities over @cloud/ui tokens.' };
-const STUB_PATTERN = { group: ['**/*.stub', '**/*.stub.*'], message: 'no-stub-import: a *.stub is a temporary forward declaration that lets a cross-module reference compile until the real one exists — not an importable module. Reference the real declaration, never the stub.' };
 
 const ALL_PATHS = [NEXT_AUTH, ...BCRYPT_GROUP, ...CACHE_GROUP, ...STORAGE_GROUP, PRISMA_IMPORT, STYLED];
-const ALL_PATTERNS = [NEXT_AUTH_PATTERN, NEXT_INTL_PATTERN, VALIDATORS_PATTERN, EMOTION_PATTERN, STUB_PATTERN];
+const ALL_PATTERNS = [NEXT_AUTH_PATTERN, NEXT_INTL_PATTERN, VALIDATORS_PATTERN, EMOTION_PATTERN];
 
 const without = (arr, drop) => arr.filter(x => !drop.includes(x));
 const imports = (paths, patterns) => ['error', { paths, patterns }];
@@ -155,18 +154,17 @@ const requireE2eCell = {
   },
 };
 // ---- custom rule: stub-notice ----------------------------------------------
-// A `*.stub.ts` is a temporary cross-module forward-declaration of a permission
-// code (AGENTS 铁律 #8): `gen:coc` globs it and injects a not-yet-declared code
-// into the generated PermissionCode union so a cross-module reference type-checks,
-// until the OWNING module declares that code for real — then the stub is deleted.
-// The file's existence is a standing two-audience TODO: the OWNER who must
-// implement it, and the DEPENDANT relying on it now. This rule surfaces that as a
-// `pnpm lint` notice (Claude runs lint during dev, so the reminder reaches it),
-// naming both from the @stub-* header so it's never anonymous, and nagging when the
-// header is incomplete so the notice can't be silent. Severity is `warn`, NOT
-// `error`: a stub is legitimately present mid-development, so it must announce
-// itself without failing the build. It self-clears when the file is gone (= the
-// real code landed; the coc `duplicate-code` gate independently forces removal).
+// A `*.stub.ts` is a temporary, importable forward-declaration of an unbuilt
+// cross-module dependency — a function/type/service you build against now, or a
+// permission code referenced before its owner ships (AGENTS 铁律 #8). Its
+// existence is a standing two-audience TODO: the OWNER (@stub-owner) who must
+// build the real thing, and the CONSUMER (@stub-consumer) depending on it now and
+// responsible for the swap + delete. This rule surfaces that as a `pnpm lint`
+// notice (Claude runs lint during dev, so the reminder reaches it), naming both
+// from the @stub-* header so it's never anonymous, and nagging when the header is
+// incomplete so the notice can't be silent. Severity is `warn`, NOT `error`: a
+// stub is legitimately present mid-development. Removal is guidance (lint) +
+// team-rule; the one hard gate is `/submit-work` (no *.stub ships to develop).
 // Like require-e2e-cell, it asserts the PRESENCE/SHAPE of a comment, which
 // no-restricted-syntax cannot (comments aren't in the esquery AST).
 const STUB_FILE_RE = /\.stub\.[mc]?[jt]sx?$/;
@@ -182,8 +180,9 @@ const stubNotice = {
     schema: [],
     messages: {
       present:
-        'STUB — owner `{{owner}}` must declare [{{declares}}] for real then delete this file ' +
-        '(needed now by `{{consumer}}`: {{reason}}). This notice clears when the stub is gone.',
+        'STUB [{{kind}}] — owner `{{owner}}` must build this then this stub is deleted ' +
+        '(needed now by `{{consumer}}`: {{reason}}). Import it now; swap to the owner’s real ' +
+        'surface when it lands. This notice clears when the stub is gone.',
       incomplete:
         'Stub header incomplete (missing {{missing}}). A *.stub.ts MUST name who owns it and why — ' +
         'see context/injections/references/cross-module-stub.md.',
@@ -205,7 +204,12 @@ const stubNotice = {
         context.report({
           node,
           messageId: 'present',
-          data: { owner: tags.owner, consumer: tags.consumer, reason: tags.reason, declares: stubTag(header, 'declares') || '…' },
+          data: {
+            kind: stubTag(header, 'kind') || 'dep',
+            owner: tags.owner,
+            consumer: tags.consumer,
+            reason: tags.reason,
+          },
         });
       },
     };

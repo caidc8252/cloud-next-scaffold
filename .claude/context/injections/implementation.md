@@ -13,9 +13,9 @@ Pick the level: **unit** by default (pure service orchestration over an injected
 
 A row belongs to one party (party-scoping rule → `coding-rules.md`): prove the guard holds with negative tests — **resource denial** (A requests B's id → not found / zero rows), **list scoping** (A's list returns only A's rows — assert contents, not status), **wrong-party mutation rejected**, **nested-write backstop** (a nested child can't be written with another party's id). Diff-coverage won't surface a missing negative — write all four.
 
-## When you reference a permission code another module hasn't declared yet
+## When you depend on something another module hasn't built yet
 
-Forward-declare it with a colocated `modules/<cat>/<mod>.stub.ts` (partial `defineModule`, only the referenced code) so `gen:coc` aggregates it into `PermissionCode` and your reference compiles. Never `import` a stub; once the owner declares the code for real the stub is stale — remove it (surface it for a human when it sits in another team's module). Header legend + copy-paste template + the gates that enforce all this → `references/cross-module-stub.md`. Types/functions cross modules via `*.public`/`*.api`, not a stub.
+Forward-declare it with a colocated **importable** `modules/<cat>/<mod>/<name>.stub.ts` (a `throw`ing fake for a function, a placeholder type, or `export const c = "…" as PermissionCode` for a permission code) with a complete `@stub-owner`/`@stub-consumer`/`@stub-reason` header, and **import it** to keep building. Once the owner ships, swap the import to the owner's real `*.public` / `*.api` (or real code) and delete the stub. Header legend + kinds + template → `references/cross-module-stub.md`. The one hard gate is `/submit-work` — no `*.stub` reaches `develop`.
 
 ## When writing routes, middleware, or auth boundaries
 

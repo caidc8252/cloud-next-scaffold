@@ -56,7 +56,7 @@ description: /logic-analyze —— 针对当前活跃任务,读取需求 specs +
 
 ## Step 2 — 读现有代码
 
-- 全局认识：遍历 `apps/web/modules/<cat>/<mod>/overview.md`、`apps/web/commons/<mod>/overview.md`（内容约定见 `.claude/docs/module-overview.md`；缺失则按现有代码自行建立认识，本 skill 只读不写 overview）。
+- 全局认识：遍历 `apps/web/modules/<cat>/<mod>/overview.md`、`apps/web/commons/<mod>/overview.md`（内容约定见 `.claude/context/injections/references/coding-rules/module-layout.md`，commons 见 `commons.md`；缺失则按现有代码自行建立认识，本 skill 只读不写 overview）。
 - 当前模块：读 `apps/web/modules/<cat>/<name>/` 下全部文件（不存在 → 全新模块）。
 
 ## Step 3 — 读 groom + 现有台账
@@ -82,6 +82,7 @@ description: /logic-analyze —— 针对当前活跃任务,读取需求 specs +
    - 回写 groom：碎片 `待处理→已整理`、问题账给终态（groom 为 markdown，本 skill 直接编辑其表格）。
 8. **回写 workbench 基线（仅成功时）**：`docs_flash_time` + 三个 `*_docs` = Step 1 抓的 commit 信息（符合 `.work/workbench.schema.json`）。**中止/阻塞则不推进基线**（下轮重算这段差异）。不碰 `current_task/start_time`。
 9. **finalize 闸门**：`ledger.mjs finalize <dir>`（依赖/取代链完整、无遗留 `blocked`）**且** groom 全部碎片=已整理、问题账无"待处理"。`待实现`/`需返工` 是交给 coding 的合法交接态，**不拦**（`blocked` 才是"缺契约、没法交接"）。不过 → 不算完成，回去处理。
+10. **交接**：finalize 过 → 告知操作员 `logic.md` 已就绪，可跑 `/coding` 消费。
 
 ## 关键规则
 

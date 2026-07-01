@@ -25,6 +25,28 @@ test('parseContract flags raw-HTML decompose when no Capitalized import is named
   expect(e.kind).toBe('html')
 })
 
+test('parseContract ignores source filenames in prose, keeps real compound selectors', () => {
+  // Mirrors the pagination contracts: Artifact prose cites `tokens.inline.css`,
+  // `rich-pagination.md`, `icon.mjs` (filenames, not selectors) alongside a real
+  // compound selector `table.data-table`. Only true classes must survive.
+  const md = [
+    '## Implementations',
+    '',
+    '- **Next / @cloud/ui** — `Pagination`.',
+    '- **Artifact** — a `<nav class="pagination">` with `.pagination__page`, styled',
+    '  `table.data-table` rows. In `release/composites.css` on top of',
+    '  `release/tokens.inline.css` — see `rich-pagination.md` / `icon.mjs`.',
+  ].join('\n')
+  const e = parseContract(md, 'pagination')!
+  const classes = [e.primary, ...e.children].filter(Boolean)
+  expect(classes).not.toContain('css')
+  expect(classes).not.toContain('inline')
+  expect(classes).not.toContain('md')
+  expect(classes).not.toContain('mjs')
+  expect(e.primary).toBe('pagination')
+  expect(e.children).toContain('data-table')
+})
+
 test('assignOwnership keeps .btn with button.md, NOT alert.md (collision fix)', () => {
   const entries = [parseContract(read('alert'), 'alert')!, parseContract(read('button'), 'button')!]
   const owned = assignOwnership(entries)

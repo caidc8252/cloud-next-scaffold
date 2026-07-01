@@ -7,11 +7,12 @@ disable-model-invocation: true
 # /coding
 
 - **Prototype work → `mock-app`, not here.** A prototype (foundation artifact / HTML prototype) → `mock-app` owns the prototype→Next transform. Come back to `/coding` only for the non-prototype logic it hands off.
-- Run `logic-analyze` → `logic.md`; plan from it.
+- **Freshness gate:** producing `logic.md` is `/logic-analyze`'s job — `/coding` no longer self-runs it. If `.work/logics/<cat>/<name>/logic.items.json` is missing, or `<name>.groom.md` still has `待处理` 碎片 → stop and tell the operator to run `/logic-analyze` first (else you'd plan from a stale ledger). Otherwise plan from `logic.md`.
 - `superpowers:writing-plans`, don't brainstorm. Tag each plan task with the `L-n` id(s) it satisfies.
-- Flip an `L-n`'s status only via `ledger.mjs status` — never hand-edit `logic.md`/`logic.items.json`. `dir = .work/logics/<cat>/<name>`.
+  - The plan must also include a create/update-`modules/<cat>/<mod>/overview.md` task (per `.claude/context/injections/references/coding-rules/module-layout.md`) — a mechanical deliverable, **no** `L-n` tag, not ledger-tracked.
+- **Only the controller (main session) flips `L-n`, never a subagent** — after a task's review is clean, or batched at end-of-run; never mid-task. Via `ledger.mjs status` only; never hand-edit `logic.md`/`logic.items.json`. `dir = .work/logics/<cat>/<name>`.
   - `L-n` meets its acceptance criterion, tests green → `node .claude/skills/logic-analyze/ledger.mjs status <dir> <n> 已处理`.
   - an `L-n` auto-flipped to `需返工` (a newer item superseded it) → roll back its impl, then `status <dir> <n> 作废`.
   - can't proceed (e.g. an unsatisfiable cross-module dependency) → `status <dir> <n> blocked` + surface.
-- Pipeline findings → `/logic-groom`.
+- **Exit:** pipeline surfaced findings → `/logic-groom` (re-groom → analyze → code loop); clean run → `/submit-work`.
 - Don't write back to FeiShu or open a PR — that's `/submit-work`.

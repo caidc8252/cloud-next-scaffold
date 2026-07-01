@@ -1,6 +1,6 @@
 # 架构说明(单 app · CoC 声明驱动菜单/权限)
 
-> 配套:CoC 规约 `.claude/docs/coc-declaration.md`、AI 铁律 `AGENTS.md`、入口索引 `README.md`
+> 配套:CoC 规约 `.claude/context/injections/references/coding-rules/coc-declaration.md`、AI 铁律 `AGENTS.md`、入口索引 `README.md`
 > 快速起步:
 > 1. `pnpm install && pnpm db:generate`(Prisma client)
 > 2. `pnpm gen:coc`(CoC 注册表/类型/i18n;predev/prebuild/pretest 会自动跑)

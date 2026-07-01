@@ -44,7 +44,7 @@ pnpm workspaces, `packages/*`); stop and ask if absent.
    **no app shell** — you will *add* one (the inverse of mock-app stripping a fake
    shell).
 2. **Run the deterministic transform.** `.claude/bin/foundation-map <artifact.html>` →
-   `out/{table.json, <Name>.tsx (scaffold), residue.json, behavior.json}`. The
+   `.work/mock-app/{table.json, <Name>.tsx (scaffold), residue.json, behavior.json}`. The
    scaffold TSX is the spine every builder extends; it carries `data-src` on every
    mapped node.
 3. **Read the residue report — three buckets, never folded (spec §4e/§7):**
@@ -62,11 +62,13 @@ pnpm workspaces, `packages/*`); stop and ask if absent.
    filterable lists, derived summaries) is irreducibly custom LLM work and is
    usually the *majority* of the script (spec §4d). Plan the custom-logic port as
    the main build stage.
-5. **Invoke each layer's skill as you reach it** — the `MUST` holds inside this
-   runbook, and "I already know it" is when it gets skipped: UI/primitive props →
-   **`ui`**; custom behavior/client components → **`ui`** + framework rules;
-   data/mock seam → **`db`** + **`request`** + **`route-design`**; guards →
-   **`permissions`**; i18n/password → **`i18n`** / **`security`**.
+5. **Route each layer to its team rule — don't re-derive it here.** The team-rule
+   index (`.claude/context/injections/references/coding-rules.md`) is authority;
+   read the rule whose *Applies when* matches. Rough routing for this transform:
+   primitives/pages/client components → `ui-and-pages`; server split + handler
+   order → `server-layering` + `api-and-requests`; data/mock seam →
+   `module-layout` + `database` + `party-scoping`; guards → `auth-guards`; copy →
+   `i18n`; all new TS/TSX → `naming-and-style` baseline.
 6. **Bound the scope with the user** and present the plan — scope, state
    inventory, the residue buckets (with the unimplemented-sequencing call), the
    behavior port, mock-data shapes, the app-frame shell — and get approval
@@ -74,12 +76,13 @@ pnpm workspaces, `packages/*`); stop and ask if absent.
 
 ## Build — orchestrate; subagents build
 
-You orchestrate; subagents build. **Builder subagents receive only their dispatch
-prompt — team hard rules do not reach them by injection. Put them in the prompt**
-(spec §9): i18n keys (no hardcoded copy), zod-parsed input, service-path layering,
-thin handlers wrapped in `withApiHandler`, **no `'use server'`**, mutations are
-route handlers only. The reusable builder prompts live in
-`references/behavior-port-prompt.md` and `references/integration-prompt.md`.
+**Builder subagents don't get the coding-rules injection — so their dispatch prompt
+must point them at it** (spec §9): each prompt tells the builder to read
+`coding-rules.md` + the rules matching its layer, and restates only what the index
+can't own — the `data-src`/gate invariant and each builder's own guardrails — plus
+the one highlight this transform trips on most (**no `'use server'`**). Refer, don't
+restate. The reusable builder prompts live in `references/behavior-port-prompt.md`
+and `references/integration-prompt.md`.
 
 - **Foundation first — one subagent, sequential.** Wrap the scaffold in the real
   **app-frame shell** (routing, the chrome the artifact omits), freeze the data
@@ -92,29 +95,39 @@ route handlers only. The reusable builder prompts live in
 - **Residue** — layout-residue as silent Tailwind; unimplemented / unknown stay
   flagged until the user rules.
 
-## Verify — the gate is a script, not a reviewer
+## Verify — the foundation gate is a script; conformance is the review
 
-1. **Scripted conformance gate.** `.claude/bin/foundation-map gate <artifact.html>
+1. **Scripted coverage gate.** `.claude/bin/foundation-map gate <artifact.html>
    <final.tsx>` → coverage by `data-src` + the residue report. A non-zero exit is
    a **wall**: a mapped node lost its instance. Fix, never override.
 2. **Build / typecheck / lint green** — the kit's own preset must pass on the
    generated output.
 3. **Behavior parity** — the ported interactions reproduce (validation gates,
    step nav, simulated async, filterable picker, derived summary).
-4. **Visual backstop is cheap, not the bar.** Components are contract-identical by
+4. **Team-rule conformance review.** Lint green ≠ coding-rules conformance. On the
+   behaviorally-complete diff, invoke `requesting-code-review` — a review-described
+   reviewer *does* get the `code-review.md` + `coding-rules.md` gates the builders
+   couldn't, so it audits conformance no script covers. Conformance findings are
+   **bugs, not logic gaps**: fix in place and re-review until clean; do NOT route
+   them through `/logic-groom` (that loop is for implementation logic the UI
+   reveals). A finding unfixable without a contract change is a STOP-and-surface.
+5. **Visual backstop is cheap, not the bar.** Components are contract-identical by
    construction — a human-readable diff, never pixelmatch/SSIM.
 
-**Cardinal rule —** a feature whose gate did not fire green, or whose
-unimplemented bucket the user has not ruled on, is **not done; it's blocked.**
-Stop and ask.
+**Cardinal rule —** a feature whose gate did not fire green, whose conformance
+review still has an open finding, or whose unimplemented bucket the user has not
+ruled on, is **not done; it's blocked.** Stop and ask.
 
-## Handoff — after the human checks the frontend
+## Handoff — return to the `/coding` caller after the human checks the frontend
 
-`mock-app` ships the prototype's UI + states + the parity-checked frame. It does
-**not** own the implementation logic the prototype can't show. So once the gate is
-green and **the human has eyeballed the running frontend**, suggest the handoff:
+`mock-app` is always entered *from* a running `/coding` session — never cold. It
+owns the prototype's UI + states + the parity-checked frame, **not** the
+implementation logic the prototype can't show; that logic was already sedimented
+into `logic.md` by the `/logic-analyze` pass that preceded `/coding`. So once the
+gate is green and **the human has eyeballed the running frontend**, hand back:
 
-> Frontend looks right? → `/logic-analyze` to sediment the implementation logic
-> into `logic.md`, then `/coding` to wire it up.
+> Frontend looks right? → back to `/coding` to wire the non-prototype logic.
+> Logic the built UI newly reveals rides the findings → `/logic-groom` →
+> `/logic-analyze` re-loop, not an inline re-analyze.
 
 Surface this as a suggestion, not an auto-jump.

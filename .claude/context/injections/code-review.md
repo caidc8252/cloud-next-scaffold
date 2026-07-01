@@ -7,11 +7,11 @@ Review the diff against `references/coding-rules.md` — this project's coding r
 
 ## `*.stub` hygiene (cross-module forward declaration)
 
-Review a `*.stub.ts` against its purpose — a throwaway forward-declaration carrying a two-way notice (*owner: declare this code for real*; *creator: delete it once they do*). Full convention → `references/cross-module-stub.md`.
+Review a `*.stub.ts` against its purpose — a throwaway, importable forward-declaration carrying a two-way notice (*owner: build this*; *consumer: swap + delete once they do*). Full convention → `references/cross-module-stub.md`.
 
-- **Imported by code → block.** A stub is a placeholder that's deleted when the owner ships — importing it binds you to something that will vanish. The reference must be the string code resolved through the generated `PermissionCode` union, never an `import` (eslint `no-stub-import`).
-- **Still present after the owner declared the real code → flag.** It's done its job; leaving it makes real + stub a duplicate (coc `duplicate-code` gate fires). Surface the stale stub for a human to delete rather than silently editing another module's file.
-- **Missing its `@stub-owner`/`@stub-consumer`/`@stub-reason` header → flag.** That header *is* the two-way notice; without it the stub is an anonymous orphan no one is told to implement or remove (eslint `stub-notice`; legend + template → `references/cross-module-stub.md`).
+- **Still present after the owner shipped the real thing → flag.** It's done its job; the consumer should have swapped the import to the owner's `*.public`/`*.api` (or real code) and deleted it. `/submit-work` blocks it from reaching `develop`. Surface a stale stub for a human rather than editing another module's file.
+- **Missing its `@stub-owner`/`@stub-consumer`/`@stub-reason` header → flag.** That header *is* the two-way notice; without it the stub is an anonymous orphan no one is told to build or remove (eslint `stub-notice`).
+- **A permission-code stub that declares a manifest entry or touches `gen:coc` → flag.** It should be a localized `export const … = "…" as PermissionCode`.
 
 ## Owner/party-scoped resource — authorization negatives
 

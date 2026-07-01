@@ -105,7 +105,7 @@ Entity ──┬── EntityContract（合同：决定该 Entity 解锁哪些 C
          └── Role（PRIVATE，permission_codes JSONB）── UserRole（entity + user + role）
 ```
 
-> 菜单 / 权限 / GLOBAL 角色**不在数据库**：由 CoC 声明系统生成（零 DB，无 `sys_menu` / `sys_permission`），见 `.claude/docs/coc-declaration.md`。DB 只存 Entity / 合同 / 用户 / 关联 / PRIVATE 角色。
+> 菜单 / 权限 / GLOBAL 角色**不在数据库**：由 CoC 声明系统生成（零 DB，无 `sys_menu` / `sys_permission`），见 `.claude/context/injections/references/coding-rules/coc-declaration.md`。DB 只存 Entity / 合同 / 用户 / 关联 / PRIVATE 角色。
 
 ### 关键概念
 
@@ -115,7 +115,7 @@ Entity ──┬── EntityContract（合同：决定该 Entity 解锁哪些 C
 | EntityContract | 该 Entity 持有的合同；合同决定 CoC 里解锁哪些叶子菜单 / 权限码（即 party scope）         |
 | EntityUser     | 用户与组织的关联，含 `authorizingType`（NORMAL/ADMIN）和 `status`（ACTIVE/INACTIVE）   |
 | Role           | 角色。GLOBAL（roleId ≤ 1000）由 CoC 死写不入库；PRIVATE（≥ 1001）入 `sys_role`、权限码存 `permission_codes` JSONB |
-| 菜单 / 权限    | **CoC 声明、零 DB**（见 `.claude/docs/coc-declaration.md`），不是数据库表              |
+| 菜单 / 权限    | **CoC 声明、零 DB**（见 `.claude/context/injections/references/coding-rules/coc-declaration.md`），不是数据库表              |
 
 ### 两种锁定机制
 
@@ -420,7 +420,7 @@ export default async function ReportsPage() {
 
 ### 怎么加菜单 / 权限
 
-菜单 / 权限 / 角色**不入库**（无 `sys_menu` / `sys_permission`），由 **CoC 声明系统**管理 —— 完整规约见 [.claude/docs/coc-declaration.md](.claude/docs/coc-declaration.md)。简述：
+菜单 / 权限 / 角色**不入库**（无 `sys_menu` / `sys_permission`），由 **CoC 声明系统**管理 —— 完整规约见 [.claude/context/injections/references/coding-rules/coc-declaration.md](.claude/context/injections/references/coding-rules/coc-declaration.md)。简述：
 
 1. 在模块 `apps/web/modules/<cat>/<mod>/manifest.ts` 用 `defineModule` 声明 `menuCode` + 4 段权限码（`<cat>.<mod>.<fn>.<action>`）+ i18n 文案
 2. 在 `apps/web/manifest/catalog/contract-types.ts` 的 `CONTRACT_MENUS` 把该菜单挂到对应合同闸门
