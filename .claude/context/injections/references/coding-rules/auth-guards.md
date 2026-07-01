@@ -26,8 +26,9 @@ Guards only read `session.permissions`, computed at company-switch into the snap
 
 Two role classes feed that computation:
 
-- **GLOBAL** hardwired roles — `roleId ≤ 1000` (`PRESET_ROLE_ID_MAX`), defined in `apps/web/manifest/catalog/roles.ts`, read-only, not stored in the DB.
-- **PRIVATE** DB roles — `roleId ≥ 1001` (`DB_ROLE_ID_MIN`), rows in the `sys_role` table (`prisma.sysRole`).
+- **GLOBAL** roles — `roleId` in `1–500` (`≤ PRESET_ROLE_ID_MAX`), defined in `apps/web/manifest/catalog/roles.ts`, read-only, not stored in the DB.
+- **PRIVATE** roles — `roleId ≥ 501` (`DB_ROLE_ID_MIN`), rows in the `sys_role` table (`prisma.sysRole`).
+- **Migration pending:** the `PRESET_ROLE_ID_MAX` / `DB_ROLE_ID_MIN` constants (`packages/platform-config/src/contract-group.ts`) are still `1000` / `1001`; they move to `500` / `501` with the role-id migration.
 
 A new fine-grained code MUST be declared via CoC before a guard can require it.
 

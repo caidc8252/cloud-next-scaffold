@@ -34,3 +34,40 @@ test('clean-mapped node records its target component', () => {
   const nodes = parseArtifactBody(html, 1, table)
   expect(nodes.find((n) => n.bases.includes('btn'))!.component).toBe('Button')
 })
+
+test('folds composition members into their root (absorbed), leaving one emittable per cluster', () => {
+  const entry = (over: object) => ({ contract: 'x', primary: null, children: [], named: [], kind: 'export' as const, disposition: 'clean-export' as const, missing: [], ...over })
+  const t: ResolvedTable = {
+    foundationVersion: 't',
+    byClass: {
+      'step-indicator': entry({ primary: 'step-indicator', children: ['step'], named: ['StepIndicator'] }),
+      step: entry({ primary: 'step-indicator', children: ['step'], named: ['StepIndicator'] }),
+      field: entry({ primary: 'field', children: [], named: ['Field'] }),
+      label: entry({ primary: 'label', children: [], named: ['Label'] }),
+      input: entry({ primary: 'input', children: [], named: ['Input'] }),
+    },
+  }
+  const src = [
+    '<ol class="step-indicator">',
+    '  <li class="step"><span class="step__dot">1</span></li>',
+    '  <li class="step"><span class="step__dot">2</span></li>',
+    '</ol>',
+    '<div class="field">',
+    '  <label class="label">Name</label>',
+    '  <input class="input">',
+    '  <p class="field__hint">hint</p>',
+    '</div>',
+  ].join('\n')
+  const nodes = parseArtifactBody(src, 1, t)
+  const bucketOf = (cls: string) => nodes.find((n) => n.classes.includes(cls))!.bucket
+  // one emittable root per composition; every member folds in
+  expect(bucketOf('step-indicator')).toBe('clean-mapped')
+  expect(nodes.filter((n) => n.classes.includes('step')).every((n) => n.bucket === 'absorbed')).toBe(true)
+  expect(nodes.filter((n) => n.classes.includes('step__dot')).every((n) => n.bucket === 'absorbed')).toBe(true)
+  expect(bucketOf('field')).toBe('clean-mapped')
+  expect(bucketOf('label')).toBe('absorbed')        // <Field label=…> renders Label internally (SLOT_AUGMENT)
+  expect(bucketOf('field__hint')).toBe('absorbed')  // same BEM block as field
+  expect(bucketOf('input')).toBe('clean-mapped')     // a rendered child of Field, not a member
+  const emittable = nodes.filter((n) => n.bucket === 'clean-mapped' || n.bucket === 'html-decompose')
+  expect(emittable.map((n) => n.component).sort()).toEqual(['Field', 'Input', 'StepIndicator'])
+})

@@ -1,5 +1,5 @@
 const messages = {
-  menu: { system: "System" },
+  menu: { platformMain: "Main", system: "System" },
   role: {
     adminPresetAdmin: "Administrator", adminPresetAdminDesc: "Built-in administrator role",
     adminOperator: "Operator", adminOperatorDesc: "Read-only operator role",

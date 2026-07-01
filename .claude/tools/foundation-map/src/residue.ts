@@ -22,7 +22,7 @@ const item = (n: IRNode): ResidueItem => ({
 
 export function buildResidueReport(nodes: IRNode[], version: string): ResidueReport {
   const counts: Record<NodeBucket, number> = {
-    'clean-mapped': 0, 'html-decompose': 0, unimplemented: 0, 'layout-residue': 0, 'offcontract-unknown': 0,
+    'clean-mapped': 0, 'html-decompose': 0, unimplemented: 0, 'layout-residue': 0, 'offcontract-unknown': 0, absorbed: 0,
   }
   for (const n of nodes) counts[n.bucket]++
   return {

@@ -3,7 +3,7 @@ import { emitTsx } from '../src/emit-tsx'
 import type { IRNode } from '../src/types'
 
 const node = (over: Partial<IRNode>): IRNode => ({
-  id: 0, line: 1, tag: 'div', classes: [], bases: [], bucket: 'clean-mapped', matchedClass: null, component: 'Card', ...over,
+  id: 0, line: 1, tag: 'div', classes: [], bases: [], bucket: 'clean-mapped', matchedClass: null, component: 'Card', named: [], absorbedBy: null, ...over,
 })
 
 test('emits one JSX instance per clean-mapped node carrying data-src', () => {

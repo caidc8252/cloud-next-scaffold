@@ -1,6 +1,6 @@
 # CoC declaration
 
-A module's `manifest.ts` (`defineModule(...)`) is the single source of truth for its menu (`menuCode` + `entry.url`) and its `permissions[]`. Declare there and only there; never restate a menu or code anywhere else.
+A module's `manifest.ts` (`defineModule(...)`) is the single source of truth for its menu (`menuCode` + `menuTitle` + `entry.url`) and its `permissions[]`. Declare there and only there. `entry.url` is the module's landing route — AI picks the best entry from the prototype.
 
 Two module classes, no middle ground:
 
@@ -12,8 +12,9 @@ Menu projection: a leaf is visible by effective permission → its ancestor dirs
 Authoring a new A-class module (these die with the manifest if skipped):
 
 - The manifest MUST be imported into the `modules` array in `manifest/collect.ts`, or codegen never sees it.
-- `parentMenuCode` MUST resolve to a node declared in `manifest/menu-tree.ts` (`defineMenuTree`), or `buildRegistry` raises `parent-missing`.
-- `label` / `desc` (and menu `title`) are i18n keys — each needs per-module `i18n/{en,zh-CN,ja}.ts` three-language backing.
+- `parentMenuCode` is the module's parent in the menu tree; when omitted it defaults to `platform.main` (the top-level parent). The resolved value MUST reference a node declared in `manifest/menu-tree.ts` (`defineMenuTree`), or `buildRegistry` raises `parent-missing`.
+  - **Migration pending:** shipped code makes `parentMenuCode` required (`z.string().min(1)` in `packages/platform-config/src/coc/define-module.ts`) and has no `platform.main` node — `manifest/menu-tree.ts` roots are only `system` / `apps`. The migration must add the `platform.main` root node and make the field optional-with-default.
+- `label` / `desc` (and menu `menuTitle`) are i18n keys — each needs per-module `i18n/{en,zh-CN,ja}.ts` backing. **Migration pending:** the shipped `defineModule` / menu-tree field is `title`; it renames to `menuTitle`.
 - `CONTRACT_MENUS` (`manifest/catalog/contract-types.ts`) has NO wildcard — every contract enumerates its unlocked menus explicitly.
 
 `pnpm gen:coc` (wired as predev / prebuild / pretest) reads the manifests and regenerates `manifest/_generated/*.generated.ts` + `_generated/i18n/`; run it after any `manifest.ts` change.
