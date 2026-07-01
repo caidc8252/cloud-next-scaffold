@@ -95,21 +95,28 @@ and `references/integration-prompt.md`.
 - **Residue** — layout-residue as silent Tailwind; unimplemented / unknown stay
   flagged until the user rules.
 
-## Verify — the gate is a script, not a reviewer
+## Verify — the foundation gate is a script; conformance is the review
 
-1. **Scripted conformance gate.** `.claude/bin/foundation-map gate <artifact.html>
+1. **Scripted coverage gate.** `.claude/bin/foundation-map gate <artifact.html>
    <final.tsx>` → coverage by `data-src` + the residue report. A non-zero exit is
    a **wall**: a mapped node lost its instance. Fix, never override.
 2. **Build / typecheck / lint green** — the kit's own preset must pass on the
    generated output.
 3. **Behavior parity** — the ported interactions reproduce (validation gates,
    step nav, simulated async, filterable picker, derived summary).
-4. **Visual backstop is cheap, not the bar.** Components are contract-identical by
+4. **Team-rule conformance review.** Lint green ≠ coding-rules conformance. On the
+   behaviorally-complete diff, invoke `requesting-code-review` — a review-described
+   reviewer *does* get the `code-review.md` + `coding-rules.md` gates the builders
+   couldn't, so it audits conformance no script covers. Conformance findings are
+   **bugs, not logic gaps**: fix in place and re-review until clean; do NOT route
+   them through `/logic-groom` (that loop is for implementation logic the UI
+   reveals). A finding unfixable without a contract change is a STOP-and-surface.
+5. **Visual backstop is cheap, not the bar.** Components are contract-identical by
    construction — a human-readable diff, never pixelmatch/SSIM.
 
-**Cardinal rule —** a feature whose gate did not fire green, or whose
-unimplemented bucket the user has not ruled on, is **not done; it's blocked.**
-Stop and ask.
+**Cardinal rule —** a feature whose gate did not fire green, whose conformance
+review still has an open finding, or whose unimplemented bucket the user has not
+ruled on, is **not done; it's blocked.** Stop and ask.
 
 ## Handoff — return to the `/coding` caller after the human checks the frontend
 
