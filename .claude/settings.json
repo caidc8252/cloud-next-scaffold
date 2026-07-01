@@ -1,0 +1,22 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/pretooluse-skill.sh\"" }]
+      },
+      { "matcher": "Agent", "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/pretooluse-agent.sh\"" }] }
+    ],
+    "UserPromptExpansion": [
+      { "matcher": "writing-plans", "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/userpromptexpansion-skill.sh\" writing-plans" }] },
+      { "matcher": "executing-plans", "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/userpromptexpansion-skill.sh\" executing-plans" }] },
+      { "matcher": "subagent-driven-development", "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/userpromptexpansion-skill.sh\" subagent-driven-development" }] },
+      { "matcher": "brainstorming", "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/userpromptexpansion-skill.sh\" brainstorming" }] },
+      { "matcher": "systematic-debugging", "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/userpromptexpansion-skill.sh\" systematic-debugging" }] },
+      { "matcher": "verification-before-completion", "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/userpromptexpansion-skill.sh\" verification-before-completion" }] },
+      { "matcher": "finishing-a-development-branch", "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/userpromptexpansion-skill.sh\" finishing-a-development-branch" }] },
+      { "matcher": "requesting-code-review", "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/userpromptexpansion-skill.sh\" requesting-code-review" }] },
+      { "matcher": "receiving-code-review", "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/userpromptexpansion-skill.sh\" receiving-code-review" }] }
+    ]
+  }
+}

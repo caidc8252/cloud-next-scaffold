@@ -1,0 +1,576 @@
+{
+  "nav": { "home": "首页", "dashboard": "仪表盘" },
+  "notifications": {
+    "title": "通知",
+    "markAllRead": "全部标为已读",
+    "markRead": "标为已读",
+    "viewAll": "查看全部通知",
+    "showingUnread": "显示 {total} 条未读中的 {shown} 条",
+    "group": {
+      "today": "今天",
+      "earlier": "更早"
+    },
+    "empty": {
+      "caughtUp": "已全部读完",
+      "caughtUpDesc": "没有未读通知。",
+      "none": "暂无通知",
+      "noneDesc": "新的工单与订单更新会显示在这里。"
+    },
+    "module": {
+      "ticket": "工单",
+      "customer": "客户",
+      "app": "应用",
+      "order": "订单",
+      "account": "账户",
+      "default": "通知"
+    },
+    "status": {
+      "unread": "未读",
+      "read": "已读"
+    },
+    "list": {
+      "title": "通知",
+      "subtitle": "工单、客户、应用与订单的所有可执行更新。点击通知可打开相关记录。",
+      "emptyFiltered": "没有符合筛选条件的通知。"
+    },
+    "search": {
+      "placeholder": "搜索通知…",
+      "action": "搜索"
+    },
+    "filter": {
+      "allTypes": "全部类型",
+      "allStatuses": "全部状态"
+    },
+    "col": {
+      "notification": "通知",
+      "type": "类型",
+      "when": "时间",
+      "statusHead": "状态",
+      "title": "标题",
+      "body": "内容"
+    },
+    "count": "{count, plural, other {条通知}}",
+    "matchingFilters": "符合筛选",
+    "export": "导出",
+    "exported": "{count, plural, other {已导出 # 条通知}}",
+    "activeFilters": "筛选条件：",
+    "clearAll": "清除全部",
+    "chip": {
+      "search": "搜索：{q}",
+      "type": "类型：{label}",
+      "status": "状态：{label}"
+    },
+    "detail": {
+      "back": "通知",
+      "notFound": "未找到通知。",
+      "ctaPlaceholder": "Mock：将打开 {label}"
+    },
+    "fields": {
+      "ticket": "工单",
+      "priority": "优先级",
+      "customer": "客户",
+      "slaDue": "SLA 截止",
+      "status": "状态",
+      "order": "订单",
+      "commenter": "评论人",
+      "assignedBy": "指派人",
+      "raisedBy": "提交方",
+      "queue": "队列",
+      "reopenedBy": "重开人",
+      "previously": "此前",
+      "resolvedBy": "解决人",
+      "resolution": "解决方案",
+      "appVersion": "应用版本",
+      "result": "结果",
+      "app": "应用",
+      "action": "动作",
+      "operator": "操作员",
+      "invitedBy": "邀请人",
+      "expires": "过期"
+    },
+    "party": {
+      "system": "系统"
+    },
+    "events": {
+      "passwordReset": {
+        "title": "你的密码已被重置",
+        "summary": "管理员为你的账号发起了密码重置",
+        "detail": "管理员发起了密码重置。请使用发送到你邮箱的链接设置新密码。链接将在 {expiresText} 后过期。",
+        "expires": "72 小时"
+      }
+    }
+  },
+  "email": {
+    "common": {
+      "footerIgnore": "如果这不是你发起的操作，可以忽略此邮件。",
+      "footerContactAdmin": "如果这不是你预期的操作，请联系你的管理员。"
+    },
+    "invite": {
+      "subject": "你被邀请加入 {partyName}",
+      "intro": "{inviterName} 邀请你加入 {partyName}。",
+      "button": "接受邀请",
+      "expiry": "该邀请将于 {date} 过期。"
+    },
+    "verifyCode": {
+      "subject": "你的验证码",
+      "expiry": "该验证码将在 {minutes} 分钟后过期。",
+      "intro": {
+        "emailChange": "请使用下方验证码确认你的邮箱变更。"
+      }
+    },
+    "passwordReset": {
+      "subject": "重置你的密码",
+      "intro": "管理员为你的账号发起了密码重置。",
+      "button": "重置密码",
+      "expiry": "该链接将在 {duration} 后过期。"
+    }
+  },
+  "ui": {
+    "datePicker": {
+      "clear": "清除",
+      "ok": "确定",
+      "placeholder": {
+        "date": "选择日期",
+        "dateTime": "选择日期和时间",
+        "range": "选择日期范围"
+      },
+      "presets": {
+        "today": "今天",
+        "last7": "近 7 天",
+        "last30": "近 30 天",
+        "thisMonth": "本月",
+        "lastMonth": "上月"
+      }
+    }
+  },
+  "dashboard": {
+    "title": "仪表盘",
+    "description": "此基线在保持刻意精简的同时，延续了经典后台的节奏与布局。",
+    "sessionActive": "会话有效",
+    "currentAccount": "当前账号",
+    "partner": "合作方",
+    "roles": "角色",
+    "panel": {
+      "title": "仪表盘",
+      "description": "脚手架内置了一套精简但完整的默认工作区。",
+      "welcome": "主区域以一个简单的欢迎块开始，让默认菜单拥有一个有用的着陆页。",
+      "extend": "你可以在这套骨架之上继续扩展，添加客户、订单、设置或任何其他业务模块。"
+    }
+  },
+  "errorPage": {
+    "title": "出了点问题",
+    "description": "服务暂时不可用，请稍后重试。",
+    "retry": "重试",
+    "home": "返回工作台",
+    "referenceLabel": "错误编号",
+    "notFoundTitle": "页面不存在",
+    "notFoundDescription": "你访问的页面不存在或已被移动。"
+  },
+  "account": {
+    "common": {
+      "back": "返回"
+    },
+    "menu": {
+      "aria": "{name} 菜单",
+      "profile": "我的资料",
+      "security": "账号与安全",
+      "securitySub": "密码 · 双重验证",
+      "partners": "切换合作方",
+      "theme": "主题",
+      "language": "语言",
+      "signOut": "退出登录"
+    },
+    "theme": {
+      "light": "浅色",
+      "dark": "深色",
+      "system": "跟随系统",
+      "desc": {
+        "light": "适合白天工作的明亮界面",
+        "dark": "弱光下更护眼",
+        "system": "跟随系统外观"
+      },
+      "toast": {
+        "light": "主题已设为浅色",
+        "dark": "主题已设为深色",
+        "system": "主题已设为跟随系统"
+      }
+    },
+    "signOut": {
+      "title": "退出登录？",
+      "cancel": "取消",
+      "confirm": "退出登录"
+    },
+    "profile": {
+      "title": "我的资料",
+      "sub": "管理你的个人信息和登录方式。",
+      "personal": "个人信息",
+      "displayName": "显示名称",
+      "country": "国家/地区",
+      "signin": "登录与安全",
+      "username": "用户名",
+      "email": "邮箱",
+      "change": "更改",
+      "discard": "放弃",
+      "save": "保存更改",
+      "nameRequired": "请填写显示名称",
+      "saved": "资料已更新"
+    },
+    "security": {
+      "title": "账号与安全",
+      "sub": "登录凭证与多重验证",
+      "signin": {
+        "title": "登录",
+        "sub": "按公司策略，密码每 90 天轮换一次"
+      },
+      "password": {
+        "title": "密码",
+        "metaUnknown": "按公司策略每 90 天轮换"
+      },
+      "changePassword": "更改密码",
+      "mfa": {
+        "title": "多重验证（MFA）",
+        "sub": "认证器应用在登录时提供第二重验证",
+        "disabledToast": "已停用双重验证"
+      },
+      "authenticator": {
+        "title": "认证器应用",
+        "active": "已启用",
+        "off": "未设置",
+        "activeSub": "登录时需要认证器中的验证码",
+        "offSub": "添加认证器应用以保护你的账号"
+      },
+      "reconfigure": "重新配置",
+      "disable": "停用",
+      "enable": "启用",
+      "disableModal": {
+        "title": "停用双重验证？",
+        "desc": "输入认证器应用中的当前验证码以关闭双重验证。"
+      }
+    },
+    "mfa": {
+      "cancel": "取消",
+      "back": "返回",
+      "done": "完成",
+      "enroll": {
+        "enableTitle": "设置认证器应用",
+        "reconfigureTitle": "重新配置认证器",
+        "doneTitle": "认证器已就绪",
+        "scanDesc": "用认证器应用扫描此二维码，或手动输入设置密钥。",
+        "setupKey": "无法扫描？输入此设置密钥",
+        "scanned": "我已扫描",
+        "confirmDesc": "输入认证器应用中显示的 6 位验证码以确认。",
+        "confirm": "确认",
+        "doneDesc": "认证器已设置完成。登录时将要求输入验证码。"
+      }
+    },
+    "partners": {
+      "title": "切换合作方",
+      "sub": "你共属于 {count} 家公司。",
+      "joined": "加入于 {date}",
+      "adminAccess": "管理员权限",
+      "roleAccess": "基于角色的权限",
+      "locked": "已锁定",
+      "noContract": "无有效契约",
+      "confirm": {
+        "title": "切换到 {name}？",
+        "body": "将把当前公司切换为 {name}，工作区将重新加载。",
+        "stay": "取消",
+        "leave": "切换"
+      },
+      "toast": {
+        "locked": "访问已锁定 · {name}",
+        "current": "你已在 {name} 中"
+      }
+    }
+  },
+  "portal": {
+    "brand": {
+      "console": "控制台",
+      "newland": "新大陆"
+    },
+    "login": {
+      "processing": "处理中",
+      "brand": {
+        "sub": "新大陆",
+        "lead": "用一个控制台管理你的<em>支付版图。</em>",
+        "status": "所有系统运行正常 · status.pep.io"
+      },
+      "title": "登录 PEP",
+      "subtitle": "{by} 合作伙伴控制台。",
+      "continueWith": "使用 <b>{provider}</b> 继续",
+      "ssoUnavailable": "第三方登录暂未开放。",
+      "dividerEmail": "或使用你的工作邮箱",
+      "emailLabel": "账号",
+      "emailPlaceholder": "name@company.com",
+      "passwordLabel": "密码",
+      "forgot": "忘记密码？",
+      "submit": "登录",
+      "invitedOnly": "仅限受邀操作员 ·",
+      "haveInvite": "有邀请？",
+      "togglePassword": "切换密码可见性",
+      "sso": {
+        "via": "通过 {provider} 单点登录",
+        "badge": "SSO",
+        "manages": "你的组织管理此登录方式。"
+      },
+      "errors": {
+        "AUTH_BAD_CREDENTIALS": "邮箱或密码不正确，请重试。",
+        "invalidEmail": "请输入有效的邮箱地址。",
+        "accountRequired": "请输入账号。",
+        "passwordMin": "密码至少需要 6 个字符。",
+        "generic": "登录失败，请重试。"
+      },
+      "idp": {
+        "chooseAccount": "选择一个账号",
+        "signIn": "登录",
+        "targetConsole": "PEP 合作伙伴控制台",
+        "secure": "安全",
+        "cancel": "取消"
+      },
+      "mfa": {
+        "back": "返回登录",
+        "eyebrow": "双重身份验证",
+        "title": "输入你的验证码",
+        "codeLabel": "验证码",
+        "hintDemo": "演示：输入任意 6 位数字即可继续。",
+        "errEnter": "请输入 6 位验证码。",
+        "errWrong": "验证码不正确，锁定前还可尝试 {count} 次。",
+        "resend": "重新发送",
+        "resendIn": "{seconds} 秒后重发",
+        "refresh": "验证码每 30 秒刷新",
+        "verify": "验证并继续"
+      },
+      "company": {
+        "back": "返回登录",
+        "eyebrow": "选择工作区",
+        "title": "选择一家公司",
+        "note": "每家公司独立界定你的角色范围。"
+      },
+      "blocked": {
+        "back": "返回登录",
+        "locked": {
+          "eyebrow": "账号已锁定",
+          "title": "你的账号已被锁定",
+          "contact": "联系管理员"
+        },
+        "ratelimit": {
+          "eyebrow": "尝试次数过多",
+          "title": "登录尝试次数过多",
+          "tryAgain": "重试",
+          "until": "后可重试",
+          "ready": "现在可以重试"
+        },
+        "mfa": {
+          "eyebrow": "验证已锁定",
+          "title": "验证已锁定",
+          "contact": "联系管理员"
+        }
+      },
+      "nocompany": {
+        "eyebrow": "无工作区",
+        "title": "没有可进入的公司",
+        "haveInvite": "我有邀请",
+        "back": "返回登录"
+      },
+      "busy": {
+        "verifying": "正在验证凭据…",
+        "verifyingCode": "正在验证你的验证码…",
+        "entering": "正在进入控制台…",
+        "returning": "正在从 {provider} 返回…"
+      }
+    },
+    "partner": {
+      "metadata": {
+        "title": "选择 partner - PEP Portal",
+        "description": "进入控制台前选择 partner 工作区。"
+      },
+      "eyebrow": "选择工作区",
+      "title": "选择 partner",
+      "description": "欢迎，{name}。请选择要进入的 partner 工作区。",
+      "empty": "当前账号没有可用的 partner 工作区。",
+      "badge": {
+        "admin": "管理员",
+        "normal": "用户"
+      },
+      "reason": {
+        "partnerDisabled": "Partner 已停用",
+        "userDisabled": "访问已停用",
+        "noContract": "无有效合同"
+      },
+      "defaultError": "无法选择该 partner，请重试。"
+    },
+    "forgot": {
+      "back": "返回登录",
+      "changeEmail": "更改邮箱",
+      "email": {
+        "eyebrow": "账号恢复",
+        "title": "重置密码",
+        "sub": "输入你账号的邮箱，我们会给你发送重置密码的链接。",
+        "label": "工作邮箱",
+        "send": "发送重置链接",
+        "sending": "正在发送…",
+        "err": "请输入有效的邮箱地址。"
+      },
+      "sent": {
+        "title": "请查收邮件",
+        "sub": "如果 {email} 存在对应账号，我们已发送重置密码的链接。"
+      },
+      "code": {
+        "eyebrow": "第 2 步，共 3 步",
+        "title": "输入验证码",
+        "label": "验证码",
+        "verify": "验证并继续",
+        "verifying": "正在验证…",
+        "resend": "重新发送",
+        "resendIn": "{seconds} 秒后重发",
+        "err": "请输入 6 位验证码。"
+      },
+      "reset": {
+        "eyebrow": "第 3 步，共 3 步",
+        "title": "设置新密码",
+        "newLabel": "新密码",
+        "newPlaceholder": "至少 {min} 个字符",
+        "confirmLabel": "确认密码",
+        "confirmPlaceholder": "再次输入密码",
+        "mismatch": "两次密码不一致。",
+        "update": "更新密码",
+        "updating": "正在更新…"
+      },
+      "rules": {
+        "length": "{min}+ 个字符",
+        "upper": "大写字母 (A-Z)",
+        "lower": "小写字母 (a-z)",
+        "digit": "数字 (0-9)",
+        "symbol": "符号 (@ # $)"
+      },
+      "done": {
+        "title": "密码已更新",
+        "sub": "你的密码已更改，请使用新凭据登录。",
+        "back": "返回登录"
+      }
+    },
+    "notFound": {
+      "code": "404",
+      "title": "找不到该页面",
+      "home": "返回首页",
+      "signIn": "前往登录"
+    },
+    "onboarding": {
+      "exit": "退出",
+      "back": "返回",
+      "previous": "上一步",
+      "cancel": "取消",
+      "backToLanding": "返回邀请页",
+      "previousStep": "上一步",
+      "invalid": {
+        "title": "未找到邀请",
+        "home": "返回首页"
+      },
+      "landing": {
+        "eyebrow": "邀请",
+        "title": "加入 {partner}",
+        "signedInAs": "你当前登录为",
+        "current": "当前",
+        "useThis": "使用此账号加入",
+        "signOutOther": "退出并使用其他账号",
+        "registerNew": "注册新账号",
+        "continueWith": "继续方式",
+        "signInExisting": "使用已有账号登录",
+        "error": "出错了，请重试。"
+      },
+      "signin": {
+        "step": "第 1 步，共 2 步",
+        "title": "登录你的账号",
+        "emailLabel": "邮箱",
+        "passwordLabel": "密码",
+        "passwordHint": "演示：任意 6 位以上字符。",
+        "signingIn": "正在登录…",
+        "signIn": "登录"
+      },
+      "register": {
+        "title": "创建你的账号",
+        "emailNote": "你将以 {email} 加入",
+        "submit": "创建账号并加入",
+        "submitting": "创建中…",
+        "error": "出错了，请重试。",
+        "stepLabel": "注册 · 第 {current} 步，共 {total} 步",
+        "steps": {
+          "email": "邮箱",
+          "newEmail": "新邮箱",
+          "verify": "验证",
+          "login": "登录名",
+          "password": "密码",
+          "country": "国家/地区",
+          "name": "姓名"
+        },
+        "joining": "正在加入 {partner}",
+        "fromInvite": "来自邀请",
+        "customEmail": "使用其他邮箱",
+        "custom": "自定义",
+        "titleEmail": "确认你的邮箱",
+        "titleName": "我们该怎么称呼你？",
+        "inviteTitle": "使用我的邀请邮箱",
+        "verified": "已验证",
+        "customTitle": "使用其他邮箱",
+        "newEmailLabel": "新邮箱地址",
+        "verifyLabel": "验证码",
+        "verifyErr": "验证码无效，请尝试 123456。",
+        "resend": "重新发送",
+        "resendIn": "{seconds} 秒后重发",
+        "sending": "正在发送…",
+        "verifying": "正在验证…",
+        "sendCode": "发送验证码",
+        "loginLabel": "选择一个登录名",
+        "loginPlaceholder": "例如 kai.tanaka",
+        "passwordLabel": "设置密码",
+        "confirmLabel": "确认密码",
+        "confirmPlaceholder": "再次输入密码",
+        "mismatch": "两次密码不一致。",
+        "countryLabel": "你位于哪里？",
+        "displayLabel": "显示名称",
+        "displayPlaceholder": "Kai Tanaka",
+        "continue": "继续",
+        "reviewConfirm": "检查并确认"
+      },
+      "confirm": {
+        "eyebrow": "最后一步",
+        "title": "加入 {partner}",
+        "preassigned": "预分配：{roles}",
+        "joiningAs": "你将以此身份加入",
+        "existing": "已有",
+        "new": "新建",
+        "decline": "拒绝",
+        "authorize": "授权并加入"
+      },
+      "welcome": {
+        "title": "欢迎加入 PEP，{name}。",
+        "enter": "进入控制台"
+      }
+    },
+    "resetPassword": {
+      "invalid": {
+        "title": "重置链接无效",
+        "sub": "该重置链接无效或已过期。请重新申请。",
+        "requestNew": "重新申请链接"
+      },
+      "form": {
+        "eyebrow": "重置密码",
+        "title": "设置新密码",
+        "sub": "请选择一个你未在别处使用过的强密码。",
+        "newLabel": "新密码",
+        "newPlaceholder": "至少 {min} 个字符",
+        "confirmLabel": "确认密码",
+        "confirmPlaceholder": "再次输入密码",
+        "mismatch": "两次密码不一致。",
+        "submit": "更新密码",
+        "submitting": "正在更新…"
+      },
+      "done": {
+        "title": "密码已更新",
+        "sub": "你的密码已修改，请用新密码登录。",
+        "signIn": "前往登录"
+      },
+      "error": "重置密码失败，请重试。"
+    }
+  }
+}

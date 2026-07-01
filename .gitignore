@@ -59,7 +59,7 @@ apps/*/manifest/_generated/
 # AI local skills / agent artifacts
 
 skills-lock.json
-.claude/settings.*
+.claude/settings.local.json
 .agents
 .codex
 
@@ -77,3 +77,7 @@ test-results/
 
 docker-data/*
 .superpowers/
+
+# AI scaffold runtime
+.claude/.audit/
+.claude/tools/setup/node_modules/

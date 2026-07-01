@@ -24,18 +24,18 @@
 | --- | --- |
 | `packages/storage/src/server/*` | S3 服务端能力：配置归一化、STS 临时凭证、服务端上传、HeadObject、CopyObject、DeleteObject、signed URL |
 | `packages/storage/src/client/*` | 浏览器直传能力：PUT、multipart、进度、取消 |
-| `apps/admin/lib/s3-upload-config.ts` | app 侧读取 S3 环境变量并传入 `@cloud/storage/server` |
-| `apps/admin/lib/s3-upload-policy.ts` | 上传大小策略 |
-| `apps/admin/lib/s3-upload-profiles.ts` | upload profile 到目录和可见性的映射 |
-| `apps/admin/lib/storage-files.ts` | app 侧 S3 helper：按 profile 创建上传会话、服务端上传、转正、metadata、signed URL |
-| `apps/admin/lib/storage-types.ts` | S3 helper 对外返回的文件信息类型 |
-| `apps/admin/lib/storage-visibility.ts` | profile 访问属性校验：PUBLIC 必须是 `image/*` 且在 `public/` 下 |
+| `apps/web/lib/s3-upload-config.ts` | app 侧读取 S3 环境变量并传入 `@cloud/storage/server` |
+| `apps/web/lib/s3-upload-policy.ts` | 上传大小策略 |
+| `apps/web/lib/s3-upload-profiles.ts` | upload profile 到目录和可见性的映射 |
+| `apps/web/lib/storage-files.ts` | app 侧 S3 helper：按 profile 创建上传会话、服务端上传、转正、metadata、signed URL |
+| `apps/web/lib/storage-types.ts` | S3 helper 对外返回的文件信息类型 |
+| `apps/web/lib/storage-visibility.ts` | profile 访问属性校验：PUBLIC 必须是 `image/*` 且在 `public/` 下 |
 
-新增业务能力优先落 `apps/<app>/service/<domain>/`。业务 route 做权限和 HTTP 适配，domain service 调 storage helper，并决定业务表保存哪些字段。
+新增业务能力优先落 `apps/web/modules/<cat>/<mod>/server/`。业务 controller 做权限和 HTTP 适配，模块 service 调 storage helper，并决定业务表保存哪些字段。
 
 ## 2. S3 能返回什么
 
-`@cloud/storage/server` 和 `apps/admin/lib/storage-files.ts` 可返回这些信息。业务开发人员按业务需要挑选字段落表。
+`@cloud/storage/server` 和 `apps/web/lib/storage-files.ts` 可返回这些信息。业务开发人员按业务需要挑选字段落表。
 
 | 字段 | 来源 | 含义 |
 | --- | --- | --- |
@@ -289,7 +289,7 @@ sequenceDiagram
 
 ## 7. 已封装函数
 
-业务开发优先使用 `apps/admin/lib/storage-files.ts` 里的封装函数，不直接操作 S3 SDK。
+业务开发优先使用 `apps/web/lib/storage-files.ts` 里的封装函数，不直接操作 S3 SDK。
 
 | 函数 | 用途 | 业务需要关心 |
 | --- | --- | --- |

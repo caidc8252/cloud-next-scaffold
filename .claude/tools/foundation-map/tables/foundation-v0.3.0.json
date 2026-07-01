@@ -1,0 +1,2473 @@
+{
+  "foundationVersion": "v0.3.0",
+  "contractHashes": {
+    "primitives/accordion.md": "a646f21ceacd499dafd16a5c0cabcceb33a11188ef23ab4dbabd276ed58d9c19",
+    "primitives/alert-dialog.md": "13408241c4006b0350cb1330f6856d5e1cdeedaa51780b0697b20587c23912b4",
+    "primitives/alert.md": "32ecea723b5b7e6fc8713b02a479a55fa9c01559c6b02581e0f83b247754031e",
+    "primitives/aspect-ratio.md": "f67c808f5c65278a6c66b09934b3d24e928fa325ef0ac8d4aa9d0377987c84c8",
+    "primitives/avatar.md": "8e54291da5c8ff682eae996108f41b4270a8060387cc90d446d5a223303022fd",
+    "primitives/badge.md": "9a712bc483fc92bc32a6b6dfba14828f905295781f9008ad31b61c239f03de4a",
+    "primitives/breadcrumb.md": "e4efe51ff69f5d4e296bcbbb410f8107015feaefcb8ce072b82d280ecb31ab68",
+    "primitives/button.md": "895d6c54f66133574eee3435069cb2a4ff7e676bf2eaf63c277c5dd573e1352e",
+    "primitives/calendar.md": "22e313068ec580c724942c31d49ccc47822ec70d19ca4172960e20fc715cc9c5",
+    "primitives/card.md": "d158eb0aad2f124c07d51c9abf65185ea54066ca49b9bff0347ac85921e0e09f",
+    "primitives/carousel.md": "30d6760f021454f03b0a1a1bd45fb85cca97e2facd615f2c5de4ed959fb0f6f2",
+    "primitives/checkbox.md": "d4d182eb3747abc0168892b13308c3c26fc783a365ca115909b6fb0c30ae67e9",
+    "primitives/collapsible.md": "a6f7b7d83456277dcaf5e3ecda216650cafaab0df7cb97c676aa5d523f0d5b7b",
+    "primitives/combobox.md": "f67234a3950df257c30836799e0d62019738dc7aa153954e8e2922213d26a484",
+    "primitives/command.md": "581e6dabe993e042767b1a705f6613ddcc36351734271fb51345be8bd9958c7c",
+    "primitives/context-menu.md": "9fcd3dd8c69d391e8c30ae93d3b36511b6158841fc486f408923e8871f17f1e8",
+    "primitives/date-picker.md": "9c778afb4ccaf012953eca8c7aedd16bbd647ebd6f6932f6f404c15b8358719b",
+    "primitives/date-range-picker.md": "cde4db22cf7617818e06cf74bdfce0388424b1b95bb79526988bb04efb2bf255",
+    "primitives/date-time-picker.md": "eb08414a0c6229948515e69e5805c94e820a7356afdfb8745ea8b598a06ddfb9",
+    "primitives/date-time-range-picker.md": "462c2d2e3cf2f237a872bf70ff85bde44b74795b940a66a30374dfbdf4219536",
+    "primitives/drawer.md": "2c4f21b49bc210bade549e0deb5624eb9abc25333ab0a5b5b26913232b6c42f3",
+    "primitives/dropdown-menu.md": "882097b204a10105acf5330facafe8eae28a50c6b35c14d4b97b2e96129b0bf9",
+    "primitives/dropzone.md": "322e88833979375630f1bfa2db1355623f92dc581270c6702dc4b3e3011934b1",
+    "primitives/field.md": "09c5b9191a7e14154f2dff8093e410c9457be46ce04b53407ad475f8b139cdd5",
+    "primitives/hover-card.md": "44d9c8c57f19d6dadf75af7f2673314522653b64d036e579e16d9e56f3a2a229",
+    "primitives/icon.md": "157dd9aff7115c160af1e40d8ee532b045a53bac533a82cb97c7f3a3f5169f0f",
+    "primitives/input-group.md": "ed3f7a416341476904d0be4907079d4f9d59b48b50fdbe9cb21e9ed1fb90cceb",
+    "primitives/input-otp.md": "0d3f5917e77f4425525ad14e0ecc3ac783887927c18d56499286714b3d76d7d3",
+    "primitives/input.md": "3b6fbd6d5d149e6706bd9004ddd96425082a92cd5e8a4324b793e9d06d68f87e",
+    "primitives/label.md": "b49802cbf2db1493afcab3b0b50e19f831998f012deaebbb334f9b922dc02f96",
+    "primitives/modal.md": "ba4680463e5713f487d7a738491273b8bdd1190e4bbc9115ec1cb1d0d3d76eab",
+    "primitives/object-tile.md": "d503eaeddcfaa9be80e1800e9411ae77310a4bd490a23f23d4bfc31e5bd69016",
+    "primitives/popover.md": "b2e7305c225935189f16d7a989b2572cdfffd8e1cb08322867875a0f6e252f88",
+    "primitives/progress.md": "5a5aa7900805cde111236837ab4788f2e824e02c79d2a74a73e45981bb3e9805",
+    "primitives/radio-group.md": "b33d38e96ab505dade861ecc74fbbc18391d8188cfe0ba9f37bdffd5dc598217",
+    "primitives/resizable.md": "2daba6f65499338c62b1ce1ff539bf773d76381489e5ac721395948b7d6d5f5d",
+    "primitives/scroll-area.md": "2f1fc2723bf3a4ed389ad8943369bfb27bbbded395d6bb4feddc8ff560509297",
+    "primitives/select.md": "e3137b02454b7f0cef9010b5ed6901e0e5e43380f02747e4286ed57303e8f64e",
+    "primitives/separator.md": "90dc2935351a8243f64af7213b2879f5afb28ac974efe1c15a1c538e8c4cac94",
+    "primitives/sheet.md": "c184c184401fb38b64afd32b368dc3e0f70ac9f52bdba9bccb6935014f854ee5",
+    "primitives/slider.md": "6219af3b335d8f70ade40f1be84224dbdf7b77bbc4a118dafbb84870d0c3a408",
+    "primitives/spinner.md": "7f6eb3c981347032cc7c31fa8830767399915dde39b6d09699ab6f997d1244c8",
+    "primitives/switch.md": "5119f43419cad1726c8ea2dd0b7e16ec87a176a32df5a86874157057aa3a1c98",
+    "primitives/tabs.md": "1ab8d0c1407c5f3827b271a6a071dafbb7487a2c05178149d6de2ba357258320",
+    "primitives/textarea.md": "44c7a3b85273c90ce48e6b6bc1d7e933446bb768eb07e1effb91317f7ce26a80",
+    "primitives/time-picker.md": "a2ac230a4010a4d71e3edde3a2376a8ff225b0497b7a87702f29220b5a885c77",
+    "primitives/toast.md": "04a8ce3c09a12a582d1884ff6eae689f69e69078500eede7f2b376bb488ecaf4",
+    "primitives/toggle-group.md": "cdb267b7ac10f429af2dc95b30a98a4e485613694c2002f77e111b852d09d32a",
+    "primitives/toggle.md": "edb5eb10c60ef0696b97d8f8ca2f26a77918ef1b1921a4b91dba4fe900bcce60",
+    "primitives/tooltip.md": "a85cf2927215e3c6fee1c2535b77a84d0d8cb8ac71ccbd5bd8bb1a5f27006300",
+    "composites/app-frame.md": "6225e0536034e157872db1816470dd117eef2c93aafd76f76a1d810d5d5f698a",
+    "composites/chart.md": "658850f46e33bdbb4c766062f341c4cceab7b2e224715363f9810be25bb89ca1",
+    "composites/data-table.md": "3b3c5fccc439006adbdce09949a2f07b9285a7d7eed520fe69bde3a7406dd240",
+    "composites/detail-header.md": "2933b1f412febf9c3508dac0ea3020623d3ea0011ffc0d23db7fa42b395f4e3d",
+    "composites/diff.md": "103e00469dce6a2bda617fc102527e41b4a0c12edf387e489c559eae08f4e770",
+    "composites/empty-state.md": "df9528c8e6cc459170804c8183d5804488233a0594fe19b7893d9360ea28bedb",
+    "composites/feed-list.md": "e755f89cd595b25aba709a0470fda50f5fade3d8568896c2f56a6463fd0b2848",
+    "composites/kv-grid.md": "bb8f8267f2f4ed714e52ecffd71623706f03c7618b36b472b274758378a93d23",
+    "composites/list-filter.md": "6bd96b40f42b8f666f23a703939f0340cb8624815ed12bd3a6750d29a2ffe284",
+    "composites/list-row.md": "71331c7a1e41191dd17fec7c5bf9b6d532f4d8f54fcda9df629b4d61a708c309",
+    "composites/load-more.md": "c0d53a8538975dba9620e7ea35427795b93dde251dc3c401a1e5624d444ad31d",
+    "composites/option-card.md": "00248ab6c48d69abbb31497619ff1c16dcbfdea87e9b3e0391181fcae08a037d",
+    "composites/page-body.md": "73700effeacaa3dacd37ac3d8706e4ec8dcea064552155d3d7c17fbbe50186d8",
+    "composites/page-header.md": "412b87847e7519762eb33e2e69335c6d2a6a7591e56d0c4afd3c707394c66fc2",
+    "composites/pagination.md": "990ca65ca98779be64ec21fbb0afeffb1e94dfb42ab873c4b5cbe9973ec33359",
+    "composites/product-card.md": "1169d3c89af2a7005f3907c20206ef21304b725bf35ef796cbae4904c434014a",
+    "composites/rich-pagination.md": "0222805454ffb4005fb9313cbfe8db6c2c7cce0dc01a5c1a5a1df5df61f7aef4",
+    "composites/skeleton.md": "4462cf85a5850115c4aaf279a48cc93428fd388916ccebda4f56fb4c842169d5",
+    "composites/stat-card.md": "6af4af790065fe7f7f8980cc4f7b1cfcc9ff07c522a8c7819010569286700709",
+    "composites/step-indicator.md": "c7aa32f0f2ee9f0b8be10d33b5157d636bf81f5ee843b45a02e29bcef2a955ab",
+    "composites/stepper.md": "31a49c37ba7c1c6b22a4e6b36b0cc6f789bec2d6cfe6fe61d67767f127d268e0",
+    "composites/summary-bar.md": "740b132407fab2c682cf06af11c4b4515dff63af764f50a6cbc8173d249ff063",
+    "composites/theme-toggle.md": "2d49cfb35ba0ade398e09328407013dc91ad12de21469825214d979f4be1ae4f",
+    "composites/timeline.md": "c13694170475e67b45bb04f56dfd25b06b85f3a5383514fdd9209c4faf00f918",
+    "composites/toggles.md": "859edfca035bfa5c036e4f87a3e2f38a9caf0ca830d673cbd2cdaf5cf31f5ea3"
+  },
+  "byClass": {
+    "accordion": {
+      "contract": "accordion",
+      "primary": "accordion",
+      "children": [
+        "accordion",
+        "accordion",
+        "accordion",
+        "accordion",
+        "inline",
+        "css",
+        "accordion"
+      ],
+      "named": [
+        "Accordion",
+        "AccordionItem",
+        "AccordionTrigger",
+        "AccordionContent"
+      ],
+      "kind": "composition"
+    },
+    "alert-dialog-overlay": {
+      "contract": "alert-dialog",
+      "primary": "alert-dialog-overlay",
+      "children": [
+        "alert-dialog",
+        "alert-dialog",
+        "alert-dialog",
+        "alert-dialog",
+        "alert-dialog",
+        "btn",
+        "btn",
+        "btn",
+        "btn",
+        "btn",
+        "btn",
+        "btn",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "AlertDialog",
+        "AlertDialogTrigger",
+        "AlertDialogContent",
+        "AlertDialogHeader",
+        "AlertDialogFooter",
+        "AlertDialogTitle",
+        "AlertDialogDescription",
+        "AlertDialogAction",
+        "AlertDialogCancel"
+      ],
+      "kind": "composition"
+    },
+    "alert-dialog": {
+      "contract": "alert-dialog",
+      "primary": "alert-dialog-overlay",
+      "children": [
+        "alert-dialog",
+        "alert-dialog",
+        "alert-dialog",
+        "alert-dialog",
+        "alert-dialog",
+        "btn",
+        "btn",
+        "btn",
+        "btn",
+        "btn",
+        "btn",
+        "btn",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "AlertDialog",
+        "AlertDialogTrigger",
+        "AlertDialogContent",
+        "AlertDialogHeader",
+        "AlertDialogFooter",
+        "AlertDialogTitle",
+        "AlertDialogDescription",
+        "AlertDialogAction",
+        "AlertDialogCancel"
+      ],
+      "kind": "composition"
+    },
+    "alert": {
+      "contract": "alert",
+      "primary": "alert",
+      "children": [
+        "alert",
+        "alert",
+        "alert",
+        "alert",
+        "alert",
+        "inline",
+        "css",
+        "alert",
+        "btn",
+        "btn",
+        "btn",
+        "alert"
+      ],
+      "named": [
+        "Alert",
+        "AlertTitle",
+        "AlertDescription",
+        "AlertAction"
+      ],
+      "kind": "composition"
+    },
+    "css": {
+      "contract": "aspect-ratio",
+      "primary": "css",
+      "children": [
+        "inline",
+        "css"
+      ],
+      "named": [
+        "AspectRatio"
+      ],
+      "kind": "export"
+    },
+    "aspect-ratio": {
+      "contract": "aspect-ratio",
+      "primary": "css",
+      "children": [
+        "inline",
+        "css"
+      ],
+      "named": [
+        "AspectRatio"
+      ],
+      "kind": "export"
+    },
+    "avatar": {
+      "contract": "avatar",
+      "primary": "avatar",
+      "children": [
+        "avatar",
+        "inline",
+        "css",
+        "avatar-group"
+      ],
+      "named": [
+        "Avatar",
+        "AvatarImage",
+        "AvatarFallback",
+        "AvatarGroup"
+      ],
+      "kind": "composition"
+    },
+    "badge": {
+      "contract": "badge",
+      "primary": "badge",
+      "children": [
+        "badge",
+        "badge",
+        "badge",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Badge"
+      ],
+      "kind": "export"
+    },
+    "breadcrumb": {
+      "contract": "breadcrumb",
+      "primary": "breadcrumb",
+      "children": [
+        "breadcrumb",
+        "breadcrumb",
+        "breadcrumb",
+        "breadcrumb",
+        "breadcrumb",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "BreadcrumbLink"
+      ],
+      "kind": "export"
+    },
+    "btn": {
+      "contract": "button",
+      "primary": "btn",
+      "children": [
+        "btn",
+        "btn",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Button"
+      ],
+      "kind": "export"
+    },
+    "button": {
+      "contract": "button",
+      "primary": "btn",
+      "children": [
+        "btn",
+        "btn",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Button"
+      ],
+      "kind": "export"
+    },
+    "calendar": {
+      "contract": "calendar",
+      "primary": "calendar",
+      "children": [
+        "calendar",
+        "calendar",
+        "calendar",
+        "calendar",
+        "calendar",
+        "calendar",
+        "calendar",
+        "calendar",
+        "inline",
+        "css",
+        "calendar",
+        "popover",
+        "calendar"
+      ],
+      "named": [
+        "Calendar"
+      ],
+      "kind": "export"
+    },
+    "card": {
+      "contract": "card",
+      "primary": "card",
+      "children": [
+        "card",
+        "card",
+        "card",
+        "css",
+        "inline",
+        "css",
+        "card"
+      ],
+      "named": [
+        "Card",
+        "CardHeader",
+        "CardTitle",
+        "CardDescription",
+        "CardAction",
+        "CardContent",
+        "CardFooter"
+      ],
+      "kind": "composition"
+    },
+    "carousel": {
+      "contract": "carousel",
+      "primary": "carousel",
+      "children": [
+        "carousel",
+        "carousel",
+        "carousel",
+        "carousel",
+        "carousel",
+        "btn",
+        "btn",
+        "btn",
+        "btn",
+        "carousel",
+        "carousel",
+        "carousel",
+        "carousel",
+        "carousel"
+      ],
+      "named": [
+        "Carousel",
+        "CarouselContent",
+        "CarouselItem",
+        "CarouselPrevious",
+        "CarouselNext",
+        "CarouselDots"
+      ],
+      "kind": "composition"
+    },
+    "checkbox": {
+      "contract": "checkbox",
+      "primary": "css",
+      "children": [
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Checkbox"
+      ],
+      "kind": "export"
+    },
+    "collapsible": {
+      "contract": "collapsible",
+      "primary": "collapsible",
+      "children": [
+        "collapsible",
+        "btn",
+        "collapsible",
+        "collapsible",
+        "inline",
+        "css",
+        "collapsible"
+      ],
+      "named": [
+        "Collapsible",
+        "CollapsibleTrigger",
+        "CollapsibleContent"
+      ],
+      "kind": "composition"
+    },
+    "combobox": {
+      "contract": "combobox",
+      "primary": "combobox",
+      "children": [
+        "css",
+        "inline",
+        "css",
+        "combobox",
+        "combobox"
+      ],
+      "named": [
+        "Combobox"
+      ],
+      "kind": "export"
+    },
+    "command": {
+      "contract": "command",
+      "primary": "command",
+      "children": [
+        "command",
+        "command",
+        "command",
+        "command",
+        "command",
+        "command",
+        "command",
+        "command",
+        "command",
+        "inline",
+        "css",
+        "command-dialog",
+        "command-dialog",
+        "input-group"
+      ],
+      "named": [
+        "Command",
+        "CommandDialog",
+        "CommandInput",
+        "CommandList",
+        "CommandEmpty",
+        "CommandGroup",
+        "CommandItem",
+        "CommandShortcut",
+        "CommandSeparator"
+      ],
+      "kind": "composition"
+    },
+    "context-menu": {
+      "contract": "context-menu",
+      "primary": "context-menu",
+      "children": [
+        "context-menu",
+        "context-menu",
+        "context-menu",
+        "context-menu",
+        "context-menu",
+        "context-menu",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "ContextMenu",
+        "ContextMenuTrigger",
+        "ContextMenuContent",
+        "ContextMenuItem",
+        "ContextMenuCheckboxItem",
+        "ContextMenuRadioItem",
+        "ContextMenuRadioGroup",
+        "ContextMenuLabel",
+        "ContextMenuSeparator",
+        "ContextMenuShortcut",
+        "ContextMenuGroup",
+        "ContextMenuSub",
+        "ContextMenuSubTrigger",
+        "ContextMenuSubContent"
+      ],
+      "kind": "composition"
+    },
+    "date-trigger": {
+      "contract": "date-picker",
+      "primary": "date-trigger",
+      "children": [
+        "date-trigger",
+        "date-trigger",
+        "date-trigger",
+        "date-trigger",
+        "popover",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "DatePicker"
+      ],
+      "kind": "export"
+    },
+    "date-picker": {
+      "contract": "date-picker",
+      "primary": "date-trigger",
+      "children": [
+        "date-trigger",
+        "date-trigger",
+        "date-trigger",
+        "date-trigger",
+        "popover",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "DatePicker"
+      ],
+      "kind": "export"
+    },
+    "date-range-picker": {
+      "contract": "date-range-picker",
+      "primary": "date-trigger",
+      "children": [
+        "popover",
+        "date-presets",
+        "date-presets",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "DateRangePicker"
+      ],
+      "kind": "export"
+    },
+    "date-time-picker": {
+      "contract": "date-time-picker",
+      "primary": "date-trigger",
+      "children": [
+        "popover",
+        "date-time-row",
+        "btn",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "DateTimePicker"
+      ],
+      "kind": "export"
+    },
+    "date-time-range-picker": {
+      "contract": "date-time-range-picker",
+      "primary": "date-trigger",
+      "children": [
+        "popover",
+        "date-presets",
+        "date-time-row",
+        "date-time-row",
+        "btn",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "DateTimeRangePicker"
+      ],
+      "kind": "export"
+    },
+    "drawer-overlay": {
+      "contract": "drawer",
+      "primary": "drawer-overlay",
+      "children": [
+        "drawer",
+        "drawer",
+        "drawer",
+        "drawer",
+        "drawer",
+        "drawer",
+        "drawer",
+        "btn",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Drawer",
+        "DrawerTrigger",
+        "DrawerContent",
+        "DrawerHeader",
+        "DrawerFooter",
+        "DrawerTitle",
+        "DrawerDescription",
+        "DrawerClose",
+        "DrawerOverlay",
+        "DrawerPortal"
+      ],
+      "kind": "composition"
+    },
+    "drawer": {
+      "contract": "drawer",
+      "primary": "drawer-overlay",
+      "children": [
+        "drawer",
+        "drawer",
+        "drawer",
+        "drawer",
+        "drawer",
+        "drawer",
+        "drawer",
+        "btn",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Drawer",
+        "DrawerTrigger",
+        "DrawerContent",
+        "DrawerHeader",
+        "DrawerFooter",
+        "DrawerTitle",
+        "DrawerDescription",
+        "DrawerClose",
+        "DrawerOverlay",
+        "DrawerPortal"
+      ],
+      "kind": "composition"
+    },
+    "dropdown-menu": {
+      "contract": "dropdown-menu",
+      "primary": "dropdown-menu",
+      "children": [
+        "css",
+        "inline",
+        "css",
+        "dropdown-menu"
+      ],
+      "named": [
+        "DropdownMenu",
+        "DropdownMenuTrigger",
+        "DropdownMenuContent",
+        "DropdownMenuItem",
+        "DropdownMenuCheckboxItem",
+        "DropdownMenuRadioGroup",
+        "DropdownMenuRadioItem",
+        "DropdownMenuLabel",
+        "DropdownMenuSeparator",
+        "DropdownMenuGroup",
+        "DropdownMenuSub",
+        "DropdownMenuSubTrigger",
+        "DropdownMenuSubContent",
+        "DropdownMenuShortcut"
+      ],
+      "kind": "composition"
+    },
+    "dropzone": {
+      "contract": "dropzone",
+      "primary": "dropzone",
+      "children": [
+        "dropzone",
+        "dropzone",
+        "file-list",
+        "file-row",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Dropzone",
+        "FileList",
+        "FileRow"
+      ],
+      "kind": "composition"
+    },
+    "field": {
+      "contract": "field",
+      "primary": "field",
+      "children": [
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Field"
+      ],
+      "kind": "export"
+    },
+    "hover-card": {
+      "contract": "hover-card",
+      "primary": "hover-card",
+      "children": [
+        "inline",
+        "css"
+      ],
+      "named": [
+        "HoverCard",
+        "HoverCardTrigger",
+        "HoverCardContent"
+      ],
+      "kind": "composition"
+    },
+    "mjs": {
+      "contract": "icon",
+      "primary": "mjs",
+      "children": [
+        "mjs",
+        "mjs"
+      ],
+      "named": [
+        "Search",
+        "Trash2",
+        "SquarePen"
+      ],
+      "kind": "composition"
+    },
+    "icon": {
+      "contract": "icon",
+      "primary": "mjs",
+      "children": [
+        "mjs",
+        "mjs"
+      ],
+      "named": [
+        "Search",
+        "Trash2",
+        "SquarePen"
+      ],
+      "kind": "composition"
+    },
+    "input-group": {
+      "contract": "input-group",
+      "primary": "input-group",
+      "children": [
+        "input-group",
+        "input-group",
+        "input-group",
+        "btn",
+        "btn",
+        "btn",
+        "btn"
+      ],
+      "named": [
+        "InputGroup",
+        "InputGroupAddon",
+        "InputGroupInput",
+        "InputGroupTextarea",
+        "InputGroupText",
+        "InputGroupButton"
+      ],
+      "kind": "composition"
+    },
+    "input-otp": {
+      "contract": "input-otp",
+      "primary": "input-otp",
+      "children": [
+        "input-otp",
+        "input-otp",
+        "input-otp",
+        "input-otp",
+        "input-otp",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "InputOTP",
+        "InputOTPGroup",
+        "InputOTPSlot",
+        "InputOTPSeparator"
+      ],
+      "kind": "composition"
+    },
+    "input": {
+      "contract": "input",
+      "primary": "input",
+      "children": [
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Input"
+      ],
+      "kind": "export"
+    },
+    "label": {
+      "contract": "label",
+      "primary": "css",
+      "children": [
+        "inline",
+        "css",
+        "label",
+        "field",
+        "field",
+        "field",
+        "field"
+      ],
+      "named": [
+        "Label"
+      ],
+      "kind": "export"
+    },
+    "modal-overlay": {
+      "contract": "modal",
+      "primary": "modal-overlay",
+      "children": [
+        "modal",
+        "modal",
+        "modal",
+        "modal",
+        "modal",
+        "modal",
+        "modal",
+        "modal",
+        "modal",
+        "btn",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Modal"
+      ],
+      "kind": "export"
+    },
+    "modal": {
+      "contract": "modal",
+      "primary": "modal-overlay",
+      "children": [
+        "modal",
+        "modal",
+        "modal",
+        "modal",
+        "modal",
+        "modal",
+        "modal",
+        "modal",
+        "modal",
+        "btn",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Modal"
+      ],
+      "kind": "export"
+    },
+    "object-tile": {
+      "contract": "object-tile",
+      "primary": "object-tile",
+      "children": [
+        "object-tile",
+        "object-tile",
+        "object-tile",
+        "object-tile",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "ObjectTile"
+      ],
+      "kind": "export"
+    },
+    "popover": {
+      "contract": "popover",
+      "primary": "popover",
+      "children": [
+        "popover",
+        "popover",
+        "popover",
+        "menu-item",
+        "menu-item",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Popover",
+        "PopoverTrigger",
+        "PopoverContent",
+        "PopoverHeader",
+        "PopoverTitle",
+        "PopoverDescription",
+        "MenuItem"
+      ],
+      "kind": "composition"
+    },
+    "progress": {
+      "contract": "progress",
+      "primary": "progress",
+      "children": [
+        "progress",
+        "progress",
+        "progress",
+        "progress",
+        "progress",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Progress"
+      ],
+      "kind": "export"
+    },
+    "radio-group": {
+      "contract": "radio-group",
+      "primary": "css",
+      "children": [
+        "inline",
+        "css"
+      ],
+      "named": [
+        "RadioGroup",
+        "RadioGroupItem"
+      ],
+      "kind": "composition"
+    },
+    "resizable-group": {
+      "contract": "resizable",
+      "primary": "resizable-group",
+      "children": [
+        "resizable-group",
+        "resizable-panel",
+        "resizable-handle",
+        "inline",
+        "css",
+        "resizable-handle",
+        "resizable-handle"
+      ],
+      "named": [
+        "ResizablePanelGroup",
+        "ResizablePanel",
+        "ResizableHandle"
+      ],
+      "kind": "composition"
+    },
+    "resizable": {
+      "contract": "resizable",
+      "primary": "resizable-group",
+      "children": [
+        "resizable-group",
+        "resizable-panel",
+        "resizable-handle",
+        "inline",
+        "css",
+        "resizable-handle",
+        "resizable-handle"
+      ],
+      "named": [
+        "ResizablePanelGroup",
+        "ResizablePanel",
+        "ResizableHandle"
+      ],
+      "kind": "composition"
+    },
+    "scroll-area": {
+      "contract": "scroll-area",
+      "primary": "scroll-area",
+      "children": [
+        "scroll-area",
+        "scroll-area",
+        "scroll-area",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "ScrollArea",
+        "ScrollBar"
+      ],
+      "kind": "composition"
+    },
+    "select": {
+      "contract": "select",
+      "primary": "css",
+      "children": [
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Select",
+        "SelectTrigger",
+        "SelectValue",
+        "SelectContent",
+        "SelectItem",
+        "SelectGroup",
+        "SelectLabel",
+        "SelectSeparator"
+      ],
+      "kind": "composition"
+    },
+    "separator": {
+      "contract": "separator",
+      "primary": "separator",
+      "children": [
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Separator"
+      ],
+      "kind": "export"
+    },
+    "sheet-overlay": {
+      "contract": "sheet",
+      "primary": "sheet-overlay",
+      "children": [
+        "sheet",
+        "sheet",
+        "sheet",
+        "sheet",
+        "sheet",
+        "btn",
+        "btn",
+        "btn",
+        "btn",
+        "sheet",
+        "sheet",
+        "btn",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Sheet",
+        "SheetTrigger",
+        "SheetClose",
+        "SheetPortal",
+        "SheetOverlay",
+        "SheetContent",
+        "SheetHeader",
+        "SheetFooter",
+        "SheetTitle",
+        "SheetDescription"
+      ],
+      "kind": "composition"
+    },
+    "sheet": {
+      "contract": "sheet",
+      "primary": "sheet-overlay",
+      "children": [
+        "sheet",
+        "sheet",
+        "sheet",
+        "sheet",
+        "sheet",
+        "btn",
+        "btn",
+        "btn",
+        "btn",
+        "sheet",
+        "sheet",
+        "btn",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Sheet",
+        "SheetTrigger",
+        "SheetClose",
+        "SheetPortal",
+        "SheetOverlay",
+        "SheetContent",
+        "SheetHeader",
+        "SheetFooter",
+        "SheetTitle",
+        "SheetDescription"
+      ],
+      "kind": "composition"
+    },
+    "slider": {
+      "contract": "slider",
+      "primary": "slider",
+      "children": [
+        "slider",
+        "slider",
+        "slider",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Slider"
+      ],
+      "kind": "export"
+    },
+    "spinner": {
+      "contract": "spinner",
+      "primary": "css",
+      "children": [
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Spinner"
+      ],
+      "kind": "export"
+    },
+    "switch": {
+      "contract": "switch",
+      "primary": "switch",
+      "children": [
+        "switch",
+        "switch",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Switch"
+      ],
+      "kind": "export"
+    },
+    "tabs": {
+      "contract": "tabs",
+      "primary": "tabs",
+      "children": [
+        "tabs",
+        "tabs",
+        "tabs",
+        "tabs",
+        "tabs",
+        "tabs",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Tabs",
+        "TabsList",
+        "TabsTrigger",
+        "TabsContent"
+      ],
+      "kind": "composition"
+    },
+    "textarea": {
+      "contract": "textarea",
+      "primary": "textarea",
+      "children": [
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Textarea"
+      ],
+      "kind": "export"
+    },
+    "time-picker": {
+      "contract": "time-picker",
+      "primary": "date-trigger",
+      "children": [
+        "input-group",
+        "input-group",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "TimePicker"
+      ],
+      "kind": "export"
+    },
+    "toast": {
+      "contract": "toast",
+      "primary": "toast",
+      "children": [
+        "toast",
+        "toast",
+        "toast",
+        "toast",
+        "toast",
+        "toast",
+        "toast",
+        "toast",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Toaster"
+      ],
+      "kind": "export"
+    },
+    "toggle-group": {
+      "contract": "toggle-group",
+      "primary": "toggle-group",
+      "children": [
+        "toggle-group",
+        "toggle-group",
+        "toggle-group",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "ToggleGroup",
+        "Toggle"
+      ],
+      "kind": "composition"
+    },
+    "toggle": {
+      "contract": "toggle",
+      "primary": "toggle",
+      "children": [
+        "toggle",
+        "toggle",
+        "inline",
+        "css",
+        "toggle-group",
+        "toggle-group",
+        "toggle"
+      ],
+      "named": [
+        "Toggle",
+        "ToggleGroup"
+      ],
+      "kind": "composition"
+    },
+    "tooltip": {
+      "contract": "tooltip",
+      "primary": "tooltip",
+      "children": [
+        "tooltip",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Tooltip",
+        "TooltipTrigger",
+        "TooltipContent",
+        "TooltipProvider"
+      ],
+      "kind": "composition"
+    },
+    "app-frame": {
+      "contract": "app-frame",
+      "primary": "app-frame",
+      "children": [
+        "app-frame",
+        "app-frame",
+        "app-frame",
+        "app-frame",
+        "app-frame",
+        "css"
+      ],
+      "named": [
+        "Sidebar",
+        "PortalHeader",
+        "Layout"
+      ],
+      "kind": "composition"
+    },
+    "chart": {
+      "contract": "chart",
+      "primary": "chart",
+      "children": [
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Tooltip",
+        "Legend",
+        "Chart",
+        "ChartConfig"
+      ],
+      "kind": "composition"
+    },
+    "table-frame": {
+      "contract": "data-table",
+      "primary": "table-frame",
+      "children": [
+        "table-scroll",
+        "data-table",
+        "cell-num",
+        "cell-right",
+        "cell-2line",
+        "cell-tags",
+        "cell-chevron",
+        "cell-empty",
+        "row-actions",
+        "col-select",
+        "css"
+      ],
+      "named": [
+        "Table"
+      ],
+      "kind": "export"
+    },
+    "data-table": {
+      "contract": "data-table",
+      "primary": "table-frame",
+      "children": [
+        "table-scroll",
+        "data-table",
+        "cell-num",
+        "cell-right",
+        "cell-2line",
+        "cell-tags",
+        "cell-chevron",
+        "cell-empty",
+        "row-actions",
+        "col-select",
+        "css"
+      ],
+      "named": [
+        "Table"
+      ],
+      "kind": "export"
+    },
+    "detail-header": {
+      "contract": "detail-header",
+      "primary": "detail-header",
+      "children": [
+        "detail-header",
+        "btn",
+        "detail-header",
+        "detail-header",
+        "detail-header",
+        "detail-header",
+        "detail-header",
+        "badge",
+        "detail-header",
+        "detail-header",
+        "detail-header",
+        "btn",
+        "detail-header",
+        "tabs",
+        "css"
+      ],
+      "named": [
+        "Card",
+        "Badge",
+        "Avatar",
+        "Button",
+        "Tabs"
+      ],
+      "kind": "composition"
+    },
+    "diff": {
+      "contract": "diff",
+      "primary": "diff",
+      "children": [
+        "diff",
+        "diff",
+        "diff",
+        "diff",
+        "diff",
+        "diff",
+        "diff",
+        "diff",
+        "css"
+      ],
+      "named": [
+        "AlertDialog"
+      ],
+      "kind": "export"
+    },
+    "empty-state": {
+      "contract": "empty-state",
+      "primary": "empty-state",
+      "children": [
+        "empty-state",
+        "empty-state",
+        "empty-state",
+        "empty-state",
+        "btn",
+        "btn",
+        "css"
+      ],
+      "named": [
+        "Empty"
+      ],
+      "kind": "export"
+    },
+    "feed-list": {
+      "contract": "feed-list",
+      "primary": "feed-list",
+      "children": [
+        "feed-item",
+        "feed-item",
+        "feed-item",
+        "feed-item",
+        "empty-state",
+        "btn",
+        "css"
+      ],
+      "named": [
+        "Badge",
+        "Button",
+        "Card"
+      ],
+      "kind": "composition"
+    },
+    "kv-grid": {
+      "contract": "kv-grid",
+      "primary": "kv-grid",
+      "children": [
+        "kv-grid",
+        "css",
+        "grid-auto-fit-kv"
+      ],
+      "named": [],
+      "kind": "html"
+    },
+    "condition-band": {
+      "contract": "list-filter",
+      "primary": "condition-band",
+      "children": [
+        "condition-band",
+        "search-input",
+        "search-input",
+        "input",
+        "select",
+        "condition-band",
+        "applied-filters",
+        "applied-filters",
+        "filter-chip",
+        "btn",
+        "btn",
+        "css"
+      ],
+      "named": [
+        "ListConditionBand",
+        "SearchInput",
+        "FilterChip",
+        "AppliedFilters",
+        "AdvancedFilterButton",
+        "AdvancedFilterSheet"
+      ],
+      "kind": "composition"
+    },
+    "list-filter": {
+      "contract": "list-filter",
+      "primary": "condition-band",
+      "children": [
+        "condition-band",
+        "search-input",
+        "search-input",
+        "input",
+        "select",
+        "condition-band",
+        "applied-filters",
+        "applied-filters",
+        "filter-chip",
+        "btn",
+        "btn",
+        "css"
+      ],
+      "named": [
+        "ListConditionBand",
+        "SearchInput",
+        "FilterChip",
+        "AppliedFilters",
+        "AdvancedFilterButton",
+        "AdvancedFilterSheet"
+      ],
+      "kind": "composition"
+    },
+    "list-rows": {
+      "contract": "list-row",
+      "primary": "list-rows",
+      "children": [
+        "list-row",
+        "list-row",
+        "avatar",
+        "list-row",
+        "list-row",
+        "badge",
+        "list-row",
+        "list-row",
+        "switch",
+        "btn",
+        "list-row",
+        "list-row",
+        "list-row",
+        "list-row",
+        "list-row",
+        "list-row",
+        "empty-state",
+        "css"
+      ],
+      "named": [
+        "Avatar",
+        "Switch",
+        "Button",
+        "Card"
+      ],
+      "kind": "composition"
+    },
+    "list-row": {
+      "contract": "list-row",
+      "primary": "list-rows",
+      "children": [
+        "list-row",
+        "list-row",
+        "avatar",
+        "list-row",
+        "list-row",
+        "badge",
+        "list-row",
+        "list-row",
+        "switch",
+        "btn",
+        "list-row",
+        "list-row",
+        "list-row",
+        "list-row",
+        "list-row",
+        "list-row",
+        "empty-state",
+        "css"
+      ],
+      "named": [
+        "Avatar",
+        "Switch",
+        "Button",
+        "Card"
+      ],
+      "kind": "composition"
+    },
+    "load-more": {
+      "contract": "load-more",
+      "primary": "load-more",
+      "children": [
+        "load-more",
+        "btn",
+        "btn",
+        "btn",
+        "load-more",
+        "progress",
+        "load-more",
+        "inline",
+        "css",
+        "css",
+        "css"
+      ],
+      "named": [
+        "LoadMore"
+      ],
+      "kind": "export"
+    },
+    "option-card": {
+      "contract": "option-card",
+      "primary": "option-card",
+      "children": [
+        "option-card",
+        "option-card",
+        "option-card",
+        "option-card",
+        "option-card",
+        "css"
+      ],
+      "named": [
+        "Card",
+        "RadioGroupItem",
+        "Checkbox",
+        "Label"
+      ],
+      "kind": "composition"
+    },
+    "page-body": {
+      "contract": "page-body",
+      "primary": "page-body",
+      "children": [
+        "page-header",
+        "css"
+      ],
+      "named": [
+        "PAGE"
+      ],
+      "kind": "export"
+    },
+    "page-header": {
+      "contract": "page-header",
+      "primary": "page-header",
+      "children": [
+        "page-header",
+        "page-header",
+        "page-header",
+        "page-header",
+        "page-header",
+        "badge",
+        "page-header",
+        "page-header",
+        "btn",
+        "css"
+      ],
+      "named": [
+        "ContentHeader",
+        "Card"
+      ],
+      "kind": "composition"
+    },
+    "pagination": {
+      "contract": "pagination",
+      "primary": "pagination",
+      "children": [
+        "pagination",
+        "pagination",
+        "pagination",
+        "pagination",
+        "pagination",
+        "select",
+        "pagination",
+        "pagination",
+        "css"
+      ],
+      "named": [
+        "Pagination",
+        "Pager",
+        "CursorPager",
+        "RichPagination",
+        "Select"
+      ],
+      "kind": "composition"
+    },
+    "product-card": {
+      "contract": "product-card",
+      "primary": "product-card",
+      "children": [
+        "product-card",
+        "product-card",
+        "product-card",
+        "product-card",
+        "btn",
+        "product-card",
+        "product-grid",
+        "css"
+      ],
+      "named": [
+        "Card",
+        "Badge",
+        "Button"
+      ],
+      "kind": "composition"
+    },
+    "rich-pagination": {
+      "contract": "rich-pagination",
+      "primary": "rich-pagination",
+      "children": [
+        "rich-pagination",
+        "rich-pagination",
+        "rich-pagination",
+        "pagination",
+        "css",
+        "inline",
+        "css",
+        "css"
+      ],
+      "named": [
+        "RichPagination"
+      ],
+      "kind": "export"
+    },
+    "skeleton": {
+      "contract": "skeleton",
+      "primary": "skeleton",
+      "children": [
+        "skeleton-row",
+        "css"
+      ],
+      "named": [],
+      "kind": "unknown"
+    },
+    "stat-card": {
+      "contract": "stat-card",
+      "primary": "stat-card",
+      "children": [
+        "stat-card",
+        "stat-card",
+        "stat-card",
+        "stat-card",
+        "stat-card",
+        "stat-card",
+        "stat-card",
+        "stat-card",
+        "stat-card",
+        "stat-grid",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "StatCard",
+        "StatGrid"
+      ],
+      "kind": "composition"
+    },
+    "step-indicator": {
+      "contract": "step-indicator",
+      "primary": "step-indicator",
+      "children": [
+        "step",
+        "step",
+        "step",
+        "step",
+        "step",
+        "step",
+        "step",
+        "step",
+        "step",
+        "step",
+        "css"
+      ],
+      "named": [
+        "StepIndicator"
+      ],
+      "kind": "export"
+    },
+    "stepper": {
+      "contract": "stepper",
+      "primary": "stepper",
+      "children": [
+        "input-group",
+        "input-group",
+        "btn",
+        "btn",
+        "btn",
+        "btn",
+        "stepper",
+        "input",
+        "input-group",
+        "stepper",
+        "input-group"
+      ],
+      "named": [
+        "Stepper"
+      ],
+      "kind": "export"
+    },
+    "summary-bar": {
+      "contract": "summary-bar",
+      "primary": "summary-bar",
+      "children": [
+        "summary-bar",
+        "summary-bar",
+        "btn",
+        "table-frame",
+        "data-table",
+        "css"
+      ],
+      "named": [
+        "ListSummaryBar",
+        "LIST"
+      ],
+      "kind": "composition"
+    },
+    "theme-toggle": {
+      "contract": "theme-toggle",
+      "primary": "theme-toggle",
+      "children": [
+        "btn",
+        "css",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "ThemeToggle"
+      ],
+      "kind": "export"
+    },
+    "timeline": {
+      "contract": "timeline",
+      "primary": "timeline",
+      "children": [
+        "timeline",
+        "timeline",
+        "timeline",
+        "timeline",
+        "timeline",
+        "timeline",
+        "timeline",
+        "timeline",
+        "timeline",
+        "timeline",
+        "timeline",
+        "timeline",
+        "timeline",
+        "timeline",
+        "timeline",
+        "timeline",
+        "timeline",
+        "timeline",
+        "timeline",
+        "css"
+      ],
+      "named": [
+        "Timeline",
+        "TimelineItem",
+        "TimelineMarker",
+        "TimelineContent",
+        "TimelineHeader",
+        "TimelineTitle",
+        "TimelineTime",
+        "TimelineTimeRow",
+        "TimelineDescription",
+        "TimelineActor"
+      ],
+      "kind": "composition"
+    },
+    "toggle-checkbox": {
+      "contract": "toggles",
+      "primary": "toggle-checkbox",
+      "children": [
+        "toggle-radio",
+        "toggle-switch",
+        "checkbox",
+        "radio",
+        "switch",
+        "label",
+        "css",
+        "inline",
+        "css",
+        "css"
+      ],
+      "named": [
+        "ToggleCheckbox",
+        "ToggleRadio",
+        "ToggleSwitch"
+      ],
+      "kind": "composition"
+    },
+    "toggles": {
+      "contract": "toggles",
+      "primary": "toggle-checkbox",
+      "children": [
+        "toggle-radio",
+        "toggle-switch",
+        "checkbox",
+        "radio",
+        "switch",
+        "label",
+        "css",
+        "inline",
+        "css",
+        "css"
+      ],
+      "named": [
+        "ToggleCheckbox",
+        "ToggleRadio",
+        "ToggleSwitch"
+      ],
+      "kind": "composition"
+    },
+    "inline": {
+      "contract": "accordion",
+      "primary": "accordion",
+      "children": [
+        "accordion",
+        "accordion",
+        "accordion",
+        "accordion",
+        "inline",
+        "css",
+        "accordion"
+      ],
+      "named": [
+        "Accordion",
+        "AccordionItem",
+        "AccordionTrigger",
+        "AccordionContent"
+      ],
+      "kind": "composition"
+    },
+    "avatar-group": {
+      "contract": "avatar",
+      "primary": "avatar",
+      "children": [
+        "avatar",
+        "inline",
+        "css",
+        "avatar-group"
+      ],
+      "named": [
+        "Avatar",
+        "AvatarImage",
+        "AvatarFallback",
+        "AvatarGroup"
+      ],
+      "kind": "composition"
+    },
+    "command-dialog": {
+      "contract": "command",
+      "primary": "command",
+      "children": [
+        "command",
+        "command",
+        "command",
+        "command",
+        "command",
+        "command",
+        "command",
+        "command",
+        "command",
+        "inline",
+        "css",
+        "command-dialog",
+        "command-dialog",
+        "input-group"
+      ],
+      "named": [
+        "Command",
+        "CommandDialog",
+        "CommandInput",
+        "CommandList",
+        "CommandEmpty",
+        "CommandGroup",
+        "CommandItem",
+        "CommandShortcut",
+        "CommandSeparator"
+      ],
+      "kind": "composition"
+    },
+    "date-presets": {
+      "contract": "date-range-picker",
+      "primary": "date-trigger",
+      "children": [
+        "popover",
+        "date-presets",
+        "date-presets",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "DateRangePicker"
+      ],
+      "kind": "export"
+    },
+    "date-time-row": {
+      "contract": "date-time-picker",
+      "primary": "date-trigger",
+      "children": [
+        "popover",
+        "date-time-row",
+        "btn",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "DateTimePicker"
+      ],
+      "kind": "export"
+    },
+    "file-list": {
+      "contract": "dropzone",
+      "primary": "dropzone",
+      "children": [
+        "dropzone",
+        "dropzone",
+        "file-list",
+        "file-row",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Dropzone",
+        "FileList",
+        "FileRow"
+      ],
+      "kind": "composition"
+    },
+    "file-row": {
+      "contract": "dropzone",
+      "primary": "dropzone",
+      "children": [
+        "dropzone",
+        "dropzone",
+        "file-list",
+        "file-row",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Dropzone",
+        "FileList",
+        "FileRow"
+      ],
+      "kind": "composition"
+    },
+    "menu-item": {
+      "contract": "popover",
+      "primary": "popover",
+      "children": [
+        "popover",
+        "popover",
+        "popover",
+        "menu-item",
+        "menu-item",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "Popover",
+        "PopoverTrigger",
+        "PopoverContent",
+        "PopoverHeader",
+        "PopoverTitle",
+        "PopoverDescription",
+        "MenuItem"
+      ],
+      "kind": "composition"
+    },
+    "resizable-panel": {
+      "contract": "resizable",
+      "primary": "resizable-group",
+      "children": [
+        "resizable-group",
+        "resizable-panel",
+        "resizable-handle",
+        "inline",
+        "css",
+        "resizable-handle",
+        "resizable-handle"
+      ],
+      "named": [
+        "ResizablePanelGroup",
+        "ResizablePanel",
+        "ResizableHandle"
+      ],
+      "kind": "composition"
+    },
+    "resizable-handle": {
+      "contract": "resizable",
+      "primary": "resizable-group",
+      "children": [
+        "resizable-group",
+        "resizable-panel",
+        "resizable-handle",
+        "inline",
+        "css",
+        "resizable-handle",
+        "resizable-handle"
+      ],
+      "named": [
+        "ResizablePanelGroup",
+        "ResizablePanel",
+        "ResizableHandle"
+      ],
+      "kind": "composition"
+    },
+    "table-scroll": {
+      "contract": "data-table",
+      "primary": "table-frame",
+      "children": [
+        "table-scroll",
+        "data-table",
+        "cell-num",
+        "cell-right",
+        "cell-2line",
+        "cell-tags",
+        "cell-chevron",
+        "cell-empty",
+        "row-actions",
+        "col-select",
+        "css"
+      ],
+      "named": [
+        "Table"
+      ],
+      "kind": "export"
+    },
+    "cell-num": {
+      "contract": "data-table",
+      "primary": "table-frame",
+      "children": [
+        "table-scroll",
+        "data-table",
+        "cell-num",
+        "cell-right",
+        "cell-2line",
+        "cell-tags",
+        "cell-chevron",
+        "cell-empty",
+        "row-actions",
+        "col-select",
+        "css"
+      ],
+      "named": [
+        "Table"
+      ],
+      "kind": "export"
+    },
+    "cell-right": {
+      "contract": "data-table",
+      "primary": "table-frame",
+      "children": [
+        "table-scroll",
+        "data-table",
+        "cell-num",
+        "cell-right",
+        "cell-2line",
+        "cell-tags",
+        "cell-chevron",
+        "cell-empty",
+        "row-actions",
+        "col-select",
+        "css"
+      ],
+      "named": [
+        "Table"
+      ],
+      "kind": "export"
+    },
+    "cell-2line": {
+      "contract": "data-table",
+      "primary": "table-frame",
+      "children": [
+        "table-scroll",
+        "data-table",
+        "cell-num",
+        "cell-right",
+        "cell-2line",
+        "cell-tags",
+        "cell-chevron",
+        "cell-empty",
+        "row-actions",
+        "col-select",
+        "css"
+      ],
+      "named": [
+        "Table"
+      ],
+      "kind": "export"
+    },
+    "cell-tags": {
+      "contract": "data-table",
+      "primary": "table-frame",
+      "children": [
+        "table-scroll",
+        "data-table",
+        "cell-num",
+        "cell-right",
+        "cell-2line",
+        "cell-tags",
+        "cell-chevron",
+        "cell-empty",
+        "row-actions",
+        "col-select",
+        "css"
+      ],
+      "named": [
+        "Table"
+      ],
+      "kind": "export"
+    },
+    "cell-chevron": {
+      "contract": "data-table",
+      "primary": "table-frame",
+      "children": [
+        "table-scroll",
+        "data-table",
+        "cell-num",
+        "cell-right",
+        "cell-2line",
+        "cell-tags",
+        "cell-chevron",
+        "cell-empty",
+        "row-actions",
+        "col-select",
+        "css"
+      ],
+      "named": [
+        "Table"
+      ],
+      "kind": "export"
+    },
+    "cell-empty": {
+      "contract": "data-table",
+      "primary": "table-frame",
+      "children": [
+        "table-scroll",
+        "data-table",
+        "cell-num",
+        "cell-right",
+        "cell-2line",
+        "cell-tags",
+        "cell-chevron",
+        "cell-empty",
+        "row-actions",
+        "col-select",
+        "css"
+      ],
+      "named": [
+        "Table"
+      ],
+      "kind": "export"
+    },
+    "row-actions": {
+      "contract": "data-table",
+      "primary": "table-frame",
+      "children": [
+        "table-scroll",
+        "data-table",
+        "cell-num",
+        "cell-right",
+        "cell-2line",
+        "cell-tags",
+        "cell-chevron",
+        "cell-empty",
+        "row-actions",
+        "col-select",
+        "css"
+      ],
+      "named": [
+        "Table"
+      ],
+      "kind": "export"
+    },
+    "col-select": {
+      "contract": "data-table",
+      "primary": "table-frame",
+      "children": [
+        "table-scroll",
+        "data-table",
+        "cell-num",
+        "cell-right",
+        "cell-2line",
+        "cell-tags",
+        "cell-chevron",
+        "cell-empty",
+        "row-actions",
+        "col-select",
+        "css"
+      ],
+      "named": [
+        "Table"
+      ],
+      "kind": "export"
+    },
+    "feed-item": {
+      "contract": "feed-list",
+      "primary": "feed-list",
+      "children": [
+        "feed-item",
+        "feed-item",
+        "feed-item",
+        "feed-item",
+        "empty-state",
+        "btn",
+        "css"
+      ],
+      "named": [
+        "Badge",
+        "Button",
+        "Card"
+      ],
+      "kind": "composition"
+    },
+    "grid-auto-fit-kv": {
+      "contract": "kv-grid",
+      "primary": "kv-grid",
+      "children": [
+        "kv-grid",
+        "css",
+        "grid-auto-fit-kv"
+      ],
+      "named": [],
+      "kind": "html"
+    },
+    "search-input": {
+      "contract": "list-filter",
+      "primary": "condition-band",
+      "children": [
+        "condition-band",
+        "search-input",
+        "search-input",
+        "input",
+        "select",
+        "condition-band",
+        "applied-filters",
+        "applied-filters",
+        "filter-chip",
+        "btn",
+        "btn",
+        "css"
+      ],
+      "named": [
+        "ListConditionBand",
+        "SearchInput",
+        "FilterChip",
+        "AppliedFilters",
+        "AdvancedFilterButton",
+        "AdvancedFilterSheet"
+      ],
+      "kind": "composition"
+    },
+    "applied-filters": {
+      "contract": "list-filter",
+      "primary": "condition-band",
+      "children": [
+        "condition-band",
+        "search-input",
+        "search-input",
+        "input",
+        "select",
+        "condition-band",
+        "applied-filters",
+        "applied-filters",
+        "filter-chip",
+        "btn",
+        "btn",
+        "css"
+      ],
+      "named": [
+        "ListConditionBand",
+        "SearchInput",
+        "FilterChip",
+        "AppliedFilters",
+        "AdvancedFilterButton",
+        "AdvancedFilterSheet"
+      ],
+      "kind": "composition"
+    },
+    "filter-chip": {
+      "contract": "list-filter",
+      "primary": "condition-band",
+      "children": [
+        "condition-band",
+        "search-input",
+        "search-input",
+        "input",
+        "select",
+        "condition-band",
+        "applied-filters",
+        "applied-filters",
+        "filter-chip",
+        "btn",
+        "btn",
+        "css"
+      ],
+      "named": [
+        "ListConditionBand",
+        "SearchInput",
+        "FilterChip",
+        "AppliedFilters",
+        "AdvancedFilterButton",
+        "AdvancedFilterSheet"
+      ],
+      "kind": "composition"
+    },
+    "product-grid": {
+      "contract": "product-card",
+      "primary": "product-card",
+      "children": [
+        "product-card",
+        "product-card",
+        "product-card",
+        "product-card",
+        "btn",
+        "product-card",
+        "product-grid",
+        "css"
+      ],
+      "named": [
+        "Card",
+        "Badge",
+        "Button"
+      ],
+      "kind": "composition"
+    },
+    "skeleton-row": {
+      "contract": "skeleton",
+      "primary": "skeleton",
+      "children": [
+        "skeleton-row",
+        "css"
+      ],
+      "named": [],
+      "kind": "unknown"
+    },
+    "stat-grid": {
+      "contract": "stat-card",
+      "primary": "stat-card",
+      "children": [
+        "stat-card",
+        "stat-card",
+        "stat-card",
+        "stat-card",
+        "stat-card",
+        "stat-card",
+        "stat-card",
+        "stat-card",
+        "stat-card",
+        "stat-grid",
+        "css",
+        "inline",
+        "css"
+      ],
+      "named": [
+        "StatCard",
+        "StatGrid"
+      ],
+      "kind": "composition"
+    },
+    "step": {
+      "contract": "step-indicator",
+      "primary": "step-indicator",
+      "children": [
+        "step",
+        "step",
+        "step",
+        "step",
+        "step",
+        "step",
+        "step",
+        "step",
+        "step",
+        "step",
+        "css"
+      ],
+      "named": [
+        "StepIndicator"
+      ],
+      "kind": "export"
+    },
+    "toggle-radio": {
+      "contract": "toggles",
+      "primary": "toggle-checkbox",
+      "children": [
+        "toggle-radio",
+        "toggle-switch",
+        "checkbox",
+        "radio",
+        "switch",
+        "label",
+        "css",
+        "inline",
+        "css",
+        "css"
+      ],
+      "named": [
+        "ToggleCheckbox",
+        "ToggleRadio",
+        "ToggleSwitch"
+      ],
+      "kind": "composition"
+    },
+    "toggle-switch": {
+      "contract": "toggles",
+      "primary": "toggle-checkbox",
+      "children": [
+        "toggle-radio",
+        "toggle-switch",
+        "checkbox",
+        "radio",
+        "switch",
+        "label",
+        "css",
+        "inline",
+        "css",
+        "css"
+      ],
+      "named": [
+        "ToggleCheckbox",
+        "ToggleRadio",
+        "ToggleSwitch"
+      ],
+      "kind": "composition"
+    },
+    "radio": {
+      "contract": "toggles",
+      "primary": "toggle-checkbox",
+      "children": [
+        "toggle-radio",
+        "toggle-switch",
+        "checkbox",
+        "radio",
+        "switch",
+        "label",
+        "css",
+        "inline",
+        "css",
+        "css"
+      ],
+      "named": [
+        "ToggleCheckbox",
+        "ToggleRadio",
+        "ToggleSwitch"
+      ],
+      "kind": "composition"
+    }
+  }
+}

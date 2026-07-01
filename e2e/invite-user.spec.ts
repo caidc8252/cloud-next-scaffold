@@ -2,7 +2,6 @@ import { test, expect } from "@playwright/test";
 import { truncateAll, pool } from "./fixtures/db";
 
 const ADMIN_URL = process.env.E2E_BASE_URL!;
-const PORTAL_URL = process.env.E2E_PORTAL_URL!;
 const PLATFORM_PARTY_ID = 1; // seed 的 ACTIVE Platform party
 const PASSWORD = "E2ePass!2026xyz"; // 12+ 且四类，满足密码策略
 
@@ -23,10 +22,10 @@ test("admin 邀请 → 被邀人注册入驻为 NORMAL，party 不激活，邀�
   expect(token).toBeTruthy();
   await adminCtx.close();
 
-  // 2) 匿名上下文走 portal 接受（注册新账号）。
+  // 2) 匿名上下文走 web 接受（注册新账号）。
   const anon = await browser.newContext();
   const page = await anon.newPage();
-  await page.goto(`${PORTAL_URL}/onboarding?token=${encodeURIComponent(token)}`);
+  await page.goto(`${ADMIN_URL}/onboarding?token=${encodeURIComponent(token)}`);
   await page.getByRole("button", { name: "Register a new account" }).click();
   await page.fill("#ob-display", "E2E Invitee");
   await page.fill("#ob-pw", PASSWORD);
