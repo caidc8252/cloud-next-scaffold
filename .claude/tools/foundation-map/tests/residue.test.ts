@@ -3,7 +3,7 @@ import { buildResidueReport } from '../src/residue'
 import type { IRNode } from '../src/types'
 
 const node = (id: number, bucket: IRNode['bucket'], extra: Partial<IRNode> = {}): IRNode => ({
-  id, line: id, tag: 'div', classes: ['x'], bases: ['x'], bucket, matchedClass: null, component: null, ...extra,
+  id, line: id, tag: 'div', classes: ['x'], bases: ['x'], bucket, matchedClass: null, component: null, named: [], absorbedBy: null, ...extra,
 })
 
 describe('buildResidueReport', () => {

@@ -3,7 +3,7 @@ import { emitTsx } from '../src/emit-tsx'
 import type { IRNode } from '../src/types'
 
 const node = (over: Partial<IRNode>): IRNode => ({
-  id: 0, line: 1, tag: 'div', classes: [], bases: [], bucket: 'clean-mapped', matchedClass: null, component: 'Card', ...over,
+  id: 0, line: 1, tag: 'div', classes: [], bases: [], bucket: 'clean-mapped', matchedClass: null, component: 'Card', named: [], absorbedBy: null, ...over,
 })
 
 test('collectInstances reads data-src ordinals and component names', () => {
@@ -57,4 +57,30 @@ test('flags a component-name mismatch as unmatched, not matched', () => {
   const res = runGate(nodes, wrong)
   expect(res.roundTrip.matchedInstances).toBe(0)
   expect(res.roundTrip.unmatchedNodes).toBe(1)
+})
+
+test('absorbed members are neither emittable nor gated', () => {
+  const nodes = [
+    node({ id: 0, bucket: 'clean-mapped', component: 'StepIndicator', named: ['StepIndicator'] }),
+    node({ id: 1, bucket: 'absorbed', component: 'StepIndicator', named: ['StepIndicator'], absorbedBy: 0 }),
+    node({ id: 2, bucket: 'absorbed', component: 'StepIndicator', named: ['StepIndicator'], absorbedBy: 0 }),
+  ]
+  // TSX carries only the single root instance — the two absorbed members are folded in.
+  const res = runGate(nodes, emitTsx(nodes))
+  expect(res.roundTrip.onContractNodes).toBe(1)      // only the root is on-contract/emittable
+  expect(res.roundTrip.matchedInstances).toBe(1)
+  expect(res.roundTrip.unmatchedNodes).toBe(0)
+  expect(res.roundTrip.orphanInstances).toBe(0)
+  expect(res.roundTrip.reliable).toBe(true)
+  expect(res.buckets.absorbed).toBe(2)
+})
+
+test('a composition root matches ANY of its named components, not just the primary', () => {
+  // option-card contract: named [Card, RadioGroupItem]; idiomatic code uses RadioGroupItem.
+  const nodes = [node({ id: 0, component: 'Card', named: ['Card', 'RadioGroupItem'] })]
+  const tsx = emitTsx([node({ id: 0, component: 'RadioGroupItem' })]) // builder chose a non-primary named
+  const res = runGate(nodes, tsx)
+  expect(res.roundTrip.matchedInstances).toBe(1)
+  expect(res.roundTrip.unmatchedNodes).toBe(0)
+  expect(res.roundTrip.reliable).toBe(true)
 })
