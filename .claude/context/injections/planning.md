@@ -9,7 +9,7 @@
 - Cross-module references go only via another module's `*.public.ts` (server-to-server) or `*.api.ts` (client). A token not yet declared → forward-declare a colocated `modules/<cat>/<mod>.stub.ts`; plan the reference now, the stub is mechanical at impl time (template + legend in `references/cross-module-stub.md`). `pnpm gen:coc` aggregates stubs.
 
 ## Module overview (required deliverable)
-- The plan MUST include a task to create (new module) or update (changed module) `apps/web/modules/<cat>/<mod>/overview.md`, per the section-set/template in `.claude/docs/module-overview.md`. Business module only — commons overview is out of scope here.
+- The plan MUST include a task to create (new module) or update (changed module) `apps/web/modules/<cat>/<mod>/overview.md`, per the section-set/template in `references/coding-rules/module-layout.md`. Business module only — commons overview is out of scope here.
 - It's the module's outward 名片: public surface / permission codes / deps / invariants, aligned to `manifest.ts` + `server/<mod>.public.ts` + `app/api/*` + `schema/`. Not implementation detail (that's code + `server-layering`).
 
 ## Component boundaries
@@ -30,7 +30,7 @@
 - `permissions[].code` is 4-segment `<cat>.<mod>.<fn>.<action>`. **Granularity = one code per indivisible capability**: ask "would a role ever be granted/revoked JUST this?" — yes → own code; no → fold in. A capability another module owns → reference that code, don't mint one. No code for backend-only steps or out-of-scope items.
 - **Inbound stubs (codes others forward-declared against you)** — before finalizing `permissions[]`, surface any `*.stub.ts` naming this module as `@stub-owner` (`pnpm lint`'s `stub-notice` lists every stub's owner). Each is a code another module is already building against and expects you to own — declare those for real here (legend → `references/cross-module-stub.md`).
 - Who may use which code is human-owned in `apps/web/manifest/catalog/roles.ts` — AI does not auto-fill it.
-- `commons/<mod>/` is the leaf layer: no `menuCode`/`parentMenuCode`, never calls a business module. See `.claude/docs/coc-declaration.md` for the full CoC how-to.
+- `commons/<mod>/` is the leaf layer: no `menuCode`/`parentMenuCode`, never calls a business module. See `references/coding-rules/coc-declaration.md` for the full CoC how-to.
 
 ## Shared packages
 - Which `@cloud/*` packages get touched? List them. Available: `api-kit`, `cache`, `config`, `constants`, `db`, `i18n`, `log`, `mail`, `permissions`, `platform-config`, `request`, `security`, `storage`, `ui`.
