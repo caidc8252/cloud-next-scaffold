@@ -81,3 +81,4 @@ docker-data/*
 # AI scaffold runtime
 .claude/.audit/
 .claude/tools/setup/node_modules/
+.work/mock-app/

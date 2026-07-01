@@ -9,7 +9,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const SCRIPT_SRC = join(HERE, '../../../../context/check-diff-coverage.mjs');
 
 const SENTINEL_RE = /\/\/ next-kit:diff-coverage v(\d+)/;
-export const COVERAGE_VERSION = 1;
+export const COVERAGE_VERSION = 2;
 const SCRIPT_REL = 'scripts/check-diff-coverage.mjs';
 const CHECK_CMD = 'vitest run --coverage --coverage.reporter=lcov --coverage.reporter=html && node scripts/check-diff-coverage.mjs';
 

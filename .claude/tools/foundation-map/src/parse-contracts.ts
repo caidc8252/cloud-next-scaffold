@@ -11,12 +11,21 @@ function implementationsSection(md: string): { next: string; artifact: string } 
 
 const baseOf = (cls: string): string => cls.split(/__|--/)[0]!
 
+// The Artifact prose references source filenames (`tokens.inline.css`,
+// `rich-pagination.md`, `icon.mjs`) whose extension/segment dots the class
+// regex would otherwise scrape as phantom classes (`css`, `inline`, `md`).
+// Strip whole filename tokens (a name base ending in a known extension) first,
+// so real compound selectors like `table.data-table` / `.btn.btn--secondary`
+// — which have no extension — survive untouched.
+const FILENAME = /[\w][\w.-]*\.(?:css|scss|md|mjs|js|jsx|ts|tsx|json|html)\b/g
+
 export function parseContract(md: string, contractName: string): ContractEntry | null {
   const impl = implementationsSection(md)
   if (!impl) return null
   const { next, artifact } = impl
 
-  const allClasses = [...artifact.matchAll(/\.([a-z][a-z0-9]+(?:-[a-z0-9]+)*)/g)].map((m) => baseOf(m[1]!))
+  const scannable = artifact.replace(FILENAME, '')
+  const allClasses = [...scannable.matchAll(/\.([a-z][a-z0-9]+(?:-[a-z0-9]+)*)/g)].map((m) => baseOf(m[1]!))
   const primary = allClasses.length > 0 ? allClasses[0]! : null
   const children = allClasses.slice(1)
 

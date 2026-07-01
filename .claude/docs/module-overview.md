@@ -5,7 +5,7 @@
 ## 是什么 / 给谁看
 - 每个业务模块 `modules/<cat>/<mod>/` 与每个通用模块 `commons/<mod>/` 各有**一份** `overview.md`，描述「这个模块是什么、对外暴露什么、依赖谁、有何不变量」。
 - **消费方**：`/logic-analyze` Step2 遍历所有 `overview.md` 建立跨模块认识，按其中的 public surface / 依赖判断「引用的目标模块契约是否齐全」。其它人/skill 也可据此快速定位，不必通读模块源码。
-- **唯一写入方**：由专门的 **commons/overview 维护 skill** 生成/维护（建设中）。在它就绪前，可由人按本模板手写。`/logic-analyze` **只读不写**。
+- **写入方**：业务模块 `modules/<cat>/<mod>/overview.md` 由 **`/coding`** 在建/改该模块时创建并保持同步（`writing-plans` 把它作为一项交付物纳入计划，非 `L-n` 台账项）。专门的 **commons/overview 维护 skill**（建设中）只覆盖 **commons 概览 + 跨模块批量梳理**。`/logic-analyze` **只读不写**。
 
 ## 写作原则
 - **薄、稳、对外**：只写跨模块/全局视角需要知道的；模块内部实现细节、分层写法不写（那是代码与 server-layering 的事）。

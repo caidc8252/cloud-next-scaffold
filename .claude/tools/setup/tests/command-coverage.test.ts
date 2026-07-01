@@ -15,7 +15,7 @@ describe('setupCoverage INSTALL', () => {
     const d = repo();
     await setupCoverage({ rootDir: d, dryRun: false });
     expect(existsSync(join(d, 'scripts/check-diff-coverage.mjs'))).toBe(true);
-    expect(readFileSync(join(d, 'scripts/check-diff-coverage.mjs'), 'utf8')).toMatch(/\/\/ next-kit:diff-coverage v1/);
+    expect(readFileSync(join(d, 'scripts/check-diff-coverage.mjs'), 'utf8')).toMatch(/\/\/ next-kit:diff-coverage v2/);
   });
 
   it('adds the check:diff-coverage npm script forcing the lcov reporter', async () => {

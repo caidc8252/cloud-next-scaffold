@@ -4,7 +4,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # AI 行为准则
 
-本文件是 AI 在本项目的**常驻**行为准则：哲学 + 目录语义 + 铁律 + 脚手架工作流。深度规格按需查 `.claude/docs/*`（按主题分篇：`server-layering` / `api-and-requests` / `auth-permissions` / `coc-declaration` / `module-overview` / `i18n` / `storage-s3` / `logging` / `notice` / …）。
+本文件是 AI 在本项目的**常驻**行为准则：哲学 + 目录语义 + 铁律 + 脚手架工作流。深度规格按需查团队编码规则索引 `.claude/context/injections/references/coding-rules.md`（路由，按主题分篇：`server-layering` / `api-and-requests` / `auth-guards` / `coc-declaration` / `module-layout` / `i18n` / `storage` / `logging` / `notice` / …）。
 
 ## 总则
 
@@ -20,7 +20,7 @@ Next.js（App Router）**大单体** `apps/web` + `@cloud/*` 参考骨架 + `.cl
 
 ## 目录语义（一句话职责）
 - 根目录只放 monorepo/构建配置与项目文档；`.next`/`node_modules`/产物/缓存/生成文件不手改、不作依赖。
-- `apps/web/modules/<cat>/<mod>/` — **AI 生成落点**，纯业务单元（`manifest.ts`+`server/`+`schema/`+`client/`+`ui/`+`overview.md`）。各子目录分层见 `.claude/docs/server-layering.md`；`overview.md` 规约见 `.claude/docs/module-overview.md`。
+- `apps/web/modules/<cat>/<mod>/` — **AI 生成落点**，纯业务单元（`manifest.ts`+`server/`+`schema/`+`client/`+`ui/`+`overview.md`）。各子目录分层见 `.claude/context/injections/references/coding-rules/server-layering.md`；`overview.md` 规约见 `.claude/context/injections/references/coding-rules/module-layout.md`。
 - `apps/web/commons/<mod>/` — **通用模块**，与 `modules/` **同级**；由 `modules/` 下模块**提升(promote)上来**的可复用单元（纯技术、无自有菜单、不受合同闸门、不反调业务模块）。详见 `apps/web/commons/README.md`。
 - `apps/web/app/` — **薄路由层**（page/route/layout）。只做 HTTP 适配，调 `modules` 的 service，不放厚业务逻辑。
 - `apps/web/manifest/` — CoC 声明与采集；生成物在 `manifest/_generated/`（`*.generated.ts` + i18n，由 `pnpm gen:coc` 产，勿手改）。
@@ -48,7 +48,7 @@ Next.js（App Router）**大单体** `apps/web` + `@cloud/*` 参考骨架 + `.cl
 5. **`commons` 是叶子层**：通用模块、纯技术、无自有菜单、不受合同闸门、**不反调业务模块**。
 6. **业务数据访问按当前 party 手工限定**（无 RLS）：`@cloud/db` 只导出 `prisma`（无 `tenantCtx`/`withTenantTx`/`systemDb`）。每条查询/变更在 `where`（及 INSERT 的 data）里用会话 `currentPartyId`（`Int`）限定；`currentPartyId` 由 controller 从会话取出、显式传入 service/repository。RSC/页面经模块 service / `*.public` 取数，绝不直接调 `prisma`。
 7. **业务表必含 `party_id Int @map("party_id")` + index**；按 party 隔离的唯一约束用 `@@unique([partyId, <key>])`。
-8. **跨模块前向声明（Step-3 脚手架）**：引用另一模块尚未声明的权限码 → 写同级 stub `modules/<cat>/<mod>.stub.ts`（partial `defineModule`，只声明所引用的码），`gen:coc` 聚合进 `PermissionCode`；**业务码禁止 import `*.stub`**（eslint 守门）；目标模块声明该码后删 stub（`duplicate-code` 守门抓残留）。类型/函数跨模块走 `server/<mod>.public` / `client/<mod>.api` 窄面（见 `server-layering`），禁止深 import。
+8. **跨模块前向声明 = 可 import 的 `*.stub.ts`**：依赖另一模块尚未构建的东西（其 `*.public`/`*.api` 的函数/类型，或一个权限码）→ 写同级 `modules/<cat>/<mod>/<name>.stub.ts`（带 `@stub-owner`/`@stub-consumer`/`@stub-reason` 头），**import 它**顶着开发。`stub-notice`（warn）在每次 lint 列出 owner/consumer；owner 造出真身后，consumer 把 import 换到真实 `*.public`/`*.api`/真码并**删除 stub**。唯一硬闸门在 `/submit-work`（`check-stubs.mjs`）——任何 `*.stub.*` 都不得并入 `develop`。权限码的 stub 导出 `code as PermissionCode`（不进 manifest、不经 `gen:coc`），运行期 fail-closed 直到 owner 落码。类型/函数窄面见 `cross-module-stub.md` 与 `coding-rules/cross-module-refs.md`。
 
 ## 命令速查（验证 / 运行）
 ```

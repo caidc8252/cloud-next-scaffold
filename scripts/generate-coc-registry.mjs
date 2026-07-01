@@ -3,7 +3,6 @@
 // 产 4 个 .generated.ts + 多 locale i18n 到 apps/web/manifest/_generated/。
 // 有 error 诊断 → 拒写、退出码 1。产物 gitignored、由 pre 钩子重建、不手改。
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { glob } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 // 直接读包源(脚本从仓库根运行,根不依赖 @cloud/*,bare specifier 解析不到);
@@ -21,19 +20,8 @@ const webDir = join(root, "apps", "web");
 const { collected } = await import(pathToFileURL(join(webDir, "manifest", "collect.ts")).href);
 const { modules, menuTree, contractTypes, contractMenus, globalRoles } = collected;
 
-// 0b. 跨模块前向声明 stub 聚合(provisional 自动扫描)。
-// 作者引用另一模块尚未声明的 token 时,写 modules/<cat>/<mod>.stub.ts(default export = 一份
-// partial defineModule 结果,与 manifest 同形)使其编译。此处自动扫描所有 *.stub.ts 动态 import
-// (同 collect.ts:Node 类型擦除友好),并入 buildRegistry 的 modules。真实 manifest 声明该 token 后,
-// 真实 + 残留 stub 重名 → buildRegistry 的 duplicate-code 诊断报错(= 删 stub 信号)。
-const stubModules = [];
-for await (const rel of glob("modules/**/*.stub.ts", { cwd: webDir })) {
-  const mod = await import(pathToFileURL(join(webDir, rel)).href);
-  if (mod.default) stubModules.push(mod.default);
-}
-
-// 1. 汇总 + 结构 guard(真实 modules + 前向声明 stub)
-const result = buildRegistry({ modules: [...modules, ...stubModules], menuTree });
+// 1. 汇总 + 结构 guard(仅真实 modules;跨模块前向声明改由 *.stub.ts 承载,gen:coc 不再感知 stub)
+const result = buildRegistry({ modules, menuTree });
 
 // 2. catalog 引用 guard
 const roleCodes = [...new Set(globalRoles.flatMap((r) => r.permissionCodes))];

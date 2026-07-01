@@ -1,0 +1,13 @@
+# Email
+
+Email goes through `@cloud/mail`: this repo only pushes a job onto the Redis list `mail:queue` (`EMAIL_QUEUE_KEY`); an external platform consumes and sends it — fire-and-forget, no receipt signal.
+
+- **MUST NOT send mail directly** (no SMTP/SES clients), and MUST NOT `lpush` the queue by hand. Enqueue via `renderAndEnqueue()` (templates) or `enqueueEmailJob()` (raw job).
+- **Queue protocol is the single source of truth** (`emailJobInputSchema`, wire field names): `{ receivers, cc?, title, content_type, content, images? }`. Changing this shape requires coordinating with the external platform — don't invent another job shape elsewhere. `content_type` stays `"text/html"` (default); `title` is plain-text subject; `cc`/`images` unused for now.
+- **`content` is a full HTML document** (`<!DOCTYPE html>` + `<meta charset=utf-8>`, minimal email-safe HTML: inline styles + `<a>` buttons, text-first — no tables/media queries/images). MUST `escapeHtml()` every injected variable (user-controllable names/emails may contain `<`/`&`); MUST NOT escape `title` (else "Smith & Co" → "&amp;").
+- **Templates live per app** at `apps/web/lib/email/<kind>.ts`, typed `EmailTemplate<V>` (platform-independent, pure `(vars, t) => { title, content }`). Copy goes through i18n `email.*` — three languages, `en` base, no hard-coded strings. Add a new mail = new `lib/email/<kind>.ts` + `email.<kind>` keys; change copy = i18n JSON only; change protocol = `@cloud/mail/queue.ts` (both sides).
+- **Translator `t` is built by the app for the RECIPIENT's locale** (`@cloud/i18n`) and injected — `@cloud/mail` doesn't depend on i18n. MUST NOT use the cookie-based `getTranslations` (recipient ≠ current requester). Currently always pass `en`; the locale param + three-language key structure are pre-staged.
+- **URL/token variables are assembled app-side** via `@cloud/platform-config` (token through `encodeURIComponent`); `@cloud/mail` never reads env.
+- **Recipient throttle (MUST for user-triggerable mail** — verify code / password reset): call `assertRecipientQuota(email, purpose, policy)` before enqueue (or pass `purpose` to `renderAndEnqueue`). `DEFAULT_RECIPIENT_THROTTLE` = 60s cooldown + 5/hour; over limit throws `BusinessError(ERR_TOO_MANY_REQUESTS, 429)`. Admin-triggered mail (already authed) may use `LENIENT_RECIPIENT_THROTTLE` or rely on backpressure.
+- **Backpressure (system-level):** `enqueueEmailJob` rejects when `LLEN(mail:queue) >= MAX_PENDING_EMAIL_JOBS` (500) with `MiddlewareError(ERR_MW_MAIL)` — a soft threshold, callers should surface "mail busy, retry later".
+- **Logging** via `@cloud/log` `createLogger("mail")`: enqueue `info`, backpressure/throttle `warn`, payload/depth `debug`.

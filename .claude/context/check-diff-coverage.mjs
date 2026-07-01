@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// next-kit:diff-coverage v1
+// next-kit:diff-coverage v2
 // Changed-line coverage gate. Notes that used to live in the setup reference:
 // - Base ref: diffs against the merge-base with origin/main → origin/master → main → master;
 //   if none match (or no `origin`), exits code 2 asking for DIFF_COVERAGE_BASE.
@@ -9,10 +9,12 @@
 // - The first half must run the FULL vitest suite (one lcov covering every spec); if the
 //   consumer splits unit/integration, point it at the command that runs both.
 //
-// Diff-coverage gate. Joins `git diff` against coverage/lcov.info: every
-// changed, coverable line must be covered by a test OR carry an inline
-// `/* v8 ignore next -- <reason> */`. Writes coverage/diff-coverage.md and
-// exits non-zero on an uncovered, unreasoned changed line.
+// Diff-coverage gate. Joins `git diff` against coverage/lcov.info: at least
+// MIN_COVERED_RATIO (95%) of changed, coverable lines must be covered by a test;
+// the rest may go uncovered OR carry an inline `/* v8 ignore next -- <reason> */`
+// (reasoned-ignore lines drop out of the ratio entirely). A bare ignore without a
+// reason always fails. Writes coverage/diff-coverage.md and exits non-zero when
+// the ratio is missed or a reasonless ignore is present.
 // Self-contained: node + git only. Pure functions are exported for tests;
 // the CLI runs only when invoked directly.
 import { execFileSync } from 'node:child_process';
@@ -82,12 +84,17 @@ export function parseIgnores(sourceText) {
  * Classify changed lines. A v8-ignore hint exempts the line it targets: an
  * own-line ignore comment exempts the NEXT line (v8 "ignore next" semantics,
  * the documented form); an inline ignore exempts its own line.
- *  - exempted: an ignore with a reason covers this line
- *  - noReason: an ignore covers this line but has NO reason   -> FAIL
- *  - uncovered: DA hits === 0, not exempted                   -> FAIL
- *  - covered: DA hits > 0
+ *  - exempted: an ignore with a reason covers this line       -> out of ratio
+ *  - noReason: an ignore covers this line but has NO reason   -> hard FAIL
+ *  - uncovered: DA hits === 0, not exempted                   -> counts against ratio
+ *  - covered: DA hits > 0                                     -> counts toward ratio
  *  - (no DA entry & not exempted -> not coverable -> skipped)
+ * The gate FAILs when covered/coverable < MIN_COVERED_RATIO, or on any noReason.
  */
+// Minimum share of changed, coverable lines that must be covered to pass.
+// Reasoned-ignore lines are excluded from the ratio; a bare ignore still hard-fails.
+export const MIN_COVERED_RATIO = 0.95;
+
 export function computeReport({ changedByFile, lcovByFile, ignoresByFile }) {
   const files = [];
   const summary = { totalCoverable: 0, totalCovered: 0, totalUncovered: 0, totalExempted: 0, totalNoReason: 0 };
@@ -126,7 +133,8 @@ export function computeReport({ changedByFile, lcovByFile, ignoresByFile }) {
       summary.totalCoverable += covered.length + uncovered.length;
     }
   }
-  return { files, summary, fail: summary.totalUncovered + summary.totalNoReason > 0 };
+  const ratio = summary.totalCoverable === 0 ? 1 : summary.totalCovered / summary.totalCoverable;
+  return { files, summary, ratio, fail: summary.totalNoReason > 0 || ratio < MIN_COVERED_RATIO };
 }
 
 /** Render the report Markdown written to coverage/diff-coverage.md. */
@@ -140,6 +148,8 @@ export function formatReport(result) {
       `${summary.totalNoReason} ignore(s) without a reason.`,
     '',
   );
+  const pct = summary.totalCoverable === 0 ? 100 : Math.floor((summary.totalCovered / summary.totalCoverable) * 100);
+  lines.push(`Covered ${pct}% of changed coverable lines (threshold ${Math.round(MIN_COVERED_RATIO * 100)}%).`, '');
   lines.push(fail ? '**Verdict: FAIL ❌**' : '**Verdict: PASS ✅**', '');
   for (const f of files) {
     lines.push(`## ${f.file}`);
@@ -217,7 +227,10 @@ function main() {
       `${s.totalUncovered} uncovered, ${s.totalNoReason} unreasoned. → coverage/diff-coverage.md`,
   );
   if (result.fail) {
-    console.error('Diff-coverage gate FAILED: cover the lines above, or annotate `/* v8 ignore next -- <reason> */`.');
+    console.error(
+      `Diff-coverage gate FAILED: changed-line coverage is below ${Math.round(MIN_COVERED_RATIO * 100)}% ` +
+        '(or a reasonless ignore is present). Cover the lines above, or annotate `/* v8 ignore next -- <reason> */`.',
+    );
     process.exit(1);
   }
 }

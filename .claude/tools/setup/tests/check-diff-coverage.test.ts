@@ -127,6 +127,42 @@ describe('computeReport', () => {
     expect(r.summary.totalCoverable).toBe(1);
   });
 
+  // Ratio gate: changed coverable lines must be >=95% covered (was: every line).
+  const bigDiff = (uncoveredFrom) => {
+    const lcov = new Map();
+    for (let i = 1; i <= 40; i++) lcov.set(i, i >= uncoveredFrom ? 0 : 1);
+    return computeReport({
+      changedByFile: new Map([['src/big.ts', new Set(Array.from({ length: 40 }, (_, i) => i + 1))]]),
+      lcovByFile: new Map([['src/big.ts', lcov]]),
+      ignoresByFile: new Map(),
+    });
+  };
+
+  it('PASSES at exactly 95% covered changed lines (38/40)', () => {
+    const r = bigDiff(39); // lines 39,40 uncovered → 38/40 = 95%
+    expect(r.summary.totalCovered).toBe(38);
+    expect(r.summary.totalCoverable).toBe(40);
+    expect(r.summary.totalUncovered).toBe(2);
+    expect(r.fail).toBe(false);
+  });
+
+  it('FAILs just below 95% (37/40)', () => {
+    const r = bigDiff(38); // lines 38,39,40 uncovered → 37/40 = 92.5%
+    expect(r.summary.totalCovered).toBe(37);
+    expect(r.fail).toBe(true);
+  });
+
+  it('hard-FAILs a bare (reasonless) ignore even when the ratio clears 95%', () => {
+    const r = computeReport({
+      changedByFile: new Map([['src/a.ts', new Set([1, 2])]]),
+      lcovByFile: new Map([['src/a.ts', new Map([[1, 3], [2, 0]])]]),
+      ignoresByFile: new Map([['src/a.ts', new Map([[2, null]])]]), // bare ignore, no reason
+    });
+    expect(r.summary.totalNoReason).toBe(1);
+    expect(r.summary.totalCoverable).toBe(1); // line 1 only; line 2 diverted to noReason
+    expect(r.fail).toBe(true);
+  });
+
   it('exempts the line BELOW an own-line ignore comment (v8 ignore next)', () => {
     const r = computeReport({
       changedByFile: new Map([['src/a.ts', new Set([2, 3])]]), // 2 = comment, 3 = code

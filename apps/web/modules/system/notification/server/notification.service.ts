@@ -58,7 +58,7 @@ export function markRead(session: ActiveSession, body: MarkReadBody): Promise<nu
  *   } catch (err) { log.warn("... notice failed (non-blocking)", { err }); }
  *
  * 写一行 `SysNotice`（status=UNREAD），写后不可变（只 mark-read）。
- * 详见 `.claude/docs/notice.md`（含「接新埋点事件」配方）。
+ * 详见 `.claude/context/injections/references/coding-rules/notice.md`（含「接新埋点事件」配方）。
  */
 export async function createNotice(input: CreateNoticeInput): Promise<void> {
   const v = createNoticeInputSchema.parse(input);

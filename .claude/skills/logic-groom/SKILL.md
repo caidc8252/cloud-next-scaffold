@@ -46,6 +46,7 @@ description: /logic-groom —— 当前活跃任务的「碎片捕获入口」�
 
 ## 关闭
 - 捕获入口持续到操作员执行 `/submit-work`（提交闭环）→ 关闭；或操作员显式喊停。
+- 碎片攒够、想让它们进 `logic.md` → 跑 `/logic-analyze` 消费（本 skill 只捕获，不自动移交）。
 
 ## AUTONOMOUS_MODE
 - 无自动决策：意图不清宁可问，不臆断；无操作员输入不编造碎片。
