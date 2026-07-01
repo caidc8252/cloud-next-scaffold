@@ -9,6 +9,7 @@ disable-model-invocation: true
 - **Prototype work → `mock-app`, not here.** A prototype (foundation artifact / HTML prototype) → `mock-app` owns the prototype→Next transform. Come back to `/coding` only for the non-prototype logic it hands off.
 - Run `logic-analyze` → `logic.md`; plan from it.
 - `superpowers:writing-plans`, don't brainstorm. Tag each plan task with the `L-n` id(s) it satisfies.
+  - The plan must also include a create/update-`modules/<cat>/<mod>/overview.md` task (per `.claude/docs/module-overview.md`) — a mechanical deliverable, **no** `L-n` tag, not ledger-tracked.
 - Flip an `L-n`'s status only via `ledger.mjs status` — never hand-edit `logic.md`/`logic.items.json`. `dir = .work/logics/<cat>/<name>`.
   - `L-n` meets its acceptance criterion, tests green → `node .claude/skills/logic-analyze/ledger.mjs status <dir> <n> 已处理`.
   - an `L-n` auto-flipped to `需返工` (a newer item superseded it) → roll back its impl, then `status <dir> <n> 作废`.

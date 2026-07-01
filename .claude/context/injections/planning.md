@@ -8,6 +8,10 @@
 - The permission set is derived from the spec, not invented — a missing or ambiguous code is stop-and-ask.
 - Cross-module references go only via another module's `*.public.ts` (server-to-server) or `*.api.ts` (client). A token not yet declared → forward-declare a colocated `modules/<cat>/<mod>.stub.ts`; plan the reference now, the stub is mechanical at impl time (template + legend in `references/cross-module-stub.md`). `pnpm gen:coc` aggregates stubs.
 
+## Module overview (required deliverable)
+- The plan MUST include a task to create (new module) or update (changed module) `apps/web/modules/<cat>/<mod>/overview.md`, per the section-set/template in `.claude/docs/module-overview.md`. Business module only — commons overview is out of scope here.
+- It's the module's outward 名片: public surface / permission codes / deps / invariants, aligned to `manifest.ts` + `server/<mod>.public.ts` + `app/api/*` + `schema/`. Not implementation detail (that's code + `server-layering`).
+
 ## Component boundaries
 - UI specific to one module lives in `modules/<cat>/<mod>/ui/`. Cross-module pure-tech helpers belong in `apps/web/lib/` (or promoted to `apps/web/commons/<mod>/` when reused). Don't drop domain UI into lib "in case of reuse."
 - Detail screens with tabs: one page with tab state + per-tab components. Don't make each tab its own route.
