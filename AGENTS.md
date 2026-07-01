@@ -35,6 +35,8 @@ Next.js（App Router）**大单体** `apps/web` + `@cloud/*` 参考骨架 + `.cl
 5. 前端通过 `@cloud/request/client` 调接口
 6. 最后再补客户端的按钮显隐和交互细节
 
+> 菜单/权限 i18n key 由 `menuCode`/`code` 派生（生成物字段名仍是 `title`/`label`/`desc`），作者只写 code + 各语言 `i18n/*.ts` 翻译。
+
 
 ## 铁律（违反 = 编译/CI/提交失败，不靠自觉）
 1. **写入口只在 route handler**（`app/api/*`）。禁用 server action（`'use server'`）。
