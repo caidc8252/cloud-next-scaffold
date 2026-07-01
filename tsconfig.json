@@ -15,7 +15,7 @@
     "jsx": "react-jsx",
     "incremental": true,
     "paths": {
-      "@/*": ["./apps/admin/*"],
+      "@/*": ["./apps/web/*"],
       "@cloud/api-kit": ["./packages/api-kit/src/index.ts"],
       "@cloud/cache": ["./packages/cache/src/index.ts"],
       "@cloud/config": ["./packages/config/src/index.ts"],
@@ -44,12 +44,9 @@
     }
   },
   "include": [
-    "apps/portal/**/*.ts",
-    "apps/portal/**/*.tsx",
-    "apps/portal/next-env.d.ts",
-    "apps/admin/**/*.ts",
-    "apps/admin/**/*.tsx",
-    "apps/admin/next-env.d.ts",
+    "apps/web/**/*.ts",
+    "apps/web/**/*.tsx",
+    "apps/web/next-env.d.ts",
     "packages/api-kit/src/**/*.ts",
     "packages/cache/src/**/*.ts",
     "packages/cache/test/**/*.ts",

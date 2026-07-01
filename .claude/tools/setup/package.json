@@ -1,0 +1,23 @@
+{
+  "name": "@next-kit/setup",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Kit-internal tool: consumer-repo guardrail installer (eslint, e2e). Not published.",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "jsonc-parser": "^3.3.1",
+    "tsx": "^4.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "minimatch": "^10.0.1",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

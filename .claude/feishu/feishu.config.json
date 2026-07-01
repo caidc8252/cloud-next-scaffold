@@ -1,0 +1,55 @@
+{
+  "space": {
+    "name": "PEP",
+    "simple_name": "pep-npt",
+    "project_key": "6a2657622232d410d6aae347"
+  },
+  "work_item_type": "task",
+  "work_item_type_key": "story",
+  "work_item_type_name": "Task",
+  "filter": {
+    "assignee": "current-user",
+    "assignee_note": "当前负责人 = 当前登录飞书账号；用 search_user_info(['current_login_user()']) 解析 user_key。原生字段 current_status_operator（multi-user）。",
+    "stage": "FE",
+    "stage_role_id": "FE",
+    "stage_role_name": "Full Stack",
+    "stage_note": "阶段=FE：FE 既是流程角色(role_id=FE / 角色名 Full Stack)，也对应开发节点 state_29。MQL 角色字段写 `__Full Stack`（角色名，`__FE` 不被接受）；开发节点判定见 stage_mapping.development_node_key。"
+  },
+  "stage_mapping": {
+    "development": "NextJS开发(Claude)",
+    "development_node_key": "state_29",
+    "note": "开发节点：显示名 NextJS开发(Claude)，node_key=state_29，角色=FE。已由 get_node_detail 在 story 工作流上核实（同流程含 start 需求填写 / state_7 Design / state_29 NextJS开发(Claude) / state_38 NextJS 测试中 / state_50 Ready4QA / state_51 Ready4Go / state_42 上线 / end 结束）。/start-work 阶段闸门按 state_29 判定。"
+  },
+  "field_mapping": {
+    "note": "story 类型 field_key 映射；已由 list_workitem_field_config 全量核实（共 65 字段）。自定义字段勿编造。epic_number 属于 Epic 类型，见 related_field_mapping。",
+    "name": "name",
+    "description": "description",
+    "current_owner": "current_status_operator",
+    "task_id": "field_2138b1",
+    "module_relation": "field_1781cd",
+    "epic_relation": "field_2450fe",
+    "prototype_url": "field_b62d71"
+  },
+  "related_field_mapping": {
+    "note": "跨类型字段：经关联关系跳到目标工作项后再读的 field_key（不在 story 上，勿直接对 story 组 MQL）。",
+    "epic_number": {
+      "field_key": "field_d799a4",
+      "on_type_key": "63b52dc0f8aa9afda85444df",
+      "on_type_name": "Epic",
+      "reached_via": "epic_relation(field_2450fe)",
+      "note": "Epic 工作项自身的「编号」(text)；与 story 的 task_id(field_2138b1) 是不同字段，勿混用。已在 Epic 类型上核实存在。"
+    }
+  },
+  "mql_hints": [
+    "FROM 必须用 project_key（空间名 `PEP` 有歧义会报 ambiguous）+ 工作项类型 key `story`（显示名 Task 不能用作 FROM 表名）。",
+    "归我（FE 角色成员）：WHERE array_contains(`__Full Stack`, current_login_user())。",
+    "归我（当前负责人）：WHERE array_contains(get_node_attribute('__BELONGING','当前负责人'), current_login_user())，或字段 current_status_operator。",
+    "在开发阶段：当前 in-progress 节点 = state_29 / 名称 NextJS开发(Claude)。"
+  ],
+  "notes": [
+    "飞书 MCP 经 .mcp.json 以本地 stdio 启动（@lark-project/mcp --domain https://project.feishu.cn，凭 MCP_USER_TOKEN 鉴权），工具前缀 mcp__FeishuProjectMcp__；需在会话启动时已连接。",
+    "【搭建】新机器/新人接入步骤（.mcp.json 与 settings.local.json 均被 gitignore，clone 后需自建）：(1) 在飞书项目 https://project.feishu.cn 的 MCP/开放能力获取个人 MCP_USER_TOKEN（代表当前登录账号，/sync 等据此解析 current_login_user()）；(2) 仓库根建 .mcp.json：{\"mcpServers\":{\"FeishuProjectMcp\":{\"type\":\"stdio\",\"command\":\"npx\",\"args\":[\"-y\",\"@lark-project/mcp\",\"--domain\",\"https://project.feishu.cn\"],\"env\":{\"MCP_USER_TOKEN\":\"<你的token>\"}}}}；(3) .claude/settings.local.json 加 {\"enabledMcpjsonServers\":[\"FeishuProjectMcp\"]}；(4) 确保账号在 space.project_key 空间有工作项读写权限。验证：claude mcp list 显示 FeishuProjectMcp ✔ Connected。",
+    "EPIC 编号 field_d799a4 是 Epic 类型(type_key 63b52dc0f8aa9afda85444df)的「编号」字段，不在 story 上——故从 story 的 field_mapping 移到 related_field_mapping。读法：经 epic_relation(field_2450fe) 关联到 Epic 工作项后再取 field_d799a4；直接对 story 查 field_d799a4 会报 attr not found。",
+    "/sync 只查询+展示(owner=当前账号 且 阶段=FE)，不写任何文件；.work/tasks.json 由 /start-work 创建条目、/submit-work 完成后删除。module_category/module_name 由 module_relation(field_1781cd) 关联的「所属模块」工作项解析。"
+  ]
+}

@@ -4,55 +4,80 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # AI 行为准则
 
-本文件是 AI 在本项目的**常驻**行为准则：哲学 + 目录地图 + 硬不变量 + 文档索引。深度细节按需读 `.claude/docs/*`（每条硬不变量都标了「动手前先读 X」）。
+本文件是 AI 在本项目的**常驻**行为准则：哲学 + 目录语义 + 铁律 + 脚手架工作流。深度规格按需查 `.claude/docs/*`（按主题分篇：`server-layering` / `api-and-requests` / `auth-permissions` / `coc-declaration` / `module-overview` / `i18n` / `storage-s3` / `logging` / `notice` / …）。
 
 ## 总则
 
-- 我们的目标是开发稳定可靠的产品
-- 所以我们要追求：代码效率、架构稳定、可维护可复用
 - 要勇于指出我的错误，当我的要求与上面的目标冲突时，直截了当跟我沟通
 - 也要积极帮我思考，找出不同方案间的优劣和 trade off，帮我重塑决策
-- 不要过度防御，不要为了兜底而兜底，马奇诺防线没有意义
 - 约定大于配置，代码大于文档
 
-## 目录地图
+## 这是什么
+Next.js（App Router）**大单体** `apps/web` + `@cloud/*` 参考骨架 + `.claude/` AI 脚手架。
+左侧菜单不写死，由"用户登录→选公司(Party)→角色×合同 交叉算出有效权限→投影菜单"得来。
+脚手架层（AI 逻辑）已**正式生产接入**：`/sync`、`/start-work` 接真实飞书（FeiShu Project MCP）；`/logic-analyze`、`/submit-work` 接真实文档 repo（需求空间 + 数据模型空间）。完整链路见下方「脚手架工作流」。
 
-先判断代码归属，再决定目录：产品业务优先落 `apps/*`；跨应用、跨业务可复用能力才沉淀 `packages/*`；不要在业务目录混放测试/脚本/配置。
 
-- `apps/admin`（后台管理，默认主应用）：登录前页面 `app/(public)`；后台页面 `app/(portal)`（大多数业务页默认加这）；API 路由 `app/api`（只做 HTTP 适配）；业务实现 `service/<domain>/`（schema/service/policy/repository/mapper 分层）；私有工具 `lib`；私有组件就近 `_components`；菜单 `manifest`；文案 `i18n/messages`。
-- `apps/portal`（对外门户，**不要放后台页面**）：认证 `app/(auth)`；控制台 `app/(console)`；官网/营销 `app/(marketing)`；其余目录约定同 admin。
-- 新增应用参考 `apps/admin` 结构（`app`/`service`/`lib`/`manifest`/`i18n/messages`），按职责裁剪，不另起不兼容约定。
-- `packages/*` 只放项目级共享能力，新增前先查现有导出避免重复造轮子：`ui`(共享UI/布局/主题) `request`(请求封装/响应辅助/错误码) `permissions`(登录态/守卫/上下文) `db`(Prisma/seed) `security`(哈希/加解密) `storage`(S3) `config`/`platform-config`(env/校验) `i18n`(locale/格式/cookie) `api-kit`(handler 骨架) `cache`。
-- `e2e` 放端到端测试；单测/组件测试就近放；`scripts` 放仓库级脚本（只服务单包的放包内）。
+## 目录语义（一句话职责）
 - 根目录只放 monorepo/构建配置与项目文档；`.next`/`node_modules`/产物/缓存/生成文件不手改、不作依赖。
+- `apps/web/modules/<cat>/<mod>/` — **AI 生成落点**，纯业务单元（`manifest.ts`+`server/`+`schema/`+`client/`+`ui/`+`overview.md`）。各子目录分层见 `.claude/docs/server-layering.md`；`overview.md` 规约见 `.claude/docs/module-overview.md`。
+- `apps/web/commons/<mod>/` — **通用模块**，与 `modules/` **同级**；由 `modules/` 下模块**提升(promote)上来**的可复用单元（纯技术、无自有菜单、不受合同闸门、不反调业务模块）。详见 `apps/web/commons/README.md`。
+- `apps/web/app/` — **薄路由层**（page/route/layout）。只做 HTTP 适配，调 `modules` 的 service，不放厚业务逻辑。
+- `apps/web/manifest/` — CoC 声明与采集；生成物在 `manifest/_generated/`（`*.generated.ts` + i18n，由 `pnpm gen:coc` 产，勿手改）。
+- `apps/web/i18n/` — 全局文案 `i18n/messages`。
+- `apps/web/manifest/catalog/{roles,contract-types}.ts` — **商业策略，非有明确指定，否则 AI 不轻易修改**。
+- `e2e` 放端到端测试；单测/组件测试就近放；`scripts` 放仓库级脚本（只服务单包的放包内）。
+- `packages/*` — `@cloud/*` 基础设施（permissions/db/request/...），只放项目级共享能力，**禁止 import `apps/`**。
 
-## 硬不变量 + 文档索引
-
-下面每条是**绝不能违反**的铁律；「怎么做」的完整规格在对应 doc，**动手前先读**。
-
-- **服务端分层**：业务逻辑落 `service/<domain>/`，route 只做 HTTP 适配，不直接 `import @cloud/db` / `*.repository` / `*.mapper`；`_server/` 是历史遗留，见到顺手迁 `service/`；页面保持薄、默认 RSC（有交互才加 `"use client"`）、取数调 service。→ 写 service/route/页面取数前读 `.claude/docs/server-layering.md`
-- **接口与请求**：**不用 Server Action**，一切 mutation 走 Route Handler；业务错误一律 `throw BusinessError`（带 `PMMNNN` 码）/ `MiddlewareError`，**不裸 `throw new Error("文本")`**；成功走 `successResponse()`/`createdResponse()`，204 用 `noContentResponse()`；默认 `withApiHandler()` 兜底；错误码是协议、message 是展示；客户端调用一律走每域 `service/<domain>/api.ts` 具名函数（不裸调 `request.*`、不内联路径/类型）。→ 写接口/改请求响应/分页前读 `.claude/docs/api-and-requests.md`
-- **i18n**：所有用户可见文案走 message、**禁止硬编码**；统一走 `@cloud/i18n`，禁止直接 import `next-intl`；`en`/`zh-CN`/`ja` 同步补齐，`en` 为基底。→ 新增/改文案前读 `.claude/docs/i18n.md`
-- **鉴权与权限**：前端只是体验层，**读写保护必须落服务端守卫**；route 用 `assertPermissions()`，page/layout 用 `requirePermissions()`，范围校验落 service/policy；菜单走 role→permission→menu 链路。→ 接登录态/权限/菜单前读 `.claude/docs/auth-permissions.md`
-- **存储与 S3**：统一走 `@cloud/storage`，不在业务里 new AWS SDK；配置由业务侧注入、包不读 `.env`；项目不提供统一文件表，S3 返回的文件信息由各业务表按需保存；公开文件限 `public/` 前缀。→ 动 S3/上传下载前读 `.claude/docs/storage-s3.md`
-- **邮件**：发邮件统一走 `@cloud/mail` 推 Redis `mail:queue`（外部平台消费发信），不直接发信 / 不直接 `lpush`；`content` 极简 HTML 且变量 `escapeHtml`、`title` 纯文本；模板落各 app `lib/email/`、文案走 i18n `email.*`、译者 app 注入；队列背压 500 + 用户可触发邮件按收件人节流；包不读 env。→ 发邮件前读 `.claude/docs/email-capability.md`
-- **能力归属**：能力两端（client/server）不拆散、整体进同一包双入口；包只做纯能力、配置业务侧注入、不偷读 env；部署常量留 app。→ 抽包/调整能力归属前读 `.claude/docs/capability-ownership.md`
-- **UI 页面样式**：portal 业务页（列表/新增/详情）只用 `@cloud/ui` 原语 + 语义/圆角 token，**不写任意值**字号/间距/宽高/颜色/圆角；选中态压过 hover、危险操作必带 danger 变体、icon-only 按钮只 `ghost`/`ghost-danger`；吸附到刻度不照搬原型像素。→ 写 portal 列表/新增/详情页前读 `.claude/docs/portal-page-style-spec.md`
-- **日志**：服务端打日志统一走 `@cloud/log` 的 `createLogger("<scope>")`，**不裸 `console.*`**；单一 JSON 行格式、`LOG_LEVEL` 控级；请求级 `traceId`/`seq` 由 `withApiHandler` 经 `AsyncLocalStorage` 自动携带，错误响应与日志共用同一 traceId。→ 打服务端日志前读 `.claude/docs/logging.md`
-- **站内通知**：给用户发站内通知统一走 `service/notification` 的服务端内部 `createNotice`（唯一生产者、不暴露建通知 API、跨 app 可写同 `sys_notice`），**不自己 `prisma.sysNotice.create`**；payload 四件套 `summary`+`detail`(均必含非空)/`fields[]`/`links[]`；`noticeType="<module>.<event>"`（module 前端派生不落库）；文本按**收件人 `sys_user.locale`** 渲染好再传（展示端不翻译）、`links.url` 生产者拼好；埋点在业务事件点 `try/catch` 调、**失败非阻断**。→ 发通知/接埋点前读 `.claude/docs/notice.md`
-- **配置归属**：按**来源**分层——env 来源进 `@cloud/config`（`getEnv` 单入口、server-only、zod 带约束、读一次缓存）；代码来源的惰性值跨 app 进 `packages/constants`、单 app 进 `apps/*/lib/constants`；带校验/生成/按上下文现算的**能力**进独立包（如 manifest）。**单一真源**不跨层抄默认值、密钥只进 env、有量纲必带单位。→ 新增/归类配置或常量前读 `.claude/docs/env-config.md` 与 `.claude/docs/constants.md`
-- **Redis key**：命名空间分配与 TTL 常量集中 `@cloud/cache/redis-core`（`REDIS_NS` 按业务域分组、值恒为 `<域>:<名>`、全小写 `:` 分隔；`TTL` 常量单位进名），**绝不硬编码前缀**、靠 import `REDIS_NS` + 一条唯一性 test 防撞；builder 贴调用方（公共消费进 `@cloud/permissions` 等公共包、单 app 留 app、无归属才进 `redis-core`），共享 key 的 builder + value 契约收口一个属主。→ 新增 Redis key 前读 `.claude/docs/redis-keys.md`
 
 ## 默认开发链路
 
-1. 在 `app/(portal)` 下新增页面
-2. 在 `packages/db/prisma/seed.ts` 或数据库里补齐菜单
-3. 判断页面是「只需登录」还是「需要明确权限」
-4. 页面分别接 `requireSession()` 或 `requirePermissions()`
-5. 在 `app/api/*` 下新增接口
-6. 接口优先用 `assertPermissions()` 做服务端权限守卫
-7. 前端通过 `@cloud/request/client` 调接口
-8. 最后再补客户端的按钮显隐和交互细节
+1. 权限化模块在 `modules/<cat>/<mod>/manifest.ts` 声明菜单 + 4 段权限码, 由AI维护
+2. 页面分别接 `requireSession()` 或 `requirePermissions()`
+3. 在 `app/api/*` 下新增接口
+4. 接口优先用 `assertPermissions()` 做服务端权限守卫
+5. 前端通过 `@cloud/request/client` 调接口
+6. 最后再补客户端的按钮显隐和交互细节
+
+
+## 铁律（违反 = 编译/CI/提交失败，不靠自觉）
+1. **写入口只在 route handler**（`app/api/*`）。禁用 server action（`'use server'`）。
+2. **`assertPermissions` 只用生成的 `PermissionCode` 类型，不用裸字符串** — 拼错/失效码当场编译报错。
+3. **`apps/web/manifest/_generated/*.generated.ts` 与 seed 永不手改** — 改 `manifest.ts` 后跑 `pnpm gen:coc` 重生成。
+4. **权限码只增不改**：删/改名要标 `@deprecated`（registry 守门）。
+5. **`commons` 是叶子层**：通用模块、纯技术、无自有菜单、不受合同闸门、**不反调业务模块**。
+6. **业务数据访问按当前 party 手工限定**（无 RLS）：`@cloud/db` 只导出 `prisma`（无 `tenantCtx`/`withTenantTx`/`systemDb`）。每条查询/变更在 `where`（及 INSERT 的 data）里用会话 `currentPartyId`（`Int`）限定；`currentPartyId` 由 controller 从会话取出、显式传入 service/repository。RSC/页面经模块 service / `*.public` 取数，绝不直接调 `prisma`。
+7. **业务表必含 `party_id Int @map("party_id")` + index**；按 party 隔离的唯一约束用 `@@unique([partyId, <key>])`。
+8. **跨模块前向声明（Step-3 脚手架）**：引用另一模块尚未声明的权限码 → 写同级 stub `modules/<cat>/<mod>.stub.ts`（partial `defineModule`，只声明所引用的码），`gen:coc` 聚合进 `PermissionCode`；**业务码禁止 import `*.stub`**（eslint 守门）；目标模块声明该码后删 stub（`duplicate-code` 守门抓残留）。类型/函数跨模块走 `server/<mod>.public` / `client/<mod>.api` 窄面（见 `server-layering`），禁止深 import。
+
+## 命令速查（验证 / 运行）
+```
+pnpm install
+pnpm db:generate        # prisma generate（@cloud/db）
+pnpm gen:coc            # 生成 manifest/_generated/*.generated.ts + i18n（改 manifest.ts 后必跑；dev/build 已 pre-hook 自动跑）
+pnpm lint               # eslint（apps/web + packages/*）
+pnpm test               # vitest 单测/组件（--passWithNoTests）
+pnpm test:e2e           # 端到端：docker compose 起 e2e pg/redis + db push/seed + playwright
+# 本地全栈：先 pnpm db:setup（generate+push+seed，需本地 Postgres）→ pnpm dev:web → http://localhost:3000/login
+```
+
+## 脚手架工作流（skills）
+脚手架把"一个飞书开发任务"从开工到收尾串成 6 个 skill，**单活跃任务锁**落在 `.work/workbench.json`（结构见 `.work/workbench.schema.json`），同一时间只允许一个活跃任务（空 `{}` = 无活跃任务）。
+
+**前置 / 约定：**
+- **飞书 MCP**：`/sync`、`/start-work` 依赖飞书 MCP（FeiShu Project MCP）；字段/节点/角色 key 与每机搭建步骤一律以 `.claude/feishu/feishu.config.json` 为准（不得编造）。**未配置则二者取不到数据**。
+- **基线分支**：feature 分支基于 `develop`，PR 目标也是 `develop`。
+- **文档仓**（与本仓同级，缺失则自动 `git clone`）：需求空间 `../pep-webapp-docs`（specs + prototype，`Newland-Payment-Technology-US-Co-Ltd/pep-webapp-docs`）、数据模型空间 `../pep-data-model-docs`（`Newland-Payment-Technology-US-Co-Ltd/pep-data-model-docs`）。
+
+**链路：**
+1. **`/sync`**（只读，不写文件）— 展示「归我（FE 角色=当前飞书账号）且在 `NextJS开发(Claude)` 节点」的任务清单。
+2. **`/start-work {task编号}`** — 校验唯一活跃任务锁 → 飞书按编号拉任务信息 → 基于最新 `develop` 建/切 `feature/task-{task编号}` → 全部成功才写 `workbench.json.current_task` + `start_time`。
+3. **`/logic-groom`**（捕获模式）— 随时把零散的需求/实现逻辑/UI 碎片**只追加**进 `.work/logics/<cat>/<name>/<name>.groom.md`（`待处理`），持续到 `/submit-work` 关闭。只捕获，不分析。
+4. **`/logic-analyze`** — 读「需求 specs + 原型 + 数据模型 + 现有代码 + groom 碎片」，把「两份真理都没说、但写代码必须知道」的实现逻辑沉淀成 `logic.md`（经 `ledger.mjs` 渲染，是交给编码的唯一交接物），并回写 workbench 文档基线。**只读** `apps/web/commons/<mod>/overview.md` 与各模块 `overview.md` 做全局认识——这些 `overview.md` 由专门的 **commons 维护 skill** 生成/维护（建设中），`/logic-analyze` 不写入它们。
+5. **`/coding`** — 消费 `logic.md`，起 superpowers 流水线（`writing-plans → executing-plans`）生成/改模块（`gen:coc` + 测试全绿）；流水线 review 的 findings → 人工触发 **`/logic-groom`** 回灌为碎片（`待处理`），走 groom→analyze→code 闭环重新消费，不在此就地 debug。不回写飞书、不开 PR（那是 `/submit-work`）。
+6. **`/submit-work`** — groom 残留闸门（有未消费碎片则拦截）→ 提交代码 → 询问是否对三仓（本代码仓 + 两文档仓）的 `feature/task-*` 开 PR 到 `develop`（默认不提交）→ 清空 `workbench.json` 释放活跃任务锁。
+
+> `logic.md` / `logic.items.json` / `<name>.groom.md` 是**模块级累积**，跨 task 保留；`/submit-work` 只清 `workbench.json`。台账只经 `ledger.mjs` 改，**任何人（含 skill）不手改** `logic.md` / `logic.items.json`。
 
 ## 代码规范
 

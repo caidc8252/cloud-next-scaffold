@@ -3,7 +3,7 @@
 > 归属：Route Handler / `@cloud/request` 响应协议 / 分页 / 游标 / 错误码 i18n。**写任何 API、改请求或响应前必读。** 异常处理细节另见 `docs/exception-handling.md`。
 
 - 本项目不使用 Server Action
-  - 所有表单提交、数据 mutation 一律走 Route Handler（`apps/admin/app/api/*`）
+  - 所有表单提交、数据 mutation 一律走 Route Handler（`apps/web/app/api/*`）
   - 鉴权、登录、选择组织等公开页面的提交同样走 API，不写 `"use server"` action
   - 客户端用 `@cloud/request/client` 调接口，拿到返回后再自行用 `useRouter()` 跳转
   - 历史遗留的 Server Action 见到即顺手改成 API，不要新增
@@ -11,9 +11,9 @@
 - 客户端使用 `@cloud/request/client`
 - 客户端收到「会话失效类」401 会自动跳登出，机制在包、策略在 app，**不要在业务组件里手写 401 跳转**：
   - 包：`@cloud/request/client` 的 `setUnauthorizedHandler(fn)` 在 `status===401` 时回调 `fn(RequestError)`，然后照常 throw（不吞错，组件原有 `catch` / `toastError` 不变）；包不认识任何 app 路由或错误码
-  - 策略：`apps/admin/lib/session-expiry.ts` 的 `handleUnauthorized` 按**白名单 code** 决定是否登出——`{ "unauthenticated", ERR_UNAUTHORIZED, ERR_AUTH_NOT_AUTHENTICATED }` 命中才 `window.location.replace("/api/auth/logout")`（与服务端 `requirePermissions` 401 出口一致：清残留 cookie → 303 `/login`）；模块级 `redirecting` 锁防并发重复跳
+  - 策略：`apps/web/lib/session-expiry.ts` 的 `handleUnauthorized` 按**白名单 code** 决定是否登出——`{ "unauthenticated", ERR_UNAUTHORIZED, ERR_AUTH_NOT_AUTHENTICATED }` 命中才 `window.location.replace("/api/auth/logout")`（与服务端 `requirePermissions` 401 出口一致：清残留 cookie → 303 `/login`）；模块级 `redirecting` 锁防并发重复跳
   - 登录页凭证错误 `ERR_AUTH_INVALID_CREDENTIALS` 也是 401，但**刻意不在白名单**，不会误跳；新增 401 码默认不触发登出，属于「会话失效」语义才往白名单补
-  - 注册：`apps/admin/app/_components/unauthorized-redirect.tsx`（tiny client 组件）在根 layout 挂一次
+  - 注册：`apps/web/app/_components/unauthorized-redirect.tsx`（tiny client 组件）在根 layout 挂一次
 - 服务端响应优先使用 `@cloud/request/server` 提供的响应辅助函数
 - 成功 JSON 响应必须走 `successResponse()` / `createdResponse()`，body 形状为 `{ code: "OK", message: "success", data, page?, limit?, total?, totalPages?, nextCursor?, prevCursor?, hasNextPage?, hasPrevPage?, traceId }`，分页字段与 `data` 同级
 - DELETE 或其他无需 body 的接口使用 `noContentResponse()` 返回 204，response body 必须为空
@@ -22,12 +22,12 @@
   - 双向游标分页统一走 `@cloud/request/server` 的 `readCursorQuery(token, direction)` + `buildCursorPage()`，配合 `CursorPager`，响应带 `nextCursor` / `prevCursor` / `hasNextPage` / `hasPrevPage`
   - 游标 token 由服务端 `encodeCursor()` 签发、只编码锚点 id、对客户端不透明；翻页方向是独立的 `direction` 参数，由客户端显式传，**不编进 token**
   - 服务端按 `query.sortOrder` 设 `orderBy`、`take: limit + 1` 多取一条探测，再交给 `buildCursorPage()` 切片、翻回升序、签发双向游标；不要在 Route Handler 里手写这套逻辑
-  - 客户端用 `apps/admin/lib/use-cursor-pagination.ts` 的 `useCursorPagination()` 原样回传服务端给的游标 + 方向，**绝不从行 id 自己拼游标**，也不缓存历史游标
-- 新增接口时，优先放在 `apps/admin/app/api/*`，且**只做 HTTP 适配**，业务逻辑落到 `service/<domain>/`（见「服务端分层」）
+  - 客户端用 `apps/web/lib/use-cursor-pagination.ts` 的 `useCursorPagination()` 原样回传服务端给的游标 + 方向，**绝不从行 id 自己拼游标**，也不缓存历史游标
+- 新增接口时，路由放在 `apps/web/app/api/*`（薄壳 re-export 模块 controller），HTTP 适配在 `modules/<cat>/<mod>/server/<mod>.controller.ts`，业务逻辑落到模块 `server/<mod>.service.ts`（见「服务端分层」）
 - Route Handler 默认做两层权限：
   - 登录态 / 粗粒度权限码：优先用 `assertPermissions()`（在 route 里做）
   - 业务归属 / 范围校验：例如 `entityId`、`roleId`、`userId` 是否属于当前租户——落在 service / policy 层
-- Route Handler 的异常兜底统一走 `apps/admin/lib/api-handler.ts`（设计与示例见 `docs/exception-handling.md`）
+- Route Handler 的异常兜底统一走 `apps/web/lib/api-handler.ts`（设计与示例见 `docs/exception-handling.md`）
   - **业务异常一律 throw 类型化异常，不再 return 错误响应**：参数校验、业务冲突、数据不存在等可预期错误用 `throw new BusinessError(code, status?, params?)`（`@cloud/request`），由 `withApiHandler` 捕获后统一出 40x `{ code, message, traceId }`
     - `code` 走 `PMMNNN` 数字码（注册表内才本地化）；`status` 限 `400|401|403|404|409|422`，默认 400；`params` 是 `{name}` 占位插值参数，渲染进文案、不进响应体
     - 中间件/基础设施故障（DB 连接、Redis、邮件等）用 `throw new MiddlewareError(ERR_MW_*)`，统一掩码成 503 通用文案（对客户不透明，开发凭 code + traceId 在日志识别）
@@ -57,15 +57,15 @@
 
 > 归属：客户端（组件 / hook）怎么发起 HTTP 调用——调用收口、路径、类型、错误展示。**写客户端调接口前必读。**
 
-- 每个业务域把客户端调用收口到 `apps/<app>/service/<domain>/api.ts`（**非 server-only**）；**组件不裸调 `request.*`、不在调用点内联 `/api/...` 路径字面量**
-  - `service/<domain>/` 下只有 `api.ts` 与 `schemas/` 可被客户端 import；`server/` 等其余文件是 server-only，客户端不得 import
+- 每个业务模块把客户端调用收口到 `modules/<cat>/<mod>/client/<mod>.api.ts`（**非 server-only**）；**组件不裸调 `request.*`、不在调用点内联 `/api/...` 路径字面量**
+  - `modules/<cat>/<mod>/` 下只有 `client/` 与 `schema/` 可被客户端 import；`server/` 等其余文件是 server-only，客户端不得 import
 - `api.ts` 只导出**具名函数**：不导出对象（`export const xxxApi = {...}` 会让整组函数一起进 chunk、破坏 tree-shaking）、不建跨域 `index.ts` 桶、调用方也不要 `import * as`
   - 组件内常有同名 handler（如 `createUser` 包了 api 调用 + 乐观更新 + toast），与 api 函数撞名时**在 import 处 alias**（`import { createUser as createUserApi }`），不要为此改用 `import *`
 - **不写 `const BASE`**，每个函数写**全量路径**——一个函数自带完整 URL，好 grep、可直接复制
 - 命名 `<动词><实体>`，**实体一律单数**，复数 / 集合语义由动词表达；动词表固定，不要自由发挥（不写 `fetchUsers` / `getUserList`）：
   - `getXxx(id)` 取单条；`listXxx(params?)` 取集合 / 分页；`createXxx(input)`；`updateXxx(id, input)`；`deleteXxx(id)`
   - 超出 CRUD 的端点：**聚合读**用 `get<Entity><名>`（如 `getNoticeUnreadCount`、`getUnreadByParty`）；**领域动作**用 `<动作><Entity>`，动作动词取领域语义（`markNoticeRead` / `lockUser` / `resendUserInvite`）——动作动词不强求落在固定表内，但仍须**实体限定、防撞名**
-- 请求 / 响应类型从该域**共享类型源** import：优先 `service/<domain>/schemas/` 的 `z.infer`（就是 Route parse 用的那份，client / server 同源），已有 `types.ts` VO 的沿用；**禁止在组件里内联 `type XxxResponse`**
+- 请求 / 响应类型从该模块**共享类型源** import：优先 `modules/<cat>/<mod>/schema/` 的 `z.infer`（就是 controller parse 用的那份，client / server 同源），已有 `<mod>.types.ts` VO 的沿用；**禁止在组件里内联 `type XxxResponse`**
 - 函数**原样返回** `request.*` 的 envelope，调用点读 `.data`；列表的分页字段（`total` / `nextCursor` 等）与 `data` 同级，**不要在 `api.ts` 里 `.then(r => r.data)` 提前 unwrap**，否则列表拿不到分页
 - 错误展示：
   - 默认 `toastError(err)`（`@cloud/request/error-toast`）弹瞬时 / 全局错误
@@ -82,9 +82,10 @@ const res = await request.get<UserResponse[]>(API_BASE);    // 调用点直连 r
 ```
 
 ```ts
-// ✅ after — apps/admin/service/users/api.ts：该域客户端调用的唯一出处
+// ✅ after — apps/web/modules/system/users/client/users.api.ts：该模块客户端调用的唯一出处
 import { request } from "@cloud/request/client";
-import type { UserVo, CreateUserInput, UpdateUserInput } from "./schemas/user.schema";
+import type { UserVo } from "../schema/users.types";
+import type { CreateUserInput, UpdateUserInput } from "../schema/users.schema";
 
 export const getUser    = (id: string)              => request.get<UserVo>(`/api/system/users/${id}`);
 export const listUser   = ()                        => request.get<UserVo[]>("/api/system/users");
@@ -94,7 +95,7 @@ export const updateUser = (id: string, input: UpdateUserInput) =>
 export const deleteUser = (id: string)              => request.delete(`/api/system/users/${id}`);
 
 // 组件：只 import 用到的，bundler drop 掉其余；类型 / 路径都不在这里出现
-import { listUser, updateUser } from "@/service/users/api";
+import { listUser, updateUser } from "@/modules/system/users/client/users.api";
 const res = await listUser();
 setUsers(res.data);
 ```

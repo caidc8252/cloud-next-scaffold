@@ -11,7 +11,7 @@
 ## 一、什么进 constants
 
 - **只放惰性值**：import 即读、无行为。
-- **带行为（校验 / 生成 / 按上下文现算）就不是 constant**——它是能力，给独立包。例：菜单 / 权限 / 角色不是常量，是 manifest 子系统（`@cloud/platform-config`，见 `.claude/docs/manifest-coc.md`），它有 codegen、构造期校验、resolver。
+- **带行为（校验 / 生成 / 按上下文现算）就不是 constant**——它是能力，给独立包。例：菜单 / 权限 / 角色不是常量，是 CoC 声明子系统（`@cloud/platform-config`，见 `.claude/docs/coc-declaration.md`），它有 codegen、生成期校验、运行时 resolver。
 - **跨 app 共享 → `packages/constants`；只属单 app → `apps/*/lib/constants`**。
 
 ## 二、组织：按领域分文件，不按可调整性

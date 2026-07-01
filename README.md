@@ -4,8 +4,7 @@
 
 ## 默认保留的基线能力
 
-- `apps/portal`：PEP 门户站和统一登录页
-- `apps/admin`：单个后台应用
+- `apps/web`：唯一应用（原 `apps/admin` + `apps/portal` 已合并）——登录前页 `app/(portal)` + 控制台 `app/(dashboard)`，业务实现在 `modules/<cat>/<mod>/`
 - `packages/ui`：基础 UI 组件与样式
 - `packages/request`：通用请求封装与错误码
 - `packages/api-kit`：API 兜底骨架与本栈默认错误映射（跨 app 复用）
@@ -15,51 +14,34 @@
 - `packages/db`：Prisma + PostgreSQL 数据层
 - `packages/security`：密码哈希、RSA 加解密
 - `packages/permissions`：权限判断 + 服务端登录态与前端权限 hook
-- `apps/admin/system`：系统管理页面组件（用户管理、角色管理）
+- `apps/web/modules/system/*`：系统管理模块（用户管理、角色管理）
 - API 统一错误响应、权限异常兜底、页面级错误边界
-- 登录页、登录态、Entity 选择页、锁定说明页
-- 完整的 Entity / 合同 / 用户 / 角色 / 权限 / 菜单 数据模型
+- 登录页、登录态、Partner 选择页、锁定说明页
+- Entity / 合同 / 用户 / 角色 数据模型 + CoC 声明的菜单 / 权限（零 DB 菜单）
 - 左侧菜单 + 顶部导航 layout
 - 默认管理员种子账号
 
 ## 启动当前仓库
 
-要求 Node.js `>=20.19.0`（Prisma 7 要求）。
-
-仓库有两个应用，本地各占一个端口：
-
-- **`apps/admin`** — 后台管理应用，跑在 **http://localhost:3000**
-- **`apps/portal`** — 门户站 + 统一登录页，跑在 **http://localhost:3100**
+要求 Node.js `>=20.19.0`（Prisma 7 要求）。单一应用 `apps/web`，本地跑在 **http://localhost:3000**。
 
 ### 一次性准备
 
 ```bash
 pnpm install
-cp .env.example .env                         # 根 .env：数据库 / 认证密钥 / Redis
-cp apps/admin/.env.example apps/admin/.env   # admin app 级变量（展示名等）
-docker compose up -d                         # 本地 PostgreSQL + Redis
-pnpm db:setup                                # generate + push + seed
+cp .env.example .env                       # 根 .env：数据库 / 认证密钥 / Redis
+cp apps/web/.env.example apps/web/.env     # web app 级变量（展示名等）
+docker compose up -d                       # 本地 PostgreSQL + Redis
+pnpm db:setup                              # generate + push + seed
 ```
 
-### 启动 admin（后台，:3000）
+### 启动开发服务器
 
 ```bash
-pnpm dev:admin        # 等价于 pnpm dev
+pnpm dev        # = pnpm dev:web，跑在 :3000
 ```
 
-打开 http://localhost:3000。未登录会被重定向到 portal 的登录页，所以本地完整体验需要同时起 portal。
-
-### 启动 portal（门户 + 统一登录，:3100）
-
-```bash
-pnpm dev:portal
-```
-
-打开 http://localhost:3100。登录入口是门户站内的 `/login`；登录成功后在 `/select-partner` 选择 partner（只有一个可选 partner 时自动跳过），portal 校验归属、生成完整权限 session 后直接跳到 `NEXT_ADMIN_URL`（默认就是 admin 的 http://localhost:3000）。admin 里登出也会跳回 portal 的 `/login`。
-
-> 本地跑通完整登录链路需要 **admin（:3000）和 portal（:3100）两个都起**：portal 负责登录与 partner 选择，admin 承载登录后的后台业务。只改后台代码时也可以只起 admin，但登录仍然走 portal。
-
-生产环境若 portal 与 admin 使用同一根域下的不同子域，需要配置 `SESSION_COOKIE_DOMAIN`，例如 `.example.com`，让两边共享 `sid` cookie。
+打开 http://localhost:3000。登录入口 `/login`（在 `app/(portal)` 内）；登录成功后在 `/select-partner` 选择 partner（只有一个可选时自动跳过），校验归属、生成完整权限 session 后进入控制台 `app/(dashboard)`。登出回到 `/login`。
 
 默认种子账号：
 
@@ -68,8 +50,7 @@ pnpm dev:portal
 
 ## 当前工作区
 
-- `apps/portal`
-- `apps/admin`
+- `apps/web`
 - `packages/api-kit`
 - `packages/config`
 - `packages/cache`
@@ -85,22 +66,16 @@ pnpm dev:portal
 
 ```txt
 apps/
-  portal/                 # PEP 门户站和统一登录页
+  web/                    # 唯一应用（原 admin + portal 合并）
     app/
-      (marketing)/        # 门户首页
-      (auth)/login/       # 登录页和 partner 选择
-    i18n/
-      messages/           # 门户站文案
-  admin/                  # 后台应用
-    app/
-      (public)/           # 登录前页面（login, select-entity, locked）
-      (portal)/           # 登录后页面（system/users, system/roles）
-      api/                # API 路由
-    lib/
-      auth.ts             # 鉴权兼容导出，实际实现位于 packages/permissions
-      user-mapper.ts      # 用户数据映射
-      role-mapper.ts      # 角色数据映射
-    system/               # 系统管理业务 UI（users, roles）
+      (portal)/           # 登录前页面（login, select-partner, onboarding, locked）
+      (dashboard)/        # 登录后控制台页面 + layout / 面包屑
+      api/                # API 路由（只做 HTTP 适配）
+      _components/        # app 级共享组件
+    modules/              # 业务模块 <cat>/<mod>/：server / ui / client / schema + CoC manifest.ts + i18n
+    manifest/             # CoC 声明与采集：menu-tree / collect / catalog / _generated（产物，gitignored）
+    lib/                  # app 私有工具（session-snapshot、session-menus 等）
+    i18n/messages/        # 全局文案
 packages/
   api-kit/                # API 兜底骨架 createApiHandler + 本栈默认错误映射
   cache/                  # Redis client + JSON KV cache
@@ -125,22 +100,22 @@ Prisma 7 使用 `packages/db/prisma.config.ts` 作为 CLI 配置入口，Prisma 
 ### 核心表关系
 
 ```
-Entity ──┬── EntityContract ── ContractDefine ── Menu ── Permission
-         ├── EntityUser ── User
-         └── Role ── RolePermission ── Permission
-              └── UserRole（entity + user + role 三方关联）
+Entity ──┬── EntityContract（合同：决定该 Entity 解锁哪些 CoC 菜单 / 权限）
+         ├── EntityUser ── User   （authorizingType: NORMAL / ADMIN）
+         └── Role（PRIVATE，permission_codes JSONB）── UserRole（entity + user + role）
 ```
+
+> 菜单 / 权限 / GLOBAL 角色**不在数据库**：由 CoC 声明系统生成（零 DB，无 `sys_menu` / `sys_permission`），见 `.claude/docs/coc-declaration.md`。DB 只存 Entity / 合同 / 用户 / 关联 / PRIVATE 角色。
 
 ### 关键概念
 
 | 概念           | 说明                                                                                   |
 | -------------- | -------------------------------------------------------------------------------------- |
-| Entity         | 组织/租户。用户通过 EntityUser 关联到 Entity                                           |
-| ContractDefine | 合同类型，决定该 Entity 可使用哪些菜单和权限                                           |
-| EntityUser     | 用户与组织的关联，包含 `authorizingType`（NORMAL/ADMIN）和 `status`（ACTIVE/INACTIVE） |
-| Role           | 角色，归属于 Entity，通过 RolePermission 关联权限                                      |
-| Permission     | 权限码，关联到 Menu                                                                    |
-| Menu           | 菜单树，归属于 ContractDefine                                                          |
+| Entity         | 组织/租户(party)。用户通过 EntityUser 关联到 Entity                                    |
+| EntityContract | 该 Entity 持有的合同；合同决定 CoC 里解锁哪些叶子菜单 / 权限码（即 party scope）         |
+| EntityUser     | 用户与组织的关联，含 `authorizingType`（NORMAL/ADMIN）和 `status`（ACTIVE/INACTIVE）   |
+| Role           | 角色。GLOBAL（roleId ≤ 1000）由 CoC 死写不入库；PRIVATE（≥ 1001）入 `sys_role`、权限码存 `permission_codes` JSONB |
+| 菜单 / 权限    | **CoC 声明、零 DB**（见 `.claude/docs/coc-declaration.md`），不是数据库表              |
 
 ### 两种锁定机制
 
@@ -151,8 +126,8 @@ Entity ──┬── EntityContract ── ContractDefine ── Menu ── P
 
 当 `EntityUser.authorizingType = ADMIN` 时：
 
-- 自动获取该 Entity 合同下的所有权限，无需配置角色
-- 角色仍正常加载但不影响权限
+- 有效权限 = 整个 party scope（合同解锁的全部 CoC 权限码），无视所绑角色（§7 结构旁路）
+- 角色仍正常加载用于展示，但不参与 ADMIN 的权限计算
 - 管理员不能对 ADMIN 用户执行停用、重置密码、角色变更等操作，只能修改备注
 
 ## 登录与鉴权
@@ -170,9 +145,9 @@ Entity ──┬── EntityContract ── ContractDefine ── Menu ── P
 
 核心实现：`packages/permissions/src/server/*`
 
-`apps/admin/lib/auth.ts` 当前只保留兼容导出，内部转发到 `@cloud/permissions/server`，避免应用侧相对路径 import 一次性大面积改动。
+登录态 / 守卫一律从 `@cloud/permissions/server` 直接引入，不在业务里写很深的相对路径。
 
-- `getSession()` — 获取完整会话（含 entity、roles、permissions、menus），未登录返回 null
+- `getSession()` — 获取完整会话（含 party、roles、permissions、contractTypes），未登录返回 null（菜单不在会话里，运行时现算）
 - `getPartialSession()` — 获取部分会话（仅用户信息），用于 Entity 选择页和锁定页
 - `requireSession()` — 要求完整登录态，根据失败原因跳转不同页面
 - `createSession(userId, entityId)` — 创建 session，entityId 可为 null（部分 session）
@@ -183,18 +158,21 @@ Session 内包含的数据：
 
 ```typescript
 {
-  id, username, displayName, email, status,
-  entity: { entityId, entityName, contractDefineCode },
+  userId, displayName, email,
+  currentPartyId, partyName, contractTypes: string[],
+  authorizingType: "ADMIN" | "NORMAL" | null,
   roles: SessionRole[],
-  permissions: string[],    // 权限码数组
-  menus: SessionMenu[]      // 菜单树
+  permissions: string[],     // 已算好的有效权限码（菜单不在会话里）
+  partners: SessionPartyRef[] // 可切换的公司列表
 }
 ```
 
-权限聚合路径：
+有效权限计算（切公司时算好、写进会话，见 `apps/web/lib/session-snapshot.ts`）：
 
-- 普通用户：`UserRole → Role → RolePermission → Permission`
-- ADMIN 用户：直接加载 ContractDefine 下所有 Permission
+- `party scope` = 当前 Entity 有效合同解锁的全部 CoC 权限码并集
+- NORMAL 用户：所绑角色权限码并集 **∩** party scope
+- ADMIN 用户：**整个 party scope**（§7 结构旁路，无视角色）
+- 菜单不入会话：运行时由 `getSessionMenus` / `buildMenuTree` 按有效权限现算
 
 ### 权限判断
 
@@ -213,10 +191,10 @@ checker.hasAll(["user.read", "user.write"]); // AND
 import { requirePermissions, assertPermissions } from "@cloud/permissions/server";
 
 // page / layout
-const session = await requirePermissions({ all: ["users.VIEW"] });
+const session = await requirePermissions({ all: ["system.users.user.view"] });
 
 // route handler
-const session = await assertPermissions({ any: ["roles.VIEW", "roles.UPD"] });
+const session = await assertPermissions({ any: ["system.roles.role.view", "system.roles.role.update"] });
 ```
 
 前端如果已经拿到权限数组，也可以通过 `@cloud/permissions/client` 做 UI 级权限判断：
@@ -245,7 +223,7 @@ export function UsersActions({ permissions }: { permissions: string[] }) {
 
 ### 客户端会话失效自动登出
 
-服务端守卫（`requireSession` / `requirePermissions`）在 401 时会 `redirect("/api/auth/logout")`；客户端的 API 调用也有对称行为。`@cloud/request/client` 在收到 401 时会回调应用注册的处理器，由 [apps/admin/lib/session-expiry.ts](apps/admin/lib/session-expiry.ts) 判断——只有「会话失效类」错误码（`"unauthenticated"` / `ERR_UNAUTHORIZED` / `ERR_AUTH_NOT_AUTHENTICATED`）才整页跳 `/api/auth/logout`（清残留 cookie → portal `/login`）。portal 登录页的凭证错误 `ERR_AUTH_INVALID_CREDENTIALS` 也是 401，但不在白名单，不会把登录失败误判为会话过期。
+服务端守卫（`requireSession` / `requirePermissions`）在 401 时会 `redirect("/api/auth/logout")`；客户端的 API 调用也有对称行为。`@cloud/request/client` 在收到 401 时会回调应用注册的处理器，由 [apps/web/lib/session-expiry.ts](apps/web/lib/session-expiry.ts) 判断——只有「会话失效类」错误码（`"unauthenticated"` / `ERR_UNAUTHORIZED` / `ERR_AUTH_NOT_AUTHENTICATED`）才整页跳 `/api/auth/logout`（清残留 cookie → portal `/login`）。portal 登录页的凭证错误 `ERR_AUTH_INVALID_CREDENTIALS` 也是 401，但不在白名单，不会把登录失败误判为会话过期。
 
 机制在包（`setUnauthorizedHandler`，不认识任何 app 路由），策略在 app，通过根 layout 里的 `UnauthorizedRedirect` 组件注册一次。业务组件正常 `catch` + `toastError` 即可，不需要、也不应该自己写 401 跳转。
 
@@ -392,14 +370,14 @@ export function Example() {
 }
 ```
 
-`apps/admin` 已接通 i18n，对应四件套（接入新应用时照此补齐，缺一不可）：
+`apps/web` 已接通 i18n，对应四件套（接入新应用时照此补齐，缺一不可）：
 
-1. [next.config.ts](apps/admin/next.config.ts) 用 `createNextIntlPlugin("./i18n/request.ts")` 包裹配置；
-2. [apps/admin/i18n/request.ts](apps/admin/i18n/request.ts) 调 `createI18nRequestConfig({ loadMessages })`，`loadMessages(locale)` 动态 import `i18n/messages/<locale>.json`；
-3. [apps/admin/app/layout.tsx](apps/admin/app/layout.tsx) 包一层 `NextIntlClientProvider`，且 `<html lang>` 用 cookie + `isLocale` 读实际 locale，不硬编码；
+1. [next.config.ts](apps/web/next.config.ts) 用 `createNextIntlPlugin("./i18n/request.ts")` 包裹配置；
+2. [apps/web/i18n/request.ts](apps/web/i18n/request.ts) 调 `createI18nRequestConfig({ loadMessages })`，`loadMessages(locale)` 动态 import `i18n/messages/<locale>.json`；
+3. [apps/web/app/layout.tsx](apps/web/app/layout.tsx) 包一层 `NextIntlClientProvider`，且 `<html lang>` 用 cookie + `isLocale` 读实际 locale，不硬编码；
 4. Provider 树内挂 `TimeZoneInit`（首屏同步浏览器时区），切语言入口 `LocaleSwitcher` 放在 portal header。
 
-文案放在 [apps/admin/i18n/messages/](apps/admin/i18n/messages/)，`en.json` 为基底，`zh-CN.json` / `ja.json` 只写差异。当前只落了 `@cloud/ui` 日期组件需要的 `ui.datePicker.*`；新增业务文案按模块往对应 namespace 补即可。现有页面的英文硬编码尚未逐条迁移到 message（独立任务，不影响 i18n 链路本身）。
+文案放在 [apps/web/i18n/messages/](apps/web/i18n/messages/)，`en.json` 为基底，`zh-CN.json` / `ja.json` 只写差异。当前只落了 `@cloud/ui` 日期组件需要的 `ui.datePicker.*`；新增业务文案按模块往对应 namespace 补即可。现有页面的英文硬编码尚未逐条迁移到 message（独立任务，不影响 i18n 链路本身）。
 
 ## 用户管理
 
@@ -421,18 +399,18 @@ export function Example() {
 
 ### 页面放在哪里
 
-- 登录前页面放在 `apps/admin/app/(public)`
-- 登录后的后台页面放在 `apps/admin/app/(portal)`
-- API 路由放在 `apps/admin/app/api`
-- 共享服务端逻辑优先放在 `apps/admin/lib` 或 `packages/*`
+- 登录前页面放在 `apps/web/app/(portal)`
+- 登录后的控制台页面放在 `apps/web/app/(dashboard)`
+- API 路由放在 `apps/web/app/api`
+- 业务实现放在 `apps/web/modules/<cat>/<mod>/`；共享服务端逻辑放 `apps/web/lib` 或 `packages/*`
 
 ### 怎么加一个后台页面
 
-1. 在 `apps/admin/app/(portal)` 下创建新目录，例如 `reports/page.tsx`
+1. 在 `apps/web/app/(dashboard)` 下创建新目录，例如 `reports/page.tsx`
 2. 页面里调用 `requireSession()` 保护登录态
 
 ```tsx
-import { requireSession } from "../../lib/auth";
+import { requireSession } from "@cloud/permissions/server";
 
 export default async function ReportsPage() {
   const session = await requireSession();
@@ -440,20 +418,15 @@ export default async function ReportsPage() {
 }
 ```
 
-### 怎么加菜单
+### 怎么加菜单 / 权限
 
-菜单来自数据库 `sys_menu` 表，通过 Permission 关联到用户可见范围。
+菜单 / 权限 / 角色**不入库**（无 `sys_menu` / `sys_permission`），由 **CoC 声明系统**管理 —— 完整规约见 [.claude/docs/coc-declaration.md](.claude/docs/coc-declaration.md)。简述：
 
-添加方式：
+1. 在模块 `apps/web/modules/<cat>/<mod>/manifest.ts` 用 `defineModule` 声明 `menuCode` + 4 段权限码（`<cat>.<mod>.<fn>.<action>`）+ i18n 文案
+2. 在 `apps/web/manifest/catalog/contract-types.ts` 的 `CONTRACT_MENUS` 把该菜单挂到对应合同闸门
+3. 跑 `pnpm gen:coc`（生成 `manifest/_generated/*`；有 error 拒写）
 
-1. 修改 `packages/db/prisma/seed.ts`，执行 `pnpm db:seed`
-2. 或用 `pnpm db:studio` 直接改表
-
-菜单可访问的前提：
-
-- `path` 对应的页面已存在
-- 菜单关联了 Permission
-- 用户的角色包含该 Permission（或用户为 ADMIN 类型）
+菜单可见的前提：`path` 对应页面已存在；当前 party 的合同解锁了该菜单；当前会话命中其任一权限码（或 `authorizingType=ADMIN` 直取合同 scope）。
 
 ### 怎么请求接口
 
@@ -546,7 +519,7 @@ const { items, pager } = buildCursorPage({ rows, limit, query, total, idOf: (m) 
 return successResponse(items.map(toRow), pager);
 ```
 
-客户端用 `apps/admin/lib/use-cursor-pagination.ts` 的 `useCursorPagination()`，**原样回传服务端给的游标 + 方向，绝不从行 id 自己拼游标，也不缓存历史游标**：
+客户端用 `apps/web/lib/use-cursor-pagination.ts` 的 `useCursorPagination()`，**原样回传服务端给的游标 + 方向，绝不从行 id 自己拼游标，也不缓存历史游标**：
 
 ```tsx
 "use client";
@@ -622,7 +595,7 @@ if (!email) {
 }
 ```
 
-未预期异常统一交给 `apps/admin/lib/api-handler.ts`（通用骨架与本栈默认错误映射在 `@cloud/api-kit`，这里只注入 config 组装出 `withApiHandler` / `handleApiError`）。默认用 `withApiHandler()` 包裹整个 handler，不要在每个文件里手写 `try / catch`：
+未预期异常统一交给 `apps/web/lib/api-handler.ts`（通用骨架与本栈默认错误映射在 `@cloud/api-kit`，这里只注入 config 组装出 `withApiHandler` / `handleApiError`）。默认用 `withApiHandler()` 包裹整个 handler，不要在每个文件里手写 `try / catch`：
 
 ```ts
 import { withApiHandler } from "@/lib/api-handler";
@@ -630,7 +603,7 @@ import { assertPermissions } from "@cloud/permissions/server";
 import { successResponse, badRequestResponse } from "@cloud/request/server";
 
 export const POST = withApiHandler(async (req: Request) => {
-  const session = await assertPermissions({ all: ["users.LOCK"] });
+  const session = await assertPermissions({ all: ["system.users.user.lock"] });
   // 业务校验错误仍然显式返回
   if (!ok) return badRequestResponse(ERR_INVALID_ID, "Invalid user ID.");
   // 业务逻辑
@@ -664,17 +637,17 @@ export const POST = withApiHandler(
 
 App Router 页面级兜底文件：
 
-- `apps/admin/app/(portal)/error.tsx`：后台页面渲染错误
-- `apps/admin/app/(public)/error.tsx`：登录前页面渲染错误
-- `apps/admin/app/global-error.tsx`：根布局级错误
-- `apps/admin/app/not-found.tsx`：404 页面
+- `apps/web/app/(dashboard)/error.tsx`：控制台页面渲染错误
+- `apps/web/app/(portal)/error.tsx`：登录前页面渲染错误
+- `apps/web/app/global-error.tsx`：根布局级错误
+- `apps/web/app/not-found.tsx`：404 页面
 
 当前 Next.js 16 错误边界组件使用 `unstable_retry()` 触发重试；新增或调整错误边界前先看 `node_modules/next/dist/docs/` 中对应文档。
 
 ### 典型开发流程
 
-1. 在 `app/(portal)` 下加页面
-2. 在 seed 或数据库里加菜单 + 权限
+1. 在 `app/(dashboard)` 下加页面（业务实现落 `modules/<cat>/<mod>/`）
+2. 权限化模块在 `manifest.ts` 声明菜单 + 权限码、`catalog/contract-types.ts` 挂合同闸门，跑 `pnpm gen:coc`（不改 seed）
 3. 用 `requireSession()` 或 `requirePermissions()` 保护页面
 4. 在 `app/api/*` 新增接口
 5. 在 route handler 里优先用 `assertPermissions()` 做接口权限校验
@@ -689,8 +662,10 @@ pnpm db:setup         # 初始化数据库（generate + push + seed）
 pnpm db:generate      # 生成 Prisma Client
 pnpm db:seed          # 执行种子数据
 pnpm db:studio        # 打开 Prisma Studio
+pnpm gen:coc          # 生成 CoC 菜单/权限注册表（已挂 predev/prebuild/pretest）
 pnpm lint             # ESLint 检查
 pnpm test             # 运行测试
+pnpm test:e2e         # 端到端测试
 pnpm exec tsc --noEmit  # TypeScript 类型检查
-pnpm --filter admin build # 构建 Admin 应用
+pnpm build:web        # 构建 web 应用
 ```

@@ -1,0 +1,1 @@
+<!-- Team-maintained index of this project's coding rules. Owned by the team, NOT the scaffold — the scaffold's implementation.md defers here and does not author or duplicate this content. Empty until the team populates it. -->

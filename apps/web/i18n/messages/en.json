@@ -1,0 +1,723 @@
+{
+  "nav": { "home": "Home", "dashboard": "Dashboard" },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "markRead": "Mark as read",
+    "viewAll": "View all notifications",
+    "showingUnread": "Showing {shown} of {total} unread",
+    "group": {
+      "today": "Today",
+      "earlier": "Earlier"
+    },
+    "empty": {
+      "caughtUp": "You're all caught up",
+      "caughtUpDesc": "No unread notifications.",
+      "none": "No notifications",
+      "noneDesc": "New tickets and order updates show up here."
+    },
+    "module": {
+      "ticket": "Tickets",
+      "customer": "Customers",
+      "app": "Apps",
+      "order": "Orders",
+      "account": "Account",
+      "default": "Notification"
+    },
+    "status": {
+      "unread": "Unread",
+      "read": "Read"
+    },
+    "list": {
+      "title": "Notifications",
+      "subtitle": "Every actionable update across tickets, customers, apps and orders. Click a notification to open the related record.",
+      "emptyFiltered": "No notifications match your filters."
+    },
+    "search": {
+      "placeholder": "Search notifications…",
+      "action": "Search"
+    },
+    "filter": {
+      "allTypes": "All types",
+      "allStatuses": "All statuses"
+    },
+    "col": {
+      "notification": "Notification",
+      "type": "Type",
+      "when": "When",
+      "statusHead": "Status",
+      "title": "Title",
+      "body": "Body"
+    },
+    "count": "{count, plural, one {notification} other {notifications}}",
+    "matchingFilters": "matching filters",
+    "export": "Export",
+    "exported": "{count, plural, one {# notification exported} other {# notifications exported}}",
+    "activeFilters": "Active filters:",
+    "clearAll": "Clear all",
+    "chip": {
+      "search": "Search: {q}",
+      "type": "Type: {label}",
+      "status": "Status: {label}"
+    },
+    "detail": {
+      "back": "Notifications",
+      "notFound": "Notification not found.",
+      "ctaPlaceholder": "Mock: would open {label}"
+    },
+    "fields": {
+      "ticket": "Ticket",
+      "priority": "Priority",
+      "customer": "Customer",
+      "slaDue": "SLA due",
+      "status": "Status",
+      "order": "Order",
+      "commenter": "Commenter",
+      "assignedBy": "Assigned by",
+      "raisedBy": "Raised by",
+      "queue": "Queue",
+      "reopenedBy": "Reopened by",
+      "previously": "Previously",
+      "resolvedBy": "Resolved by",
+      "resolution": "Resolution",
+      "appVersion": "App version",
+      "result": "Result",
+      "app": "App",
+      "action": "Action",
+      "operator": "Operator",
+      "invitedBy": "Invited by",
+      "expires": "Expires"
+    },
+    "party": {
+      "system": "System"
+    },
+    "events": {
+      "passwordReset": {
+        "title": "Your password was reset",
+        "summary": "An administrator started a password reset for your account",
+        "detail": "An administrator initiated a password reset. Use the link sent to your email to set a new password. The link expires in {expiresText}.",
+        "expires": "72 hours"
+      }
+    }
+  },
+  "email": {
+    "common": {
+      "footerIgnore": "If you didn't request this, you can safely ignore this email.",
+      "footerContactAdmin": "If you didn't request this, please contact your administrator."
+    },
+    "invite": {
+      "subject": "You're invited to join {partyName}",
+      "intro": "{inviterName} invited you to join {partyName}.",
+      "button": "Accept invitation",
+      "expiry": "This invitation expires on {date}."
+    },
+    "verifyCode": {
+      "subject": "Your verification code",
+      "expiry": "This code expires in {minutes} minutes.",
+      "intro": {
+        "emailChange": "Use the code below to confirm your email change."
+      }
+    },
+    "passwordReset": {
+      "subject": "Reset your password",
+      "intro": "An administrator has requested a password reset for your account.",
+      "button": "Reset password",
+      "expiry": "This link expires in {duration}."
+    }
+  },
+  "ui": {
+    "datePicker": {
+      "clear": "Clear",
+      "ok": "OK",
+      "placeholder": {
+        "date": "Pick a date",
+        "dateTime": "Pick a date & time",
+        "range": "Pick a date range"
+      },
+      "presets": {
+        "today": "Today",
+        "last7": "Last 7 days",
+        "last30": "Last 30 days",
+        "thisMonth": "This month",
+        "lastMonth": "Last month"
+      }
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "This baseline keeps the classic admin rhythm and layout while staying intentionally minimal.",
+    "sessionActive": "Session Active",
+    "currentAccount": "Current Account",
+    "partner": "Partner",
+    "roles": "Roles",
+    "panel": {
+      "title": "Dashboard",
+      "description": "The scaffold ships with a compact but complete default workspace.",
+      "welcome": "The main area starts with a simple welcome block so the default menu has a useful landing page.",
+      "extend": "You can keep building on top of this shell by adding customer, order, settings, or any other business modules."
+    }
+  },
+  "errorPage": {
+    "title": "Something went wrong",
+    "description": "The service is temporarily unavailable. Please try again later.",
+    "retry": "Try again",
+    "home": "Back to workspace",
+    "referenceLabel": "Reference",
+    "notFoundTitle": "Page not found",
+    "notFoundDescription": "The page you are looking for does not exist or has been moved."
+  },
+  "account": {
+    "common": {
+      "back": "Back"
+    },
+    "menu": {
+      "aria": "{name} menu",
+      "profile": "My profile",
+      "security": "Account & security",
+      "securitySub": "Password · 2FA",
+      "partners": "Switch partner",
+      "theme": "Theme",
+      "language": "Language",
+      "signOut": "Sign out"
+    },
+    "theme": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System",
+      "desc": {
+        "light": "Bright surfaces for daytime work",
+        "dark": "Easier on the eyes in low light",
+        "system": "Follow your OS appearance"
+      },
+      "toast": {
+        "light": "Theme set to Light",
+        "dark": "Theme set to Dark",
+        "system": "Theme set to System"
+      }
+    },
+    "language": {
+      "note": "Switching language updates labels across the admin surface. Form data is unaffected."
+    },
+    "signOut": {
+      "title": "Sign out?",
+      "body": "You'll be returned to the sign-in screen on this device. Any unsaved drafts in open wizards may be lost.",
+      "note": "Active sessions on other devices will continue. Sign them out from Account & security.",
+      "cancel": "Cancel",
+      "confirm": "Sign out"
+    },
+    "profile": {
+      "title": "My profile",
+      "sub": "Manage your personal details and sign-in.",
+      "personal": "Personal details",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "e.g. Jordan Diaz",
+      "country": "Country",
+      "signin": "Sign-in & security",
+      "username": "Username",
+      "email": "Email",
+      "change": "Change",
+      "discard": "Discard",
+      "save": "Save changes",
+      "nameRequired": "Display name is required",
+      "saved": "Profile updated"
+    },
+    "identity": {
+      "title": {
+        "email": {
+          "verify-old": "Change email · verify it's you",
+          "new": "Enter new email",
+          "verify-new": "Verify new email"
+        },
+        "username": {
+          "verify-old": "Change username · verify it's you",
+          "new": "Choose new username"
+        }
+      },
+      "verifyOldDesc": "To protect your account, enter the 6-digit code we sent to your current email {email}. (Dev: the code is printed to the server log.)",
+      "newEmailDesc": "Enter the new email address you want to use to sign in.",
+      "newUsernameDesc": "Pick a new username. This is your login handle.",
+      "newEmailLabel": "New email",
+      "newUsernameLabel": "New username",
+      "verifyNewDesc": "Enter the 6-digit code we sent to your new email {email}. (Dev: printed to the server log.)",
+      "doneEmail": "Your email is now {email}.",
+      "doneUsername": "Your username is now @{username}.",
+      "resend": "Resend code",
+      "cancel": "Cancel",
+      "verify": "Verify",
+      "back": "Back",
+      "continue": "Continue",
+      "changeUsername": "Change username",
+      "verifyChange": "Verify & change"
+    },
+    "password": {
+      "title": {
+        "verify-old": "Change password · confirm it's you",
+        "mfa": "Two-factor verification",
+        "new": "Set a new password",
+        "done": "Password changed"
+      },
+      "verifyOldDesc": "To change your password, first confirm your current password.",
+      "currentLabel": "Current password",
+      "currentPlaceholder": "Enter current password",
+      "mfaNote": "Two-factor is on — you'll confirm a code from your authenticator app next.",
+      "mfaDesc": "Enter the 6-digit code from your authenticator app to authorize this change.",
+      "newDesc": "Choose a new password. It must meet company policy and will rotate again in 90 days.",
+      "newLabel": "New password",
+      "confirmLabel": "Confirm new password",
+      "reqs": {
+        "len": "At least {min} characters",
+        "case": "Upper- and lower-case letters",
+        "number": "A number",
+        "symbol": "A symbol",
+        "different": "Different from current password"
+      },
+      "doneDesc": "Your password has been changed.",
+      "show": "Show",
+      "hide": "Hide",
+      "cancel": "Cancel",
+      "continue": "Continue",
+      "back": "Back",
+      "change": "Change Password",
+      "done": "Done",
+      "err": {
+        "reqsNotMet": "New password does not meet every requirement.",
+        "mismatch": "The two passwords do not match."
+      }
+    },
+    "security": {
+      "title": "Account & security",
+      "sub": "Sign-in credentials and multi-factor authentication",
+      "signin": {
+        "title": "Sign-in",
+        "sub": "Password rotates every 90 days per company policy"
+      },
+      "password": {
+        "title": "Password",
+        "meta": "Last changed {days} days ago · expires in {expires} days",
+        "metaUnknown": "Rotates every 90 days per company policy"
+      },
+      "changePassword": "Change password",
+      "mfa": {
+        "title": "Multi-factor authentication",
+        "sub": "An authenticator app adds a second factor at sign-in",
+        "disabledToast": "Two-factor disabled"
+      },
+      "authenticator": {
+        "title": "Authenticator app",
+        "active": "Active",
+        "off": "Not set up",
+        "activeSub": "A code from your authenticator is required at sign-in",
+        "offSub": "Add an authenticator app to protect your account"
+      },
+      "reconfigure": "Reconfigure",
+      "disable": "Disable",
+      "enable": "Enable",
+      "disableModal": {
+        "title": "Disable two-factor?",
+        "desc": "Enter a current code from your authenticator app to turn off two-factor authentication."
+      }
+    },
+    "mfa": {
+      "cancel": "Cancel",
+      "back": "Back",
+      "done": "Done",
+      "enroll": {
+        "enableTitle": "Set up authenticator app",
+        "reconfigureTitle": "Reconfigure authenticator app",
+        "doneTitle": "Authenticator ready",
+        "scanDesc": "Scan this QR code with your authenticator app, or enter the setup key manually.",
+        "setupKey": "Can't scan? Enter this setup key",
+        "scanned": "I've scanned it",
+        "confirmDesc": "Enter the 6-digit code shown in your authenticator app to confirm it's working.",
+        "confirm": "Confirm",
+        "doneDesc": "Your authenticator app is set up. You'll be asked for a code at sign-in."
+      }
+    },
+    "partners": {
+      "title": "Switch partner",
+      "sub": "You belong to {count, plural, one {# company} other {# companies}}.",
+      "joined": "Joined {date}",
+      "adminAccess": "Admin access",
+      "roleAccess": "Role-based access",
+      "locked": "Locked",
+      "noContract": "No active contract",
+      "confirm": {
+        "title": "Switch to {name}?",
+        "body": "You'll switch your active company to {name} and the workspace will reload.",
+        "stay": "Cancel",
+        "leave": "Switch"
+      },
+      "toast": {
+        "locked": "Access locked · {name}",
+        "current": "You're already in {name}"
+      }
+    }
+  },
+  "auth": {
+    "selectPartner": {
+      "title": "Select organization",
+      "welcome": "Welcome, {name}. Choose an organization to continue.",
+      "empty": "Your account isn't linked to any organization yet. Please contact your administrator.",
+      "badge": {
+        "admin": "Admin access",
+        "normal": "Role-based access"
+      },
+      "reason": {
+        "partnerDisabled": "This organization is disabled",
+        "userDisabled": "Your access to this organization is disabled",
+        "noContract": "This organization has no active contract"
+      }
+    }
+  },
+  "portal": {
+    "brand": {
+      "name": "PEP",
+      "full": "Payment Empowerment Platform",
+      "by": "Newland Payment Technology",
+      "console": "Console",
+      "newland": "Newland"
+    },
+    "login": {
+      "processing": "Processing",
+      "brand": {
+        "sub": "Newland",
+        "lead": "One console for your <em>payment estate.</em>",
+        "status": "All systems operational · status.pep.io",
+        "highlights": {
+          "devices": {
+            "title": "Device management",
+            "desc": "Provision, group and monitor every payment terminal you ship."
+          },
+          "diagnostics": {
+            "title": "Remote diagnostics",
+            "desc": "Health snapshots, FlyDesk sessions and one-tap reboot."
+          },
+          "parameters": {
+            "title": "Payment parameters",
+            "desc": "Push acquirer, AID and key configs down to the lane."
+          },
+          "merchants": {
+            "title": "Merchant management",
+            "desc": "Onboard merchants, organise stores, assign devices."
+          },
+          "receipts": {
+            "title": "Electronic receipts",
+            "desc": "Centralise e-receipts and transaction records."
+          }
+        }
+      },
+      "title": "Sign in to PEP",
+      "subtitle": "Partner console for {by}.",
+      "continueWith": "Continue with <b>{provider}</b>",
+      "ssoUnavailable": "Third-party sign-in isn't available yet.",
+      "dividerEmail": "or with your work email",
+      "emailLabel": "Account",
+      "emailPlaceholder": "name@company.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "forgot": "Forgot password?",
+      "submit": "Sign in",
+      "invitedOnly": "Invited operators only ·",
+      "haveInvite": "Have an invite?",
+      "demoHint": "Demo: any email + 6-char password. Try {accounts} or an SSO domain (acmepay.com, verakiosk.com).",
+      "togglePassword": "Toggle password visibility",
+      "sso": {
+        "via": "Single sign-on via {provider}",
+        "badge": "SSO",
+        "manages": "Your organization manages this sign-in.",
+        "suspended": "SSO is paused for <b>{partner}</b>. Use password sign-in while an admin restores the contract."
+      },
+      "errors": {
+        "invalidEmail": "Enter a valid email address.",
+        "accountRequired": "Enter your account.",
+        "passwordMin": "Password must be at least 6 characters.",
+        "AUTH_BAD_CREDENTIALS": "Your email or password is incorrect. Please try again.",
+        "generic": "Sign in failed. Please try again."
+      },
+      "idp": {
+        "chooseAccount": "Choose an account",
+        "signIn": "Sign in",
+        "continueTo": "to continue to <b>{target}</b>",
+        "targetConsole": "PEP Partner Console",
+        "targetPartner": "{partner} on PEP",
+        "useAnother": "Use another account",
+        "secure": "Secure",
+        "consent": "{provider} will return a signed <b>id_token</b> with your verified email and a stable <b>sub</b>. PEP validates it server-side — your password is never shared.",
+        "cancel": "Cancel"
+      },
+      "mfa": {
+        "back": "Back to sign in",
+        "eyebrow": "Two-factor authentication",
+        "title": "Enter your verification code",
+        "subTotp": "Open your <b>{hint}</b> and enter the 6-digit code for PEP.",
+        "subSms": "We texted a 6-digit code to <b>{hint}</b>.",
+        "codeLabel": "Verification code",
+        "hintDemo": "Demo: enter any 6 digits to continue.",
+        "hintBad": "This scenario rejects 000000 — five wrong tries triggers a lockout.",
+        "errEnter": "Enter the 6-digit code.",
+        "errWrong": "That code is incorrect. {count} tries remaining before lockout.",
+        "resend": "Resend code",
+        "resendIn": "Resend in {seconds}s",
+        "refresh": "Code refreshes every 30s",
+        "verify": "Verify & continue"
+      },
+      "company": {
+        "back": "Back to sign in",
+        "eyebrow": "Select workspace",
+        "title": "Choose a company",
+        "sub": "Your account has access to multiple companies. Pick one to continue — you can switch later from the console.",
+        "note": "Each company scopes your role independently."
+      },
+      "blocked": {
+        "back": "Back to sign in",
+        "locked": {
+          "eyebrow": "Account locked",
+          "title": "Your account is locked",
+          "body": "This account has been locked for security. An administrator must unlock it before you can sign in again.",
+          "contact": "Contact administrator"
+        },
+        "ratelimit": {
+          "eyebrow": "Too many attempts",
+          "title": "Too many sign-in attempts",
+          "body": "You've reached the maximum number of sign-in attempts. For your security, you can try again in about 1 hour.",
+          "tryAgain": "Try again",
+          "until": "until you can retry",
+          "ready": "you can try again now"
+        },
+        "mfa": {
+          "eyebrow": "Verification locked",
+          "title": "Verification locked",
+          "body": "Too many incorrect codes were entered. This sign-in has been locked for security. Try again later or contact your administrator.",
+          "contact": "Contact administrator"
+        }
+      },
+      "nocompany": {
+        "eyebrow": "No workspace",
+        "title": "No company to enter",
+        "body": "You're signed in, but your account isn't a member of any company yet. Companies are invite-only — ask an administrator to send you an invitation. You can't join one on your own.",
+        "haveInvite": "I have an invite",
+        "back": "Back to sign in"
+      },
+      "busy": {
+        "verifying": "Verifying credentials…",
+        "verifyingCode": "Verifying your code…",
+        "entering": "Entering your console…",
+        "returning": "Returning from {provider}…"
+      }
+    },
+    "partner": {
+      "metadata": {
+        "title": "Select partner - PEP Portal",
+        "description": "Choose a partner workspace before entering the console."
+      },
+      "eyebrow": "Choose Workspace",
+      "title": "Select a partner",
+      "description": "Welcome, {name}. Choose the partner workspace you want to enter.",
+      "empty": "No partner workspace is available for this account.",
+      "badge": {
+        "admin": "Admin",
+        "normal": "User"
+      },
+      "reason": {
+        "partnerDisabled": "Partner disabled",
+        "userDisabled": "Access disabled",
+        "noContract": "No active contract"
+      },
+      "defaultError": "The partner could not be selected. Please try again."
+    },
+    "forgot": {
+      "back": "Back to sign in",
+      "changeEmail": "Change email",
+      "email": {
+        "eyebrow": "Account recovery",
+        "title": "Reset your password",
+        "sub": "Enter your account email and we'll send you a link to reset your password.",
+        "label": "Work email",
+        "send": "Send reset link",
+        "sending": "Sending link…",
+        "err": "Enter a valid email address."
+      },
+      "sent": {
+        "title": "Check your email",
+        "sub": "If an account exists for {email}, we've sent a link to reset your password."
+      },
+      "code": {
+        "eyebrow": "Step 2 of 3",
+        "title": "Enter the code",
+        "sub": "We sent a 6-digit code to <b>{email}</b>.",
+        "label": "Verification code",
+        "hint": "Demo: enter <code>123456</code> or any 6 digits.",
+        "verify": "Verify & continue",
+        "verifying": "Verifying…",
+        "resend": "Resend code",
+        "resendIn": "Resend in {seconds}s",
+        "err": "Enter the 6-digit code."
+      },
+      "reset": {
+        "eyebrow": "Step 3 of 3",
+        "title": "Set a new password",
+        "sub": "Choose a strong password you don't use anywhere else.",
+        "newLabel": "New password",
+        "newPlaceholder": "At least {min} characters",
+        "confirmLabel": "Confirm password",
+        "confirmPlaceholder": "Repeat password",
+        "mismatch": "Passwords don't match.",
+        "update": "Update password",
+        "updating": "Updating…"
+      },
+      "rules": {
+        "length": "{min}+ characters",
+        "upper": "Uppercase (A-Z)",
+        "lower": "Lowercase (a-z)",
+        "digit": "Digit (0-9)",
+        "symbol": "Symbol (@ # $)"
+      },
+      "done": {
+        "title": "Password updated",
+        "sub": "Your password has been changed. Sign in with your new credentials.",
+        "back": "Back to sign in"
+      }
+    },
+    "notFound": {
+      "code": "404",
+      "title": "We can't find that page",
+      "sub": "The link may be broken, or the page may have been moved. Let's get you back on track.",
+      "home": "Back to home",
+      "signIn": "Go to sign in"
+    },
+    "onboarding": {
+      "exit": "Exit",
+      "back": "Back",
+      "previous": "Previous",
+      "cancel": "Cancel",
+      "backToLanding": "Back to landing",
+      "previousStep": "Previous step",
+      "invalid": {
+        "title": "Invitation not found",
+        "sub": "The link (<code>{token}</code>) doesn't match any pending invitation. It may have been cancelled, used, or expired.",
+        "home": "Back to home"
+      },
+      "landing": {
+        "eyebrow": "Invitation",
+        "title": "Join {partner}",
+        "sub": "You've been invited to join the PEP partner console. Choose how to continue.",
+        "invitedBy": "Invited by <b>{by}</b> · {contract} contract",
+        "signedInAs": "You're signed in as",
+        "current": "Current",
+        "useThis": "Use this account to join",
+        "signOutOther": "Sign out & use a different account",
+        "registerNew": "Register a new account",
+        "continueWith": "Continue with",
+        "signInExisting": "Sign in with existing account",
+        "expires": "Sent to <b>{email}</b> · expires {when}",
+        "error": "Something went wrong. Please try again."
+      },
+      "signin": {
+        "step": "Step 1 of 2",
+        "title": "Sign in to your account",
+        "sub": "Then confirm joining <b>{partner}</b>.",
+        "emailLabel": "Email",
+        "passwordLabel": "Password",
+        "passwordHint": "Demo: any 6+ characters.",
+        "signingIn": "Signing in…",
+        "signIn": "Sign in"
+      },
+      "register": {
+        "title": "Create your account",
+        "emailNote": "You'll join with {email}",
+        "submit": "Create account & join",
+        "submitting": "Creating account…",
+        "error": "Something went wrong. Please try again.",
+        "stepLabel": "Register · Step {current} of {total}",
+        "steps": {
+          "email": "Email",
+          "newEmail": "New email",
+          "verify": "Verify",
+          "login": "Login name",
+          "password": "Password",
+          "country": "Country",
+          "name": "Name"
+        },
+        "joining": "Joining {partner}",
+        "emailFromInvite": "Email <b>{email}</b>",
+        "fromInvite": "From invite",
+        "customEmail": "Using a different email",
+        "custom": "Custom",
+        "titleEmail": "Confirm your email",
+        "titleName": "What should we call you?",
+        "inviteTitle": "Use my invitation email",
+        "verified": "Verified",
+        "inviteSub": "<b>{email}</b> — already confirmed by opening the invite.",
+        "customTitle": "Use a different email",
+        "customSub": "Enter the new address next, then verify it with a 6-digit code.",
+        "newEmailLabel": "New email address",
+        "newEmailHint": "A 6-digit code will confirm you own this address.",
+        "verifySent": "We sent a code to <b>{email}</b>.",
+        "verifyLabel": "Verification code",
+        "verifyHint": "Demo: <code>123456</code> or any 6 digits.",
+        "verifyErr": "Invalid code. Try 123456.",
+        "resend": "Resend code",
+        "resendIn": "Resend in {seconds}s",
+        "sending": "Sending…",
+        "verifying": "Verifying…",
+        "sendCode": "Send code",
+        "loginLabel": "Choose a login name",
+        "loginErr": "Lowercase letters, digits, . _ - (2–31 chars, start with a letter).",
+        "loginHint": "Used to sign in. Lowercase letters, digits and . _ - only.",
+        "loginPlaceholder": "e.g. kai.tanaka",
+        "passwordLabel": "Set a password",
+        "confirmLabel": "Confirm password",
+        "confirmPlaceholder": "Repeat password",
+        "mismatch": "Passwords don't match.",
+        "countryLabel": "Where are you based?",
+        "countryHint": "Used for compliance routing (locale, audit jurisdiction).",
+        "displayLabel": "Display name",
+        "displayHint": "Appears in audit logs and to colleagues.",
+        "displayPlaceholder": "Kai Tanaka",
+        "continue": "Continue",
+        "reviewConfirm": "Review & confirm"
+      },
+      "confirm": {
+        "eyebrow": "Final step",
+        "title": "Join {partner}",
+        "sub": "Confirm you want to join with the account below. An administrator assigns your access after you join.",
+        "preassigned": "Pre-assigned: {roles}",
+        "joiningAs": "You're joining as",
+        "existing": "Existing",
+        "new": "New",
+        "decline": "Decline",
+        "authorize": "Authorize & join"
+      },
+      "welcome": {
+        "title": "Welcome to PEP, {name}.",
+        "sub": "You're now a member of <b>{partner}</b>. We've recorded your sign-up time and the roles you accepted.",
+        "enter": "Go to console"
+      }
+    },
+    "resetPassword": {
+      "invalid": {
+        "title": "Reset link invalid",
+        "sub": "This password reset link is invalid or has expired. Request a new one to continue.",
+        "requestNew": "Request a new link"
+      },
+      "form": {
+        "eyebrow": "Reset password",
+        "title": "Set a new password",
+        "sub": "Choose a strong password you don’t use anywhere else.",
+        "newLabel": "New password",
+        "newPlaceholder": "At least {min} characters",
+        "confirmLabel": "Confirm password",
+        "confirmPlaceholder": "Repeat password",
+        "mismatch": "Passwords don’t match.",
+        "submit": "Update password",
+        "submitting": "Updating…"
+      },
+      "done": {
+        "title": "Password updated",
+        "sub": "Your password has been changed. Sign in with your new password.",
+        "signIn": "Go to sign in"
+      },
+      "error": "Couldn’t reset your password. Please try again."
+    }
+  }
+}

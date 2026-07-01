@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -u
+
+# Resolve the script's location, following symlinks. ${CLAUDE_PLUGIN_ROOT} is set
+# when Claude Code's PATH integration invokes this; fall back to BASH_SOURCE resolution.
+RESOLVED="${BASH_SOURCE[0]}"
+while [ -L "$RESOLVED" ]; do
+  target="$(readlink "$RESOLVED")"
+  case "$target" in
+    /*) RESOLVED="$target" ;;                         # absolute target
+    *)  RESOLVED="$(dirname "$RESOLVED")/$target" ;;  # re-anchor relative target
+  esac
+done
+SHIM_DIR="$(cd "$(dirname "$RESOLVED")" && pwd)" || { echo "foundation-map: cannot resolve script dir" >&2; exit 2; }
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$SHIM_DIR/.." && pwd)}"
+TOOL_DIR="$PLUGIN_ROOT/tools/foundation-map"
+
+if [ ! -d "$TOOL_DIR" ]; then
+  echo "foundation-map: tool directory not found at $TOOL_DIR" >&2
+  exit 2
+fi
+
+# Lazy install on first use. Gate on the exec target, not just the dir: an
+# interrupted install can leave node_modules/ present but .bin/tsx unlinked, and
+# a dir-only check would skip the repair and wedge every later run. No --silent
+# (output routed to stderr) so a slow cold install shows progress, not a hang.
+# --ignore-workspace keeps this standalone tool out of the repo's pnpm workspace.
+if [ ! -x "$TOOL_DIR/node_modules/.bin/tsx" ]; then
+  echo "foundation-map: first run — installing tool deps (once per version)..." >&2
+  (cd "$TOOL_DIR" && pnpm install --ignore-workspace) >&2 || {
+    echo "foundation-map: pnpm install failed in $TOOL_DIR" >&2
+    exit 2
+  }
+fi
+
+exec "$TOOL_DIR/node_modules/.bin/tsx" "$TOOL_DIR/src/cli.ts" "$@"
