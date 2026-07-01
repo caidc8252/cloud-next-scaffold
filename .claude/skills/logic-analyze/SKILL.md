@@ -55,7 +55,7 @@ description: /logic-analyze —— 针对当前活跃任务,读取需求 specs +
 
 ## Step 2 — 读现有代码
 
-- 全局认识：遍历 `apps/web/modules/<cat>/<mod>/overview.md`、`apps/web/commons/<mod>/overview.md`（内容约定见 `.claude/docs/module-overview.md`；缺失则按现有代码自行建立认识，本 skill 只读不写 overview）。
+- 全局认识：遍历 `apps/web/modules/<cat>/<mod>/overview.md`、`apps/web/commons/<mod>/overview.md`（内容约定见 `.claude/context/injections/references/coding-rules/module-layout.md`，commons 见 `commons.md`；缺失则按现有代码自行建立认识，本 skill 只读不写 overview）。
 - 当前模块：读 `apps/web/modules/<cat>/<name>/` 下全部文件（不存在 → 全新模块）。
 
 ## Step 3 — 读 groom + 现有台账

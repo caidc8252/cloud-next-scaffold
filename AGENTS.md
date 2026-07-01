@@ -4,7 +4,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # AI 行为准则
 
-本文件是 AI 在本项目的**常驻**行为准则：哲学 + 目录语义 + 铁律 + 脚手架工作流。深度规格按需查 `.claude/docs/*`（按主题分篇：`server-layering` / `api-and-requests` / `auth-permissions` / `coc-declaration` / `module-overview` / `i18n` / `storage-s3` / `logging` / `notice` / …）。
+本文件是 AI 在本项目的**常驻**行为准则：哲学 + 目录语义 + 铁律 + 脚手架工作流。深度规格按需查团队编码规则索引 `.claude/context/injections/references/coding-rules.md`（路由，按主题分篇：`server-layering` / `api-and-requests` / `auth-guards` / `coc-declaration` / `module-layout` / `i18n` / `storage` / `logging` / `notice` / …）。
 
 ## 总则
 
@@ -20,7 +20,7 @@ Next.js（App Router）**大单体** `apps/web` + `@cloud/*` 参考骨架 + `.cl
 
 ## 目录语义（一句话职责）
 - 根目录只放 monorepo/构建配置与项目文档；`.next`/`node_modules`/产物/缓存/生成文件不手改、不作依赖。
-- `apps/web/modules/<cat>/<mod>/` — **AI 生成落点**，纯业务单元（`manifest.ts`+`server/`+`schema/`+`client/`+`ui/`+`overview.md`）。各子目录分层见 `.claude/docs/server-layering.md`；`overview.md` 规约见 `.claude/docs/module-overview.md`。
+- `apps/web/modules/<cat>/<mod>/` — **AI 生成落点**，纯业务单元（`manifest.ts`+`server/`+`schema/`+`client/`+`ui/`+`overview.md`）。各子目录分层见 `.claude/context/injections/references/coding-rules/server-layering.md`；`overview.md` 规约见 `.claude/context/injections/references/coding-rules/module-layout.md`。
 - `apps/web/commons/<mod>/` — **通用模块**，与 `modules/` **同级**；由 `modules/` 下模块**提升(promote)上来**的可复用单元（纯技术、无自有菜单、不受合同闸门、不反调业务模块）。详见 `apps/web/commons/README.md`。
 - `apps/web/app/` — **薄路由层**（page/route/layout）。只做 HTTP 适配，调 `modules` 的 service，不放厚业务逻辑。
 - `apps/web/manifest/` — CoC 声明与采集；生成物在 `manifest/_generated/`（`*.generated.ts` + i18n，由 `pnpm gen:coc` 产，勿手改）。
