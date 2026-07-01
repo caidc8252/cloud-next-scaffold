@@ -62,11 +62,13 @@ pnpm workspaces, `packages/*`); stop and ask if absent.
    filterable lists, derived summaries) is irreducibly custom LLM work and is
    usually the *majority* of the script (spec §4d). Plan the custom-logic port as
    the main build stage.
-5. **Invoke each layer's skill as you reach it** — the `MUST` holds inside this
-   runbook, and "I already know it" is when it gets skipped: UI/primitive props →
-   **`ui`**; custom behavior/client components → **`ui`** + framework rules;
-   data/mock seam → **`db`** + **`request`** + **`route-design`**; guards →
-   **`permissions`**; i18n/password → **`i18n`** / **`security`**.
+5. **Route each layer to its team rule — don't re-derive it here.** The team-rule
+   index (`.claude/context/injections/references/coding-rules.md`) is authority;
+   read the rule whose *Applies when* matches. Rough routing for this transform:
+   primitives/pages/client components → `ui-and-pages`; server split + handler
+   order → `server-layering` + `api-and-requests`; data/mock seam →
+   `module-layout` + `database` + `party-scoping`; guards → `auth-guards`; copy →
+   `i18n`; all new TS/TSX → `naming-and-style` baseline.
 6. **Bound the scope with the user** and present the plan — scope, state
    inventory, the residue buckets (with the unimplemented-sequencing call), the
    behavior port, mock-data shapes, the app-frame shell — and get approval
@@ -74,12 +76,13 @@ pnpm workspaces, `packages/*`); stop and ask if absent.
 
 ## Build — orchestrate; subagents build
 
-You orchestrate; subagents build. **Builder subagents receive only their dispatch
-prompt — team hard rules do not reach them by injection. Put them in the prompt**
-(spec §9): i18n keys (no hardcoded copy), zod-parsed input, service-path layering,
-thin handlers wrapped in `withApiHandler`, **no `'use server'`**, mutations are
-route handlers only. The reusable builder prompts live in
-`references/behavior-port-prompt.md` and `references/integration-prompt.md`.
+**Builder subagents don't get the coding-rules injection — so their dispatch prompt
+must point them at it** (spec §9): each prompt tells the builder to read
+`coding-rules.md` + the rules matching its layer, and restates only what the index
+can't own — the `data-src`/gate invariant and each builder's own guardrails — plus
+the one highlight this transform trips on most (**no `'use server'`**). Refer, don't
+restate. The reusable builder prompts live in `references/behavior-port-prompt.md`
+and `references/integration-prompt.md`.
 
 - **Foundation first — one subagent, sequential.** Wrap the scaffold in the real
   **app-frame shell** (routing, the chrome the artifact omits), freeze the data
