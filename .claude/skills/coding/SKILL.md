@@ -10,7 +10,7 @@ disable-model-invocation: true
 - Run `logic-analyze` → `logic.md`; plan from it.
 - `superpowers:writing-plans`, don't brainstorm. Tag each plan task with the `L-n` id(s) it satisfies.
   - The plan must also include a create/update-`modules/<cat>/<mod>/overview.md` task (per `.claude/docs/module-overview.md`) — a mechanical deliverable, **no** `L-n` tag, not ledger-tracked.
-- Flip an `L-n`'s status only via `ledger.mjs status` — never hand-edit `logic.md`/`logic.items.json`. `dir = .work/logics/<cat>/<name>`.
+- **Only the controller (main session) flips `L-n`, never a subagent** — after a task's review is clean, or batched at end-of-run; never mid-task. Via `ledger.mjs status` only; never hand-edit `logic.md`/`logic.items.json`. `dir = .work/logics/<cat>/<name>`.
   - `L-n` meets its acceptance criterion, tests green → `node .claude/skills/logic-analyze/ledger.mjs status <dir> <n> 已处理`.
   - an `L-n` auto-flipped to `需返工` (a newer item superseded it) → roll back its impl, then `status <dir> <n> 作废`.
   - can't proceed (e.g. an unsatisfiable cross-module dependency) → `status <dir> <n> blocked` + surface.
