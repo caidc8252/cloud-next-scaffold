@@ -3,11 +3,11 @@ import { buildRegistry } from "./build-registry.ts";
 import { validateCatalog } from "./validate-catalog.ts";
 import type { ModuleManifest, MenuTreeNodeDecl } from "./registry-types.ts";
 
-const menuTree: MenuTreeNodeDecl[] = [{ menuCode: "system", title: "menu.system", parentMenuCode: null, order: 100 }];
+const menuTree: MenuTreeNodeDecl[] = [{ menuCode: "system", parentMenuCode: null, order: 100 }];
 const roles: ModuleManifest = {
-  moduleCategory: "system", moduleName: "roles", menuCode: "system.roles", title: "menu.roles",
+  moduleCategory: "system", moduleName: "roles", menuCode: "system.roles",
   parentMenuCode: "system", entry: { url: "/roles" },
-  permissions: [{ code: "system.roles.role.view", belongToMenuCode: "system.roles", label: "l", desc: "d" }],
+  permissions: [{ code: "system.roles.role.view", belongToMenuCode: "system.roles" }],
 };
 const result = buildRegistry({ modules: [roles], menuTree });
 
