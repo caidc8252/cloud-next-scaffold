@@ -1,5 +1,14 @@
 # Caching (`@cloud/cache`)
 
-_Team-owned coding rule — fill in._
+admin and portal share one Redis (same `REDIS_URL`). Two things — and only two — are centralized in `@cloud/cache`'s `redis-core/`: **namespace allocation** (`REDIS_NS`, collision-proofing) and **TTL constants** (`TTL`). Key **builders stay next to the caller** — no factory, no env segment (environment isolation is separate Redis instances).
+
+- **Go through `@cloud/cache`:** `kv` (`kv.get<T>` / `kv.set(key, value, ttlSeconds?)` / `kv.del` / `kv.expire`, JSON-serialized) for value access, or `getRedis()` for raw ioredis ops (`llen`/`lpush`/`incr`/`set … NX` — as `@cloud/mail` does). Do not construct your own `new Redis(...)`; the singleton client lives in `client.ts`.
+- **Never hard-code a key prefix.** Every key is built from `REDIS_NS` — `import { REDIS_NS, TTL } from "@cloud/cache/redis-core"`. The `namespace.test.ts` gate asserts every `REDIS_NS` value is globally unique and starts with its domain key.
+- **Key naming:** each `REDIS_NS` value is `"<domain>:<name>"`, first segment always the business domain (so cross-domain never collides); all lowercase, `:` between domain and name, **snake_case within a segment** (`auth:login_mfa`, `auth:session_handoff`). Add a new key under the matching domain sub-object in `namespace.ts`; login/permission/session all hang under `auth:`. The builder is a plain function beside its consumer: `const sessionKey = (sid) => \`${REDIS_NS.auth.session}:${sid}\``.
+- **Builder placement:** consumer in a shared package → builder lives there (session/handoff/mfa/nonce/pw-reset are consumed by auth → `@cloud/permissions`); consumer in one app only → keep it in that app (`apps/*/lib`); shared but no package home → fall back to `redis-core/keys.ts`.
+- **TTL is a write-time argument, not baked into the key.** Constants are flat, domain-prefixed, unit-in-name (`TTL.AUTH_SESSION_SECONDS` mirrors `REDIS_NS.auth.session`). The same key may take different TTLs by writer (`auth:pw_reset`: admin 72h vs self-service 1h). Pass the constant to `kv.set(...)` / `redis.set(..., "EX", ...)`; don't inline magic numbers.
+- **Shared keys get one owner.** A key produced/consumed across apps defines its builder **and** value contract once in the shared owner (e.g. `passwordResetKey` + `ResetTokenEntry` in `@cloud/permissions`); all sides import that one copy so shape and TTL can't quietly diverge. Don't split a namespace by purpose if the consumer only holds a token and can't know the source.
+- **Party-scope cached business data** the same way you scope the DB row: fold `currentPartyId` into the key so one party can't read another's cache — see [party-scoping](party-scoping.md). Auth/session keys scope by their own id (sid/token), not party.
+- Only accumulating, high-volume keys carry a capacity comment (an `n × m` magnitude formula); short-TTL keys that self-expire don't. Invalidation is explicit: `kv.del`/`kv.expire` on the write that makes the cached value stale.
 
 See also (deep spec): `.claude/docs/redis-keys.md`.
