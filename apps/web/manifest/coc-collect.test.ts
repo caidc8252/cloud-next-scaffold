@@ -11,7 +11,7 @@ describe("CoC author sources (collect)", () => {
   it("exposes the migrated permission + menu unions", () => {
     expect(result.permissionCodeUnion).toContain("system.roles.role.create");
     expect(result.permissionCodeUnion).toContain("system.users.user.changeRole");
-    expect(result.menuCodeUnion).toEqual(["system", "system.roles", "system.users"]);
+    expect(result.menuCodeUnion).toEqual(["platform.main", "system", "system.roles", "system.users"]);
   });
   it("validateCatalog passes for declared roles + contracts (no errors)", () => {
     const roleCodes = [...new Set(collected.globalRoles.flatMap((r) => r.permissionCodes))];

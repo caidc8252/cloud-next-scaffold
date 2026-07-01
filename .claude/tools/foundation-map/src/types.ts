@@ -41,7 +41,11 @@ export const ResolvedTableSchema = z.object({
 export type ResolvedTable = z.infer<typeof ResolvedTableSchema>
 
 export const NodeBucket = z.enum([
-  'clean-mapped', 'html-decompose', 'unimplemented', 'layout-residue', 'offcontract-unknown',
+  // 'absorbed' = a composition-member DOM node folded into its cluster root (e.g. a
+  // .step / .alert__title inside a StepIndicator / Alert). It is covered by the root's
+  // single @cloud/ui component, so it is NOT emitted and NOT gated — idiomatic
+  // @cloud/ui collapses the cluster into one call. See parse-artifact composition pass.
+  'clean-mapped', 'html-decompose', 'unimplemented', 'layout-residue', 'offcontract-unknown', 'absorbed',
 ])
 export type NodeBucket = z.infer<typeof NodeBucket>
 
@@ -54,6 +58,8 @@ export interface IRNode {
   bucket: NodeBucket
   matchedClass: string | null
   component: string | null   // first @cloud/ui component name for the node
+  named: string[]            // all acceptable @cloud/ui component names for this node's contract (gate matches any)
+  absorbedBy: number | null  // id of the composition-root node that absorbed this one (null unless bucket==='absorbed')
 }
 
 export interface RoundTrip {

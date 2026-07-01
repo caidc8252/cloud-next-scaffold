@@ -1,5 +1,5 @@
 const messages = {
-  menu: { system: "系统" },
+  menu: { platformMain: "主菜单", system: "系统" },
   role: {
     adminPresetAdmin: "管理员", adminPresetAdminDesc: "内置管理员角色",
     adminOperator: "操作员", adminOperatorDesc: "只读操作员角色",

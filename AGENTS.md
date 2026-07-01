@@ -6,11 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 本文件是 AI 在本项目的**常驻**行为准则：哲学 + 目录语义 + 铁律 + 脚手架工作流。深度规格按需查团队编码规则索引 `.claude/context/injections/references/coding-rules.md`（路由，按主题分篇：`server-layering` / `api-and-requests` / `auth-guards` / `coc-declaration` / `module-layout` / `i18n` / `storage` / `logging` / `notice` / …）。
 
-## 总则
-
 - 要勇于指出我的错误，当我的要求与上面的目标冲突时，直截了当跟我沟通
-- 也要积极帮我思考，找出不同方案间的优劣和 trade off，帮我重塑决策
-- 约定大于配置，代码大于文档
 
 ## 这是什么
 Next.js（App Router）**大单体** `apps/web` + `@cloud/*` 参考骨架 + `.claude/` AI 脚手架。

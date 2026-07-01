@@ -30,21 +30,27 @@ export function collectInstances(tsx: string): Map<number, string> {
 
 export function runGate(nodes: IRNode[], tsx: string): GateResult {
   const buckets: Record<NodeBucket, number> = {
-    'clean-mapped': 0, 'html-decompose': 0, unimplemented: 0, 'layout-residue': 0, 'offcontract-unknown': 0,
+    'clean-mapped': 0, 'html-decompose': 0, unimplemented: 0, 'layout-residue': 0, 'offcontract-unknown': 0, absorbed: 0,
   }
   for (const n of nodes) buckets[n.bucket]++
 
   const instances = collectInstances(tsx)
   // Emittable nodes = named-component instances (clean-mapped) AND raw-HTML maps (html-decompose).
-  // A component node matches on its component name; an html-decompose node matches on its source tag.
+  // Absorbed members carry no element of their own (folded into a composition root), so they
+  // are neither emittable nor gated. A clean-mapped node matches ANY of its contract's `named`
+  // components — a composition root may idiomatically render RadioGroupItem/FileList/… rather
+  // than the primary named[0]. An html-decompose node matches its source tag.
   const emittable = nodes.filter((n) => n.bucket === 'clean-mapped' || n.bucket === 'html-decompose')
   const emittableIds = new Set(emittable.map((n) => n.id))
 
   let matched = 0
   let unmatched = 0
   for (const n of emittable) {
-    const expected = n.bucket === 'clean-mapped' ? n.component : n.tag
-    if (instances.get(n.id) === expected) matched++
+    const found = instances.get(n.id)
+    const accepted = n.bucket === 'clean-mapped'
+      ? new Set([...n.named, ...(n.component ? [n.component] : [])])
+      : new Set([n.tag])
+    if (found !== undefined && accepted.has(found)) matched++
     else unmatched++
   }
   let orphan = 0
