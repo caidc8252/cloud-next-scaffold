@@ -52,6 +52,9 @@ export interface GeneratedMenuEntry {
 
 export type GuardRule =
   | "duplicate-code"
+  | "duplicate-menu-code"
+  | "code-underscore"
+  | "menu-depth"
   | "belongs-to-menu-rule"
   | "menu-code-required"
   | "parent-missing"
