@@ -32,8 +32,8 @@ cloud-next-scaffold/
 │  │  └─ ui/                            #   页面与私有组件
 │  ├─ manifest/                         # ★ CoC 声明与产物
 │  │  ├─ collect.ts                     #   采集入口(codegen 唯一消费)
-│  │  ├─ menu-tree.ts                   #   目录(非叶子)骨架
-│  │  ├─ catalog/                       #   代码态目录(单一权威)
+│  │  ├─ catalog/                       #   代码态目录(单一权威):商业策略 + 导航骨架
+│  │  │  ├─ menu-tree.ts                #     目录(非叶子)骨架
 │  │  │  ├─ contract-types.ts           #     合同闸门:CONTRACT_MENUS(合同 → 解锁哪些叶子菜单)
 │  │  │  ├─ roles.ts                    #     死写 GLOBAL 角色 GLOBAL_ROLES(roleId ≤ 1000)
 │  │  │  └─ i18n/{en,zh-CN,ja}.ts       #     目录 / 角色 / 合同文案

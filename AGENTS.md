@@ -21,7 +21,7 @@ Next.js（App Router）**大单体** `apps/web` + `@cloud/*` 参考骨架 + `.cl
 - `apps/web/app/` — **薄路由层**（page/route/layout）。只做 HTTP 适配，调 `modules` 的 service，不放厚业务逻辑。
 - `apps/web/manifest/` — CoC 声明与采集；生成物在 `manifest/_generated/`（`*.generated.ts` + i18n，由 `pnpm gen:coc` 产，勿手改）。
 - `apps/web/i18n/` — 全局文案 `i18n/messages`。
-- `apps/web/manifest/catalog/{roles,contract-types}.ts` — **商业策略，非有明确指定，否则 AI 不轻易修改**。
+- `apps/web/manifest/catalog/` — 声明式「投影输入」，两类：`{roles,contract-types, menu-tree}.ts` 是**商业策略**（非明确指定 AI 不轻易修改**。
 - `e2e` 放端到端测试；单测/组件测试就近放；`scripts` 放仓库级脚本（只服务单包的放包内）。
 - `packages/*` — `@cloud/*` 基础设施（permissions/db/request/...），只放项目级共享能力，**禁止 import `apps/`**。
 

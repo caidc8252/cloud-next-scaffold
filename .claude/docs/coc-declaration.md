@@ -14,7 +14,7 @@
 |---|---|
 | `apps/web/modules/<cat>/<mod>/manifest.ts` | `defineModule(...)`：`menuCode` / `entry.url` / `permissions[]` |
 | `apps/web/modules/<cat>/<mod>/i18n/{en,zh-CN,ja}.ts` | 该模块菜单 / 权限文案(i18n key) |
-| `apps/web/manifest/menu-tree.ts` | `defineMenuTree(...)`：目录(非叶子)骨架 |
+| `apps/web/manifest/catalog/menu-tree.ts` | `defineMenuTree(...)`：目录(非叶子)骨架 |
 | `apps/web/manifest/catalog/contract-types.ts` | ★ 合同闸门唯一真源 `CONTRACT_MENUS` |
 | `apps/web/manifest/catalog/roles.ts` | 死写 GLOBAL 角色 `GLOBAL_ROLES`(`roleId ≤ 1000`) |
 | `apps/web/manifest/catalog/i18n/{en,zh-CN,ja}.ts` | 目录 / 角色 / 合同文案 |
@@ -76,7 +76,7 @@ provisional 前向占位、跨模块依赖 checkpoint、删码 reconcile / 孤�
 
 1. `modules/<cat>/<mod>/manifest.ts`：`defineModule` 声明 `menuCode` + 4 段权限码 + `belongToMenuCode`。
 2. 同目录 `i18n/{en,zh-CN,ja}.ts` 补三语文案。
-3. 目录骨架不够，就在 `manifest/menu-tree.ts` 加目录节点。
+3. 目录骨架不够，就在 `manifest/catalog/menu-tree.ts` 加目录节点。
 4. `manifest/catalog/contract-types.ts` 的 `CONTRACT_MENUS` 把该 `menuCode` 挂到对应合同。
 5. `manifest/collect.ts` 里 `import` 新模块 manifest。
 6. 角色要带新码：改 `catalog/roles.ts`(GLOBAL)或 DB `sys_role.permission_codes`(PRIVATE)。
