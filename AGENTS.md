@@ -48,7 +48,7 @@ Next.js（App Router）**大单体** `apps/web` + `@cloud/*` 参考骨架 + `.cl
 5. **`commons` 是叶子层**：通用模块、纯技术、无自有菜单、不受合同闸门、**不反调业务模块**。
 6. **业务数据访问按当前 party 手工限定**（无 RLS）：`@cloud/db` 只导出 `prisma`（无 `tenantCtx`/`withTenantTx`/`systemDb`）。每条查询/变更在 `where`（及 INSERT 的 data）里用会话 `currentPartyId`（`Int`）限定；`currentPartyId` 由 controller 从会话取出、显式传入 service/repository。RSC/页面经模块 service / `*.public` 取数，绝不直接调 `prisma`。
 7. **业务表必含 `party_id Int @map("party_id")` + index**；按 party 隔离的唯一约束用 `@@unique([partyId, <key>])`。
-8. **跨模块前向声明（Step-3 脚手架）**：引用另一模块尚未声明的权限码 → 写同级 stub `modules/<cat>/<mod>.stub.ts`（partial `defineModule`，只声明所引用的码），`gen:coc` 聚合进 `PermissionCode`；**业务码禁止 import `*.stub`**（eslint 守门）；目标模块声明该码后删 stub（`duplicate-code` 守门抓残留）。类型/函数跨模块走 `server/<mod>.public` / `client/<mod>.api` 窄面（见 `server-layering`），禁止深 import。
+8. **跨模块前向声明 = 可 import 的 `*.stub.ts`**：依赖另一模块尚未构建的东西（其 `*.public`/`*.api` 的函数/类型，或一个权限码）→ 写同级**可 import** 的 `modules/<cat>/<mod>/<name>.stub.ts`（带 `@stub-owner`/`@stub-consumer`/`@stub-reason` 头），**import 它**顶着开发。`stub-notice`（warn）在每次 lint 列出 owner/consumer；owner 造出真身后，consumer 把 import 换到真实 `*.public`/`*.api`/真码并**删除 stub**。唯一硬闸门在 `/submit-work`（`check-stubs.mjs`）——任何 `*.stub.*` 都不得并入 `develop`。权限码的 stub 导出 `code as PermissionCode`（不进 manifest、不经 `gen:coc`），运行期 fail-closed 直到 owner 落码。类型/函数窄面见 `cross-module-stub.md` 与 `coding-rules/cross-module-refs.md`。
 
 ## 命令速查（验证 / 运行）
 ```
