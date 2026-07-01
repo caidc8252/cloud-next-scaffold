@@ -41,7 +41,7 @@
 2. **对齐靠约定规则自动推导，无映射文件**。系统性差异写成固定转换规则，两边归一化后再比；结构性特例硬编码处理。无状态、幂等。
 3. **写回边界 = 改 `schema.prisma` + 校验就停**（`prisma validate` + `pnpm db:generate`），不碰真库。
 4. **忠实镜像 app.sql，不发明**（操作员对初版约定的修正）：
-   - 前缀 `sys_` → 领域前缀 `app_`；model 名 `App<T>`，`@@map("app_<t>")`。
+   - **`app` 是 PG schema，不是表名前缀**：`app.<t>` = schema `app` + 表 `<t>`。用 Prisma **multiSchema** 忠实表达：model 名 `App<T>`，`@@map("<t>")` + `@@schema("app")`（详见 4.2）。
    - app.sql 没有的字段**不生成**（如 `cre_user_id`/`upd_user_id`）。
    - 无物理外键 → **不写 `@relation`**，只留标量列 + `@@index`。
    - 主键 `<t>.id bigint identity` → `<t>Id Int @default(autoincrement()) @map("id")`（列名就是 `id`）。
@@ -55,7 +55,7 @@
 
 | app.sql | ⇄ Prisma | 定性 |
 |---|---|---|
-| 表 `app.<t>` | model `App<T>` / `@@map("app_<t>")` | 前缀 `sys_`→`app_`，领域即前缀 |
+| 表 `app.<t>`（schema `app` + 表 `<t>`） | model `App<T>` / `@@map("<t>")` + `@@schema("app")` | multiSchema，`app` 是真 PG schema（详见 4.2） |
 | 主键 `<t>.id bigint identity` | `<t>Id Int @default(autoincrement()) @map("id")` | 列名就是 `id`；类型走 4.1，默认 `Int` |
 | `bigint` | 默认 `Int`（**显式偏差**）/ 按表可 override `BigInt` | **非静默归一化**，见 4.1 |
 | `numeric(p,s)` / `decimal(p,s)`（金额） | `Decimal @db.Decimal(p,s)` | 禁 `Float`，见 4.1 |
@@ -70,7 +70,7 @@
 | 唯一索引 `..._uidx` | `@@unique([...])` / 单列 `@unique` | 按索引列集对齐 |
 | 普通索引（外键字段） | `@@index([...])` | 按索引列集对齐 |
 
-**表名 → Prisma model 映射说明**：本设计按操作员指令取「扁平前缀」`@@map("app_<t>")`（单 schema、表名带 `app_` 前缀），而非 Prisma multiSchema（`@@schema("app")` + `@@map("<t>")`）。如后续要改用真 PG 多 schema，此规则单点可翻。
+**表名 → Prisma model 映射说明（已修正）**：`app` 是 PostgreSQL **schema**，不是表名的一部分——`create schema app; create table app.user (...)` 里表名就是 `user`。故用 Prisma **multiSchema** 忠实表达：`@@map("<t>")` + `@@schema("app")`，而非早期误设的扁平前缀 `@@map("app_<t>")`（那会在 public 里造真名 `app_user` 的表，与物理不符）。model 名保留 `App<T>`（领域改由 `@@schema` 承载，前缀仅作 client 端命名空间/全局唯一，防日后 schema 拆分同名表撞名）。详见 4.2。
 
 **枚举/注释**：app.sql 用 `comment` 描述受控取值（如 `status is '0=未激活; 1=启用; 2=暂停'`）。Prisma 不表达 CHECK，这类沉淀为 Prisma 字段注释（advisory），不生成约束。
 
@@ -89,6 +89,22 @@
 - 备选「整数最小币种单位（分）存 `bigint`」适合高频清算场景，回到上面的 `BigInt` 序列化约束、前端自行 /100；采用时须在 app.sql 注释标明单位。
 - app.sql 现无金额列 —— 这是**给数据建模方的前置约定**：金额优先 `numeric(p,s)`（p/s 由业务定，如 `numeric(18,2)`）。skill 只按上表规则映射，遇到 `numeric/decimal` 落 `Decimal`、遇到金额语义的 `Float` 直接报警。
 - `BigInt` / `Decimal` 均不原生 JSON 序列化 —— **统一在 API 边界（`@cloud/request` 出参）序列化为 string** 作为跨层约定。
+
+### 4.2 multiSchema（`app` 是真 PG schema）
+
+app.sql 头部 `create schema if not exists app;`，之后 `app.user`/`app.party`… = schema `app` 下的表，表名不含 `app`。Prisma 用 multiSchema 忠实表达（Prisma **7.x multiSchema 已 GA，无需 `previewFeatures`**）：
+
+- **datasource**：`db { schemas = ["app", "public"] }`。
+- **每张 app.sql 表**：`model App<T> { … @@map("<t>") @@schema("app") }`（表名就是 `<t>`，schema=`app`）。
+- **`prisma db push`** 据此 `create schema app` 并把表建进 `app`，与 app.sql 对齐；`DATABASE_URL` 现为 `?schema=public`（默认 schema），multiSchema model 显式限定 schema，不受影响。
+
+**全有全无约束（重要连带后果）**：一旦 datasource 开 `schemas=[...]`，**每个 model 都必须带 `@@schema(...)`**，否则 `prisma validate` 报错。因此：
+
+- app.sql 的 7 张表 → `@@schema("app")`。
+- 现有 5 张 Prisma-only 表（`sys_notice`/`sys_mfa_info`/`sys_operator_invite`/`sys_operation_log`/`sys_party_contract_event`，决策 5「保留不动」）→ 各补 `@@schema("public")` 保持现物理位置。
+- `citext` 等 datasource 扩展 → 指明 schema（如 `citext(schema: "public")`）。
+
+这把 skill 写入面机械放大（datasource `schemas` + 给现有 model 补 `@@schema` + 扩展 schema），但都是确定性改动、不改语义——是「扁平前缀 → 真 schema」躲不掉的成本，换取忠实。
 
 ## 5. Drift 分类与报告
 
@@ -109,7 +125,7 @@
 ## 6. 确认 → 改写 → 校验流程
 
 1. 展示报告，操作员逐条或批量勾选要应用的项（新增/对齐类默认勾选；删列/删表默认不勾，需显式确认）。
-2. 对确认项用 Edit 改 `packages/db/prisma/schema.prisma`。
+2. 对确认项用 Edit 改 `packages/db/prisma/schema.prisma`。**首次引入 `app` schema 时的 multiSchema 一次性处理**（见 4.2）：datasource 补 `schemas = ["app","public"]`、`app` 表加 `@@schema("app")`、现有其它 model 补 `@@schema("public")`、`citext` 等扩展指明 schema。这批是开 multiSchema 的强制配套，随首个 `app` 表落地一起做。
 3. 跑 `prisma validate`（经 `packages/db/prisma.config.ts`）。
 4. 跑 `pnpm db:generate` 重生成 client。
 5. 汇报：改了哪些条、validate/generate 是否过；若涉及改名/重构，**提示下游 `apps/web` 的 `SysXxx` 引用会编译不过，属本 skill 范围外**。
