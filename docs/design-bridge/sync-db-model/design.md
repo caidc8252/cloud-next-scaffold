@@ -47,6 +47,7 @@
    - 主键 `<t>.id bigint identity` → `<t>Id Int @default(autoincrement()) @map("id")`（列名就是 `id`）。
    - 结构性差异（`party_user_role` join 表、`role.permissions`、`email varchar`）**照 app.sql 忠实建成**，不再折成 JSONB / 改名 / 自造 `citext`。
 5. **app.sql 未覆盖的 5 张 Prisma-only 表 → 保留不动，只提示**。删除是破坏性且 app.sql 未授权，不自动删。
+6. **类型策略（见 4.1）**：整数默认 `Int`（有界实体 + 铁律 #7 + JS `number` 安全），但 `app.sql=bigint / Prisma=Int` 作**显式偏差**入报告、可按表 override `BigInt`；金额用 `Decimal @db.Decimal(p,s)` 禁 `Float`；`BigInt`/`Decimal` 在 API 边界统一序列化为 string。
 
 ## 4. 约定归一化规则（核心）
 
@@ -55,8 +56,9 @@
 | app.sql | ⇄ Prisma | 定性 |
 |---|---|---|
 | 表 `app.<t>` | model `App<T>` / `@@map("app_<t>")` | 前缀 `sys_`→`app_`，领域即前缀 |
-| 主键 `<t>.id bigint identity` | `<t>Id Int @default(autoincrement()) @map("id")` | 列名就是 `id` |
-| `bigint` | `Int` | 类型忠实转换（顺带解掉 AGENTS.md #7 的 `party_id Int` 冲突） |
+| 主键 `<t>.id bigint identity` | `<t>Id Int @default(autoincrement()) @map("id")` | 列名就是 `id`；类型走 4.1，默认 `Int` |
+| `bigint` | 默认 `Int`（**显式偏差**）/ 按表可 override `BigInt` | **非静默归一化**，见 4.1 |
+| `numeric(p,s)` / `decimal(p,s)`（金额） | `Decimal @db.Decimal(p,s)` | 禁 `Float`，见 4.1 |
 | `varchar(n)` | `@db.VarChar(n)` | 忠实转换 |
 | `timestamp` | `@db.Timestamp(3)` | 忠实转换 |
 | `jsonb` | `Json` | 忠实转换 |
@@ -71,6 +73,22 @@
 **表名 → Prisma model 映射说明**：本设计按操作员指令取「扁平前缀」`@@map("app_<t>")`（单 schema、表名带 `app_` 前缀），而非 Prisma multiSchema（`@@schema("app")` + `@@map("<t>")`）。如后续要改用真 PG 多 schema，此规则单点可翻。
 
 **枚举/注释**：app.sql 用 `comment` 描述受控取值（如 `status is '0=未激活; 1=启用; 2=暂停'`）。Prisma 不表达 CHECK，这类沉淀为 Prisma 字段注释（advisory），不生成约束。
+
+### 4.1 类型策略（整数宽度 / 金额）
+
+关键机制：**决定 JS 运行时类型的是 Prisma scalar，不是 PG 列宽**。`Int`→JS `number`（安全整数 ±2⁵³）；`BigInt`→JS `BigInt`（不能 `JSON.stringify`、前端 `number` 接不住）；`Decimal`→`Prisma.Decimal`（`toJSON` 出 string）。且本仓本地/e2e 库由 `pnpm db:push` 从 `schema.prisma` 生成 —— **Prisma 声明的类型就是实际物理类型**，app.sql 的 `bigint` 是数据建模方的意图，两者不一致是一条**该被看见的偏差**，不做静默归一化。
+
+**整数 / ID 策略：**
+- **默认 `Int`**：app.sql 那 7 张是有界 B2B 关系表（party/user/role/合同/归属），int4 的 21 亿上限非真天花板；`Int` 同时满足 AGENTS.md 铁律 #7（`party_id Int`）与前端 `number` 干净。
+- app.sql `bigint` → Prisma `Int` 这条，**在报告里显式列为一条偏差**（`app.sql=bigint / Prisma=Int / 理由=有界实体+铁律#7+JS number 安全`），不吞进「风格归一化」。
+- **逃生舱**：某表确为高 volume → 逐表 override 成 `BigInt @db.BigInt`，并在 `@cloud/request` / API 边界统一序列化为 string。默认不启用。
+
+**金额策略：**
+- 金额**绝不用** `Float`/`number`（二进制浮点丢精度）。
+- `numeric(p,s)` / `decimal(p,s)` → `Decimal @db.Decimal(p,s)`（推荐默认）；`Prisma.Decimal` 出线为 string，前端以 string 存/展示、算术用 decimal 库，禁 `parseFloat` 参与运算。
+- 备选「整数最小币种单位（分）存 `bigint`」适合高频清算场景，回到上面的 `BigInt` 序列化约束、前端自行 /100；采用时须在 app.sql 注释标明单位。
+- app.sql 现无金额列 —— 这是**给数据建模方的前置约定**：金额优先 `numeric(p,s)`（p/s 由业务定，如 `numeric(18,2)`）。skill 只按上表规则映射，遇到 `numeric/decimal` 落 `Decimal`、遇到金额语义的 `Float` 直接报警。
+- `BigInt` / `Decimal` 均不原生 JSON 序列化 —— **统一在 API 边界（`@cloud/request` 出参）序列化为 string** 作为跨层约定。
 
 ## 5. Drift 分类与报告
 
