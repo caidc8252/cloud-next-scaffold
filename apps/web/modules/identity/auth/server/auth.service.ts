@@ -17,7 +17,7 @@ import {
   ERR_AUTH_MFA_TOKEN_INVALID,
   ERR_AUTH_NOT_AUTHENTICATED,
   ERR_AUTH_REQUEST_EXPIRED,
-} from "@/lib/auth-error-codes";
+} from "@/modules/identity/auth/error/auth.error-codes";
 import { buildSessionSnapshot } from "@/lib/session-snapshot";
 import {
   isAccountActive,

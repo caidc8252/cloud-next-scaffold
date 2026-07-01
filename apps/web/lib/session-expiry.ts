@@ -2,7 +2,7 @@ import "client-only";
 
 import type { RequestError } from "@cloud/request/client";
 import { ERR_UNAUTHORIZED } from "@cloud/request/error-codes";
-import { ERR_AUTH_NOT_AUTHENTICATED } from "./auth-error-codes";
+import { ERR_AUTH_NOT_AUTHENTICATED } from "@/modules/identity/auth/error/auth.error-codes";
 
 // 仅这些 401 code 视为「会话失效」，需要自动登出。
 // - ERR_UNAUTHORIZED：assertPermissions 抛 AuthzError(401) 经 handleApiError 统一映射的 code，也是 @cloud/request 通用 401

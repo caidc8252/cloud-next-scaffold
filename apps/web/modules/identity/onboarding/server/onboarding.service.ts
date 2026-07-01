@@ -3,7 +3,7 @@ import "server-only";
 import { hashPassword } from "@cloud/security/server";
 import { BusinessError } from "@cloud/request";
 import { decryptAndValidatePassword } from "@/lib/password-input";
-import { buildSessionAndRedirect } from "@/modules/identity/auth/server/auth.service";
+import { buildSessionAndRedirect } from "@/modules/identity/auth/server/auth.public";
 import {
   ERR_OB_EMAIL_TAKEN,
   ERR_OB_INVITE_CONSUMED,
@@ -11,7 +11,7 @@ import {
   ERR_OB_INVITE_NOT_FOUND,
   ERR_OB_NOT_AUTHENTICATED,
   ERR_OB_PASSWORD_WEAK,
-} from "@/lib/onboarding-error-codes";
+} from "@/modules/identity/onboarding/error/onboarding.error-codes";
 import type { AcceptInput, AcceptResult, InvitePublic } from "../schema/onboarding.schema";
 import * as repo from "./onboarding.repository";
 
@@ -25,7 +25,8 @@ async function requireValidInvite(token: string, now: Date): Promise<InviteRow> 
   const invite = await repo.findInviteByToken(token);
   if (!invite) throw new BusinessError(ERR_OB_INVITE_NOT_FOUND, 404);
   if (invite.status !== "PENDING") throw new BusinessError(ERR_OB_INVITE_CONSUMED, 404);
-  if (invite.expiresAt.getTime() <= now.getTime()) throw new BusinessError(ERR_OB_INVITE_EXPIRED, 404);
+  if (invite.expiresAt.getTime() <= now.getTime())
+    throw new BusinessError(ERR_OB_INVITE_EXPIRED, 404);
   return invite;
 }
 
@@ -49,12 +50,17 @@ export async function getInvite(token: string): Promise<InvitePublic> {
 }
 
 /** 接受邀请：绑定 + 消费 + 激活 + 建会话。sessionUserId 来自当前 portal 会话（mode=existing 必需）。 */
-export async function accept(input: AcceptInput, sessionUserId: number | null): Promise<AcceptResult> {
+export async function accept(
+  input: AcceptInput,
+  sessionUserId: number | null,
+): Promise<AcceptResult> {
   const now = new Date();
   const invite = await requireValidInvite(input.token, now);
 
   let userId: number | null;
-  let newUser: { email: string; passwordHash: string; nickName: string; country: string } | undefined;
+  let newUser:
+    | { email: string; passwordHash: string; nickName: string; country: string }
+    | undefined;
 
   if (input.mode === "existing") {
     if (sessionUserId === null) throw new BusinessError(ERR_OB_NOT_AUTHENTICATED, 401);
@@ -65,7 +71,11 @@ export async function accept(input: AcceptInput, sessionUserId: number | null): 
       throw new BusinessError(ERR_OB_EMAIL_TAKEN, 409);
     }
     userId = null;
-    const newPassword = await decryptAndValidatePassword(input.encryptedPassword, now, ERR_OB_PASSWORD_WEAK);
+    const newPassword = await decryptAndValidatePassword(
+      input.encryptedPassword,
+      now,
+      ERR_OB_PASSWORD_WEAK,
+    );
     newUser = {
       email: invite.inviteEmail,
       passwordHash: await hashPassword(newPassword),

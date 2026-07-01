@@ -109,13 +109,13 @@ Entity ──┬── EntityContract（合同：决定该 Entity 解锁哪些 C
 
 ### 关键概念
 
-| 概念           | 说明                                                                                   |
-| -------------- | -------------------------------------------------------------------------------------- |
-| Entity         | 组织/租户(party)。用户通过 EntityUser 关联到 Entity                                    |
-| EntityContract | 该 Entity 持有的合同；合同决定 CoC 里解锁哪些叶子菜单 / 权限码（即 party scope）         |
-| EntityUser     | 用户与组织的关联，含 `authorizingType`（NORMAL/ADMIN）和 `status`（ACTIVE/INACTIVE）   |
+| 概念           | 说明                                                                                                              |
+| -------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Entity         | 组织/租户(party)。用户通过 EntityUser 关联到 Entity                                                               |
+| EntityContract | 该 Entity 持有的合同；合同决定 CoC 里解锁哪些叶子菜单 / 权限码（即 party scope）                                  |
+| EntityUser     | 用户与组织的关联，含 `authorizingType`（NORMAL/ADMIN）和 `status`（ACTIVE/INACTIVE）                              |
 | Role           | 角色。GLOBAL（roleId ≤ 1000）由 CoC 死写不入库；PRIVATE（≥ 1001）入 `sys_role`、权限码存 `permission_codes` JSONB |
-| 菜单 / 权限    | **CoC 声明、零 DB**（见 `.claude/context/injections/references/coding-rules/coc-declaration.md`），不是数据库表              |
+| 菜单 / 权限    | **CoC 声明、零 DB**（见 `.claude/context/injections/references/coding-rules/coc-declaration.md`），不是数据库表   |
 
 ### 两种锁定机制
 
@@ -194,7 +194,9 @@ import { requirePermissions, assertPermissions } from "@cloud/permissions/server
 const session = await requirePermissions({ all: ["system.users.user.view"] });
 
 // route handler
-const session = await assertPermissions({ any: ["system.roles.role.view", "system.roles.role.update"] });
+const session = await assertPermissions({
+  any: ["system.roles.role.view", "system.roles.role.update"],
+});
 ```
 
 前端如果已经拿到权限数组，也可以通过 `@cloud/permissions/client` 做 UI 级权限判断：
@@ -345,12 +347,12 @@ pnpm db:seed
 
 三入口：
 
-| 入口 | 取什么 | 用在哪 |
-| --- | --- | --- |
-| `@cloud/i18n` | `locales` / `Locale` / `isLocale` / cookie 常量 / `formats` | 共享常量、类型收窄 |
-| `@cloud/i18n/server` | `createI18nRequestConfig` / `deepMerge` / `setLocaleAction` / `setTimeZoneAction` | RSC、route handler |
-| `@cloud/i18n/client` | `useTranslations` / `useFormatter` / `useLocale` / `TimeZoneInit` | 客户端组件 |
-| `@cloud/i18n/actions` | `setLocaleAction` / `setTimeZoneAction` | 客户端组件里调 server action（如语言切换 UI） |
+| 入口                  | 取什么                                                                            | 用在哪                                        |
+| --------------------- | --------------------------------------------------------------------------------- | --------------------------------------------- |
+| `@cloud/i18n`         | `locales` / `Locale` / `isLocale` / cookie 常量 / `formats`                       | 共享常量、类型收窄                            |
+| `@cloud/i18n/server`  | `createI18nRequestConfig` / `deepMerge` / `setLocaleAction` / `setTimeZoneAction` | RSC、route handler                            |
+| `@cloud/i18n/client`  | `useTranslations` / `useFormatter` / `useLocale` / `TimeZoneInit`                 | 客户端组件                                    |
+| `@cloud/i18n/actions` | `setLocaleAction` / `setTimeZoneAction`                                           | 客户端组件里调 server action（如语言切换 UI） |
 
 客户端取文案与格式化：
 
@@ -584,14 +586,14 @@ DELETE 这类无内容响应使用 `noContentResponse()`，HTTP status 为 204�
 
 ### API 异常兜底
 
-Route Handler 的业务校验错误应该显式返回响应，例如 `badRequestResponse()`、`notFoundResponse()`；不要用 `throw new Error("A valid email is required.")` 表达可预期错误。错误码是接口协议，message 是给用户看的兜底文案。
+Route Handler 的业务校验错误应该抛 `BusinessError` 交给 `withApiHandler()` 统一映射；不要用 `throw new Error("A valid email is required.")` 表达可预期错误。错误码是接口协议，message 是给用户看的兜底文案。
 
 ```ts
-import { badRequestResponse } from "@cloud/request/server";
-import { ERR_USER_EMAIL_INVALID } from "@cloud/request/error-codes";
+import { BusinessError } from "@cloud/request";
+import { ERR_BAD_REQUEST } from "@cloud/request/error-codes";
 
 if (!email) {
-  return badRequestResponse(ERR_USER_EMAIL_INVALID, "A valid email is required.");
+  throw new BusinessError(ERR_BAD_REQUEST);
 }
 ```
 
@@ -600,12 +602,14 @@ if (!email) {
 ```ts
 import { withApiHandler } from "@/lib/api-handler";
 import { assertPermissions } from "@cloud/permissions/server";
-import { successResponse, badRequestResponse } from "@cloud/request/server";
+import { BusinessError } from "@cloud/request";
+import { successResponse } from "@cloud/request/server";
+import { ERR_INVALID_ID } from "@cloud/request/error-codes";
 
 export const POST = withApiHandler(async (req: Request) => {
   const session = await assertPermissions({ all: ["system.users.user.lock"] });
-  // 业务校验错误仍然显式返回
-  if (!ok) return badRequestResponse(ERR_INVALID_ID, "Invalid user ID.");
+  // 业务校验错误抛 BusinessError，由 withApiHandler 统一映射。
+  if (!ok) throw new BusinessError(ERR_INVALID_ID);
   // 业务逻辑
   return successResponse(data);
 });

@@ -2,7 +2,10 @@ import "server-only";
 
 import { prisma } from "@cloud/db";
 import { BusinessError } from "@cloud/request";
-import { ERR_OB_ALREADY_MEMBER, ERR_OB_INVITE_CONSUMED } from "@/lib/onboarding-error-codes";
+import {
+  ERR_OB_ALREADY_MEMBER,
+  ERR_OB_INVITE_CONSUMED,
+} from "@/modules/identity/onboarding/error/onboarding.error-codes";
 
 // onboarding 域数据访问。验票读取 + 接受邀请的原子绑定事务。
 

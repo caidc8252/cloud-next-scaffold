@@ -14,7 +14,7 @@ export abstract class AppError extends Error {
   abstract readonly params?: ErrorParams;
 }
 
-// ① 业务异常:由业务代码 throw,默认 40x。code 走 PMMNNN 数字码。
+// ① 业务异常:由业务代码 throw,默认 40x。code 走 IISSS 5 位十六进制码。
 export class BusinessError extends AppError {
   constructor(
     readonly code: string,
@@ -27,7 +27,7 @@ export class BusinessError extends AppError {
 }
 
 // ③ 中间件异常:DB / Redis / 邮件等基础设施故障,统一 503 + 通用文案(对客户不透明)。
-// code 走 ERR_MW_* (Module 90);开发凭 code + traceId 在日志里识别具体中间件。
+// code 走 ERR_MW_* (Module F0);开发凭 code + traceId 在日志里识别具体中间件。
 export class MiddlewareError extends AppError {
   readonly status = 503;
   readonly params = undefined;

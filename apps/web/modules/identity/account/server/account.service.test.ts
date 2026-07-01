@@ -7,7 +7,7 @@ import {
   ERR_ACCOUNT_MFA_PENDING_MISSING,
   ERR_ACCOUNT_MFA_STEPUP_INVALID,
   ERR_ACCOUNT_VERIFY_CODE_INVALID,
-} from "@/lib/account-error-codes";
+} from "@/modules/identity/account/error/account.error-codes";
 import type { ActiveSession } from "@cloud/permissions/server";
 
 // 全 I/O 边界工厂 mock,隔离出 service 的编排 / 分支。
@@ -31,7 +31,9 @@ vi.mock("@/lib/account-verify-code", () => ({
   issueVerifyCode: vi.fn(),
 }));
 vi.mock("@/lib/email", () => ({ sendVerifyCodeEmail: vi.fn() }));
-vi.mock("@/lib/session-snapshot", () => ({ buildSessionSnapshot: vi.fn().mockResolvedValue(null) }));
+vi.mock("@/lib/session-snapshot", () => ({
+  buildSessionSnapshot: vi.fn().mockResolvedValue(null),
+}));
 vi.mock("@cloud/permissions/server", () => ({ updateSession: vi.fn() }));
 
 import * as repo from "./account.repository";
@@ -93,7 +95,11 @@ describe("requestVerifyCode", () => {
     const res = await requestVerifyCode(session, { purpose: "EMAIL_NEW", newEmail: "new@x.com" });
 
     expect(res).toEqual({ sent: true });
-    expect(sendVerifyCodeEmail).toHaveBeenCalledWith({ to: "new@x.com", code: "123456", intent: "emailChange" });
+    expect(sendVerifyCodeEmail).toHaveBeenCalledWith({
+      to: "new@x.com",
+      code: "123456",
+      intent: "emailChange",
+    });
   });
 
   it("emails the current address for EMAIL_CURRENT", async () => {
@@ -102,7 +108,11 @@ describe("requestVerifyCode", () => {
 
     await requestVerifyCode(session, { purpose: "EMAIL_CURRENT" });
 
-    expect(sendVerifyCodeEmail).toHaveBeenCalledWith({ to: "old@x.com", code: "999999", intent: "emailChange" });
+    expect(sendVerifyCodeEmail).toHaveBeenCalledWith({
+      to: "old@x.com",
+      code: "999999",
+      intent: "emailChange",
+    });
   });
 });
 
@@ -123,7 +133,10 @@ describe("activateMfa", () => {
 
   it("returns refreshed security on success", async () => {
     vi.mocked(mfa.activateEnrollment).mockResolvedValue("ok");
-    vi.mocked(repo.getUser).mockResolvedValue({ mfaEnable: true, passwordChangedTimestamp: null } as never);
+    vi.mocked(repo.getUser).mockResolvedValue({
+      mfaEnable: true,
+      passwordChangedTimestamp: null,
+    } as never);
     vi.mocked(mfa.getMfaStatus).mockResolvedValue("ACTIVE");
 
     const security = await activateMfa(session, { mfaInfoId: 5, code: "123456" });
@@ -167,8 +180,22 @@ describe("disableAccountMfa", () => {
 describe("listPartners", () => {
   it("derives contract types and sorts current → active → locked", async () => {
     vi.mocked(repo.listPartyMemberships).mockResolvedValue([
-      { partyUserId: 1, partyId: 100, partner: { partyName: "A" }, authorizingType: "NORMAL", authorizingTimestamp: null, status: "ACTIVE" },
-      { partyUserId: 2, partyId: 200, partner: { partyName: "B" }, authorizingType: "ADMIN", authorizingTimestamp: null, status: "LOCKED" },
+      {
+        partyUserId: 1,
+        partyId: 100,
+        partner: { partyName: "A" },
+        authorizingType: "NORMAL",
+        authorizingTimestamp: null,
+        status: "ACTIVE",
+      },
+      {
+        partyUserId: 2,
+        partyId: 200,
+        partner: { partyName: "B" },
+        authorizingType: "ADMIN",
+        authorizingTimestamp: null,
+        status: "LOCKED",
+      },
     ] as never);
     vi.mocked(repo.listActiveContractTypes).mockResolvedValue([
       { authorizedPartyId: 100, authorizedContractType: "ISO" },

@@ -1,9 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ERR_FP_TOKEN_INVALID, ERR_FP_PASSWORD_REUSED } from "@/lib/forgot-error-codes";
+import {
+  ERR_FP_TOKEN_INVALID,
+  ERR_FP_PASSWORD_REUSED,
+} from "@/modules/identity/forgot-password/error/forgot.error-codes";
 
 const { repo, token, email, pwInput, security } = vi.hoisted(() => ({
   repo: { findUserByEmail: vi.fn(), findUserById: vi.fn(), updatePassword: vi.fn() },
-  token: { issueSelfServiceResetToken: vi.fn(), readResetToken: vi.fn(), consumeResetToken: vi.fn() },
+  token: {
+    issueSelfServiceResetToken: vi.fn(),
+    readResetToken: vi.fn(),
+    consumeResetToken: vi.fn(),
+  },
   email: { sendResetLinkEmail: vi.fn() },
   pwInput: { decryptAndValidatePassword: vi.fn() },
   security: { hashPassword: vi.fn(), verifyPassword: vi.fn() },
@@ -29,12 +36,17 @@ describe("sendResetLink", () => {
     const res = await sendResetLink({ email: "a@x.com" });
     expect(res).toEqual({ ok: true, cooldownSeconds: 60 });
     expect(token.issueSelfServiceResetToken).toHaveBeenCalledWith(1);
-    expect(email.sendResetLinkEmail).toHaveBeenCalledWith(expect.objectContaining({ to: "a@x.com", token: "tok123" }));
+    expect(email.sendResetLinkEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "a@x.com", token: "tok123" }),
+    );
   });
 
   it("returns ok without issuing for an unknown email (anti-enumeration)", async () => {
     repo.findUserByEmail.mockResolvedValue(null);
-    await expect(sendResetLink({ email: "ghost@x.com" })).resolves.toEqual({ ok: true, cooldownSeconds: 60 });
+    await expect(sendResetLink({ email: "ghost@x.com" })).resolves.toEqual({
+      ok: true,
+      cooldownSeconds: 60,
+    });
     expect(token.issueSelfServiceResetToken).not.toHaveBeenCalled();
     expect(email.sendResetLinkEmail).not.toHaveBeenCalled();
   });
@@ -43,7 +55,10 @@ describe("sendResetLink", () => {
     repo.findUserByEmail.mockResolvedValue({ userId: 1, status: "ACTIVE" });
     token.issueSelfServiceResetToken.mockResolvedValue("tok123");
     email.sendResetLinkEmail.mockRejectedValue(new Error("throttled"));
-    await expect(sendResetLink({ email: "a@x.com" })).resolves.toEqual({ ok: true, cooldownSeconds: 60 });
+    await expect(sendResetLink({ email: "a@x.com" })).resolves.toEqual({
+      ok: true,
+      cooldownSeconds: 60,
+    });
   });
 });
 
@@ -69,7 +84,12 @@ describe("resetPassword", () => {
 
   it("rejects a reused password", async () => {
     token.readResetToken.mockResolvedValue({ userId: 1, source: "self-service" });
-    repo.findUserById.mockResolvedValue({ userId: 1, status: "ACTIVE", passwordHash: "old", passwordHistory: [] });
+    repo.findUserById.mockResolvedValue({
+      userId: 1,
+      status: "ACTIVE",
+      passwordHash: "old",
+      passwordHistory: [],
+    });
     pwInput.decryptAndValidatePassword.mockResolvedValue("NewPassw0rd!");
     security.verifyPassword.mockResolvedValue(true);
     await expect(resetPassword(input)).rejects.toMatchObject({ code: ERR_FP_PASSWORD_REUSED });
@@ -78,7 +98,12 @@ describe("resetPassword", () => {
 
   it("updates password + history and consumes the token on success", async () => {
     token.readResetToken.mockResolvedValue({ userId: 1, source: "self-service" });
-    repo.findUserById.mockResolvedValue({ userId: 1, status: "ACTIVE", passwordHash: "old", passwordHistory: ["h1"] });
+    repo.findUserById.mockResolvedValue({
+      userId: 1,
+      status: "ACTIVE",
+      passwordHash: "old",
+      passwordHistory: ["h1"],
+    });
     pwInput.decryptAndValidatePassword.mockResolvedValue("NewPassw0rd!");
     security.verifyPassword.mockResolvedValue(false);
     security.hashPassword.mockResolvedValue("newhash");

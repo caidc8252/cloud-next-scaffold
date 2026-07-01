@@ -1,9 +1,12 @@
-import "@/lib/auth-error-messages";
+import "@/modules/identity/auth/error/auth.error-messages";
 
 import { getPartialSession } from "@cloud/permissions/server";
 import { BusinessError } from "@cloud/request";
 import { successResponse } from "@cloud/request/server";
-import { ERR_AUTH_NOT_AUTHENTICATED, ERR_AUTH_PARTNER_REQUIRED } from "@/lib/auth-error-codes";
+import {
+  ERR_AUTH_NOT_AUTHENTICATED,
+  ERR_AUTH_PARTNER_REQUIRED,
+} from "@/modules/identity/auth/error/auth.error-codes";
 import { selectPartnerSchema } from "@/modules/identity/auth/schema/auth.schema";
 import { selectPartner } from "@/modules/identity/auth/server/auth.service";
 import { withApiHandler } from "@/lib/api-handler";
