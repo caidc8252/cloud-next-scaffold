@@ -7,13 +7,11 @@ Types and functions cross module boundaries **only** through the narrow public s
 
 MUST NOT deep-import another module's internals (`server/<mod>.service`, `*.repository`, `*.mapper`, `schema/*`, `ui/*`) — eslint `module-boundary/boundary` errors. If another module needs something, the owner exports it from its `.public` / `.api` file; consume that.
 
-## Forward-declaration stubs (`*.stub.ts`)
+## Cross-module stubs (`*.stub.ts`)
 
-A permission code the owning module has **not declared yet** is forward-declared with a colocated `modules/<cat>/<mod>.stub.ts` — a partial `defineModule` (from `@cloud/platform-config`) declaring **only** the referenced `permissions[].code`.
+A dependency another module hasn't built yet — a function/type from its `*.public`/`*.api`, or a permission code — is forward-declared with a colocated **importable** `modules/<cat>/<mod>/<name>.stub.ts` carrying a `@stub-owner` / `@stub-consumer` / `@stub-reason` header.
 
-- `pnpm gen:coc` globs `apps/web/modules/**/*.stub.ts` and merges each `code` into the generated `PermissionCode` union, so the consumer type-checks before the owner ships.
-- `defineModule` is shape-complete (zod-validated): `title` / `parentMenuCode` / `entry.url` and each permission's `label` / `desc` MUST all be present, but only `code` is load-bearing — the rest are throwaway placeholders; use the `stub.*` i18n namespace so they read as fake.
-- coc guards: `menuCode` MUST equal `<cat>.<mod>`, and each permission's `belongToMenuCode` MUST equal `menuCode` (belongs-to-menu guard).
-- Required header tags `@stub-owner` / `@stub-consumer` / `@stub-reason`, one value per line (optional `@stub-kind` / `@stub-declares` / `@stub-task` / `@stub-created`). The `next-kit/stub-notice` lint surfaces every stub and warns if the header is incomplete — a warning, not a build failure (a stub is legitimately present mid-development).
-- Business code MUST NOT `import` a `*.stub` — the link is the generated union, never an import. The block is core `no-restricted-imports` (the `**/*.stub` pattern); `no-stub-import` is only the violation message label, not a rule name.
-- When the owner declares the code for real the stub is redundant and MUST go — a leftover collides and fails the coc `duplicate-code` build gate. Because a stub lives beside the owner's module, surface a stale stub for a human rather than editing another module's files unilaterally.
+- **Import it** — that is the mechanism. `next-kit/stub-notice` surfaces every stub (warn), naming owner + consumer, and nags on an incomplete header. There is no import ban.
+- **Delete it** once the owner ships: swap the import to the owner's real `*.public` / `*.api` (or real code) and remove the file. The one hard gate is `/submit-work` (`scripts/check-stubs.mjs`) — no `*.stub.*` reaches `develop`.
+- A permission-code stub exports the code `as PermissionCode` (no manifest entry, no `gen:coc` involvement); it fails closed at runtime until the owner ships.
+- Full convention, kinds, and template → `../cross-module-stub.md`.
