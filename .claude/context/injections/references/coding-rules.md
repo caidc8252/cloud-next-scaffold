@@ -4,6 +4,9 @@ Before writing or editing code, read only the rule(s) whose **Applies when** mat
 
 Rule filenames are stable anchors; if you rename one, update every link to it.
 
+## Domain model
+- [domain-model](coding-rules/domain-model.md) — Party/tenant, contract types (incl. the `ADMIN` platform-wide singleton), roles, and how effective permissions + the left menu are derived.
+
 ## Where code lives
 - [module-layout](coding-rules/module-layout.md) — scaffolding a *new* module (required subdirs, `manifest.ts`, `overview.md`).
 - [commons](coding-rules/commons.md) — writing under `apps/web/commons/`, or promoting a reusable unit out of `modules/` (into a `@cloud/*` package → package-boundaries).
