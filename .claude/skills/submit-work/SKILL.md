@@ -1,6 +1,6 @@
 ---
 name: submit-work
-description: /submit-work —— 闭合 /start-work 开的活跃任务。检查 groom 残留 → 提交代码 → 询问是否 PR 到 develop（默认不提交，含代码/需求/数据模型三仓）→ 关闭 groom 入口、清空 workbench 活跃锁。当操作员完成本任务、要收尾提交时使用。
+description: /submit-work —— 闭合 /start-work 开的活跃任务。检查 groom 残留 + stub 残留 → 提交代码 → 询问是否 PR 到 develop（默认不提交，含代码/需求/数据模型三仓）→ 关闭 groom 入口、清空 workbench 活跃锁。当操作员完成本任务、要收尾提交时使用。
 ---
 
 # submit-work
@@ -18,11 +18,15 @@ description: /submit-work —— 闭合 /start-work 开的活跃任务。检查 
 
    > **收尾顺序**：submit 前应先「停止 `/logic-groom` 输入 → 跑 `/logic-analyze` 把最新碎片清成 `已整理` → 再 `/submit-work`」。若 analyze 后又 groom 出新碎片，本闸门会再次拦截——这是有意的强制闭合。
 
-2. **提交代码** —— 在 `feature/task-<task_id>` 分支上：
+2. **stub 残留闸门(硬闸门)** —— 运行 `node scripts/check-stubs.mjs`：
+   - 退出码 `1`(列出任何 `apps/web/**/*.stub.*`)→ **拦截提交**。每个 stub 是对另一模块未实现依赖的临时前向声明,不得并入 `develop`。提示:owner 实现真身 → consumer 把 import 换到真实 `*.public`/`*.api`/真码 → 删除 stub;若 stub 位于他人模块树,交人处理而非擅改。
+   - 退出码 `0` → 通过。
+
+3. **提交代码** —— 在 `feature/task-<task_id>` 分支上：
    - 先 `git status` 给操作员看将提交的改动；**无改动** → 跳过提交并提示。
    - `git add -A` + `git commit`（提交信息含 `task_id` 与简述）。
 
-3. **PR 决策（默认选中「不提交」）** —— 询问操作员是否把工作 PR 到 `develop`：
+4. **PR 决策（默认选中「不提交」）** —— 询问操作员是否把工作 PR 到 `develop`：
    - **不提交（默认）** → **提醒影响**：工作停留在 `feature/task-<task_id>`，未并入 `develop`；他人/后续任务看不到本次成果，主干不前进，代码与文档未入主干对齐，需日后手动并。
    - **提交** → 对**三个仓库**各自的 `feature/task-<task_id>` 开 PR 到 `develop`：
      - **代码仓**（本仓库）—— 已在该分支，直接 PR。
@@ -31,7 +35,7 @@ description: /submit-work —— 闭合 /start-work 开的活跃任务。检查 
        - 然后开 PR `feature/task-<task_id>` → `develop`。
      - 某仓库**确无任何改动**（feature 与 `develop` 无差异）→ **跳过并明确告知**（不静默吞掉）。
 
-4. **闭环收尾**：
+5. **闭环收尾**：
    - 关闭本任务的 `/logic-groom` 捕获入口（捕获模式结束）。
    - 清空 `.work/workbench.json` → `{}`（释放唯一活跃任务锁，可开下一个任务）。
    - **不清** `.work/logics/<cat>/<name>/`（`logic.md`/`logic.items.json`/`<name>.groom.md` 是**模块级累积**，跨 task 保留）。
@@ -42,4 +46,4 @@ description: /submit-work —— 闭合 /start-work 开的活跃任务。检查 
 - **Idempotent**：`workbench` 已空 → no-op（无可提交任务）。
 
 ## AUTONOMOUS_MODE
-- 两个交互点：步骤 3 的 PR 决策（默认不提交）、步骤 1 残留拦截后的去向。无操作员输入 → **不擅自 PR、不擅自跳过残留闸门**。
+- 两个交互点：步骤 4 的 PR 决策（默认不提交）、步骤 1/2 残留闸门拦截后的去向。无操作员输入 → **不擅自 PR、不擅自跳过残留闸门**。
