@@ -13,3 +13,9 @@ export const DEFAULT_TABLES_DIR = join(TOOL_ROOT, 'tables')
 // three levels up. Resolved relative to the tool (not cwd) so the bin shim works
 // from any directory; override with UI_SRC_DIR.
 export const DEFAULT_UI_SRC = join(TOOL_ROOT, '..', '..', '..', 'packages', 'ui', 'src')
+
+// Default output dir for transform/gate artifacts. cwd-relative (the consumer
+// repo root, where the bin shim is invoked) — these are per-run outputs, not
+// tool assets. Lands under .work/ (the scaffold's scratch area) rather than a
+// stray top-level out/.
+export const DEFAULT_OUT_DIR = join(process.cwd(), '.work', 'mock-app')

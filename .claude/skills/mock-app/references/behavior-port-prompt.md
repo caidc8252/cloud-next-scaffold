@@ -8,7 +8,7 @@ builder sees only this prompt — every rule it must obey is here.
 Port the **custom** behavior of a foundation artifact into the scaffold TSX
 component at `[path/to/Component.tsx]`. The deterministic transform already mapped
 the primitive layer; you extend it. The artifact's script is at
-`[artifact path, lines S–E]`; the behavior report (`out/behavior.json`) lists each
+`[artifact path, lines S–E]`; the behavior report (`.work/mock-app/behavior.json`) lists each
 unit as `absorbed` or `custom`.
 
 - **Drop every `absorbed` unit.** State-switching (active tab/step, modal

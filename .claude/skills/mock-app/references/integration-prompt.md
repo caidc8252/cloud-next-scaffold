@@ -13,7 +13,7 @@ which strips a fake shell.
 
 1. **App-frame shell** — mount the feature under the real Next App Router shell at
    `[route path]`: layout, nav placement, breadcrumb slots. Use the team layout
-   primitives (`[e.g. Layout / AppFrame mapping from out/table.json]`).
+   primitives (`[e.g. Layout / AppFrame mapping from .work/mock-app/table.json]`).
 2. **Data seam** — types, a store pinned to `globalThis`, and **route handlers**
    for every mutation. Client → `@cloud/request/client` → a thin route handler →
    data via the `@cloud/request/server` envelope. The mock→real swap must be a

@@ -44,7 +44,7 @@ pnpm workspaces, `packages/*`); stop and ask if absent.
    **no app shell** — you will *add* one (the inverse of mock-app stripping a fake
    shell).
 2. **Run the deterministic transform.** `.claude/bin/foundation-map <artifact.html>` →
-   `out/{table.json, <Name>.tsx (scaffold), residue.json, behavior.json}`. The
+   `.work/mock-app/{table.json, <Name>.tsx (scaffold), residue.json, behavior.json}`. The
    scaffold TSX is the spine every builder extends; it carries `data-src` on every
    mapped node.
 3. **Read the residue report — three buckets, never folded (spec §4e/§7):**
