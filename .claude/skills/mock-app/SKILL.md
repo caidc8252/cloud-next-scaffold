@@ -111,13 +111,16 @@ and `references/integration-prompt.md`.
 unimplemented bucket the user has not ruled on, is **not done; it's blocked.**
 Stop and ask.
 
-## Handoff — after the human checks the frontend
+## Handoff — return to the `/coding` caller after the human checks the frontend
 
-`mock-app` ships the prototype's UI + states + the parity-checked frame. It does
-**not** own the implementation logic the prototype can't show. So once the gate is
-green and **the human has eyeballed the running frontend**, suggest the handoff:
+`mock-app` is always entered *from* a running `/coding` session — never cold. It
+owns the prototype's UI + states + the parity-checked frame, **not** the
+implementation logic the prototype can't show; that logic was already sedimented
+into `logic.md` by the `/logic-analyze` pass that preceded `/coding`. So once the
+gate is green and **the human has eyeballed the running frontend**, hand back:
 
-> Frontend looks right? → `/logic-analyze` to sediment the implementation logic
-> into `logic.md`, then `/coding` to wire it up.
+> Frontend looks right? → back to `/coding` to wire the non-prototype logic.
+> Logic the built UI newly reveals rides the findings → `/logic-groom` →
+> `/logic-analyze` re-loop, not an inline re-analyze.
 
 Surface this as a suggestion, not an auto-jump.
