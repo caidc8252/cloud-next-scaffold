@@ -1,14 +1,14 @@
 <!-- Scaffold-owned reference: the generic cross-module stub convention.
      planning.md / implementation.md / code-review.md / coding-rules/* defer here;
-     the eslint `stub-notice` rule enforces the header, and `/submit-work` gates it.
+     the eslint `stub-notice` rule flags the header, and `/submit-work` gates it.
      This is scaffold machinery (the /coding Step-3 logic), distinct from team-owned
      coding-rules. -->
 
 # Cross-module stub (`*.stub.ts`)
 
-## What it is (generic)
+## What it is
 
-A `*.stub.ts` is a **temporary, importable forward-declaration of an unbuilt cross-module dependency**, so a consumer isn't blocked waiting on another module. You **import it** and build against it; you delete it once the real thing lands.
+A `*.stub.ts` is a **temporary, importable forward-declaration of an unbuilt cross-module dependency** — the consumer authors it in its own module so it isn't blocked waiting on another.
 
 - **You import it.** That is the mechanism (there is no import ban).
 - **`@stub-*` header** — `owner`, `consumer`, `reason` are **required**; `kind`, `declares`, `task`, `created` are recommended. Keep each value on one line (the lint parser reads to end-of-line).
@@ -17,15 +17,15 @@ A `*.stub.ts` is a **temporary, importable forward-declaration of an unbuilt cro
 - **One hard gate:** `/submit-work` runs `scripts/check-stubs.mjs` and blocks the PR to `develop` if any `*.stub.*` survives. Local dev is unblocked; a stub can never ship.
 - `gen:coc` and `build-registry` know nothing about stubs.
 
-Because a stub lives beside the **owner's** module, an AI/reviewer should **surface a stale or inbound stub for a human** rather than editing another team's files unilaterally.
+A stub may sit in another team's module tree; **surface a stale or inbound stub for a human** rather than editing it unilaterally.
 
 ## The `@stub-*` header
 
 | tag | value |
 |-----|-------|
 | `@stub-kind` | `public-api` (function/service), `type` (type/schema), or `permission-code` |
-| `@stub-owner` | `<cat>/<mod>` that must build the real thing (which makes this stub redundant) |
-| `@stub-consumer` | `<cat>/<mod>` depending on it now (why the stub exists) |
+| `@stub-owner` | `<cat>/<mod>` that must build the real thing |
+| `@stub-consumer` | `<cat>/<mod>` depending on it now |
 | `@stub-reason` | one line: what forces the reference before the owner ships |
 | `@stub-declares` | the forward-declared symbol(s)/code(s), comma-separated |
 | `@stub-task` | originating task id (e.g. `task-1234`) |
@@ -63,10 +63,10 @@ export const rolesAssignRead = "system.roles.assign.read" as PermissionCode;
 ```
 Consumer imports it and passes it to `assertPermissions({ all: [rolesAssignRead] })`; swaps the import to `system/roles`'s real code and deletes the stub once roles ships.
 
-**Rationale (honest about today):** `assertPermissions` currently types its args as `string[]`, not `PermissionCode` (铁律 #2 is not yet realized — see `coding-rules/permission-codes.md`), so a bare code string *already compiles*. The permission-code stub therefore isn't a compile-unblock today — its value is the **`@stub-owner` coordination notice** (telling the owner someone references their unbuilt code) plus the `/submit-work` no-ship gate. The `as PermissionCode` cast is the forward-looking convention: it keeps you honest per 铁律 #2 and becomes load-bearing the moment `assertPermissions` is typed to the union. The code **fails closed at runtime** until the owner ships and seeds it — consistent with every stub (the owner's functions `throw` anyway).
+**Rationale:** a bare code string already compiles (`assertPermissions` args are `string[]`; 铁律 #2 not yet enforced), so the stub isn't a compile-unblock — write it for the `@stub-owner` notice + `/submit-work` gate. The cast is the forward-looking convention; the code **fails closed at runtime** until the owner ships and seeds it.
 
-## Lifecycle
+## Lifecycle (who acts)
 
-- **Create** (consumer): write the stub + a complete `@stub-*` header; import it. `stub-notice` validates the header.
-- **Implement** (owner): `pnpm lint`'s `stub-notice` surfaces every stub whose `@stub-owner` is you — build the real thing in your module.
-- **Delete** (consumer): once the real surface exists, swap the import and delete the stub. `stub-notice` keeps warning until it's gone; `/submit-work` blocks the PR if it isn't.
+- **Create** — consumer: write the stub + full `@stub-*` header, import it.
+- **Implement** — owner: `stub-notice` lists every stub you own; build the real thing.
+- **Delete** — consumer: swap the import to the real surface, delete the stub.

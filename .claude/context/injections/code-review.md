@@ -11,7 +11,7 @@ Review a `*.stub.ts` against its purpose — a throwaway, importable forward-dec
 
 - **Still present after the owner shipped the real thing → flag.** It's done its job; the consumer should have swapped the import to the owner's `*.public`/`*.api` (or real code) and deleted it. `/submit-work` blocks it from reaching `develop`. Surface a stale stub for a human rather than editing another module's file.
 - **Missing its `@stub-owner`/`@stub-consumer`/`@stub-reason` header → flag.** That header *is* the two-way notice; without it the stub is an anonymous orphan no one is told to build or remove (eslint `stub-notice`).
-- **A permission-code stub that declares a manifest entry or touches `gen:coc` → flag.** It should be a localized `export const … = "…" as PermissionCode`, nothing more.
+- **A permission-code stub that declares a manifest entry or touches `gen:coc` → flag.** It should be a localized `export const … = "…" as PermissionCode`.
 
 ## Owner/party-scoped resource — authorization negatives
 

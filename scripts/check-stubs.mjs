@@ -6,8 +6,10 @@ import { execSync } from 'node:child_process';
 const ROOT = process.env.STUB_ROOTS || 'apps/web';
 let out = '';
 try {
-  // -l: list files; the glob covers .stub.ts/.tsx/.mts/.cts/.js/.jsx
-  out = execSync(`git ls-files -- '${ROOT}/**/*.stub.*'`, { encoding: 'utf8' });
+  // --cached --others --exclude-standard: tracked AND untracked (respecting
+  // .gitignore) — a stub authored during /coding is still untracked when this
+  // gate runs (before /submit-work's git add), so tracked-only would miss it.
+  out = execSync(`git ls-files --cached --others --exclude-standard -- '${ROOT}/**/*.stub.*'`, { encoding: 'utf8' });
 } catch (e) {
   out = e.stdout ?? '';
 }

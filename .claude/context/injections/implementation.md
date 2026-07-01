@@ -15,7 +15,7 @@ A row belongs to one party (party-scoping rule → `coding-rules.md`): prove the
 
 ## When you depend on something another module hasn't built yet
 
-Forward-declare it with a colocated **importable** `modules/<cat>/<mod>/<name>.stub.ts` (a `throw`ing fake for a function, a placeholder type, or `export const c = "…" as PermissionCode` for a permission code) with a complete `@stub-owner`/`@stub-consumer`/`@stub-reason` header, and **import it** to keep building. Once the owner ships, swap the import to the owner's real `*.public` / `*.api` (or real code) and delete the stub (surface it for a human when it sits in another team's module). Header legend + kinds + template → `references/cross-module-stub.md`. The one hard gate is `/submit-work` — no `*.stub` reaches `develop`.
+Forward-declare it with a colocated **importable** `modules/<cat>/<mod>/<name>.stub.ts` (a `throw`ing fake for a function, a placeholder type, or `export const c = "…" as PermissionCode` for a permission code) with a complete `@stub-owner`/`@stub-consumer`/`@stub-reason` header, and **import it** to keep building. Once the owner ships, swap the import to the owner's real `*.public` / `*.api` (or real code) and delete the stub. Header legend + kinds + template → `references/cross-module-stub.md`. The one hard gate is `/submit-work` — no `*.stub` reaches `develop`.
 
 ## When writing routes, middleware, or auth boundaries
 
