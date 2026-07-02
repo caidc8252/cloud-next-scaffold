@@ -45,7 +45,7 @@ pnpm dev        # = pnpm dev:web，跑在 :3000
 
 默认种子账号：
 
-- 账号：`admin`
+- 账号：`admin@newlandnpt.com`
 - 密码：`ChangeMe!123`
 
 ## 当前工作区
