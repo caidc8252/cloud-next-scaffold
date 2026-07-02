@@ -345,3 +345,13 @@ finding #6 (freshness was presence-only). Complementary **push** handoffs: `sync
 ends by suggesting `/logic-converge` → `/coding` when a task is active; `logic-converge`
 already suggests `/coding` (Step 7). Placement chosen: router lives in `/coding`
 (single entry point) rather than a separate `/next` driver.
+
+Coding's build uses **native plan mode** (`EnterPlanMode`/`ExitPlanMode`), **not**
+`superpowers:writing-plans`: read `coding-rules.md` → research (specs / prototype /
+data-model / existing code) → plan → `ExitPlanMode` → implement → review → verify →
+`/submit-work`. The plan must cover: `overview.md`; per-party-scoped-table
+authorization negatives (list scoping / resource denial / wrong-party write /
+fail-closed); `@e2e-cell` + matching `e2e/<feature>.spec.ts` (flat in `e2e/`, spec
+filename = feature — `check-e2e-orphans.mjs` reads `e2e/` non-recursively); a subagent
+diff-audit vs `coding-rules.md`; and a paste-real-output verify (`gen:coc` → `lint` →
+`test` → `test:e2e`).
