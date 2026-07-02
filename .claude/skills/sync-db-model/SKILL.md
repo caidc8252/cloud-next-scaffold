@@ -88,6 +88,7 @@ app.sql 头部 `create schema if not exists app;`，`app.user`/`app.party`… �
    - 跑 `pnpm db:generate` 重生成 client。
    - 任一失败 → 报错、指明失败点；已改的 schema **保留**（操作员可 `git` 回滚），退出。
 9. **汇报**：列出改了哪些条、validate/generate 结果。**若涉及改名/重构** → 明确提示「下游 `apps/web` 里 `SysXxx` / `prisma.sysXxx.*` 引用会编译不过，属本 skill 范围外，需另行修复」。
+   - **下一步（handoff，仅建议）**：若 `.work/workbench.json` 有活跃任务 → 数据模型已变，建议接着 `/logic-converge`（让 `logic.md` 对齐新 schema）再 `/coding`；无活跃任务 → 到此为止。
 
 ## I/O contract
 
