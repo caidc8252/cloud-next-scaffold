@@ -23,6 +23,7 @@ Module-build entry point **and preflight router**: before planning, walk the lad
   - `@e2e-cell` marker + matching `e2e/<feature>.spec.ts` per route / middleware / auth-boundary;
   - **Review** — a subagent audits the diff against `coding-rules.md`; fix findings;
   - **Verify (paste real output)** — `pnpm gen:coc` clean → `pnpm lint` → `pnpm test` → `pnpm test:e2e`.
+- **Executing the plan: ask, don't guess.** Any problem — ambiguity, blocker, or something the plan / inputs / `logic.md` don't resolve — → stop and ask the operator, never guess. A decision that changes logic routes back through `/logic-groom` → `/logic-converge`.
 - Plan tasks reference converged decisions (`C-n`) + inputs — references, not a work-queue.
 - **Re-run after a re-converge:** re-verify already-shipped code against any `## 1 Converged` entry tagged `⟲ re-check impl` — green tests don't prove a superseded decision was rolled back.
 - **Never write `logic.md`** — sole writer is `/logic-converge`; route decision changes back through the loop.
