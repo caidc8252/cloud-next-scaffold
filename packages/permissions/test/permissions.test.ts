@@ -9,7 +9,6 @@ const redirectMock = vi.fn((url: string): never => {
 function activeSession(permissions: string[]): ActiveSession {
   return {
     userId: 1,
-    username: "alice",
     displayName: "Alice",
     email: "alice@example.com",
     currentPartyId: 1,
@@ -90,7 +89,10 @@ describe("server permissions", () => {
       const { assertPermissions } = await import("../src/server/permissions.ts");
 
       await expect(
-        assertPermissions({ all: ["users.view", "users.update"], any: ["roles.view", "roles.add"] }),
+        assertPermissions({
+          all: ["users.view", "users.update"],
+          any: ["roles.view", "roles.add"],
+        }),
       ).rejects.toEqual(
         expect.objectContaining({
           name: "AuthzError",
@@ -106,7 +108,9 @@ describe("server permissions", () => {
       getSessionMock.mockResolvedValue(session);
       const { assertPermissions } = await import("../src/server/permissions.ts");
 
-      await expect(assertPermissions({ all: ["users.view"], any: ["users.update"] })).resolves.toBe(session);
+      await expect(assertPermissions({ all: ["users.view"], any: ["users.update"] })).resolves.toBe(
+        session,
+      );
     });
   });
 
@@ -124,7 +128,9 @@ describe("server permissions", () => {
       getSessionMock.mockResolvedValue(activeSession(["users.view"]));
       const { requirePermissions } = await import("../src/server/permissions.ts");
 
-      await expect(requirePermissions({ all: ["users.update"] })).rejects.toThrow("__REDIRECT__:/403");
+      await expect(requirePermissions({ all: ["users.update"] })).rejects.toThrow(
+        "__REDIRECT__:/403",
+      );
     });
   });
 });

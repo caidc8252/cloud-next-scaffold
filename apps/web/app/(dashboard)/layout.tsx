@@ -1,3 +1,5 @@
+import "@/lib/register-dev-auth-bypass";
+
 import { getConfig } from "@cloud/config";
 import { cookies } from "next/headers";
 import { Layout, Sidebar, type SidebarSection } from "@cloud/ui/components/layout";

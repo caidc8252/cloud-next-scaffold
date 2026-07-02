@@ -9,9 +9,9 @@
 
 ## 提升（promote）何时发生
 - 某段逻辑/能力被**多处业务模块复用**，或属于可下沉的纯技术能力时，从 `modules/` 提升到 `commons/`。
-- 提升属于结构调整，需操作员授权后进行；`/logic-analyze` 只标「上提候选」，不擅自搬。
+- 提升属于结构调整，需操作员授权后进行；`/logic-converge` 只标「上提候选」，不擅自搬。
 
 ## overview.md
-- 每个 `commons/<mod>/` 维护一份 `overview.md`（commons 模板见 `.claude/context/injections/references/coding-rules/commons.md`），供 `/logic-analyze` 做全局认识。**只读消费**，写入由专门的维护 skill 负责（建设中）。
+- 每个 `commons/<mod>/` 维护一份 `overview.md`（commons 模板见 `.claude/context/injections/references/coding-rules/commons.md`），供 `/logic-converge` 做全局认识。**只读消费**，写入由专门的维护 skill 负责（建设中）。
 
 > 目录当前为空（占位）。第一个通用模块提升上来后，删除本说明的"占位"措辞即可。

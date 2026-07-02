@@ -3,7 +3,13 @@ import "server-only";
 import { verifyPassword, decryptRsaOaep } from "@cloud/security/server";
 import { getConfig } from "@cloud/config";
 import { PASSWORD_POLICY, LOGIN_TIMESTAMP_WINDOW_MS } from "@cloud/constants";
-import { createSession, updateSession, createSessionHandoffToken } from "@cloud/permissions/server";
+import {
+  createSession,
+  updateSession,
+  createSessionHandoffToken,
+  SESSION_TTL_SECONDS,
+  type Session,
+} from "@cloud/permissions/server";
 import { BusinessError } from "@cloud/request";
 import {
   ERR_AUTH_ACCOUNT_DISABLED,
@@ -43,7 +49,10 @@ export type LoginResult = { mfaRequired: true; mfaToken: string } | { redirectTo
 
 /** 登录完成的公共收尾：按「可选 partner 数」聚合 → 建会话 → 按 portal 组跨 host handoff。
  *  onboarding 接受邀请后也复用它（新用户恰好 1 party→直达 console）。 */
-export async function buildSessionAndRedirect(userId: number, snapshotFailCode: string): Promise<{ redirectTo: string }> {
+export async function buildSessionAndRedirect(
+  userId: number,
+  snapshotFailCode: string,
+): Promise<{ redirectTo: string }> {
   const choices = await listPartyChoices(userId);
   const selectable = choices.filter(isPartySelectable);
   const currentPartyId = selectable.length === 1 ? selectable[0].partyId : null;
@@ -54,7 +63,8 @@ export async function buildSessionAndRedirect(userId: number, snapshotFailCode: 
   const sid = await createSession(snapshot);
   // 直达目标 console 前先签发交接 token，让目标 host 自己写 sid cookie（方案 B）；
   // currentPartyId 落不下来（多选/零选/授权窗口失效）→ 去选择页，不签 token。
-  const group = snapshot.currentPartyId !== null ? resolvePortalGroup(snapshot.contractTypes) : null;
+  const group =
+    snapshot.currentPartyId !== null ? resolvePortalGroup(snapshot.contractTypes) : null;
   const handoffToken = group ? await createSessionHandoffToken(sid) : null;
 
   return {
@@ -133,6 +143,21 @@ export async function login(input: LoginInput): Promise<LoginResult> {
   return buildSessionAndRedirect(user.userId, ERR_AUTH_INVALID_CREDENTIALS);
 }
 
+export async function buildDevAuthBypassSession(email: string): Promise<Session | null> {
+  const user = await authRepository.findUserByEmail(email);
+  if (!user || !isAccountActive(user.status)) return null;
+
+  const choices = await listPartyChoices(user.userId);
+  const selectable = choices.filter(isPartySelectable);
+  const currentPartyId = selectable.length === 1 ? selectable[0].partyId : null;
+
+  const snapshot = await buildSessionSnapshot(user.userId, currentPartyId);
+  if (!snapshot) return null;
+
+  const loginAt = Date.now();
+  return { ...snapshot, loginAt, expireAt: loginAt + SESSION_TTL_SECONDS * 1000 };
+}
+
 export async function verifyMfa(input: MfaVerifyInput): Promise<{ redirectTo: string }> {
   const entry = await readMfaLoginToken(input.mfaToken);
   if (entry === null) throw new BusinessError(ERR_AUTH_MFA_TOKEN_INVALID, 401);
@@ -155,7 +180,10 @@ export async function verifyMfa(input: MfaVerifyInput): Promise<{ redirectTo: st
 }
 
 /** 选择登录公司：校验归属有效 → 重建带 partner 的会话快照 → 更新会话 → 跨 host handoff 到目标 console。 */
-export async function selectPartner(userId: number, partyId: number): Promise<{ redirectTo: string }> {
+export async function selectPartner(
+  userId: number,
+  partyId: number,
+): Promise<{ redirectTo: string }> {
   const membership = await authRepository.findPartyMembership(partyId, userId);
   if (!membership || membership.status !== "ACTIVE" || membership.partner.status !== "ACTIVE") {
     throw new BusinessError(ERR_AUTH_INVALID_PARTNER);

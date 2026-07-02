@@ -8,7 +8,8 @@ const { store, kvMock } = vi.hoisted(() => {
     store,
     kvMock: {
       get: vi.fn(async (key: string) => (store.has(key) ? store.get(key) : null)),
-      set: vi.fn(async (key: string, value: unknown) => {
+      set: vi.fn(async (key: string, value: unknown, ttlSeconds?: number) => {
+        void ttlSeconds;
         store.set(key, value);
       }),
       del: vi.fn(async (key: string) => {
@@ -25,7 +26,6 @@ import { sessionStore, SESSION_TTL_SECONDS, type Session } from "../src/server/s
 
 const snapshot: Omit<Session, "loginAt" | "expireAt"> = {
   userId: 7,
-  username: "alice",
   displayName: "Alice",
   email: "alice@example.com",
   currentPartyId: 9,
@@ -35,8 +35,22 @@ const snapshot: Omit<Session, "loginAt" | "expireAt"> = {
   roles: [{ roleId: 1, roleName: "Administrator", roleType: "GLOBAL" }],
   permissions: ["roles.view", "users.view"],
   partners: [
-    { partyId: 9, partyName: "Acme", authorizingType: "ADMIN", status: "ACTIVE", authorizingFrom: null, authorizingTo: null },
-    { partyId: 10, partyName: "Beta", authorizingType: "NORMAL", status: "ACTIVE", authorizingFrom: null, authorizingTo: null },
+    {
+      partyId: 9,
+      partyName: "Acme",
+      authorizingType: "ADMIN",
+      status: "ACTIVE",
+      authorizingFrom: null,
+      authorizingTo: null,
+    },
+    {
+      partyId: 10,
+      partyName: "Beta",
+      authorizingType: "NORMAL",
+      status: "ACTIVE",
+      authorizingFrom: null,
+      authorizingTo: null,
+    },
   ],
   mfaPassed: true,
 };

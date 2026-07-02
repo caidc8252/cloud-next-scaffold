@@ -35,9 +35,6 @@ export default defineConfig({
   ],
   use: {
     baseURL: ADMIN_URL,
-    extraHTTPHeaders: {
-      "X-E2E-Bypass-Captcha": process.env.E2E_CAPTCHA_BYPASS_TOKEN ?? "",
-    },
   },
   projects: [{ name: "anon", use: {} }],
 });
