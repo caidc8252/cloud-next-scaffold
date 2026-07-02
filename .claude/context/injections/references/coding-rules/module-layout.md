@@ -15,7 +15,7 @@ A module is a self-contained business unit at `apps/web/modules/<cat>/<mod>/`. I
 - `ui/` — `<mod>-page.tsx` + `components/`.
 - `i18n/{en,ja,zh-CN}.ts` — module-scoped messages (real: `apps/web/modules/system/users/i18n/`).
 - unit/component tests colocated beside source as `*.test.ts` (e.g. `manifest.test.ts`, `<mod>.service.test.ts`).
-- `overview.md` — REQUIRED per module. The module's read-only "name card" for `/logic-analyze`; `/coding` creates and keeps it in sync as a planned deliverable. Thin/stable/outward — no internal implementation detail. Template below.
+- `overview.md` — REQUIRED per module. The module's read-only "name card" for `/logic-converge`; `/coding` creates and keeps it in sync as a planned deliverable. Thin/stable/outward — no internal implementation detail. Template below.
 
 Where code goes:
 

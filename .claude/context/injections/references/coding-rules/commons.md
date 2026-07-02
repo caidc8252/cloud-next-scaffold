@@ -6,11 +6,11 @@
 - **Not contract-gated**: no `require` / `contractTypes`; it stays outside the role×contract permission projection.
 - **MUST NOT call back into business modules** (iron law #5): dependency is one-way — a `modules/` unit may depend on `commons/`, never the reverse.
 
-Promotion (modules → commons) happens when a capability is reused by **multiple** business modules or is a droppable pure-tech concern. It is a structural move: it needs operator authorization, and `/logic-analyze` only flags a "上提候选" — it does not move code on its own.
+Promotion (modules → commons) happens when a capability is reused by **multiple** business modules or is a droppable pure-tech concern. It is a structural move: it needs operator authorization, and `/logic-converge` only flags a "上提候选" — it does not move code on its own.
 
 Distinct from `packages/*` (cross-app infrastructure): commons is `apps/web`-internal, business-derived. When adding shared capability, decide the layer first.
 
-Each `commons/<mod>/` keeps one `overview.md` for `/logic-analyze` global awareness — read-only there, written by a dedicated maintenance skill.
+Each `commons/<mod>/` keeps one `overview.md` for `/logic-converge` global awareness — read-only there, written by a dedicated maintenance skill.
 
 ## `overview.md` template (commons variant)
 

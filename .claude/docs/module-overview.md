@@ -1,11 +1,11 @@
 # 模块概览（overview.md）约定
 
-> 归属：`apps/web/modules/<cat>/<mod>/overview.md` 与 `apps/web/commons/<mod>/overview.md` 的内容约定与模板。**它是「模块的对外名片」**——给 `/logic-analyze` 等做「全局认识」的只读交接物，不放实现细节（实现看代码与 `.claude/docs/server-layering.md`）。
+> 归属：`apps/web/modules/<cat>/<mod>/overview.md` 与 `apps/web/commons/<mod>/overview.md` 的内容约定与模板。**它是「模块的对外名片」**——给 `/logic-converge` 等做「全局认识」的只读交接物，不放实现细节（实现看代码与 `.claude/docs/server-layering.md`）。
 
 ## 是什么 / 给谁看
 - 每个业务模块 `modules/<cat>/<mod>/` 与每个通用模块 `commons/<mod>/` 各有**一份** `overview.md`，描述「这个模块是什么、对外暴露什么、依赖谁、有何不变量」。
-- **消费方**：`/logic-analyze` Step2 遍历所有 `overview.md` 建立跨模块认识，按其中的 public surface / 依赖判断「引用的目标模块契约是否齐全」。其它人/skill 也可据此快速定位，不必通读模块源码。
-- **写入方**：业务模块 `modules/<cat>/<mod>/overview.md` 由 **`/coding`** 在建/改该模块时创建并保持同步（`writing-plans` 把它作为一项交付物纳入计划，非 `L-n` 台账项）。专门的 **commons/overview 维护 skill**（建设中）只覆盖 **commons 概览 + 跨模块批量梳理**。`/logic-analyze` **只读不写**。
+- **消费方**：`/logic-converge` Step2 遍历所有 `overview.md` 建立跨模块认识，按其中的 public surface / 依赖判断「引用的目标模块契约是否齐全」。其它人/skill 也可据此快速定位，不必通读模块源码。
+- **写入方**：业务模块 `modules/<cat>/<mod>/overview.md` 由 **`/coding`** 在建/改该模块时创建并保持同步（`writing-plans` 把它作为一项交付物纳入计划）。专门的 **commons/overview 维护 skill**（建设中）只覆盖 **commons 概览 + 跨模块批量梳理**。`/logic-converge` **只读不写**。
 
 ## 写作原则
 - **薄、稳、对外**：只写跨模块/全局视角需要知道的；模块内部实现细节、分层写法不写（那是代码与 server-layering 的事）。
