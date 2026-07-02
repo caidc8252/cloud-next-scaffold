@@ -5,7 +5,7 @@ description: /logic-converge — for the active task, read all inputs (requireme
 
 # logic-converge
 
-Converge the module's sources of truth: read them all, decide every cross-source conflict with the operator, record the decisions in `logic.md` — a **supplement** on top of the raw inputs (never a substitute; `/coding` reads all inputs AND `logic.md`). Reconcile what the sources *do* say; not gap-hunting for what none mention. **Out of scope:** cross-module dependency / stubs (`/coding` owns it, 铁律 8) and commons 上提 (flag to the operator) — converge does neither.
+`logic.md` is a **supplement** on top of the raw inputs (never a substitute; `/coding` reads all inputs AND `logic.md`). Reconcile what the sources *do* say; not gap-hunting for what none mention. **Out of scope:** cross-module dependency / stubs (`/coding` owns it, 铁律 8) and commons 上提 (flag to the operator) — converge does neither; but a genuine **source conflict** that happens to involve another module **is** still converged here.
 
 ## Preconditions
 - Read `.work/workbench.json`; `current_task` empty → **error out** (run `/start-work`).
@@ -14,13 +14,13 @@ Converge the module's sources of truth: read them all, decide every cross-source
 ## Procedure
 
 ### 1. Pull + record baselines
-For each doc repo: checkout `develop`, `git pull`; record this pass's HEAD per repo as the baseline to write back in step 6 — don't re-read HEAD later (remote may have moved). Missing repo → auto `git clone`; clone/pull failure → block and tell the operator, never silently skip.
+For each doc repo: checkout `develop`, `git pull`; record this pass's HEAD per repo as the baseline to write back in step 6 — don't re-read HEAD later (remote may have moved). Missing repo → auto `git clone`; clone/pull failure → block and tell the operator.
 > Clone URLs: `https://github.com/Newland-Payment-Technology-US-Co-Ltd/pep-webapp-docs.git` · `.../pep-data-model-docs.git` (private; needs local GitHub credentials).
 
 ### 2. Read all inputs — navigate each repo by its own README, never a hardcoded path
 | Input | Repo (local) | How to locate |
 |---|---|---|
-| specs | `pep-webapp-docs` (`../pep-webapp-docs`) | `specs/README.md` (self-describing entry) → resolve authoritative `<CATEGORY>/<MODULE>` via `specs/00-module-registry.md` (mirrors 飞书「所属模块」) → read module `{rules,processes,states}/` **plus inherited shared layers** global `specs/_common/` + category `<CATEGORY>/_common/` → `specs/glossary.md`. |
+| specs | `pep-webapp-docs` (`../pep-webapp-docs`) | `specs/README.md` → resolve authoritative `<CATEGORY>/<MODULE>` via `specs/00-module-registry.md` (mirrors 飞书「所属模块」) → read module `{rules,processes,states}/` **plus inherited shared layers** global `specs/_common/` + category `<CATEGORY>/_common/` → `specs/glossary.md`. |
 | prototype | `pep-webapp-docs` | `handoffs/design/`, exact path per `.claude/rules/prototype-loop.md`. Absent → "no prototype", don't fabricate. |
 | data-model | `pep-data-model-docs` (`../pep-data-model-docs`) | Navigate via its own README. |
 | existing code | this repo | `apps/web/modules/<cat>/<name>/` (absent → new module). |
