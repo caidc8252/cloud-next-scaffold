@@ -12,14 +12,14 @@ Menu projection: a leaf is visible by effective permission → its ancestor dirs
 Authoring a new A-class module (these die with the manifest if skipped):
 
 - The manifest MUST be imported into the `modules` array in `manifest/collect.ts`, or codegen never sees it.
-- `parentMenuCode` is the module's parent in the menu tree (required, no default). The resolved value MUST reference a node declared in `manifest/catalog/menu-tree.ts` (`defineMenuTree`), or `buildRegistry` raises `parent-missing`.
+- `parentMenuCode` is the module's parent in the menu tree; when omitted it defaults to `platform` (the top-level parent). The resolved value MUST reference a node declared in `manifest/catalog/menu-tree.ts` (`defineMenuTree`), or `buildRegistry` raises `parent-missing`.
 - `CONTRACT_MENUS` (`manifest/catalog/contract-types.ts`) has NO wildcard — every contract enumerates its unlocked menus explicitly.
 
 `pnpm gen:coc` (wired as predev / prebuild / pretest) reads the manifests and regenerates `manifest/_generated/*.generated.ts` + `_generated/i18n/`; run it after any `manifest.ts` change.
 
 ### Menu / permission i18n keys are DERIVED, not authored
 
-`manifest.ts` and `catalog/menu-tree.ts` declare only `menuCode` / permission `code` (+ `icon`/`order`/`entry`/`parentMenuCode`/`belongToMenuCode`). They do **not** declare `title` / `label` / `desc`. `gen:coc` derives the i18n keys and writes them into the generated registries (the field is named `title` / `label` / `desc` there):
+`gen:coc` derives the i18n keys and writes them into the generated registries (the field is named `title` / `label` / `desc` there): 
 
 - menu `title`  = `"menu." + menuCode.replaceAll(".", "_")`      → e.g. `system.roles` ⇒ `menu.system_roles`
 - perm `label` = `"permission." + code.replaceAll(".", "_") + "_label"` → e.g. `system.roles.role.view` ⇒ `permission.system_roles_role_view_label`

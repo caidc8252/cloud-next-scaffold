@@ -2,7 +2,7 @@
 
 A module is a self-contained business unit at `apps/web/modules/<cat>/<mod>/`. Its subdirs, canonical/maximal set (a given module MAY omit those it doesn't need):
 
-- `manifest.ts` — permission-gated modules only: one `defineModule(...)` declaring `menuCode` + `parentMenuCode` (required) + the 4-segment `permissions[].code` set. 菜单标题 / 权限 label/desc 不在此声明——由 `gen:coc` 从 `menuCode`/`code` 派生（`title`/`label`/`desc`）；翻译写在 `i18n/{en,zh-CN,ja}.ts`。详见 `coc-declaration.md`。Non-gated modules omit it (e.g. `identity/account`, `identity/auth`, `identity/forgot-password`, `identity/mfa`, `identity/onboarding`, `system/notification`). Editing it means re-running `pnpm gen:coc`; never hand-edit `manifest/_generated/*.generated.ts` or seed (iron law #3).
+- `manifest.ts` — permission-gated modules only: one `defineModule(...)` declaring `menuCode` + `parentMenuCode` (optional; defaults to `platform.main`) + the 4-segment `permissions[].code` set. Non-gated modules omit it (e.g. `identity/account`, `identity/auth`, `identity/forgot-password`, `identity/mfa`, `identity/onboarding`, `system/notification`). Editing it means re-running `pnpm gen:coc`; never hand-edit `manifest/_generated/*.generated.ts` or seed (iron law #3).
 - `schema/<mod>.schema.ts` + `<mod>.types.ts` — zod + VO types shared by client and server; lives **outside** `server/` so client forms can import it.
 - `server/` — layered backend, one file per layer:
   - `<mod>.controller.ts` — HTTP adapter (`assertPermissions` → parse → service → envelope).
