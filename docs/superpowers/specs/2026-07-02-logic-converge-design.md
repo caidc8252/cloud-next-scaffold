@@ -211,9 +211,9 @@ existing skills stay Chinese — edits to them are made in Chinese (rename refer
 **Create (English)**
 - `.claude/skills/logic-converge/SKILL.md`
 
-**Delete**
-- `.claude/skills/logic-analyze/SKILL.md`
-- `.claude/skills/logic-analyze/ledger.mjs`
+**Retain — operator decision, not deleted** (supersedes the earlier "delete now")
+- `.claude/skills/logic-analyze/SKILL.md` — left on disk as a transitional, unwired reference.
+- `.claude/skills/logic-analyze/ledger.mjs` — left with its SKILL; nothing outside this dir references it. Deletion deferred to a later cleanup.
 
 **Rewrite (Chinese)**
 - `.claude/skills/coding/SKILL.md` — drop all ledger / `L-n` / `logic.items.json`;
@@ -264,7 +264,7 @@ existing skills stay Chinese — edits to them are made in Chinese (rename refer
 | Taxonomy | **Single "conflict"** lens (subsumes diff; includes blocking silence; drops standalone gap-hunting) |
 | `# 问题账` | **Retired** — Open convergences live in `logic.md ## 2 Open` |
 | Language | Only new skill + this spec in English; existing skills stay Chinese |
-| Delete timing | Delete `logic-analyze` + `ledger.mjs` **now** as part of the sweep |
+| Delete timing | **Retain** `logic-analyze` + `ledger.mjs` on disk (transitional, unwired); deletion deferred (operator decision, superseding the earlier "delete now") |
 
 ## 11. Risks / watch-items
 

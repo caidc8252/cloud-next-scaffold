@@ -16,7 +16,8 @@
 - **No ledger, ever.** Do not reintroduce `ledger.mjs`, `logic.items.json`, `L-n` ids/statuses, coding status-flips, or an item-based finalize gate.
 - **`logic.md` is a supplement with a single writer** (`/logic-converge`). `/coding` and `/logic-groom` never write it.
 - **Input navigation is README/rule-driven** — never hardcode a doc-repo path table as truth.
-- **Sweep completeness (verified in Task 9):** after this plan, the tokens `logic-analyze`, `ledger`, `logic.items`, `唯一交接物`, `问题账` must appear **nowhere** in the repo (excluding `node_modules`, `.git`, and `docs/superpowers/`). The token `台账` must survive **only** in `.claude/skills/sync-db-model/SKILL.md` (unrelated meaning).
+- **`logic-analyze` is retained, not deleted** (operator decision, superseding the design's "delete now"): its `SKILL.md` + `ledger.mjs` stay on disk as a transitional, unwired reference. Everything else points to `/logic-converge`; nothing *outside* that dir may reference `logic-analyze` / `ledger.mjs`.
+- **Sweep completeness (verified in Task 9):** after this plan, the tokens `logic-analyze`, `ledger`, `logic.items`, `唯一交接物`, `问题账` must appear **nowhere** in the repo **except the intentionally-retained `.claude/skills/logic-analyze/` files** (also excluding `node_modules`, `.git`, `docs/superpowers/`). The token `台账` must survive **only** in `.claude/skills/sync-db-model/SKILL.md` and the retained `.claude/skills/logic-analyze/` files.
 - **Commits:** these files are outside `docs/`, so normal `git add`. (Only files under `docs/` need `git add -f` in this repo — that applies to this plan/spec, not to the sweep edits.)
 
 ---
@@ -26,8 +27,8 @@
 | File | Action | Responsibility after change |
 |---|---|---|
 | `.claude/skills/logic-converge/SKILL.md` | **Create** (English) | The converge skill: read all inputs, converge conflicts, author `logic.md` supplement, advance workbench baseline. |
-| `.claude/skills/logic-analyze/SKILL.md` | **Delete** | — |
-| `.claude/skills/logic-analyze/ledger.mjs` | **Delete** | — |
+| `.claude/skills/logic-analyze/SKILL.md` | **Keep** (retained, unwired) | Left on disk as a transitional reference; no longer pointed to by any other file. |
+| `.claude/skills/logic-analyze/ledger.mjs` | **Keep** (retained, unwired) | Left on disk with its SKILL; nothing outside this dir references it. |
 | `.claude/skills/coding/SKILL.md` | Rewrite (English) | Consume all inputs + `logic.md`; new freshness gate; no ledger; loop exit. |
 | `.claude/skills/logic-groom/SKILL.md` | Retool (Chinese) | Pure fragment capture; `# 问题账` retired; points to `/logic-converge`. |
 | `.claude/skills/submit-work/SKILL.md` | Edit (Chinese) | Residue gate = groom `待处理` + `logic.md ## 2 Open`; drop `# 问题账`; drop `logic.items.json`. |
@@ -155,37 +156,13 @@ git commit -m "feat(skills): add logic-converge (supplement model, replaces logi
 
 ---
 
-## Task 2: Delete `logic-analyze` and its ledger
+## Task 2: Retain `logic-analyze` and its ledger (no action)
 
-**Files:**
-- Delete: `.claude/skills/logic-analyze/SKILL.md`, `.claude/skills/logic-analyze/ledger.mjs`
-
-- [ ] **Step 1: Confirm nothing in code/config imports the ledger (already verified, re-check)**
-
-Run:
-```bash
-grep -rn "ledger" --include="*.ts" --include="*.tsx" --include="*.mjs" --include="*.json" . | grep -v node_modules | grep -v "/.git/" | grep -v "workbench.schema" | grep -v ".claude/skills/logic-analyze/"
-```
-Expected: **no output** (only the to-be-deleted ledger references itself).
-
-- [ ] **Step 2: Delete the directory**
-
-```bash
-git rm .claude/skills/logic-analyze/SKILL.md .claude/skills/logic-analyze/ledger.mjs
-```
-
-- [ ] **Step 3: Verify gone**
-
-```bash
-test ! -e .claude/skills/logic-analyze/SKILL.md && test ! -e .claude/skills/logic-analyze/ledger.mjs && echo "deleted OK"
-```
-Expected: `deleted OK`.
-
-- [ ] **Step 4: Commit**
-
-```bash
-git commit -m "chore(skills): remove logic-analyze + ledger.mjs (superseded by logic-converge)"
-```
+**Operator decision** (supersedes the design's "delete now"): do **not** delete
+`.claude/skills/logic-analyze/{SKILL.md,ledger.mjs}`. They stay on disk as a
+transitional, unwired reference. **No file edits, no deletion, no commit for this
+task.** The only requirement — verified in Task 9 — is that nothing *outside* that
+directory still references `logic-analyze` / `ledger.mjs` after the sweep.
 
 ---
 
@@ -547,36 +524,36 @@ git commit -m "docs: rename /logic-analyze references to /logic-converge across 
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: The forbidden tokens must be gone repo-wide**
+- [ ] **Step 1: Forbidden tokens gone everywhere except the retained logic-analyze dir**
 
 ```bash
 for t in "logic-analyze" "ledger" "logic.items" "唯一交接物" "问题账"; do
-  n=$(grep -rn "$t" . 2>/dev/null | grep -v node_modules | grep -v "/.git/" | grep -v "docs/superpowers/" | wc -l)
+  n=$(grep -rn "$t" . 2>/dev/null | grep -v node_modules | grep -v "/.git/" | grep -v "docs/superpowers/" | grep -v ".claude/skills/logic-analyze/" | wc -l)
   echo "$t: $n"
 done
 ```
-Expected: **every count `0`.** (Design/plan under `docs/superpowers/` legitimately mention the old names and are excluded.)
+Expected: **every count `0`.** (The retained `.claude/skills/logic-analyze/` files and `docs/superpowers/` legitimately contain the old vocabulary and are excluded.)
 
-- [ ] **Step 2: `台账` survives only in sync-db-model**
+- [ ] **Step 2: `台账` survives only in sync-db-model + retained logic-analyze**
 
 ```bash
 grep -rln "台账" . 2>/dev/null | grep -v node_modules | grep -v "/.git/" | grep -v "docs/superpowers/"
 ```
-Expected: exactly one line — `.claude/skills/sync-db-model/SKILL.md`.
+Expected: `.claude/skills/sync-db-model/SKILL.md` and the retained `.claude/skills/logic-analyze/{SKILL.md,ledger.mjs}` — and nothing else.
 
-- [ ] **Step 3: No code/config references the deleted ledger**
+- [ ] **Step 3: Nothing outside the retained dir references `ledger`**
 
 ```bash
-grep -rn "ledger.mjs" --include="*.ts" --include="*.tsx" --include="*.mjs" --include="*.json" . | grep -v node_modules | grep -v "/.git/"
+grep -rn "ledger" . 2>/dev/null | grep -v node_modules | grep -v "/.git/" | grep -v "docs/superpowers/" | grep -v ".claude/skills/logic-analyze/"
 ```
-Expected: **no output.**
+Expected: **no output** (external ledger references were rewritten; only the retained logic-analyze dir self-references it).
 
-- [ ] **Step 4: Skill inventory is coherent (logic-converge present, logic-analyze gone)**
+- [ ] **Step 4: Skill inventory (logic-converge added; logic-analyze retained)**
 
 ```bash
 ls .claude/skills/ | grep 'logic'
 ```
-Expected: `logic-converge` and `logic-groom` present; **no** `logic-analyze`.
+Expected: `logic-analyze`, `logic-converge`, and `logic-groom` all present (logic-analyze intentionally retained).
 
 - [ ] **Step 5: If any check failed, fix the offending file and re-run; otherwise nothing to commit**
 
@@ -592,8 +569,8 @@ Expected: `logic-converge` and `logic-groom` present; **no** `logic-analyze`.
 - §6 README-driven navigation → Task 1 (navigation table) + Task 6 §4 ("按自描述 README 导航") + Task 8 start-work path-table softening.
 - §7 skill steps → Task 1 (Steps 1-7).
 - §8 gates → Task 3 (coding gate) + Task 5 (submit gate).
-- §9 full-sweep file changes → Tasks 2-8 (one per file/group).
-- §10 delete timing → Task 2.
+- §9 full-sweep file changes → Tasks 3-8 (one per file/group); Task 2 is now a no-op (retention).
+- §10 delete timing → Task 2 (retain per operator; deletion deferred).
 - §11 risks (single-writer convention, prototype may be empty, baseline/Open decoupling) → encoded in Task 1 prose.
 
 **2. Placeholder scan** — no `TBD`/`TODO`/"handle edge cases"/"similar to Task N"; every edit shows exact old→new content or exact tokens; every verify step has a concrete command + expected output.
