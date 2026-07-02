@@ -15,7 +15,7 @@ A module is a self-contained business unit at `apps/web/modules/<cat>/<mod>/`. I
 - `ui/` — `<mod>-page.tsx` + `components/`.
 - `i18n/{en,ja,zh-CN}.ts` — module-scoped messages (real: `apps/web/modules/system/users/i18n/`).
 - unit/component tests colocated beside source as `*.test.ts` (e.g. `manifest.test.ts`, `<mod>.service.test.ts`).
-- `overview.md` — REQUIRED per module. The module's read-only "name card" for `/logic-analyze`; `/coding` creates and keeps it in sync as a planned deliverable. Thin/stable/outward — no internal implementation detail. Template below.
+- `overview.md` — REQUIRED per module. The module's read-only "name card" for `/logic-analyze`; `/coding` creates and keeps it in sync as a planned deliverable. Thin/stable/outward — no internal implementation detail. It also declares which `R/P/SM` this module covers (the durable「实现游标」). Template below.
 
 Where code goes:
 
@@ -36,3 +36,4 @@ Sections:
 - **Permission codes (4-seg)** — `<cat>.<mod>.<entity>.<action>` with meaning.
 - **Dependencies** — which `modules/` and `commons/` it depends on, and why.
 - **Invariants** — constraints code must obey that aren't in specs/prototype.
+- **Truth coverage (R/P/SM)** — 声明本模块兑现了哪些 `R-n` / `P-n` / `SM-n`（列 id 即可，是稳定的「实现游标」，供 `/logic-analyze` 与后续对账用）。逐条落点（`implemented`/`gap`/`out-of-scope`）的**活**明细在 `.work/logics/<cat>/<mod>/coverage.md`（经 `coverage.mjs` 渲染），overview **不重复维护**明细，只留稳定 id 清单。

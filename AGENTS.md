@@ -69,8 +69,8 @@ pnpm test:e2e           # 端到端：docker compose 起 e2e pg/redis + db push/
 1. **`/sync`**（只读，不写文件）— 展示「归我（FE 角色=当前飞书账号）且在 `NextJS开发(Claude)` 节点」的任务清单。
 2. **`/start-work {task编号}`** — 校验唯一活跃任务锁 → 飞书按编号拉任务信息 → 基于最新 `develop` 建/切 `feature/task-{task编号}` → 全部成功才写 `workbench.json.current_task` + `start_time`。
 3. **`/logic-groom`**（捕获模式）— 随时把零散的需求/实现逻辑/UI 碎片**只追加**进 `.work/logics/<cat>/<name>/<name>.groom.md`（`待处理`），持续到 `/submit-work` 关闭。只捕获，不分析。
-4. **`/logic-analyze`** — 读「需求 specs + 原型 + 数据模型 + 现有代码 + groom 碎片」，把「两份真理都没说、但写代码必须知道」的实现逻辑沉淀成 `logic.md`（经 `ledger.mjs` 渲染，是交给编码的唯一交接物），并回写 workbench 文档基线。**只读** `apps/web/commons/<mod>/overview.md` 与各模块 `overview.md` 做全局认识——这些 `overview.md` 由专门的 **commons 维护 skill** 生成/维护（建设中），`/logic-analyze` 不写入它们。
-5. **`/coding`** — 消费 `logic.md`，起 superpowers 流水线（`writing-plans → executing-plans`）生成/改模块（`gen:coc` + 测试全绿）；流水线 review 的 findings → 人工触发 **`/logic-groom`** 回灌为碎片（`待处理`），走 groom→analyze→code 闭环重新消费，不在此就地 debug。不回写飞书、不开 PR（那是 `/submit-work`）。
+4. **`/logic-analyze`** — 读「需求 specs + 原型 + 数据模型 + 现有代码 + groom 碎片」，把「两份真理都没说、但写代码必须知道」的实现逻辑沉淀成 `logic.md`（经 `ledger.mjs` 渲染，是 coding 直读的**四真源之一**：specs + 原型 + data-model + logic.md，**非唯一交接物**），并回写 workbench 文档基线。**只读** `apps/web/commons/<mod>/overview.md` 与各模块 `overview.md` 做全局认识——这些 `overview.md` 由专门的 **commons 维护 skill** 生成/维护（建设中），`/logic-analyze` 不写入它们。
+5. **`/coding`** — **直读四真源**（specs + 原型 + data-model + logic.md，不只读 logic.md），起 superpowers 流水线（`writing-plans → executing-plans`）按**分相流程**（读真理→覆盖清单 / 地基生成 / 地基硬检查点〔含操作员在线看 UI〕/ 逻辑生成+收敛 / 终检）生成/改模块，双检查（`coverage.mjs gate` 覆盖 + 语义对账）+ `gen:coc` + 测试全绿；流水线/对账 review 的 findings → 人工触发 **`/logic-groom`** 回灌为碎片（`待处理`），走 groom→analyze→code 闭环重新消费，不在此就地 debug。不回写飞书、不开 PR（那是 `/submit-work`）。
 6. **`/submit-work`** — groom 残留闸门（有未消费碎片则拦截）→ 提交代码 → 询问是否对三仓（本代码仓 + 两文档仓）的 `feature/task-*` 开 PR 到 `develop`（默认不提交）→ 清空 `workbench.json` 释放活跃任务锁。
 
 > `logic.md` / `logic.items.json` / `<name>.groom.md` 是**模块级累积**，跨 task 保留；`/submit-work` 只清 `workbench.json`。台账只经 `ledger.mjs` 改，**任何人（含 skill）不手改** `logic.md` / `logic.items.json`。
