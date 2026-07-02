@@ -24,7 +24,7 @@ description: /sync-db-model —— 把数据模型空间的物理 DDL（../pep-d
 
 | app.sql | ⇄ Prisma | 说明 |
 |---|---|---|
-| 表 `app.<t>` | model `App<T>` / `@@map("app_<t>")` | 前缀 `sys_`→`app_`，领域即前缀；扁平前缀，非 multiSchema |
+| 表 `app.<t>`（schema `app` + 表 `<t>`） | model `App<T>` / `@@map("<t>")` + `@@schema("app")` | `app` 是真 PG schema，用 multiSchema，非扁平前缀（见「multiSchema」节） |
 | 主键 `<t>.id bigint identity` | `<t>Id Int @default(autoincrement()) @map("id")` | 列名就是 `id`；整数类型走「类型策略」 |
 | `bigint` | 默认 `Int`（**显式偏差**）/ 按表可 override `BigInt` | 见「类型策略」，非静默归一化 |
 | `numeric(p,s)` / `decimal(p,s)`（金额） | `Decimal @db.Decimal(p,s)` | 禁 `Float`，见「类型策略」 |
@@ -50,6 +50,16 @@ description: /sync-db-model —— 把数据模型空间的物理 DDL（../pep-d
 - **金额禁 `Float`**：`numeric(p,s)`/`decimal(p,s)` → `Decimal @db.Decimal(p,s)`；遇到金额语义的 `Float` 直接报警。app.sql 现无金额列（前置约定）。
 - `BigInt`/`Decimal` 均不原生 JSON 序列化 → 跨层约定统一在 `@cloud/request`/API 边界序列化为 string。
 
+## multiSchema（`app` 是真 PG schema，不是表名前缀）
+
+app.sql 头部 `create schema if not exists app;`，`app.user`/`app.party`… 是 schema `app` 下的表，**表名不含 `app`**。用 Prisma **multiSchema** 忠实表达（Prisma 7.x multiSchema 已 GA，**无需 `previewFeatures`**）：
+
+- datasource：`db { schemas = ["app", "public"] }`。
+- app.sql 每表：`model App<T> { … @@map("<t>") @@schema("app") }`。
+- `pnpm db:push` 会 `create schema app` 并把表建进 `app`；`DATABASE_URL` 现 `?schema=public`，multiSchema model 显式限定 schema、不受影响。
+
+**全有全无（强制配套）**：datasource 一开 `schemas=[...]`，**每个 model 都必须带 `@@schema(...)`**，否则 `prisma validate` 报错。故随首个 `app` 表落地，须一次性：① app.sql 的 7 表 → `@@schema("app")`；② 现有 5 张 Prisma-only 表（notice/mfa/operator_invite/operation_log/party_contract_event，「保留不动」）→ 各补 `@@schema("public")` 保持现位；③ `citext` 等扩展指明 schema（如 `citext(schema: "public")`）。都是确定性改动、不改语义。
+
 ## Steps
 
 1. **就绪校验**：确认 `../pep-data-model-docs/specs/physical-model/app.sql` 与 `packages/db/prisma/schema.prisma` 均存在可读；上游缺失 → 提示 `git clone` 后退出。
@@ -72,7 +82,7 @@ description: /sync-db-model —— 把数据模型空间的物理 DDL（../pep-d
 
 5. **展示报告**（inline、不落文件，按表分组）：每条含 `编号 / 表 / 列 / app.sql 侧 / Prisma 侧 / 分类 / 建议改法 / 默认动作`。
 6. **操作员确认**：逐条或批量勾选要应用的项。新增/对齐类默认勾选；删列/删表、bigint→BigInt override 默认不勾，需显式确认。**无确认项 → 直接结束**（纯只读，无副作用）。
-7. **改写**：对确认项用 Edit 改 `packages/db/prisma/schema.prisma`。遵循约定规则表逐条落（model 名 `App<T>`、`@@map`、`@map("id")`、无 `@relation`、类型策略）。
+7. **改写**：对确认项用 Edit 改 `packages/db/prisma/schema.prisma`。遵循约定规则表逐条落（model 名 `App<T>`、`@@map("<t>")` + `@@schema("app")`、`@map("id")`、无 `@relation`、类型策略）。**首次引入 `app` schema 时的 multiSchema 强制配套**（见「multiSchema」节）随之一次性做：datasource 补 `schemas=["app","public"]`、现有 5 张 Prisma-only 表补 `@@schema("public")`、`citext` 等扩展指明 schema。
 8. **校验**：
    - 在 `packages/db` 跑 `prisma validate`（经 `prisma.config.ts`）。
    - 跑 `pnpm db:generate` 重生成 client。

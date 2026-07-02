@@ -52,6 +52,7 @@ description: /logic-analyze —— 针对当前活跃任务,读取需求 specs +
 - **差异检测**：用 workbench 里对应 `last_commit_id` 对本轮 HEAD 跑 `git diff <base>..<head> -- <模块路径>`：
   - 命中本模块 → 总结差异（原型差异要连同上下文看）；命中别处 → 标"无影响"以示已查。
   - workbench 无基线（首次）→ 全量读，差异为"首次全量"。
+- **数据模型漂移检查**（读完数据模型后自动触发）：调用 `check-model-drift` skill（干净上下文 subagent，传入 `feature/task-{task_id}`），把逻辑↔物理差距简报展示给操作员并提醒。**只读、不阻断分析**——若有「本 feature 新建逻辑未落物理」，据此判断本轮分析是否踩在过时物理模型上（必要时先请操作员到数据模型空间 `/sync-to-physical-model`），但不强行中止。
 
 ## Step 2 — 读现有代码
 
