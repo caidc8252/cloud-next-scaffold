@@ -25,15 +25,15 @@ cloud-next-scaffold/
 │  │  └─ api/<cat>/<mod>/route.ts       # 薄壳:re-export 模块 controller(唯一写入口,禁用 server action)
 │  ├─ modules/<cat>/<mod>/              # ★ AI 生成落点（菜单无关）
 │  │  ├─ manifest.ts                    #   A 类模块:声明 menuCode / permissions / entry.url
-│  │  ├─ i18n/{en,zh-CN,ja}.ts          #   本模块菜单标题 + 权限 label/desc(coc 命名空间)
+│  │  ├─ i18n/{en,zh-CN,ja}.ts          #   本模块菜单标题 + 权限 label/desc 翻译(key 由 menuCode/code 派生:menu.<flat> / permission.<flat>_label|_desc)
 │  │  ├─ server/                        #   <mod>.{controller,service,repository,mapper}.ts
 │  │  ├─ client/<mod>.api.ts            #   该域客户端调用唯一出处
 │  │  ├─ schema/                        #   VO,DTO
 │  │  └─ ui/                            #   页面与私有组件
 │  ├─ manifest/                         # ★ CoC 声明与产物
 │  │  ├─ collect.ts                     #   采集入口(codegen 唯一消费)
-│  │  ├─ menu-tree.ts                   #   目录(非叶子)骨架
-│  │  ├─ catalog/                       #   代码态目录(单一权威)
+│  │  ├─ catalog/                       #   代码态目录(单一权威):商业策略 + 导航骨架
+│  │  │  ├─ menu-tree.ts                #     目录(非叶子)骨架(title 由 menuCode 派生)
 │  │  │  ├─ contract-types.ts           #     合同闸门:CONTRACT_MENUS(合同 → 解锁哪些叶子菜单)
 │  │  │  ├─ roles.ts                    #     死写 GLOBAL 角色 GLOBAL_ROLES(roleId ≤ 1000)
 │  │  │  └─ i18n/{en,zh-CN,ja}.ts       #     目录 / 角色 / 合同文案

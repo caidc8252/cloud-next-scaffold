@@ -1,21 +1,17 @@
 // CoC 声明系统的数据形状(纯类型,无运行时 import)。
-// 注:叶子菜单的展示字段(title/parentMenuCode/icon/order)由模块 manifest 携带——
-// 模块拥有自己那条叶子菜单;目录(非叶子)节点在 menu-tree 骨架声明。
+// 注:title 由 menuCode 派生;icon/order 由 manifest/menu-tree 携带。
 
-/** 模块声明的一条权限。label/desc 为 i18n key。 */
+/** 模块声明的一条权限。label/desc 不再声明,由 code 派生(见 derive-i18n-keys)。 */
 export interface ModulePermissionDecl {
   code: string;             // <cat>.<mod>.<fn>.<action>
   belongToMenuCode: string; // 显式;guard 强制 == 本模块 menuCode == code 前两段
-  label: string;            // i18n key
-  desc: string;             // i18n key
 }
 
-/** UI 模块唯一真源。无 contractTypes(合同归属在 catalog)、无 platform、无 require。 */
+/** UI 模块唯一真源。title 由 menuCode 派生;无 contractTypes / platform / require。 */
 export interface ModuleManifest {
   moduleCategory: string;
   moduleName: string;
   menuCode: string;            // <cat>.<mod>
-  title: string;              // 菜单标题 i18n key
   parentMenuCode: string;     // 挂到 menu-tree 骨架的目录 menuCode
   icon?: string;
   order?: number;
@@ -23,10 +19,9 @@ export interface ModuleManifest {
   permissions: ModulePermissionDecl[];
 }
 
-/** 目录(非叶子)骨架节点。无 contractTypes / 无 permissions / 无 path。 */
+/** 目录(非叶子)骨架节点。title 由 menuCode 派生;无 contractTypes / permissions / path。 */
 export interface MenuTreeNodeDecl {
   menuCode: string;
-  title: string;              // i18n key
   parentMenuCode: string | null;
   icon?: string;
   order?: number;
@@ -52,6 +47,9 @@ export interface GeneratedMenuEntry {
 
 export type GuardRule =
   | "duplicate-code"
+  | "duplicate-menu-code"
+  | "code-underscore"
+  | "menu-depth"
   | "belongs-to-menu-rule"
   | "menu-code-required"
   | "parent-missing"

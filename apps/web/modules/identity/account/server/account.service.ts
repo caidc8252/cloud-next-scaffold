@@ -18,8 +18,11 @@ import {
   ERR_ACCOUNT_PASSWORD_POLICY,
   ERR_ACCOUNT_PASSWORD_REUSED,
   ERR_ACCOUNT_VERIFY_CODE_INVALID,
-} from "@/lib/account-error-codes";
-import { ERR_AUTH_ENCRYPTION_INVALID, ERR_AUTH_REQUEST_EXPIRED } from "@/lib/auth-error-codes";
+} from "@/modules/identity/account/error/account.error-codes";
+import {
+  ERR_AUTH_ENCRYPTION_INVALID,
+  ERR_AUTH_REQUEST_EXPIRED,
+} from "@/modules/identity/auth/server/auth.public";
 import { buildSessionSnapshot } from "@/lib/session-snapshot";
 import { isTimestampFresh } from "@/lib/login-checks";
 import {
@@ -27,18 +30,10 @@ import {
   recentPasswordHashes,
   buildNextPasswordHistory,
 } from "@/lib/password-rules";
-import {
-  readVerifyCode,
-  consumeVerifyCode,
-  issueVerifyCode,
-} from "@/lib/account-verify-code";
+import { readVerifyCode, consumeVerifyCode, issueVerifyCode } from "@/lib/account-verify-code";
 import { sendVerifyCodeEmail } from "@/lib/email";
 import * as mfa from "@/modules/identity/mfa/server/mfa.public";
-import type {
-  AccountProfile,
-  AccountSecurity,
-  AccountPartner,
-} from "../schema/account.types";
+import type { AccountProfile, AccountSecurity, AccountPartner } from "../schema/account.types";
 import type {
   ActivateMfaInput,
   ChangeEmailInput,
@@ -156,7 +151,8 @@ export async function changePassword(
 
   const history = Array.isArray(user.passwordHistory) ? (user.passwordHistory as string[]) : [];
   for (const hash of recentPasswordHashes(user.passwordHash, history)) {
-    if (await verifyPassword(hash, newPassword)) throw new BusinessError(ERR_ACCOUNT_PASSWORD_REUSED);
+    if (await verifyPassword(hash, newPassword))
+      throw new BusinessError(ERR_ACCOUNT_PASSWORD_REUSED);
   }
 
   const newHash = await hashPassword(newPassword);
@@ -246,7 +242,11 @@ export async function enrollMfa(
   session: ActiveSession,
 ): Promise<{ mfaInfoId: number; secret: string; otpauthUri: string }> {
   const user = await accountRepository.getUser(session.userId);
-  const result = await mfa.startEnrollment(session.userId, user.email, getConfig().NEXT_PUBLIC_APP_NAME);
+  const result = await mfa.startEnrollment(
+    session.userId,
+    user.email,
+    getConfig().NEXT_PUBLIC_APP_NAME,
+  );
   return { mfaInfoId: result.mfaInfoId, secret: result.secret, otpauthUri: result.otpauthUri };
 }
 

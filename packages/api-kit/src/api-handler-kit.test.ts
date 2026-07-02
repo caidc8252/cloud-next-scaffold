@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import { AuthzError } from "@cloud/permissions/server";
 import { BusinessError, MiddlewareError } from "@cloud/request";
 import {
+  ERR_BAD_REQUEST,
   ERR_INTERNAL,
   ERR_MW_CACHE,
   ERR_MW_DB,
-  ERR_ROLE_DELETE_ASSIGNED,
   ERR_UNAUTHORIZED,
 } from "@cloud/request/error-codes";
 import {
@@ -27,7 +27,9 @@ const noopConfig = { resolveLocale: async () => "en" };
 describe("createApiHandler", () => {
   it("rethrows Next control-flow errors (redirect / notFound) instead of mapping them", () => {
     const { handleApiError } = createApiHandler({ ...noopConfig, mapError: () => null });
-    const redirect = Object.assign(new Error("redirect"), { digest: "NEXT_REDIRECT;replace;/login;" });
+    const redirect = Object.assign(new Error("redirect"), {
+      digest: "NEXT_REDIRECT;replace;/login;",
+    });
 
     expect(() => handleApiError(redirect)).toThrow(redirect);
   });
@@ -67,7 +69,10 @@ describe("createApiHandler", () => {
 });
 
 describe("composeMappers", () => {
-  const hit = (status: number): ApiErrorMapper => () => new Response(null, { status });
+  const hit =
+    (status: number): ApiErrorMapper =>
+    () =>
+      new Response(null, { status });
 
   it("returns the first non-null mapper result and skips the rest", () => {
     const second = vi.fn(hit(409));
@@ -147,10 +152,10 @@ describe("mapPrismaError", () => {
 describe("mapAppError", () => {
   it("maps BusinessError to its status + code (and localizes the message)", async () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const response = mapAppError(new BusinessError(ERR_ROLE_DELETE_ASSIGNED, 409, { count: 3 }));
+    const response = mapAppError(new BusinessError(ERR_BAD_REQUEST, 409));
     expect(response?.status).toBe(409);
     const body = await readBody(response!);
-    expect(body.code).toBe(ERR_ROLE_DELETE_ASSIGNED);
+    expect(body.code).toBe(ERR_BAD_REQUEST);
     expect(body.message).not.toContain("undefined");
     spy.mockRestore();
   });

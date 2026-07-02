@@ -1,6 +1,6 @@
 import { withApiHandler } from "@/lib/api-handler";
 import { BusinessError } from "@cloud/request";
-import { ERR_AUTH_INVALID_CREDENTIALS } from "@/lib/auth-error-codes";
+import { ERR_AUTH_INVALID_CREDENTIALS } from "@/modules/identity/auth/error/auth.error-codes";
 
 // 第三方 / 企业 OIDC 登录。TODO: 替换为真实 OIDC 实现（功能尚待产品确认去留）。
 

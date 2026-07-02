@@ -4,15 +4,12 @@ import type { MenuTreeNodeDecl, ModuleManifest } from "./registry-types.ts";
 const permissionSchema = z.object({
   code: z.string().min(1),
   belongToMenuCode: z.string().min(1),
-  label: z.string().min(1),
-  desc: z.string().min(1),
 });
 
 const moduleSchema = z.object({
   moduleCategory: z.string().min(1),
   moduleName: z.string().min(1),
   menuCode: z.string().min(1),
-  title: z.string().min(1),
   parentMenuCode: z.string().min(1),
   icon: z.string().optional(),
   order: z.number().optional(),
@@ -23,7 +20,6 @@ const moduleSchema = z.object({
 const menuTreeSchema = z.array(
   z.object({
     menuCode: z.string().min(1),
-    title: z.string().min(1),
     parentMenuCode: z.string().min(1).nullable(),
     icon: z.string().optional(),
     order: z.number().optional(),

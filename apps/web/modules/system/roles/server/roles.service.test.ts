@@ -4,7 +4,7 @@ import {
   ERR_ROLE_DELETE_BUILTIN,
   ERR_ROLE_NOT_FOUND,
   ERR_ROLE_UPDATE_BUILTIN,
-} from "@cloud/request/error-codes";
+} from "../error/roles.error-codes";
 import type { ActiveSession } from "@cloud/permissions/server";
 
 // repository 是 I/O 边界,工厂 mock(避免自动 mock 加载真模块触发 @cloud/db 实例化)。
@@ -28,7 +28,13 @@ vi.mock("@/manifest", () => ({
 
 import * as repo from "./roles.repository";
 import { getRoles, resolvePartyScope } from "@/manifest";
-import { createRole, deleteRole, listAssignableRoles, listRoles, updateRole } from "./roles.service";
+import {
+  createRole,
+  deleteRole,
+  listAssignableRoles,
+  listRoles,
+  updateRole,
+} from "./roles.service";
 
 const session = {
   userId: 1,
@@ -61,7 +67,11 @@ describe("listRoles", () => {
   it("merges in-scope coded roles (group gate) with DB roles, dropping DB roles with no in-scope permission", async () => {
     vi.mocked(getRoles).mockReturnValue([
       // roleId 1（预置超管）显式列出权限码（含一个组外码 admin.only，验证列表 ∩ scope 时被砍）。
-      { roleId: 1, roleName: "Administrator", permissionCodes: ["roles.view", "users.view", "admin.only"] },
+      {
+        roleId: 1,
+        roleName: "Administrator",
+        permissionCodes: ["roles.view", "users.view", "admin.only"],
+      },
       { roleId: 2, roleName: "Operator", permissionCodes: ["roles.view"] }, // ADMIN 组
       { roleId: 101, roleName: "Customer Administrator", permissionCodes: [] }, // CUSTOMER 组
     ] as never);
@@ -70,7 +80,9 @@ describe("listRoles", () => {
       roleRow({ roleId: 1001, roleName: "InScope", permissionCodes: ["users.view"], updUserId: 9 }),
       roleRow({ roleId: 1002, roleName: "OutOfScope", permissionCodes: ["ghost.x"] }),
     ] as never);
-    vi.mocked(repo.listPartnerRoleBindings).mockResolvedValue([{ roles: [{ roleId: 1001 }] }] as never);
+    vi.mocked(repo.listPartnerRoleBindings).mockResolvedValue([
+      { roles: [{ roleId: 1001 }] },
+    ] as never);
     vi.mocked(repo.resolveUsernames).mockResolvedValue(new Map([[9, "carol"]]));
 
     const result = await listRoles(100, ["ADMIN"]);
@@ -115,7 +127,9 @@ describe("listAssignableRoles", () => {
 
 describe("createRole", () => {
   it("creates a partner-owned role with the given permissions", async () => {
-    vi.mocked(repo.createRole).mockResolvedValue(roleRow({ permissionCodes: ["users.view"] }) as never);
+    vi.mocked(repo.createRole).mockResolvedValue(
+      roleRow({ permissionCodes: ["users.view"] }) as never,
+    );
 
     const role = await createRole(session, { name: "Ops", permissions: ["users.view"] });
 
@@ -150,7 +164,10 @@ describe("updateRole", () => {
     vi.mocked(repo.updateRole).mockResolvedValue(roleRow({ roleId: 1001 }) as never);
     vi.mocked(repo.countRoleOperatorsInPartner).mockResolvedValue(2 as never);
 
-    const role = await updateRole(session, 1001, { name: "  Renamed  ", permissions: ["roles.add"] });
+    const role = await updateRole(session, 1001, {
+      name: "  Renamed  ",
+      permissions: ["roles.add"],
+    });
 
     const data = vi.mocked(repo.updateRole).mock.calls[0][1] as Record<string, unknown>;
     expect(data.roleName).toBe("Renamed");
