@@ -280,3 +280,47 @@ existing skills stay Chinese — edits to them are made in Chinese (rename refer
   an area, reconcile against existing Open/Converged entries so nothing is lost.
 - **`docs/` is gitignored but force-tracked** in this repo — commit design docs
   with `git add -f`; never `rm -rf` a `docs/` subdir.
+
+## 12. Post-review amendments (adversarial review, 2026-07-02)
+
+Four adversarial subagents reviewed the implemented sweep (terseness, pipeline
+correctness, reference integrity, spec fidelity). Fidelity: 12/12 locked decisions
+honored. Outcomes:
+
+**Accepted risk (no change, operator decision):**
+- **Retained `logic-analyze` is a live, invocable command.** A `SKILL.md` is
+  dispatched by its frontmatter, not by who references it — so the earlier
+  "unwired" framing was wrong. It writes the same `logic.md` path in ledger format:
+  running it clobbers the supplement, and because the hard gates string-match
+  `## 2 Open` (absent from ledger files) it **silently passes both the coding and
+  submit gates**. Operator elected to **leave it as-is**. Recorded as an accepted
+  risk. If revisited: rename its `SKILL.md` (dir stops being a discoverable skill),
+  tombstone, or delete.
+
+**Applied fixes:**
+- **Cross-module predecheck contradiction** — `.claude/docs/module-overview.md`
+  still had `/logic-converge` judge "referenced modules' contract completeness"
+  (the retired predecheck). Reworded: converge uses overviews for awareness only;
+  contract completeness / stub-vs-block is `/coding`'s (铁律 8).
+- **Prune can lose a live decision** — prune a `## 1 Converged` entry only when its
+  conflict is gone from the inputs; a decision still bridging a live disagreement is
+  kept or superseded, never dropped.
+- **Supersede-after-implement** — added a `⟲ re-check impl` tag on revised
+  decisions; `/coding` re-verifies shipped code against tagged entries on re-run
+  (replaces the old ledger's `需返工` signal).
+- **Undecidable Open wedged both gates** — added a non-blocking `## 3 Deferred`
+  section (dispositions: 转出 TASK-x / out-of-scope / coding-fallback) so a
+  genuinely-deferrable conflict can close the task; gates still block only on
+  `## 2 Open`.
+- **Zero-conflict deadlock** — converge now always emits `logic.md` (≥ `## 0
+  Provenance`) so coding's gate passes on trivial modules.
+- **GAP-1** — `AGENTS.md` §6 submit summary now mentions the `## 2 Open` gate.
+- **Workflow note** — run `/sync-db-model` before `/logic-converge` when the task
+  changes the data model (grounds the data-model input; `mock-app` stays inside
+  `/coding`, unchanged).
+- **Terseness** — cut recap across the skills (removed the `## I/O contract` block,
+  deduped "Never guess" and the supplement framing, dropped rationale/meta tails).
+
+**Confirmed clean by review:** cross-skill section names match exactly; single-writer
+stated everywhere; doc-repo path claims verified against the real `pep-webapp-docs`;
+no dangling references introduced by the sweep.
