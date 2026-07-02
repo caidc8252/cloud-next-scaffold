@@ -15,23 +15,20 @@ Module-build entry point **and preflight router**. Base guard: needs `current_ta
 3. **Prototype** — prototype + UI work → hand off to **`mock-app`** (prototype→Next); return for the non-prototype logic.
 
 ## 2. Plan (native plan mode, **not** `superpowers:writing-plans`)
-`EnterPlanMode` → read `.claude/context/injections/references/coding-rules.md` → research specs + prototype + data-model + existing code + `logic.md` → write the plan → `ExitPlanMode`.
-- **Settle every decision here.** Surface each ambiguity/conflict and resolve it with the operator (cross-source conflicts via `/logic-converge`) *before* `ExitPlanMode`; the approved plan needs no further decisions.
-- The plan must cover:
-  - create/update the module's `overview.md` (per `.claude/context/injections/references/coding-rules/module-layout.md`);
-  - authorization negatives per party-scoped table — list scoping, resource denial, wrong-party write, nested-write backstop, fail-closed;
-  - `@e2e-cell` marker + matching `e2e/<feature>.spec.ts` per route / middleware / auth-boundary;
-  - the review + verify steps (4).
+`EnterPlanMode` → read `.claude/context/injections/references/coding-rules.md` → research specs + prototype + data-model + existing code + `logic.md` → write the plan → `ExitPlanMode`. **Settle every decision here** — resolve each ambiguity/conflict with the operator (cross-source conflicts via `/logic-converge`) before `ExitPlanMode`; the approved plan needs no further decisions.
 
-## 3. Implement
-- Consume **all** raw inputs **and** `logic.md`. Plan tasks reference converged decisions (`C-n`) + inputs — references, not a work-queue.
+The plan must cover:
+- create/update the module's `overview.md` (per `.claude/context/injections/references/coding-rules/module-layout.md`);
+- authorization negatives per party-scoped table — list scoping, resource denial, wrong-party write, nested-write backstop, fail-closed;
+- `@e2e-cell` marker + matching `e2e/<feature>.spec.ts` per route / middleware / auth-boundary;
+- **review** — a subagent audits the diff against `coding-rules.md`; fix findings;
+- **verify (paste real output)** — `pnpm gen:coc` clean → `pnpm lint` → `pnpm test` → `pnpm test:e2e`.
+
+## 3. Execute the plan
+- Consume **all** raw inputs **and** `logic.md`; plan tasks reference converged decisions (`C-n`) + inputs.
 - Re-verify already-shipped code against any `## 1 Converged` entry tagged `⟲ re-check impl` — green tests don't prove a superseded decision was rolled back.
 - **Never write `logic.md`** — sole writer is `/logic-converge`.
 
-## 4. Review → verify
-- **Review** — a subagent audits the diff against `coding-rules.md`; fix findings.
-- **Verify (paste real output)** — `pnpm gen:coc` clean → `pnpm lint` → `pnpm test` → `pnpm test:e2e`.
-
-## 5. Exit
-- Clean → **`/submit-work`** (no FeiShu write-back or PR here — that's `/submit-work`).
+## 4. Exit
+- Clean → **`/submit-work`** (no FeiShu write-back or PR here).
 - Findings (review or verify) → **drive the loop**: `/logic-groom` → `/logic-converge` → resume `/coding`.
