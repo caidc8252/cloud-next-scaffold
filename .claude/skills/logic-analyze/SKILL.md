@@ -1,11 +1,11 @@
 ---
 name: logic-analyze
-description: /logic-analyze —— 针对当前活跃任务,读取需求 specs + 高保真原型 + 数据模型 + 现有模块代码,把 specs/原型都没说、但写代码必须知道的「技术逻辑与缺口」沉淀成 coding 可逐条消费的 logic.md 台账。逻辑来自三路输入(澄清/差异/groom 沉淀),不自己猜;未澄清直接问操作员。
+description: /logic-analyze —— 针对当前活跃任务,读取需求 specs + 高保真原型 + 数据模型 + 现有模块代码,把 specs/原型都没说、但写代码必须知道的「技术逻辑与缺口」沉淀成 coding 可逐条消费的 logic.md 台账（logic.md 是 coding 直读四真源 specs+原型+data-model+logic.md 之一，非唯一交接物）。逻辑来自三路输入(澄清/差异/groom 沉淀),不自己猜;未澄清直接问操作员。
 ---
 
 # logic-analyze
 
-针对 `workbench.current_task` 指向的模块，把「需求 + 原型 + 数据模型 + 现有代码 + groom 沉淀」读齐、对齐、补缺，产出 `logic.md`——`/coding` 的唯一交接物。
+针对 `workbench.current_task` 指向的模块，把「需求 + 原型 + 数据模型 + 现有代码 + groom 沉淀」读齐、对齐、补缺，产出 `logic.md`——它是 `/coding` 直读的**四真源之一**（specs + 原型 + data-model + logic.md），不是唯一交接物；coding 与其它三源**并读**。
 
 > **核心原则**：`specs/` 是业务语义的真理、原型是展现的真理，二者**已经很详细**。`logic.md` **不复述业务**，只装「两份真理都没说、但 coding 写代码必须知道」的**实现逻辑与缺口**。
 > **逻辑不是猜的**，来自三路输入：① 逻辑不足/冲突 → 经操作员澄清后提取；② 文档增量差异；③ `<name>.groom.md` 沉淀。
@@ -49,6 +49,7 @@ description: /logic-analyze —— 针对当前活跃任务,读取需求 specs +
 对每个文档仓库：切 `develop` 并 `git pull` 到最新。然后：
 - **抓本轮分析的 commit**：记下各仓库**此刻**的 HEAD（specs/prototype 同属 pep-webapp-docs，commit 相同；但按各自路径分别 diff）。**这就是本轮要写回 workbench 的基线值**——结尾别重新查 HEAD（远端可能已前进，那段没分析过）。
 - **读取**：需求模块目录、原型规范文件、数据模型四目录。
+- **建/刷新覆盖清单（`coverage.json`）**：读齐后，用 `references/{spec,data,behavior}-reader-prompt.md` 各起一个 reader 子代理（只读、各回 obligation JSON 数组；契约见 `references/obligation-schema.md`）；合并后首次 `node .claude/skills/coding/coverage.mjs init .work/logics/<cat>/<name> <cat> <name>`，再 `… ingest .work/logics/<cat>/<name>`（stdin=合并数组，幂等、保留已有落点）。`coverage.json` 与 `logic.items.json` 并列，是 `/coding` 阶段 A 直接消费的义务清单（logic.md 只补它没有的缺口/决策）。
 - **差异检测**：用 workbench 里对应 `last_commit_id` 对本轮 HEAD 跑 `git diff <base>..<head> -- <模块路径>`：
   - 命中本模块 → 总结差异（原型差异要连同上下文看）；命中别处 → 标"无影响"以示已查。
   - workbench 无基线（首次）→ 全量读，差异为"首次全量"。
@@ -87,13 +88,13 @@ description: /logic-analyze —— 针对当前活跃任务,读取需求 specs +
 
 ## 关键规则
 
-- **锚点要细**：specs 指到 `R-n/P-n/SM-n` 并带依据 commit（`#R-2 @<commit>`）；原型指到**具体界面/区块**（如 `<name>.html#上传版本弹窗`）。**禁止让 coding 回读整份 html / 整个语料**——logic.md 是蒸馏交接物，coding 按锚点回读那一小片。
+- **锚点要细**：specs 指到 `R-n/P-n/SM-n` 并带依据 commit（`#R-2 @<commit>`）；原型指到**具体界面/区块**（如 `<name>.html#上传版本弹窗`）。coding **直读四真源**（大真理经 reader / `foundation-map` 结构化直读，或按细锚点回读那一小片）；锚点细是为了让 coding 快速定位真源对应片段，**不是**让 logic.md 取代真源——它只是四源之一。
 - **字段级所有权/并发**：logic-analyze 重跑期间不可同时 coding。助手层面：`add/digest/meta` 归 logic-analyze；`status` 归 coding（`待实现↔已处理`，并按交接信号置 `作废`〔回滚 `需返工` 后〕/`blocked`〔缺契约〕）。谁都不手改渲染产物。
 - **生命周期**：`logic.md` 是**模块级、跨 task 累积**，**不随 `/submit-work` 清空**（submit 只清 workbench）；条目按状态(待实现/已处理/blocked/需返工/作废)长期留在台账。
 
 ## I/O contract
 
 - **Input**：`workbench.current_task`；三类文档仓库（自动 clone/pull）；现有模块代码；`<name>.groom.md`；现有 `logic.items.json`。
-- **Output**：`logic.md`（渲染产物）+ `logic.items.json`（真相）；回写 groom 状态；回写 workbench `docs_flash_time` + 三个 `*_docs`。
+- **Output**：`logic.md`（渲染产物）+ `logic.items.json`（真相）+ `coverage.json`/`coverage.md`（义务清单，经 `coverage.mjs`）；回写 groom 状态；回写 workbench `docs_flash_time` + 三个 `*_docs`。
 - **Idempotent**：可重复运行；基于最新 commit 增量追加/更新 `L-n`，**绝不删除未消费条目**，基线只在成功后推进。
 - **Failure**：无活跃任务 → 报错退出；有未澄清的阻断问题 → 不强行产出，先问操作员，且**不推进基线**。

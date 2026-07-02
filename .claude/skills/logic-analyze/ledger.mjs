@@ -116,7 +116,7 @@ function render(d, db) {
   const L = []
   L.push(`# Logic: ${mod.category}/${mod.name}`)
   L.push(`> 由 /logic-analyze 生成(经 ledger.mjs 渲染,勿手改) | task: ${m.task || '-'} | 更新时间: ${m.updated || '-'}`)
-  L.push(`> 本文件是 /logic-analyze → /coding 的唯一交接物。只装「specs(业务)与原型(展现)都没说、但写代码必须知道」的实现逻辑;不复述业务。`)
+  L.push(`> 本文件是 /coding 直读的四真源之一（specs + 原型 + data-model + logic.md），与其它三源**并读**，不是唯一交接物。只装「specs(业务)与原型(展现)都没说、但写代码必须知道」的实现逻辑与决策;不复述业务。`)
   L.push(`> 消费:coding 逐条消费 §2 的 L-n,经 ledger.mjs 把「状态」由 待实现 改为 已处理;未消费条目永不被覆盖。`)
   L.push(`> 基线:权威 commit 游标在 .work/workbench.json;本文件 commit 只是给人/coding 看的快照。`)
   L.push('')
