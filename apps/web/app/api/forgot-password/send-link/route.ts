@@ -1,4 +1,4 @@
-import "@/lib/forgot-error-messages";
+import "@/modules/identity/forgot-password/error/forgot.error-messages";
 
 import { BusinessError } from "@cloud/request";
 import { successResponse } from "@cloud/request/server";

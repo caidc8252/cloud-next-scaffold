@@ -6,7 +6,7 @@ import {
   ERR_USER_NO_PENDING_INVITE,
   ERR_USER_NOT_FOUND,
   ERR_USER_PROTECTED,
-} from "@cloud/request/error-codes";
+} from "../error/users.error-codes";
 import type { ActiveSession } from "@cloud/permissions/server";
 
 // 数据访问与 Redis token 是 I/O 边界,mock 掉;被测的是 service 的编排 / 分支 / 抛错行为
@@ -30,9 +30,13 @@ vi.mock("./users.repository", () => ({
 }));
 vi.mock("@/lib/password-reset-token", () => ({ createPasswordResetToken: vi.fn() }));
 vi.mock("@/lib/email", () => ({ sendInviteEmail: vi.fn(), sendResetLinkEmail: vi.fn() }));
-vi.mock("@/modules/system/notification/server/notification.public", () => ({ createNotice: vi.fn() }));
+vi.mock("@/modules/system/notification/server/notification.public", () => ({
+  createNotice: vi.fn(),
+}));
 vi.mock("@cloud/i18n/server", () => ({ getTranslations: vi.fn(async () => (k: string) => k) }));
-vi.mock("@cloud/log", () => ({ createLogger: vi.fn(() => ({ warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() })) }));
+vi.mock("@cloud/log", () => ({
+  createLogger: vi.fn(() => ({ warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() })),
+}));
 
 import * as repo from "./users.repository";
 import { createPasswordResetToken } from "@/lib/password-reset-token";
@@ -72,7 +76,9 @@ function userRow(overrides: Record<string, unknown> = {}) {
     passwordErrorLockExpiredTimestamp: null,
     creTime: new Date("2026-01-01T00:00:00.000Z"),
     updTime: new Date("2026-01-02T00:00:00.000Z"),
-    partyUsers: [{ authorizingType: "NORMAL", status: "ACTIVE", roles: [{ roleId: 5 }], remark: "" }],
+    partyUsers: [
+      { authorizingType: "NORMAL", status: "ACTIVE", roles: [{ roleId: 5 }], remark: "" },
+    ],
     ...overrides,
   };
 }
@@ -99,7 +105,9 @@ beforeEach(() => {
 describe("listUsersAndInvites", () => {
   it("returns mapped users followed by pending invites with resolved inviter names", async () => {
     vi.mocked(repo.listPartyUsers).mockResolvedValue([userRow()] as never);
-    vi.mocked(repo.listPendingInvites).mockResolvedValue([inviteRow({ inviterUserId: 42 })] as never);
+    vi.mocked(repo.listPendingInvites).mockResolvedValue([
+      inviteRow({ inviterUserId: 42 }),
+    ] as never);
     vi.mocked(repo.resolveUsernames).mockResolvedValue(new Map([[42, "carol"]]));
 
     const result = await listUsersAndInvites(100);
@@ -123,35 +131,56 @@ describe("createInvite", () => {
 
   it("creates the invite and stores the selected roles", async () => {
     vi.mocked(repo.findPendingInviteByEmail).mockResolvedValue(null as never);
-    vi.mocked(repo.createInvite).mockResolvedValue(inviteRow({ intendedRole: [{ roleId: 3 }] }) as never);
+    vi.mocked(repo.createInvite).mockResolvedValue(
+      inviteRow({ intendedRole: [{ roleId: 3 }] }) as never,
+    );
 
     const invite = await createInvite(session, { email: "new@example.com", roleIds: ["3", "3"] });
 
     expect(invite.inviteEmail).toBe("new@example.com");
     expect(invite.invitedBy).toBe("admin");
-    expect(vi.mocked(repo.createInvite).mock.calls[0][0]).toMatchObject({ intendedRole: [{ roleId: 3 }] });
+    expect(vi.mocked(repo.createInvite).mock.calls[0][0]).toMatchObject({
+      intendedRole: [{ roleId: 3 }],
+    });
     expect(sendInviteEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ to: "new@example.com", token: "tok", partyName: "Acme", inviterName: "admin" }),
+      expect.objectContaining({
+        to: "new@example.com",
+        token: "tok",
+        partyName: "Acme",
+        inviterName: "admin",
+      }),
     );
   });
 
   it("已是成员（ACTIVE）→ EMAIL_TAKEN，不发邀请", async () => {
     vi.mocked(repo.findUserByEmail).mockResolvedValue({ userId: 9 } as never);
-    vi.mocked(repo.findUserLink).mockResolvedValue({ status: "ACTIVE", authorizingType: "NORMAL" } as never);
-    await expect(createInvite(session, { email: "x@example.com" })).rejects.toMatchObject({ code: ERR_USER_EMAIL_TAKEN });
+    vi.mocked(repo.findUserLink).mockResolvedValue({
+      status: "ACTIVE",
+      authorizingType: "NORMAL",
+    } as never);
+    await expect(createInvite(session, { email: "x@example.com" })).rejects.toMatchObject({
+      code: ERR_USER_EMAIL_TAKEN,
+    });
     expect(repo.createInvite).not.toHaveBeenCalled();
     expect(repo.updateInvite).not.toHaveBeenCalled();
   });
 
   it("已是成员（LOCKED）→ EMAIL_TAKEN", async () => {
     vi.mocked(repo.findUserByEmail).mockResolvedValue({ userId: 9 } as never);
-    vi.mocked(repo.findUserLink).mockResolvedValue({ status: "LOCKED", authorizingType: "NORMAL" } as never);
-    await expect(createInvite(session, { email: "x@example.com" })).rejects.toMatchObject({ code: ERR_USER_EMAIL_TAKEN });
+    vi.mocked(repo.findUserLink).mockResolvedValue({
+      status: "LOCKED",
+      authorizingType: "NORMAL",
+    } as never);
+    await expect(createInvite(session, { email: "x@example.com" })).rejects.toMatchObject({
+      code: ERR_USER_EMAIL_TAKEN,
+    });
   });
 
   it("同邮箱未过期邀请 → EMAIL_TAKEN", async () => {
     vi.mocked(repo.findPendingInviteByEmail).mockResolvedValue(inviteRow() as never); // 未过期
-    await expect(createInvite(session, { email: "x@example.com" })).rejects.toMatchObject({ code: ERR_USER_EMAIL_TAKEN });
+    await expect(createInvite(session, { email: "x@example.com" })).rejects.toMatchObject({
+      code: ERR_USER_EMAIL_TAKEN,
+    });
     expect(repo.createInvite).not.toHaveBeenCalled();
   });
 
@@ -163,7 +192,10 @@ describe("createInvite", () => {
     await createInvite(session, { email: "x@example.com", roleIds: ["3"] });
     expect(repo.createInvite).not.toHaveBeenCalled();
     expect(vi.mocked(repo.updateInvite).mock.calls[0][0]).toBe(7);
-    expect(vi.mocked(repo.updateInvite).mock.calls[0][1]).toMatchObject({ status: "PENDING", resendCount: 0 });
+    expect(vi.mocked(repo.updateInvite).mock.calls[0][1]).toMatchObject({
+      status: "PENDING",
+      resendCount: 0,
+    });
   });
 });
 
@@ -177,7 +209,10 @@ describe("updateUser", () => {
   });
 
   it("forbids changing roles on a protected (ADMIN) user", async () => {
-    vi.mocked(repo.findUserLink).mockResolvedValue({ authorizingType: "ADMIN", roles: [] } as never);
+    vi.mocked(repo.findUserLink).mockResolvedValue({
+      authorizingType: "ADMIN",
+      roles: [],
+    } as never);
     await expect(updateUser(session, 2, { roleIds: ["3"] })).rejects.toMatchObject({
       code: ERR_USER_PROTECTED,
     });
@@ -217,12 +252,18 @@ describe("toggleUserLock", () => {
   });
 
   it("refuses to lock an ADMIN-authorized account", async () => {
-    vi.mocked(repo.findUserLink).mockResolvedValue({ authorizingType: "ADMIN", status: "ACTIVE" } as never);
+    vi.mocked(repo.findUserLink).mockResolvedValue({
+      authorizingType: "ADMIN",
+      status: "ACTIVE",
+    } as never);
     await expect(toggleUserLock(session, 2)).rejects.toMatchObject({ code: ERR_USER_PROTECTED });
   });
 
   it("toggles ACTIVE → LOCKED", async () => {
-    vi.mocked(repo.findUserLink).mockResolvedValue({ authorizingType: "NORMAL", status: "ACTIVE" } as never);
+    vi.mocked(repo.findUserLink).mockResolvedValue({
+      authorizingType: "NORMAL",
+      status: "ACTIVE",
+    } as never);
     vi.mocked(repo.updatePartyUser).mockResolvedValue({} as never);
     vi.mocked(repo.getUserWithLink).mockResolvedValue(userRow() as never);
 
@@ -234,13 +275,19 @@ describe("toggleUserLock", () => {
 
 describe("resetUserPassword", () => {
   it("throws NOT_FOUND for a non-ACTIVE link", async () => {
-    vi.mocked(repo.findUserLink).mockResolvedValue({ authorizingType: "NORMAL", status: "LOCKED" } as never);
+    vi.mocked(repo.findUserLink).mockResolvedValue({
+      authorizingType: "NORMAL",
+      status: "LOCKED",
+    } as never);
     await expect(resetUserPassword(session, 2)).rejects.toMatchObject({ code: ERR_USER_NOT_FOUND });
     expect(createPasswordResetToken).not.toHaveBeenCalled();
   });
 
   it("issues a reset token and emails the reset link for an eligible user", async () => {
-    vi.mocked(repo.findUserLink).mockResolvedValue({ authorizingType: "NORMAL", status: "ACTIVE" } as never);
+    vi.mocked(repo.findUserLink).mockResolvedValue({
+      authorizingType: "NORMAL",
+      status: "ACTIVE",
+    } as never);
     vi.mocked(repo.getUserWithLink).mockResolvedValue(userRow() as never);
     vi.mocked(createPasswordResetToken).mockResolvedValue("rtok");
 
@@ -253,27 +300,41 @@ describe("resetUserPassword", () => {
   });
 
   it("resetUserPassword sends an in-app notice to the target user", async () => {
-    vi.mocked(repo.findUserLink).mockResolvedValue({ status: "ACTIVE", authorizingType: "NORMAL" } as never);
-    vi.mocked(repo.getUserWithLink).mockResolvedValue(userRow({ userId: 42, email: "u@x.com" }) as never);
+    vi.mocked(repo.findUserLink).mockResolvedValue({
+      status: "ACTIVE",
+      authorizingType: "NORMAL",
+    } as never);
+    vi.mocked(repo.getUserWithLink).mockResolvedValue(
+      userRow({ userId: 42, email: "u@x.com" }) as never,
+    );
     vi.mocked(repo.findUserLocale).mockResolvedValue("zh-CN" as never);
     vi.mocked(createPasswordResetToken).mockResolvedValue("tok" as never);
 
     await resetUserPassword(session, 42);
 
-    expect(createNotice).toHaveBeenCalledWith(expect.objectContaining({
-      userId: 42, noticeType: "account.passwordReset", belongToPartyId: session.currentPartyId,
-    }));
+    expect(createNotice).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 42,
+        noticeType: "account.passwordReset",
+        belongToPartyId: session.currentPartyId,
+      }),
+    );
   });
 });
 
 describe("cancelInvite", () => {
   it("throws when the invite is missing or not pending", async () => {
     vi.mocked(repo.findInvite).mockResolvedValue(null as never);
-    await expect(cancelInvite(session, 9)).rejects.toMatchObject({ code: ERR_USER_CANCEL_NOT_PENDING });
+    await expect(cancelInvite(session, 9)).rejects.toMatchObject({
+      code: ERR_USER_CANCEL_NOT_PENDING,
+    });
   });
 
   it("deletes a pending invite", async () => {
-    vi.mocked(repo.findInvite).mockResolvedValue({ operatorInviteId: 9, status: "PENDING" } as never);
+    vi.mocked(repo.findInvite).mockResolvedValue({
+      operatorInviteId: 9,
+      status: "PENDING",
+    } as never);
     vi.mocked(repo.deleteInvite).mockResolvedValue({} as never);
     await cancelInvite(session, 9);
     expect(repo.deleteInvite).toHaveBeenCalledWith(9);
@@ -283,16 +344,22 @@ describe("cancelInvite", () => {
 describe("resendInvite", () => {
   it("throws NO_PENDING_INVITE when none is found", async () => {
     vi.mocked(repo.findPendingInvite).mockResolvedValue(null as never);
-    await expect(resendInvite(session, 9)).rejects.toMatchObject({ code: ERR_USER_NO_PENDING_INVITE });
+    await expect(resendInvite(session, 9)).rejects.toMatchObject({
+      code: ERR_USER_NO_PENDING_INVITE,
+    });
   });
 
   it("过期邀请 → ERR_USER_NO_PENDING_INVITE", async () => {
     vi.mocked(repo.findPendingInvite).mockResolvedValue(null as never); // 收紧后过期即 null
-    await expect(resendInvite(session, 9)).rejects.toMatchObject({ code: ERR_USER_NO_PENDING_INVITE });
+    await expect(resendInvite(session, 9)).rejects.toMatchObject({
+      code: ERR_USER_NO_PENDING_INVITE,
+    });
   });
 
   it("未过期 → 只 resendCount+1，不改 token/expiresAt", async () => {
-    vi.mocked(repo.findPendingInvite).mockResolvedValue(inviteRow({ operatorInviteId: 9 }) as never);
+    vi.mocked(repo.findPendingInvite).mockResolvedValue(
+      inviteRow({ operatorInviteId: 9 }) as never,
+    );
     vi.mocked(repo.updateInvite).mockResolvedValue(inviteRow({ operatorInviteId: 9 }) as never);
     vi.mocked(repo.resolveUsernames).mockResolvedValue(new Map([[1, "admin"]]));
     await resendInvite(session, 9);
@@ -309,7 +376,9 @@ describe("resendInvite", () => {
 
     const result = await resendInvite(session, 9);
 
-    expect(vi.mocked(repo.updateInvite).mock.calls[0][1]).toMatchObject({ resendCount: { increment: 1 } });
+    expect(vi.mocked(repo.updateInvite).mock.calls[0][1]).toMatchObject({
+      resendCount: { increment: 1 },
+    });
     expect(result.invitedBy).toBe("dora");
     expect(sendInviteEmail).toHaveBeenCalledWith(
       expect.objectContaining({ to: "new@example.com", token: "tok", inviterName: "dora" }),
@@ -335,11 +404,15 @@ describe("setInviteRoles", () => {
 describe("regenerateInvite", () => {
   it("过期/无 → ERR_USER_NO_PENDING_INVITE", async () => {
     vi.mocked(repo.findPendingInvite).mockResolvedValue(null as never);
-    await expect(regenerateInvite(session, 9)).rejects.toMatchObject({ code: ERR_USER_NO_PENDING_INVITE });
+    await expect(regenerateInvite(session, 9)).rejects.toMatchObject({
+      code: ERR_USER_NO_PENDING_INVITE,
+    });
   });
 
   it("未过期 → 换 token + 刷 expiresAt，不动 resendCount", async () => {
-    vi.mocked(repo.findPendingInvite).mockResolvedValue(inviteRow({ operatorInviteId: 9 }) as never);
+    vi.mocked(repo.findPendingInvite).mockResolvedValue(
+      inviteRow({ operatorInviteId: 9 }) as never,
+    );
     vi.mocked(repo.updateInvite).mockResolvedValue(inviteRow({ operatorInviteId: 9 }) as never);
     vi.mocked(repo.resolveUsernames).mockResolvedValue(new Map([[1, "admin"]]));
     await regenerateInvite(session, 9);

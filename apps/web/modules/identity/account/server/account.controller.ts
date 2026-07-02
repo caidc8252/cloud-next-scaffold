@@ -8,7 +8,7 @@ import {
   ERR_ACCOUNT_EMAIL_INVALID,
   ERR_ACCOUNT_MFA_ENROLL_CODE_INVALID,
   ERR_ACCOUNT_MFA_STEPUP_INVALID,
-} from "@/lib/account-error-codes";
+} from "@/modules/identity/account/error/account.error-codes";
 import { withApiHandler } from "@/lib/api-handler";
 import {
   updateProfileSchema,

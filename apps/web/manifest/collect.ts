@@ -1,4 +1,4 @@
-import menuTree from "./menu-tree.ts";
+import menuTree from "./catalog/menu-tree.ts";
 import { CONTRACT_TYPES, CONTRACT_MENUS } from "./catalog/contract-types.ts";
 import { GLOBAL_ROLES } from "./catalog/roles.ts";
 

@@ -1,8 +1,8 @@
-import "@/lib/auth-error-messages";
+import "@/modules/identity/auth/error/auth.error-messages";
 
 import { BusinessError } from "@cloud/request";
 import { successResponse } from "@cloud/request/server";
-import { ERR_AUTH_CREDENTIALS_REQUIRED } from "@/lib/auth-error-codes";
+import { ERR_AUTH_CREDENTIALS_REQUIRED } from "@/modules/identity/auth/error/auth.error-codes";
 import { loginSchema } from "@/modules/identity/auth/schema/auth.schema";
 import { login } from "@/modules/identity/auth/server/auth.service";
 import { withApiHandler } from "@/lib/api-handler";

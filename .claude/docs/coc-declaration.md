@@ -12,9 +12,9 @@
 
 | 文件 | 内容 |
 |---|---|
-| `apps/web/modules/<cat>/<mod>/manifest.ts` | `defineModule(...)`：`menuCode` / `entry.url` / `permissions[]` |
+| `apps/web/modules/<cat>/<mod>/manifest.ts` | `defineModule(...)`：`menuCode` / `entry.url` / `permissions[]`（`title`/`label`/`desc` 不在此声明，由 `gen:coc` 从 `menuCode`/`code` 派生） |
 | `apps/web/modules/<cat>/<mod>/i18n/{en,zh-CN,ja}.ts` | 该模块菜单 / 权限文案(i18n key) |
-| `apps/web/manifest/menu-tree.ts` | `defineMenuTree(...)`：目录(非叶子)骨架 |
+| `apps/web/manifest/catalog/menu-tree.ts` | `defineMenuTree(...)`：目录(非叶子)骨架 |
 | `apps/web/manifest/catalog/contract-types.ts` | ★ 合同闸门唯一真源 `CONTRACT_MENUS` |
 | `apps/web/manifest/catalog/roles.ts` | 死写 GLOBAL 角色 `GLOBAL_ROLES`(`roleId ≤ 1000`) |
 | `apps/web/manifest/catalog/i18n/{en,zh-CN,ja}.ts` | 目录 / 角色 / 合同文案 |
@@ -31,13 +31,15 @@
 // modules/system/roles/manifest.ts
 export default defineModule({
   moduleCategory: "system", moduleName: "roles", menuCode: "system.roles",
-  title: "menu.roles", parentMenuCode: "system", icon: "shield", order: 101,
+  parentMenuCode: "system", icon: "shield", order: 101,
   entry: { url: "/system/roles" },
   permissions: [
-    { code: "system.roles.role.view", belongToMenuCode: "system.roles", label: "permission.rolesView", desc: "permission.rolesViewDesc" },
+    { code: "system.roles.role.view", belongToMenuCode: "system.roles" },
     // …
   ],
 });
+// title = "menu.system_roles"（menuCode 派生）；label/desc = "permission.system_roles_role_view_label" / "_desc"（code 派生）
+// 翻译写在 modules/system/roles/i18n/{en,zh-CN,ja}.ts，不在 manifest.ts 里
 ```
 
 ## 三、合同闸门 + 角色(catalog 单一权威)
@@ -74,9 +76,9 @@ provisional 前向占位、跨模块依赖 checkpoint、删码 reconcile / 孤�
 
 ## 加一个权限化模块(how-to)
 
-1. `modules/<cat>/<mod>/manifest.ts`：`defineModule` 声明 `menuCode` + 4 段权限码 + `belongToMenuCode`。
-2. 同目录 `i18n/{en,zh-CN,ja}.ts` 补三语文案。
-3. 目录骨架不够，就在 `manifest/menu-tree.ts` 加目录节点。
+1. `modules/<cat>/<mod>/manifest.ts`：`defineModule` 声明 `menuCode` + 4 段权限码 + `belongToMenuCode`（`title`/`label`/`desc` 不在此写，`gen:coc` 从 `menuCode`/`code` 派生）。
+2. 同目录 `i18n/{en,zh-CN,ja}.ts` 按派生 key（`menu.<flat>`、`permission.<flat>_label`/`_desc`）补三语文案。
+3. 目录骨架不够，就在 `manifest/catalog/menu-tree.ts` 加目录节点（只声明 `menuCode`/`parentMenuCode`，节点 title 同样派生，翻译补在 `manifest/catalog/i18n/{en,zh-CN,ja}.ts`）。
 4. `manifest/catalog/contract-types.ts` 的 `CONTRACT_MENUS` 把该 `menuCode` 挂到对应合同。
 5. `manifest/collect.ts` 里 `import` 新模块 manifest。
 6. 角色要带新码：改 `catalog/roles.ts`(GLOBAL)或 DB `sys_role.permission_codes`(PRIVATE)。

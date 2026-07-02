@@ -192,4 +192,4 @@
 
 侧边栏三级模型（见 `app/(dashboard)/layout.tsx`）：L1 是分组标题（无 icon）、L2 是渲染为 sidebar item 的菜单项（**带 icon**）、L3 是 L2 下的嵌套子项（无 icon）。
 
-- **L2 必须有对应 icon（MUST）**：每个 L2 菜单在模块 `manifest.ts`（目录节点在 `manifest/menu-tree.ts`）声明的 `icon` 名，都必须在 `apps/web/app/(dashboard)/_components/menu-icon.tsx` 的 `getMenuIcon` 里有匹配 case，**不能落到 `LayoutDashboard` 兜底**（兜底只是防御网，不是合法终态）。新增 / 调整 L2 时：先在 `manifest.ts` 定 `icon` 名，再在 `menu-icon.tsx` 补上对应 case（icon 取自 `lucide-react`），icon 语义应能区分、不与同级混淆。
+- **L2 必须有对应 icon（MUST）**：每个 L2 菜单在模块 `manifest.ts`（目录节点在 `manifest/catalog/menu-tree.ts`）声明的 `icon` 名，都必须在 `apps/web/app/(dashboard)/_components/menu-icon.tsx` 的 `getMenuIcon` 里有匹配 case，**不能落到 `LayoutDashboard` 兜底**（兜底只是防御网，不是合法终态）。新增 / 调整 L2 时：先在 `manifest.ts` 定 `icon` 名，再在 `menu-icon.tsx` 补上对应 case（icon 取自 `lucide-react`），icon 语义应能区分、不与同级混淆。

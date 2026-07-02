@@ -1,4 +1,4 @@
-import "@/lib/onboarding-error-messages";
+import "@/modules/identity/onboarding/error/onboarding.error-messages";
 
 import { successResponse } from "@cloud/request/server";
 import { getInvite } from "@/modules/identity/onboarding/server/onboarding.service";

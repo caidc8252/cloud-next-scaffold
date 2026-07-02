@@ -8,7 +8,10 @@ import { loginPayloadSchema } from "@/modules/identity/auth/schema/auth.schema";
 import { isTimestampFresh } from "@/lib/login-checks";
 import { consumeLoginNonce } from "@/lib/login-nonce";
 import { isPasswordValid } from "@/lib/password-rules";
-import { ERR_AUTH_ENCRYPTION_INVALID, ERR_AUTH_REQUEST_EXPIRED } from "@/lib/auth-error-codes";
+import {
+  ERR_AUTH_ENCRYPTION_INVALID,
+  ERR_AUTH_REQUEST_EXPIRED,
+} from "@/modules/identity/auth/error/auth.error-codes";
 
 // 解密 + 校验前端提交的新密码（RSA 包体 + 双向时间戳窗 + nonce 单次消费 + 复杂度策略），
 // 与登录同安全姿态。返回校验过的**明文**：调用方再 hash；改密场景还需用明文对历史哈希做复用检查。
@@ -21,7 +24,9 @@ export async function decryptAndValidatePassword(
   const rsaPrivateKey = getConfig().NEXT_AUTH_LOGIN_RSA_PRIVATE_KEY;
   let payload: { password: string; timestamp: number; nonce: string };
   try {
-    payload = loginPayloadSchema.parse(JSON.parse(decryptRsaOaep(encryptedPassword, rsaPrivateKey)));
+    payload = loginPayloadSchema.parse(
+      JSON.parse(decryptRsaOaep(encryptedPassword, rsaPrivateKey)),
+    );
   } catch {
     throw new BusinessError(ERR_AUTH_ENCRYPTION_INVALID);
   }
