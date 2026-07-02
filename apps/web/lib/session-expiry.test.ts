@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RequestError } from "@cloud/request/client";
 import { ERR_UNAUTHORIZED } from "@cloud/request/error-codes";
-import { ERR_AUTH_INVALID_CREDENTIALS, ERR_AUTH_NOT_AUTHENTICATED } from "./auth-error-codes";
+import {
+  ERR_AUTH_INVALID_CREDENTIALS,
+  ERR_AUTH_NOT_AUTHENTICATED,
+} from "@/modules/identity/auth/error/auth.error-codes";
 
 function unauthorized(code: string | undefined): RequestError {
   return new RequestError(

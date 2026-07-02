@@ -1,0 +1,9 @@
+// Module 10 = system.users. Format: 5-hex-digit IISSS.
+export const ERR_USER_EMAIL_INVALID = "10001";
+export const ERR_USER_EMAIL_TAKEN = "10002";
+export const ERR_USER_NOT_FOUND = "10003";
+export const ERR_USER_RESET_PW_PENDING = "10004";
+export const ERR_USER_NO_PENDING_INVITE = "10005";
+export const ERR_USER_CANCEL_NOT_PENDING = "10006";
+export const ERR_USER_PROTECTED = "10007";
+export const ERR_USER_CANNOT_DISABLE_SELF = "10008";

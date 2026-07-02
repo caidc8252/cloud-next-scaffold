@@ -1,5 +1,5 @@
-import "@/lib/forgot-error-messages";
-import "@/lib/auth-error-messages"; // 密码解密/重放复用 ERR_AUTH_* 文案
+import "@/modules/identity/forgot-password/error/forgot.error-messages";
+import "@/modules/identity/auth/error/auth.error-messages"; // 密码解密/重放复用 ERR_AUTH_* 文案
 
 import { BusinessError } from "@cloud/request";
 import { successResponse } from "@cloud/request/server";

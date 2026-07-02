@@ -3,11 +3,11 @@ import { buildRegistry } from "./build-registry.ts";
 import { deriveContractScope } from "./contract-scope.ts";
 import type { ModuleManifest, MenuTreeNodeDecl } from "./registry-types.ts";
 
-const menuTree: MenuTreeNodeDecl[] = [{ menuCode: "system", title: "menu.system", parentMenuCode: null, order: 100 }];
+const menuTree: MenuTreeNodeDecl[] = [{ menuCode: "system", parentMenuCode: null, order: 100 }];
 const mk = (mod: string, code: string): ModuleManifest => ({
-  moduleCategory: "system", moduleName: mod, menuCode: `system.${mod}`, title: `menu.${mod}`,
+  moduleCategory: "system", moduleName: mod, menuCode: `system.${mod}`,
   parentMenuCode: "system", entry: { url: `/${mod}` },
-  permissions: [{ code, belongToMenuCode: `system.${mod}`, label: "l", desc: "d" }],
+  permissions: [{ code, belongToMenuCode: `system.${mod}` }],
 });
 const result = buildRegistry({ modules: [mk("roles", "system.roles.role.view"), mk("users", "system.users.user.view")], menuTree });
 

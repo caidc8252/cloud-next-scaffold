@@ -2,17 +2,17 @@ import "server-only";
 
 import { type ActiveSession } from "@cloud/permissions/server";
 import { BusinessError } from "@cloud/request";
-import {
-  ERR_ROLE_DELETE_ASSIGNED,
-  ERR_ROLE_DELETE_BUILTIN,
-  ERR_ROLE_NOT_FOUND,
-  ERR_ROLE_UPDATE_BUILTIN,
-} from "@cloud/request/error-codes";
 import { contractTypeGroup, roleIdInGroupRange } from "@cloud/platform-config";
 import { getRoles, resolvePartyScope } from "@/manifest";
 import { extractRoleIds } from "@/lib/role-codes";
 import type { Role } from "../schema/roles.types";
 import type { CreateRoleInput, UpdateRoleInput } from "../schema/roles.schema";
+import {
+  ERR_ROLE_DELETE_ASSIGNED,
+  ERR_ROLE_DELETE_BUILTIN,
+  ERR_ROLE_NOT_FOUND,
+  ERR_ROLE_UPDATE_BUILTIN,
+} from "../error/roles.error-codes";
 import { toClientRole, toClientCodeRole } from "./roles.mapper";
 import { isBuiltinRole, roleBelongsToPartner } from "./roles.policy";
 import * as rolesRepository from "./roles.repository";
@@ -65,7 +65,11 @@ export async function listRoles(partyId: number, contractTypes: string[]): Promi
   // DB（PRIVATE）角色：partyId 已在 repo 过滤;展示权限 ∩ scope，并丢掉「无一权限落在当前 scope」的角色。
   const privateRoles = dbRoles
     .map((role) => {
-      const vo = toClientRole(role, updaterNames.get(role.updUserId) ?? "system", counts.get(role.roleId) ?? 0);
+      const vo = toClientRole(
+        role,
+        updaterNames.get(role.updUserId) ?? "system",
+        counts.get(role.roleId) ?? 0,
+      );
       return { ...vo, permissions: maskByScope(vo.permissions) };
     })
     .filter((role) => role.permissions.length > 0);
@@ -74,7 +78,10 @@ export async function listRoles(partyId: number, contractTypes: string[]): Promi
 }
 
 /** 用户/邀请的角色选择器；与 listRoles 同口径（编码组归属门 + DB scope 过滤）。 */
-export async function listAssignableRoles(partyId: number, contractTypes: string[]): Promise<Role[]> {
+export async function listAssignableRoles(
+  partyId: number,
+  contractTypes: string[],
+): Promise<Role[]> {
   return listRoles(partyId, contractTypes);
 }
 

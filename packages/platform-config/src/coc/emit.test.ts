@@ -4,18 +4,18 @@ import { deriveContractScope } from "./contract-scope.ts";
 import { emitRegistry } from "./emit.ts";
 import type { ModuleManifest, MenuTreeNodeDecl } from "./registry-types.ts";
 
-const menuTree: MenuTreeNodeDecl[] = [{ menuCode: "system", title: "menu.system", parentMenuCode: null, order: 100 }];
+const menuTree: MenuTreeNodeDecl[] = [{ menuCode: "system", parentMenuCode: null, order: 100 }];
 const roles: ModuleManifest = {
-  moduleCategory: "system", moduleName: "roles", menuCode: "system.roles", title: "menu.roles",
+  moduleCategory: "system", moduleName: "roles", menuCode: "system.roles",
   parentMenuCode: "system", icon: "shield", order: 101, entry: { url: "/roles" },
-  permissions: [{ code: "system.roles.role.view", belongToMenuCode: "system.roles", label: "permission.rolesView", desc: "permission.rolesViewDesc" }],
+  permissions: [{ code: "system.roles.role.view", belongToMenuCode: "system.roles" }],
 };
 const result = buildRegistry({ modules: [roles], menuTree });
 const contractScope = deriveContractScope({ ADMIN: ["system.roles"] }, result);
 
 describe("emitRegistry", () => {
   it("emits a PermissionCode union and a header on every file", () => {
-    const files = emitRegistry({ result, contractScope, i18n: { menu: { roles: "Roles" } }, contractTypes: ["ADMIN"] });
+    const files = emitRegistry({ result, contractScope, i18n: { menu: { system_roles: "Roles" } }, contractTypes: ["ADMIN"] });
     expect(files["registry-types.generated.ts"]).toContain('export type PermissionCode =');
     expect(files["registry-types.generated.ts"]).toContain('"system.roles.role.view"');
     expect(files["registry-types.generated.ts"]).toContain('export type MenuCode =');
@@ -26,6 +26,7 @@ describe("emitRegistry", () => {
     expect(files["permission-registry.generated.ts"]).toContain("export function codeToMenu");
     expect(files["menu-registry.generated.ts"]).toContain("MENU_REGISTRY");
     expect(files["contract-scope.generated.ts"]).toContain("CONTRACT_SCOPE");
+    expect(files["permission-registry.generated.ts"]).toContain("permission.system_roles_role_view_label");
     expect(files["i18n/en.json"]).toContain('"Roles"');
   });
 

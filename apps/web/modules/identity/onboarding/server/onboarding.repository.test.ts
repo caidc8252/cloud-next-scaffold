@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ERR_OB_ALREADY_MEMBER } from "@/lib/onboarding-error-codes";
+import { ERR_OB_ALREADY_MEMBER } from "@/modules/identity/onboarding/error/onboarding.error-codes";
 
 const { tx, prisma } = vi.hoisted(() => {
   const tx = {
@@ -21,8 +21,13 @@ vi.mock("@cloud/db", () => ({ prisma }));
 import { bindInvite } from "./onboarding.repository";
 
 const baseParams = {
-  inviteId: 7, partyId: 42, userId: 5,
-  roles: [{ roleId: 150 }], inviterUserId: 1, inviterName: "admin", now: new Date(),
+  inviteId: 7,
+  partyId: 42,
+  userId: 5,
+  roles: [{ roleId: 150 }],
+  inviterUserId: 1,
+  inviterName: "admin",
+  now: new Date(),
 };
 
 beforeEach(() => {

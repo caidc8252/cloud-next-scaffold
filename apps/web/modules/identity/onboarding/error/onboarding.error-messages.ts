@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Locale } from "@cloud/i18n";
 import { registerErrorMessages } from "@cloud/request/server";
 import {
   ERR_OB_INVITE_NOT_FOUND,
@@ -9,9 +10,18 @@ import {
   ERR_OB_PASSWORD_WEAK,
   ERR_OB_NOT_AUTHENTICATED,
   ERR_OB_ALREADY_MEMBER,
-} from "./onboarding-error-codes";
+} from "./onboarding.error-codes";
 
-const onboardingErrorMessages: Record<string, Record<string, string>> = {
+type OnboardingErrorCode =
+  | typeof ERR_OB_INVITE_NOT_FOUND
+  | typeof ERR_OB_INVITE_EXPIRED
+  | typeof ERR_OB_INVITE_CONSUMED
+  | typeof ERR_OB_EMAIL_TAKEN
+  | typeof ERR_OB_PASSWORD_WEAK
+  | typeof ERR_OB_NOT_AUTHENTICATED
+  | typeof ERR_OB_ALREADY_MEMBER;
+
+const onboardingErrorMessages = {
   en: {
     [ERR_OB_INVITE_NOT_FOUND]: "Invitation not found.",
     [ERR_OB_INVITE_EXPIRED]: "This invitation has expired.",
@@ -34,11 +44,13 @@ const onboardingErrorMessages: Record<string, Record<string, string>> = {
     [ERR_OB_INVITE_NOT_FOUND]: "招待が見つかりません。",
     [ERR_OB_INVITE_EXPIRED]: "この招待は有効期限が切れています。",
     [ERR_OB_INVITE_CONSUMED]: "この招待は既に使用されています。",
-    [ERR_OB_EMAIL_TAKEN]: "このメールアドレスは既に登録されています。サインインして参加してください。",
+    [ERR_OB_EMAIL_TAKEN]:
+      "このメールアドレスは既に登録されています。サインインして参加してください。",
     [ERR_OB_PASSWORD_WEAK]: "パスワードが要件を満たしていません。",
-    [ERR_OB_NOT_AUTHENTICATED]: "セッションの有効期限が切れました。もう一度サインインしてください。",
+    [ERR_OB_NOT_AUTHENTICATED]:
+      "セッションの有効期限が切れました。もう一度サインインしてください。",
     [ERR_OB_ALREADY_MEMBER]: "すでにこの組織のメンバーです。",
   },
-};
+} satisfies Record<Locale, Record<OnboardingErrorCode, string>>;
 
 registerErrorMessages(onboardingErrorMessages);

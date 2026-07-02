@@ -5,7 +5,7 @@ import {
   ERR_OB_INVITE_EXPIRED,
   ERR_OB_INVITE_NOT_FOUND,
   ERR_OB_NOT_AUTHENTICATED,
-} from "@/lib/onboarding-error-codes";
+} from "@/modules/identity/onboarding/error/onboarding.error-codes";
 
 const { repo, buildSessionAndRedirect } = vi.hoisted(() => ({
   repo: {
@@ -38,7 +38,9 @@ function inviteRow(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   for (const fn of Object.values(repo)) fn.mockReset();
-  buildSessionAndRedirect.mockReset().mockResolvedValue({ redirectTo: "http://console/api/auth/session-handoff?token=x" });
+  buildSessionAndRedirect
+    .mockReset()
+    .mockResolvedValue({ redirectTo: "http://console/api/auth/session-handoff?token=x" });
   repo.resolveInviterName.mockResolvedValue("Inviter");
 });
 
@@ -84,7 +86,13 @@ describe("accept", () => {
     repo.findUserByEmail.mockResolvedValue({ userId: 99 });
     await expect(
       accept(
-        { mode: "register", token: "tok", encryptedPassword: "x", displayName: "Al", country: "US" },
+        {
+          mode: "register",
+          token: "tok",
+          encryptedPassword: "x",
+          displayName: "Al",
+          country: "US",
+        },
         null,
       ),
     ).rejects.toMatchObject({ code: ERR_OB_EMAIL_TAKEN });

@@ -6,6 +6,6 @@ describe("menu-tree", () => {
     expect(Object.isFrozen(menuTree)).toBe(true);
     expect(menuTree).toHaveLength(2);
     for (const node of menuTree) expect(node.parentMenuCode).toBeNull();
-    expect(menuTree.map((n) => n.menuCode)).toEqual(["platform.main", "system"]);
+    expect(menuTree.map((n) => n.menuCode)).toEqual(["platform", "system"]);
   });
 });
