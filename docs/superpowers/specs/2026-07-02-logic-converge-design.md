@@ -355,3 +355,20 @@ fail-closed); `@e2e-cell` + matching `e2e/<feature>.spec.ts` (flat in `e2e/`, sp
 filename = feature — `check-e2e-orphans.mjs` reads `e2e/` non-recursively); a subagent
 diff-audit vs `coding-rules.md`; and a paste-real-output verify (`gen:coc` → `lint` →
 `test` → `test:e2e`).
+
+## 14. Second review round (2026-07-02): converge + coding refactored for readability
+
+Both skills refactored into linear, handoff-last procedures; re-reviewed by three
+adversarial subagents (terseness / sequence-no-content-lost / cross-skill consistency).
+- **Applied:** logic-converge terseness cuts (intro read/decide/record triple, minor
+  parentheticals) + **restored a dropped out-of-scope guard** (a genuine source conflict
+  that involves another module *is* still converged — the sequence refactor had lost it);
+  coding restructured to `1 Preflight → 2 Plan → 3 Implement → 4 Review→verify → 5 Exit`,
+  dropped the redundant "execution makes no new decisions" bullet (covered by step 2 +
+  the Exit loop), fixed Exit "review or verify" (pipeline was vestigial), added
+  `nested-write backstop` to the required authorization negatives.
+- **Reaffirmed accepted risk:** the live `logic-analyze` duplicate producer (F1) —
+  operator again chose to leave it; unchanged.
+- **Confirmed clean:** producer/consumer anchors (`## 0/1/2/3`, `C-n`, `⟲ re-check impl`,
+  `待处理`/`已整理`) match verbatim; native-plan flow order + `e2e/<feature>.spec.ts` path
+  verified; handoff chain (coding ↔ sync-db-model ↔ converge ↔ submit) has no dead-ends.
