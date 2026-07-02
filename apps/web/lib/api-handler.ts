@@ -1,5 +1,6 @@
 import "server-only";
 import "@/lib/register-error-messages";
+import "@/lib/register-dev-auth-bypass";
 
 import {
   composeMappers,

@@ -19,7 +19,9 @@ const { kvStore, kvMock, cookieJar, cookieStore, redirectMock } = vi.hoisted(() 
       expire: vi.fn(async () => {}),
     },
     cookieStore: {
-      get: vi.fn((name: string) => (cookieJar.has(name) ? { value: cookieJar.get(name)! } : undefined)),
+      get: vi.fn((name: string) =>
+        cookieJar.has(name) ? { value: cookieJar.get(name)! } : undefined,
+      ),
     },
     redirectMock: vi.fn((url: string): never => {
       throw new Error(`__REDIRECT__:${url}`);
@@ -33,7 +35,6 @@ vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 
 const fullSnapshot: Omit<Session, "loginAt" | "expireAt"> = {
   userId: 1,
-  username: "alice",
   displayName: "Alice",
   email: "alice@example.com",
   currentPartyId: 2,
@@ -43,7 +44,14 @@ const fullSnapshot: Omit<Session, "loginAt" | "expireAt"> = {
   roles: [{ roleId: 3, roleName: "Admin", roleType: "GLOBAL" }],
   permissions: ["users.view", "roles.view"],
   partners: [
-    { partyId: 2, partyName: "Acme", authorizingType: "ADMIN", status: "ACTIVE", authorizingFrom: null, authorizingTo: null },
+    {
+      partyId: 2,
+      partyName: "Acme",
+      authorizingType: "ADMIN",
+      status: "ACTIVE",
+      authorizingFrom: null,
+      authorizingTo: null,
+    },
   ],
   mfaPassed: true,
 };
@@ -82,10 +90,33 @@ describe("getPartialSession", () => {
     expect(await getPartialSession()).toBeNull();
   });
 
+  it("returns identity from a registered fallback session when no sid cookie is present", async () => {
+    const { registerSessionFallbackProvider } = await import("../src/server/session-fallback.ts");
+    registerSessionFallbackProvider(async () => ({
+      ...fullSnapshot,
+      loginAt: 1000,
+      expireAt: 2000,
+    }));
+
+    const { getPartialSession } = await import("../src/server/dal.ts");
+
+    expect(await getPartialSession()).toEqual({
+      userId: 1,
+      email: "alice@example.com",
+      displayName: "Alice",
+    });
+    expect(kvMock.get).not.toHaveBeenCalled();
+    expect(kvMock.expire).not.toHaveBeenCalled();
+  });
+
   it("returns identity for any live session (incl. partial)", async () => {
     await seed(partialSnapshot);
     const { getPartialSession } = await import("../src/server/dal.ts");
-    expect(await getPartialSession()).toEqual({ userId: 1, email: "alice@example.com", displayName: "Alice" });
+    expect(await getPartialSession()).toEqual({
+      userId: 1,
+      email: "alice@example.com",
+      displayName: "Alice",
+    });
   });
 });
 
@@ -101,7 +132,6 @@ describe("getSession", () => {
     const { getSession } = await import("../src/server/dal.ts");
     expect(await getSession()).toMatchObject({
       userId: 1,
-      username: "alice",
       displayName: "Alice",
       email: "alice@example.com",
       currentPartyId: 2,
@@ -111,6 +141,41 @@ describe("getSession", () => {
       roles: [{ roleId: 3, roleName: "Admin", roleType: "GLOBAL" }],
       permissions: ["users.view", "roles.view"],
     });
+  });
+
+  it("returns a registered fallback session when the sid cookie is absent", async () => {
+    const { registerSessionFallbackProvider } = await import("../src/server/session-fallback.ts");
+    registerSessionFallbackProvider(async () => ({
+      ...fullSnapshot,
+      loginAt: 1000,
+      expireAt: 2000,
+    }));
+
+    const { getSession } = await import("../src/server/dal.ts");
+
+    expect(await getSession()).toMatchObject({
+      userId: 1,
+      currentPartyId: 2,
+      permissions: ["users.view", "roles.view"],
+    });
+    expect(kvMock.get).not.toHaveBeenCalled();
+    expect(kvMock.expire).not.toHaveBeenCalled();
+  });
+
+  it("falls back when a stale sid cookie points at no Redis session", async () => {
+    cookieJar.set("sid", "stale");
+    const { registerSessionFallbackProvider } = await import("../src/server/session-fallback.ts");
+    registerSessionFallbackProvider(async () => ({
+      ...fullSnapshot,
+      loginAt: 1000,
+      expireAt: 2000,
+    }));
+
+    const { getSession } = await import("../src/server/dal.ts");
+
+    expect(await getSession()).toMatchObject({ userId: 1, currentPartyId: 2 });
+    expect(kvMock.get).toHaveBeenCalledWith("auth:session:stale");
+    expect(kvMock.expire).not.toHaveBeenCalled();
   });
 
   it("slides the TTL on a cache hit", async () => {
@@ -138,7 +203,14 @@ describe("requireSession", () => {
     await seed({
       ...partialSnapshot,
       partners: [
-        { partyId: 2, partyName: "Acme", authorizingType: "NORMAL", status: "EXPIRED", authorizingFrom: null, authorizingTo: null },
+        {
+          partyId: 2,
+          partyName: "Acme",
+          authorizingType: "NORMAL",
+          status: "EXPIRED",
+          authorizingFrom: null,
+          authorizingTo: null,
+        },
       ],
     });
     const { requireSession } = await import("../src/server/dal.ts");

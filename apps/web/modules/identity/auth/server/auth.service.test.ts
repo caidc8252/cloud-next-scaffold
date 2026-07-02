@@ -34,10 +34,15 @@ vi.mock("@/lib/login-token", () => ({
 vi.mock("@cloud/security/server", () => ({ verifyPassword: vi.fn(), decryptRsaOaep: vi.fn() }));
 vi.mock("@cloud/config", () => ({
   getConfig: vi.fn(() => ({
-    NEXT_AUTH_LOGIN_RSA_PRIVATE_KEY: { key: Buffer.from("ZGVy", "base64"), format: "der", type: "pkcs8" },
+    NEXT_AUTH_LOGIN_RSA_PRIVATE_KEY: {
+      key: Buffer.from("ZGVy", "base64"),
+      format: "der",
+      type: "pkcs8",
+    },
   })),
 }));
 vi.mock("@cloud/permissions/server", () => ({
+  SESSION_TTL_SECONDS: 3600,
   createSession: vi.fn(),
   updateSession: vi.fn(),
   createSessionHandoffToken: vi.fn(),
@@ -59,7 +64,7 @@ import { verifyPassword, decryptRsaOaep } from "@cloud/security/server";
 import { createSession, createSessionHandoffToken } from "@cloud/permissions/server";
 import { consumeLoginNonce } from "@/lib/login-nonce";
 import { resolvePortalGroup } from "@cloud/platform-config";
-import { login, verifyMfa, selectPartner } from "./auth.service";
+import { login, verifyMfa, selectPartner, buildDevAuthBypassSession } from "./auth.service";
 
 const ACTIVE_USER = {
   userId: 1,
@@ -72,7 +77,9 @@ const ACTIVE_USER = {
 const goodInput = { email: "alice@x.io", encryptedPassword: "enc" };
 
 function armDecryptSuccess() {
-  vi.mocked(decryptRsaOaep).mockReturnValue(JSON.stringify({ password: "pw", timestamp: 1, nonce: "n" }));
+  vi.mocked(decryptRsaOaep).mockReturnValue(
+    JSON.stringify({ password: "pw", timestamp: 1, nonce: "n" }),
+  );
   vi.mocked(isTimestampFresh).mockReturnValue(true);
   vi.mocked(consumeLoginNonce).mockResolvedValue(true);
 }
@@ -88,19 +95,28 @@ beforeEach(() => {
 describe("login", () => {
   it("rejects an unknown account", async () => {
     vi.mocked(repo.findUserByEmail).mockResolvedValue(null as never);
-    await expect(login(goodInput)).rejects.toMatchObject({ code: ERR_AUTH_INVALID_CREDENTIALS, status: 401 });
+    await expect(login(goodInput)).rejects.toMatchObject({
+      code: ERR_AUTH_INVALID_CREDENTIALS,
+      status: 401,
+    });
   });
 
   it("rejects a disabled account", async () => {
     vi.mocked(repo.findUserByEmail).mockResolvedValue(ACTIVE_USER as never);
     vi.mocked(isAccountActive).mockReturnValue(false);
-    await expect(login(goodInput)).rejects.toMatchObject({ code: ERR_AUTH_ACCOUNT_DISABLED, status: 403 });
+    await expect(login(goodInput)).rejects.toMatchObject({
+      code: ERR_AUTH_ACCOUNT_DISABLED,
+      status: 403,
+    });
   });
 
   it("rejects a locked account", async () => {
     vi.mocked(repo.findUserByEmail).mockResolvedValue(ACTIVE_USER as never);
     vi.mocked(isLockActive).mockReturnValue(true);
-    await expect(login(goodInput)).rejects.toMatchObject({ code: ERR_AUTH_ACCOUNT_LOCKED, status: 403 });
+    await expect(login(goodInput)).rejects.toMatchObject({
+      code: ERR_AUTH_ACCOUNT_LOCKED,
+      status: 403,
+    });
   });
 
   it("rejects an undecryptable payload", async () => {
@@ -113,7 +129,9 @@ describe("login", () => {
 
   it("rejects a stale timestamp", async () => {
     vi.mocked(repo.findUserByEmail).mockResolvedValue(ACTIVE_USER as never);
-    vi.mocked(decryptRsaOaep).mockReturnValue(JSON.stringify({ password: "pw", timestamp: 1, nonce: "n" }));
+    vi.mocked(decryptRsaOaep).mockReturnValue(
+      JSON.stringify({ password: "pw", timestamp: 1, nonce: "n" }),
+    );
     vi.mocked(isTimestampFresh).mockReturnValue(false);
     await expect(login(goodInput)).rejects.toMatchObject({ code: ERR_AUTH_REQUEST_EXPIRED });
   });
@@ -122,7 +140,10 @@ describe("login", () => {
     vi.mocked(repo.findUserByEmail).mockResolvedValue(ACTIVE_USER as never);
     armDecryptSuccess();
     vi.mocked(verifyPassword).mockResolvedValue(false);
-    await expect(login(goodInput)).rejects.toMatchObject({ code: ERR_AUTH_INVALID_CREDENTIALS, status: 401 });
+    await expect(login(goodInput)).rejects.toMatchObject({
+      code: ERR_AUTH_INVALID_CREDENTIALS,
+      status: 401,
+    });
     expect(repo.recordLoginFailure).toHaveBeenCalled();
   });
 
@@ -143,9 +164,19 @@ describe("login", () => {
     armDecryptSuccess();
     vi.mocked(verifyPassword).mockResolvedValue(true);
     vi.mocked(listPartyChoices).mockResolvedValue([
-      { partyId: 100, partyName: "A", partnerStatus: "ACTIVE", userStatus: "ACTIVE", authorizingType: "NORMAL", validContract: true },
+      {
+        partyId: 100,
+        partyName: "A",
+        partnerStatus: "ACTIVE",
+        userStatus: "ACTIVE",
+        authorizingType: "NORMAL",
+        validContract: true,
+      },
     ] as never);
-    vi.mocked(buildSessionSnapshot).mockResolvedValue({ currentPartyId: 100, contractTypes: ["MERCHANT"] } as never);
+    vi.mocked(buildSessionSnapshot).mockResolvedValue({
+      currentPartyId: 100,
+      contractTypes: ["MERCHANT"],
+    } as never);
 
     const result = await login(goodInput);
 
@@ -159,8 +190,22 @@ describe("login", () => {
     armDecryptSuccess();
     vi.mocked(verifyPassword).mockResolvedValue(true);
     vi.mocked(listPartyChoices).mockResolvedValue([
-      { partyId: 1, partyName: "A", partnerStatus: "ACTIVE", userStatus: "ACTIVE", authorizingType: "NORMAL", validContract: true },
-      { partyId: 2, partyName: "B", partnerStatus: "ACTIVE", userStatus: "ACTIVE", authorizingType: "NORMAL", validContract: true },
+      {
+        partyId: 1,
+        partyName: "A",
+        partnerStatus: "ACTIVE",
+        userStatus: "ACTIVE",
+        authorizingType: "NORMAL",
+        validContract: true,
+      },
+      {
+        partyId: 2,
+        partyName: "B",
+        partnerStatus: "ACTIVE",
+        userStatus: "ACTIVE",
+        authorizingType: "NORMAL",
+        validContract: true,
+      },
     ] as never);
     vi.mocked(buildSessionSnapshot).mockResolvedValue({ currentPartyId: null } as never);
 
@@ -175,7 +220,14 @@ describe("login", () => {
     armDecryptSuccess();
     vi.mocked(verifyPassword).mockResolvedValue(true);
     vi.mocked(listPartyChoices).mockResolvedValue([
-      { partyId: 1, partyName: "A", partnerStatus: "ACTIVE", userStatus: "ACTIVE", authorizingType: "NORMAL", validContract: false },
+      {
+        partyId: 1,
+        partyName: "A",
+        partnerStatus: "ACTIVE",
+        userStatus: "ACTIVE",
+        authorizingType: "NORMAL",
+        validContract: false,
+      },
     ] as never);
     vi.mocked(buildSessionSnapshot).mockResolvedValue({ currentPartyId: null } as never);
 
@@ -229,9 +281,64 @@ describe("selectPartner", () => {
       status: "ACTIVE",
       partner: { status: "ACTIVE" },
     } as never);
-    vi.mocked(buildSessionSnapshot).mockResolvedValue({ currentPartyId: 100, contractTypes: ["MERCHANT"] } as never);
+    vi.mocked(buildSessionSnapshot).mockResolvedValue({
+      currentPartyId: 100,
+      contractTypes: ["MERCHANT"],
+    } as never);
 
     const result = await selectPartner(1, 100);
     expect(result).toEqual({ redirectTo: "http://console.test/session-handoff" });
+  });
+});
+
+describe("buildDevAuthBypassSession", () => {
+  it("returns null for an unknown or inactive account", async () => {
+    vi.mocked(repo.findUserByEmail).mockResolvedValue(null as never);
+    await expect(buildDevAuthBypassSession("admin@example.com")).resolves.toBeNull();
+
+    vi.mocked(repo.findUserByEmail).mockResolvedValue(ACTIVE_USER as never);
+    vi.mocked(isAccountActive).mockReturnValue(false);
+    await expect(buildDevAuthBypassSession("admin@example.com")).resolves.toBeNull();
+  });
+
+  it("builds an in-memory active session without writing Redis or cookies", async () => {
+    vi.mocked(repo.findUserByEmail).mockResolvedValue(ACTIVE_USER as never);
+    vi.mocked(listPartyChoices).mockResolvedValue([
+      {
+        partyId: 100,
+        partyName: "A",
+        partnerStatus: "ACTIVE",
+        userStatus: "ACTIVE",
+        authorizingType: "ADMIN",
+        validContract: true,
+      },
+    ] as never);
+    vi.mocked(buildSessionSnapshot).mockResolvedValue({
+      userId: 1,
+      displayName: "Admin",
+      email: "admin@example.com",
+      currentPartyId: 100,
+      partyName: "A",
+      contractTypes: ["ADMIN"],
+      authorizingType: "ADMIN",
+      roles: [],
+      permissions: ["system.users.create"],
+      partners: [],
+      mfaPassed: true,
+    } as never);
+
+    const session = await buildDevAuthBypassSession("admin@example.com");
+
+    expect(repo.findUserByEmail).toHaveBeenCalledWith("admin@example.com");
+    expect(buildSessionSnapshot).toHaveBeenCalledWith(ACTIVE_USER.userId, 100);
+    expect(createSession).not.toHaveBeenCalled();
+    expect(session).toMatchObject({
+      userId: 1,
+      currentPartyId: 100,
+      permissions: ["system.users.create"],
+      loginAt: expect.any(Number),
+      expireAt: expect.any(Number),
+    });
+    expect(session!.expireAt).toBeGreaterThan(session!.loginAt);
   });
 });
