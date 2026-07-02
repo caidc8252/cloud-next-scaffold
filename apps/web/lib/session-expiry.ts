@@ -20,7 +20,7 @@ let redirecting = false;
 
 export function handleUnauthorized(error: RequestError): void {
   const code = error.body?.code;
-  if (!code || !SESSION_EXPIRED_CODES.has(code) || redirecting) return;
+  if (error.status !== 401 || !code || !SESSION_EXPIRED_CODES.has(code) || redirecting) return;
 
   redirecting = true;
   // 与服务端 requirePermissions 的 401 出口一致：先清残留 cookie，再由 logout 跳回 portal /login。
