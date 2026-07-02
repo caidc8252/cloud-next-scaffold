@@ -324,3 +324,24 @@ honored. Outcomes:
 **Confirmed clean by review:** cross-skill section names match exactly; single-writer
 stated everywhere; doc-repo path claims verified against the real `pep-webapp-docs`;
 no dangling references introduced by the sweep.
+
+## 13. Follow-on: `/coding` preflight router (2026-07-02)
+
+`/coding` became the single module-build entry point **and a preflight router** to
+smooth operator UX (one command, not a remembered chain). Before planning it walks a
+ladder and **offers** (never silently runs) each unmet step, handing off in-session
+with the operator in the loop:
+1. data-model drift (`pep-data-model-docs` HEAD ≠ workbench baseline) → `/sync-db-model`;
+2. converge freshness (logic.md missing / groom `待处理` / `## 2 Open` non-empty /
+   any doc HEAD past its baseline) → `/logic-converge`;
+3. prototype + UI → `mock-app`;
+4. clear → build; findings → drive `groom → converge → coding` loop.
+
+Rules: interactive steps (sync/converge/mock) are **handed off, never subagented**
+(subagents can't hold operator dialogue); subagents stay for autonomous
+implementation. This reverses the earlier "coding never self-runs converge" into
+"coding offers to run it." Step 2's "any doc HEAD past baseline" also closes review
+finding #6 (freshness was presence-only). Complementary **push** handoffs: `sync-db-model`
+ends by suggesting `/logic-converge` → `/coding` when a task is active; `logic-converge`
+already suggests `/coding` (Step 7). Placement chosen: router lives in `/coding`
+(single entry point) rather than a separate `/next` driver.
