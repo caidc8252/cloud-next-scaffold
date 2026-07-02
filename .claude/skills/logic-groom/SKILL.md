@@ -14,7 +14,7 @@ description: /logic-groom —— 当前活跃任务的「碎片捕获入口」�
 ## 前置
 - 读 `.work/workbench.json`；`current_task` 为空 → **报错退出**（无活跃任务，先 `/start-work`）。
 - 取 `cat/name` ← `current_task.module.{category,name}`；`dir = .work/logics/<cat>/<name>`；`groom = <dir>/<name>.groom.md`。
-- `groom` 不存在 → 创建骨架：仅 `# 原始碎片`（表头）。未决收敛问题**不进 groom**，改记入 `logic.md` 的 `## 2 Open`（旧的「问题清单」区已废弃）。
+- `groom` 不存在 → 创建骨架：仅 `# 原始碎片`（表头）。
 
 ## 捕获循环（启动后持续，直到 /submit-work 或操作员喊停）
 对操作员的**每一条输入**：
@@ -42,7 +42,7 @@ description: /logic-groom —— 当前活跃任务的「碎片捕获入口」�
 ## I/O contract
 - **Input**：操作员零散输入；`workbench.current_task`。
 - **Output**：仅向 `<name>.groom.md` 的 `# 原始碎片` 表**追加**待处理碎片。不写 `logic.md`，不改 `workbench`。
-- **Idempotent**：纯追加；不去重（避免误删信息），重复与否由操作员判断。
+- **Idempotent**：纯追加；不去重，重复与否由操作员判断。
 
 ## 关闭
 - 捕获入口持续到操作员执行 `/submit-work`（提交闭环）→ 关闭；或操作员显式喊停。

@@ -73,9 +73,11 @@ pnpm test:e2e           # 端到端：docker compose 起 e2e pg/redis + db push/
 3. **`/logic-groom`**（捕获模式）— 随时把零散的需求/实现逻辑/UI 碎片**只追加**进 `.work/logics/<cat>/<name>/<name>.groom.md`（`待处理`），持续到 `/submit-work` 关闭。只捕获，不分析。
 4. **`/logic-converge`** — 读「需求 specs（含 `_common` 共享层）+ 原型 + 数据模型 + 现有代码 + groom 碎片」，把**跨制品的冲突**（矛盾/差异/阻断实现的沉默）逐条与操作员**收敛**，决策沉淀进 `logic.md`——它是**叠加在各输入之上的补充件（supplement），不是替代**：`/coding` 同时读原始输入与 `logic.md`。文档仓按其自描述 README 导航（不硬编码路径），并回写 workbench 文档基线。**只读** `apps/web/commons/<mod>/overview.md` 与各模块 `overview.md` 做全局认识——这些 `overview.md` 由专门的 **commons 维护 skill** 生成/维护（建设中），`/logic-converge` 不写入它们。
 5. **`/coding`** — 消费**全部输入 + `logic.md`**（后者是补充件，非唯一来源），起 superpowers 流水线（`writing-plans → executing-plans`）生成/改模块（`gen:coc` + 测试全绿）；流水线 review 的 findings → 人工触发 **`/logic-groom`** 回灌为碎片（`待处理`），走 groom→converge→code 闭环重新消费，不在此就地 debug。不回写飞书、不开 PR（那是 `/submit-work`）。
-6. **`/submit-work`** — groom 残留闸门（有未消费碎片则拦截）→ 提交代码 → 询问是否对三仓（本代码仓 + 两文档仓）的 `feature/task-*` 开 PR 到 `develop`（默认不提交）→ 清空 `workbench.json` 释放活跃任务锁。
+6. **`/submit-work`** — 残留闸门（groom 未消费碎片 / `logic.md ## 2 Open` 未决 → 拦截）→ 提交代码 → 询问是否对三仓（本代码仓 + 两文档仓）的 `feature/task-*` 开 PR 到 `develop`（默认不提交）→ 清空 `workbench.json` 释放活跃任务锁。
 
-> `logic.md` / `<name>.groom.md` 是**模块级累积**，跨 task 保留；`/submit-work` 只清 `workbench.json`。`logic.md` 是**收敛决策的补充件**（累积但会随输入演进被**修订/取代**，不是只增不删、不是任务清单），**唯一写者是 `/logic-converge`**；任何人（含 `/coding`、`/logic-groom`）不手改。
+> 数据模型有变更时，`/logic-converge` 前先跑 `/sync-db-model`（上游 DDL → 本地 Prisma），使 converge 与 coding 的数据模型输入一致。
+>
+> `logic.md` / `<name>.groom.md` 是**模块级累积**，跨 task 保留；`/submit-work` 只清 `workbench.json`。`logic.md` 是**收敛决策的补充件**，**唯一写者是 `/logic-converge`**；任何人（含 `/coding`、`/logic-groom`）不手改。
 
 ## 代码规范
 

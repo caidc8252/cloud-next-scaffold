@@ -7,17 +7,16 @@ description: /submit-work —— 闭合 /start-work 开的活跃任务。检查 
 
 把 `/start-work` 开的这一轮工作**收尾闭环**：确认无遗留 → 提交代码 → 决定是否并入 `develop` → 释放活跃任务锁。
 
-> 本 skill 是**全新实现**（workbench 模型），不沿用任何旧的 submit-work 命令逻辑。
 > **前置**：读 `.work/workbench.json`；`current_task` 为空 → 报错退出（无活跃任务可提交）。取 `cat/name/task_id` ← `current_task`。
 
 ## Steps
 
 1. **残留闸门（硬闸门）** —— 确认无未消费的收敛输入：
    - 读 `.work/logics/<cat>/<name>/<name>.groom.md`：`# 原始碎片` 仍有 `处理状态=待处理` → **拦截提交**，列出残留碎片。
-   - 读 `.work/logics/<cat>/<name>/logic.md`：`## 2 Open` 区仍有未决收敛条目 → **拦截提交**，列出未决项。
+   - 读 `.work/logics/<cat>/<name>/logic.md`：`## 2 Open` 区仍有未决收敛条目 → **拦截提交**，列出未决项（`## 3 Deferred` 有意搁置项不拦）。
    - 二者皆空（或无 groom / 无 logic.md）→ 通过。**本 skill 不自己分析/消费/收敛**（那是 `/logic-converge` 的职责）。
 
-   > **收尾顺序**：submit 前应先「停止 `/logic-groom` 输入 → 跑 `/logic-converge` 把最新碎片清成 `已整理`、把冲突收敛到 `## 1 Converged`（`## 2 Open` 清空）→ 再 `/submit-work`」。若 converge 后又 groom 出新碎片，本闸门会再次拦截——这是有意的强制闭合。
+   > **收尾顺序**：submit 前应先「停止 `/logic-groom` 输入 → 跑 `/logic-converge` 把最新碎片清成 `已整理`、把冲突收敛到 `## 1 Converged`（`## 2 Open` 清空）→ 再 `/submit-work`」。若 converge 后又 groom 出新碎片，本闸门会再次拦截。
 
 2. **stub 残留闸门(硬闸门)** —— 运行 `node scripts/check-stubs.mjs`：
    - 退出码 `1`(列出任何 `apps/web/**/*.stub.*`)→ **拦截提交**。每个 stub 是对另一模块未实现依赖的临时前向声明,不得并入 `develop`。提示:owner 实现真身 → consumer 把 import 换到真实 `*.public`/`*.api`/真码 → 删除 stub;若 stub 位于他人模块树,交人处理而非擅改。
@@ -28,7 +27,7 @@ description: /submit-work —— 闭合 /start-work 开的活跃任务。检查 
    - `git add -A` + `git commit`（提交信息含 `task_id` 与简述）。
 
 4. **PR 决策（默认选中「不提交」）** —— 询问操作员是否把工作 PR 到 `develop`：
-   - **不提交（默认）** → **提醒影响**：工作停留在 `feature/task-<task_id>`，未并入 `develop`；他人/后续任务看不到本次成果，主干不前进，代码与文档未入主干对齐，需日后手动并。
+   - **不提交（默认）** → **提醒影响**：工作停留在 `feature/task-<task_id>`，未并入 `develop`（需日后手动并）。
    - **提交** → 对**三个仓库**各自的 `feature/task-<task_id>` 开 PR 到 `develop`：
      - **代码仓**（本仓库）—— 已在该分支，直接 PR。
      - **需求空间** `../pep-webapp-docs`、**数据模型空间** `../pep-data-model-docs`：

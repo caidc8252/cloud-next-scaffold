@@ -4,7 +4,7 @@
 
 ## 是什么 / 给谁看
 - 每个业务模块 `modules/<cat>/<mod>/` 与每个通用模块 `commons/<mod>/` 各有**一份** `overview.md`，描述「这个模块是什么、对外暴露什么、依赖谁、有何不变量」。
-- **消费方**：`/logic-converge` Step2 遍历所有 `overview.md` 建立跨模块认识，按其中的 public surface / 依赖判断「引用的目标模块契约是否齐全」。其它人/skill 也可据此快速定位，不必通读模块源码。
+- **消费方**：`/logic-converge` 遍历所有 `overview.md` 建立跨模块认识（各模块对外暴露什么、依赖谁），据此收敛涉及其它模块的冲突；**不判断契约是否齐全、不做跨模块预检**（那是 `/coding` 的 stub-vs-block 职责，AGENTS.md 铁律 8）。其它人/skill 也可据此快速定位，不必通读模块源码。
 - **写入方**：业务模块 `modules/<cat>/<mod>/overview.md` 由 **`/coding`** 在建/改该模块时创建并保持同步（`writing-plans` 把它作为一项交付物纳入计划）。专门的 **commons/overview 维护 skill**（建设中）只覆盖 **commons 概览 + 跨模块批量梳理**。`/logic-converge` **只读不写**。
 
 ## 写作原则
