@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # /coding
 
-Module-build entry point **and preflight router**. Base guard: needs `current_task`; `dir = .work/logics/<cat>/<name>`.
+Module-build entry point **and preflight router**. Base guard: needs `current_task`; `dir = .work/logics/<cat>/<name>`. Coding **never writes `logic.md`** — sole writer is `/logic-converge`.
 
 ## 1. Preflight — offer each unmet step in-session, never silently run it
 **Never** subagent the interactive steps (subagents can't hold operator dialogue); autonomous work — the implementation and the review audit — may use subagents.
@@ -15,7 +15,7 @@ Module-build entry point **and preflight router**. Base guard: needs `current_ta
 3. **Prototype** — prototype + UI work → hand off to **`mock-app`** (prototype→Next); return for the non-prototype logic.
 
 ## 2. Plan (native plan mode, **not** `superpowers:writing-plans`)
-`EnterPlanMode` → read `.claude/context/injections/references/coding-rules.md` → research specs + prototype + data-model + existing code + `logic.md` → write the plan → `ExitPlanMode`. **Settle every decision here** — resolve each ambiguity/conflict with the operator (cross-source conflicts via `/logic-converge`) before `ExitPlanMode`; the approved plan needs no further decisions.
+`EnterPlanMode` → read `.claude/context/injections/references/coding-rules.md` → research specs + prototype + data-model + existing code + `logic.md` → write the plan → `ExitPlanMode` → implement. **Settle every decision here** — resolve each ambiguity/conflict with the operator (cross-source conflicts via `/logic-converge`) before `ExitPlanMode`; the approved plan needs no further decisions. Plan tasks reference converged decisions (`C-n`) + inputs — references, not a work-queue; on a re-run after a re-converge, re-verify already-shipped code against any `## 1 Converged` entry tagged `⟲ re-check impl` (green tests don't prove a superseded decision was rolled back).
 
 The plan must cover:
 - create/update the module's `overview.md` (per `.claude/context/injections/references/coding-rules/module-layout.md`);
@@ -24,11 +24,6 @@ The plan must cover:
 - **review** — a subagent audits the diff against `coding-rules.md`; fix findings;
 - **verify (paste real output)** — `pnpm gen:coc` clean → `pnpm lint` → `pnpm test` → `pnpm test:e2e`.
 
-## 3. Execute the plan
-- Consume **all** raw inputs **and** `logic.md`; plan tasks reference converged decisions (`C-n`) + inputs.
-- Re-verify already-shipped code against any `## 1 Converged` entry tagged `⟲ re-check impl` — green tests don't prove a superseded decision was rolled back.
-- **Never write `logic.md`** — sole writer is `/logic-converge`.
-
-## 4. Exit
+## 3. Exit
 - Clean → **`/submit-work`** (no FeiShu write-back or PR here).
 - Findings (review or verify) → **drive the loop**: `/logic-groom` → `/logic-converge` → resume `/coding`.
