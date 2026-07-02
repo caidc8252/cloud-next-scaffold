@@ -14,12 +14,19 @@ Module-build entry point **and preflight router**: before planning, walk the lad
 3. **Prototype** — prototype present + UI work → hand off to **`mock-app`** (prototype→Next); return for the non-prototype logic.
 4. **Clear → build.**
 
-## Build
+## Plan → implement → review → verify
 - Consume **all** raw inputs **and** `logic.md` (a supplement on top of the inputs, not a substitute).
-- `superpowers:writing-plans`, don't brainstorm. Plan tasks reference converged decisions (`C-n`) + inputs — references, not a work-queue. Include a create/update `modules/<cat>/<mod>/overview.md` task (per `.claude/context/injections/references/coding-rules/module-layout.md`).
+- **Flow** (native plan mode, **not** `superpowers:writing-plans`): `EnterPlanMode` → read `.claude/context/injections/references/coding-rules.md` → research specs + prototype + data-model + existing code (+ `logic.md`) → write the plan → `ExitPlanMode` → implement → review → verify → `/submit-work`.
+- **The plan must cover:**
+  - create/update the module's `overview.md` (per `.claude/context/injections/references/coding-rules/module-layout.md`);
+  - authorization negatives per party-scoped table — list scoping, resource denial, wrong-party write, fail-closed;
+  - `@e2e-cell` marker + matching `e2e/<feature>.spec.ts` per route / middleware / auth-boundary;
+  - **Review** — a subagent audits the diff against `coding-rules.md`; fix findings;
+  - **Verify (paste real output)** — `pnpm gen:coc` clean → `pnpm lint` → `pnpm test` → `pnpm test:e2e`.
+- Plan tasks reference converged decisions (`C-n`) + inputs — references, not a work-queue.
 - **Re-run after a re-converge:** re-verify already-shipped code against any `## 1 Converged` entry tagged `⟲ re-check impl` — green tests don't prove a superseded decision was rolled back.
 - **Never write `logic.md`** — sole writer is `/logic-converge`; route decision changes back through the loop.
 
 ## Exit
-- Findings → **drive the loop, announcing each hop** (operator inputs at each; don't make them re-type): `/logic-groom` → `/logic-converge` → resume `/coding`.
+- Findings (review or pipeline) → **drive the loop, announcing each hop**: `/logic-groom` → `/logic-converge` → resume `/coding`.
 - Clean run → **`/submit-work`**. Don't write back to FeiShu or open a PR — that's `/submit-work`.
