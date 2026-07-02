@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://claude.local/.work/workbench.schema.json",
   "title": "工作台(Workbench)",
-  "description": ".work/workbench.json 的结构约束。它是「唯一活跃任务锁 + 信息载体」：/start-work 写 current_task 与 start_time;/logic-analyze 写 docs_flash_time 与三个 *_docs(commit 信息);/submit-work 完成后清空(回到 {})。同一时间只允许一个活跃任务。空对象 {} 表示当前无活跃任务。",
+  "description": ".work/workbench.json 的结构约束。它是「唯一活跃任务锁 + 信息载体」：/start-work 写 current_task 与 start_time;/logic-converge 写 docs_flash_time 与三个 *_docs(commit 信息);/submit-work 完成后清空(回到 {})。同一时间只允许一个活跃任务。空对象 {} 表示当前无活跃任务。",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -55,7 +55,7 @@
     "docs_flash_time": {
       "type": ["string", "null"],
       "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
-      "description": "执行 /logic-analyze 刷新文档信息的时间(yyyy-MM-dd HH:mm:ss)。"
+      "description": "执行 /logic-converge 刷新文档信息的时间(yyyy-MM-dd HH:mm:ss)。"
     },
     "specs_docs": { "$ref": "#/definitions/docRef" },
     "prototype_docs": { "$ref": "#/definitions/docRef" },
@@ -63,7 +63,7 @@
   },
   "definitions": {
     "docRef": {
-      "description": "一个文档仓库的最新 git 快照信息(由 /logic-analyze 写入,用于下次增量差异比对)。无活跃任务时可缺省或为 null。",
+      "description": "一个文档仓库的最新 git 快照信息(由 /logic-converge 写入,用于下次增量差异比对)。无活跃任务时可缺省或为 null。",
       "type": ["object", "null"],
       "required": ["repo", "last_commit_id", "last_commit_time", "last_commit_user", "path"],
       "properties": {

@@ -5,6 +5,10 @@ import type { Instrumentation } from "next";
 // 有 error 拒写、prebuild/pretest 失败),不再依赖启动期导入抛错。
 export async function register() {
   await import("@/manifest");
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { registerDevAuthBypassSessionProvider } = await import("@/lib/dev-auth-bypass");
+    registerDevAuthBypassSessionProvider();
+  }
 }
 
 // 服务端异常集中观测点。Route Handler 的异常已被 withApiHandler 捕获并自带 traceId，

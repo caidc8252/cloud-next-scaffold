@@ -13,7 +13,7 @@ test("admin 邀请 → 被邀人注册入驻为 NORMAL，party 不激活，邀�
   const inviteEmail = `invitee-${Date.now()}@e2e.test`;
 
   // 1) admin 会话调 createInvite（场景一：邀进 admin 的 Platform party）。
-  const adminCtx = await browser.newContext({ storageState: "e2e/.auth/admin.json" });
+  const adminCtx = await browser.newContext();
   const created = await adminCtx.request.post(`${ADMIN_URL}/api/system/users`, {
     data: { email: inviteEmail, roleIds: [] },
   });
@@ -30,9 +30,14 @@ test("admin 邀请 → 被邀人注册入驻为 NORMAL，party 不激活，邀�
   await page.fill("#ob-display", "E2E Invitee");
   await page.fill("#ob-pw", PASSWORD);
   await page.fill("#ob-confirm", PASSWORD); // country 默认 US，无需操作
+  const acceptResponsePromise = page.waitForResponse(
+    (res) => res.url().endsWith("/api/onboarding/accept") && res.request().method() === "POST",
+  );
   await page.getByRole("button", { name: "Create account & join" }).click();
+  const accepted = await acceptResponsePromise;
+  expect(accepted.ok()).toBeTruthy();
   // 新用户恰好 1 party → handoff 进 console（落 admin:3000）。
-  await page.waitForURL((url) => url.origin === ADMIN_URL, { timeout: 30_000 });
+  await page.waitForURL((url) => url.pathname === "/dashboard", { timeout: 30_000 });
   await anon.close();
 
   // 3) 读库断言（裸 pg）。

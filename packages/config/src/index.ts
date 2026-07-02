@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { config as loadEnv } from "dotenv";
 import { z } from "zod";
 import { parseAuthConfig, type AuthConfig } from "./auth.ts";
+import { parseRuntimeConfig, type RuntimeConfig } from "./runtime.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 loadEnv({ path: path.resolve(here, "../../../.env") });
@@ -36,6 +37,10 @@ export function resolveAppUrl(envKey: string, devFallback?: string): string {
 }
 
 export type Config = {
+  NODE_ENV: "development" | "test" | "production";
+  CI: boolean;
+  DEV_AUTH_BYPASS: boolean;
+  DEV_AUTH_BYPASS_EMAIL: string | null;
   /** 解码后的 RSA 私钥 DER 结构；键名对齐 env 源，值是 base64 解码结果（见 .env.example 说明）。 */
   NEXT_AUTH_LOGIN_RSA_PRIVATE_KEY: AuthConfig["rsaPrivateKey"];
   NEXT_AUTH_AES_SECRET_KEY: string;
@@ -48,9 +53,23 @@ export type Config = {
 let cachedAuth: AuthConfig | null = null;
 let cachedCache: { REDIS_URL: string } | null = null;
 let cachedApp: z.infer<typeof appEnvSchema> | null = null;
+let cachedRuntime: RuntimeConfig | null = null;
 const auth = () => (cachedAuth ??= parseAuthConfig(process.env));
+const runtime = () => (cachedRuntime ??= parseRuntimeConfig(process.env));
 
 const config: Config = {
+  get NODE_ENV() {
+    return runtime().NODE_ENV;
+  },
+  get CI() {
+    return runtime().CI;
+  },
+  get DEV_AUTH_BYPASS() {
+    return runtime().DEV_AUTH_BYPASS;
+  },
+  get DEV_AUTH_BYPASS_EMAIL() {
+    return runtime().DEV_AUTH_BYPASS_EMAIL;
+  },
   get NEXT_AUTH_LOGIN_RSA_PRIVATE_KEY() {
     return auth().rsaPrivateKey;
   },

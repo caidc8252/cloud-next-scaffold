@@ -62,7 +62,7 @@ app.sql 头部 `create schema if not exists app;`，`app.user`/`app.party`… �
 
 ## Steps
 
-1. **就绪校验**：确认 `../pep-data-model-docs/specs/physical-model/app.sql` 与 `packages/db/prisma/schema.prisma` 均存在可读；上游缺失 → 提示 `git clone` 后退出。
+1. **就绪校验 + 拉取上游**：`../pep-data-model-docs` 存在 → 先 `git pull`（取最新 DDL；避免拿陈旧 `app.sql` 同步，也早于 `/logic-converge` 的拉取以免两侧对不同版本）；缺失 → 提示 `git clone` 后退出。确认 `../pep-data-model-docs/specs/physical-model/app.sql` 与 `packages/db/prisma/schema.prisma` 均存在可读。
 2. **解析两边**：
    - 解析 app.sql → 表/列/类型/可空/默认/索引·唯一/comment。
    - 解析 schema.prisma → model/字段/`@db.*`/`@@map`/`@@unique`/`@@index`。
@@ -88,6 +88,7 @@ app.sql 头部 `create schema if not exists app;`，`app.user`/`app.party`… �
    - 跑 `pnpm db:generate` 重生成 client。
    - 任一失败 → 报错、指明失败点；已改的 schema **保留**（操作员可 `git` 回滚），退出。
 9. **汇报**：列出改了哪些条、validate/generate 结果。**若涉及改名/重构** → 明确提示「下游 `apps/web` 里 `SysXxx` / `prisma.sysXxx.*` 引用会编译不过，属本 skill 范围外，需另行修复」。
+   - **下一步（handoff，仅建议）**：若 `.work/workbench.json` 有活跃任务 → 数据模型已变，建议接着 `/logic-converge`（让 `logic.md` 对齐新 schema）再 `/coding`；无活跃任务 → 到此为止。
 
 ## I/O contract
 

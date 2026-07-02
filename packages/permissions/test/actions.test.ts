@@ -47,7 +47,6 @@ import { sessionStore, SID_COOKIE, type Session } from "../src/server/session-st
 
 const snapshot: Omit<Session, "loginAt" | "expireAt"> = {
   userId: 7,
-  username: "alice",
   displayName: "Alice",
   email: "alice@example.com",
   currentPartyId: 9,
