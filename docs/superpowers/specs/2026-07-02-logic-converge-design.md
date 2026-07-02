@@ -291,8 +291,8 @@ honored. Outcomes:
 - **Retained `logic-analyze` is a live, invocable command.** A `SKILL.md` is
   dispatched by its frontmatter, not by who references it — so the earlier
   "unwired" framing was wrong. It writes the same `logic.md` path in ledger format:
-  running it clobbers the supplement, and because the hard gates string-match
-  `## 2 Open` (absent from ledger files) it **silently passes both the coding and
+  running it clobbers the supplement, and because the hard gates look for unresolved
+  `## 2 Open` entries (absent from ledger files) it **silently passes both the coding and
   submit gates**. Operator elected to **leave it as-is**. Recorded as an accepted
   risk. If revisited: rename its `SKILL.md` (dir stops being a discoverable skill),
   tombstone, or delete.
@@ -363,7 +363,7 @@ adversarial subagents (terseness / sequence-no-content-lost / cross-skill consis
 - **Applied:** logic-converge terseness cuts (intro read/decide/record triple, minor
   parentheticals) + **restored a dropped out-of-scope guard** (a genuine source conflict
   that involves another module *is* still converged — the sequence refactor had lost it);
-  coding restructured to `1 Preflight → 2 Plan → 3 Implement → 4 Review→verify → 5 Exit`,
+  coding restructured toward a linear shape (later dissolved to `1 Preflight → 2 Plan → 3 Exit`, execution implied by `ExitPlanMode`),
   dropped the redundant "execution makes no new decisions" bullet (covered by step 2 +
   the Exit loop), fixed Exit "review or verify" (pipeline was vestigial), added
   `nested-write backstop` to the required authorization negatives.
@@ -372,3 +372,41 @@ adversarial subagents (terseness / sequence-no-content-lost / cross-skill consis
 - **Confirmed clean:** producer/consumer anchors (`## 0/1/2/3`, `C-n`, `⟲ re-check impl`,
   `待处理`/`已整理`) match verbatim; native-plan flow order + `e2e/<feature>.spec.ts` path
   verified; handoff chain (coding ↔ sync-db-model ↔ converge ↔ submit) has no dead-ends.
+
+## 15. Third review round (2026-07-02): full pipeline review + correctness fixes
+
+Five adversarial subagents reviewed the whole session (terseness / correctness / references
+/ fidelity / readability). Fidelity, references, and the token sweep came back clean;
+correctness surfaced real holes in the incremental model and the retained skill — all fixed
+**within** the existing design (incremental + offer-gate retained):
+
+- **#1 Open-item wedge** — a parked `## 2 Open` whose commit falls behind the baseline never
+  re-entered the incremental diff → task unclosable. Fix: converge **re-offers every existing
+  `## 2 Open` each pass**, independent of the diff.
+- **#2 stale Converged** — a decision the inputs no longer support could win over corrected
+  inputs. Fix: converge prunes/supersedes any `## 1 Converged` that contradicts current
+  inputs; coding treats such a contradiction as stale → loops back.
+- **#3 `⟲ re-check impl` lifecycle** — no clearing + cross-pass drop. Fix: converge preserves
+  the tag on untouched entries and clears it only after coding reports (via the loop) it
+  re-verified.
+- **#4 sync-db-model ordering** — it never pulled yet runs before converge's pull → schema
+  from stale DDL. Fix: sync-db-model `git pull`s `pep-data-model-docs` first.
+- **#5/#6 data-model-drift gate** — the offered tool (sync) couldn't clear it, and it fired
+  spuriously on first run. Fix: gate offers `/sync-db-model` **then** `/logic-converge`,
+  guarded on baseline-exists.
+- **#6 offer-gate hardening** — "offer" was decline-able into building on nothing. Fix: gates
+  hold — declining a required prerequisite (logic.md missing / `## 2 Open`) stops, doesn't guess.
+- **#8** prototype ref qualified to `pep-webapp-docs`'s `.claude/rules/prototype-loop.md`.
+- **#7 `disable-model-invocation`** — **not** added (operator kept the gitignored
+  `settings.local.json` mechanism).
+
+**Neutralized the retained `logic-analyze`** (operator decision, superseding the earlier
+"leave it"): `git mv SKILL.md → ARCHIVED.md` so the dir is no longer a discoverable skill —
+removing the clobber path and the newly-found *non-recoverable* groom-fragment loss (analyze
+flipped `待处理→已整理` into an orphaned `logic.items.json` converge can't recover).
+`ledger.mjs` + `ARCHIVED.md` stay on disk as reference.
+
+**Readability:** coding step-2 paragraph → bullets; logic-converge step-4 forward-ref glossed;
+start-work `异常界定` defined once up front (was a step 4→6 forward jump). **Terseness:** AGENTS
+"supplement" 3×→1 + misc restatements. **Known open (left per operator):** `mock-app`'s
+`(spec §N)` dangling refs + aphoristic prose.
