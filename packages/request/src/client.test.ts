@@ -13,7 +13,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("request client unauthorized hook", () => {
+describe("request client auth hooks", () => {
   it("invokes the registered handler with the RequestError on 401, and still throws", async () => {
     vi.stubGlobal(
       "fetch",
@@ -33,9 +33,9 @@ describe("request client unauthorized hook", () => {
     expect(err.body?.code).toBe("unauthenticated");
   });
 
-  it("does not invoke the handler on non-401 errors (400 / 403 / 500)", async () => {
-    const handler = vi.fn();
-    setUnauthorizedHandler(handler);
+  it("does not invoke the unauthorized handler on non-401 errors (400 / 403 / 500)", async () => {
+    const unauthorizedHandler = vi.fn();
+    setUnauthorizedHandler(unauthorizedHandler);
 
     for (const status of [400, 403, 500]) {
       vi.stubGlobal(
@@ -45,12 +45,12 @@ describe("request client unauthorized hook", () => {
       await expect(request.get("/api/x")).rejects.toBeInstanceOf(RequestError);
     }
 
-    expect(handler).not.toHaveBeenCalled();
+    expect(unauthorizedHandler).not.toHaveBeenCalled();
   });
 
   it("does not invoke the handler on 2xx / 204 success", async () => {
-    const handler = vi.fn();
-    setUnauthorizedHandler(handler);
+    const unauthorizedHandler = vi.fn();
+    setUnauthorizedHandler(unauthorizedHandler);
 
     vi.stubGlobal(
       "fetch",
@@ -63,16 +63,14 @@ describe("request client unauthorized hook", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 204 })));
     await expect(request.delete("/api/ok")).resolves.toBeUndefined();
 
-    expect(handler).not.toHaveBeenCalled();
+    expect(unauthorizedHandler).not.toHaveBeenCalled();
   });
 
-  it("does not throw on a 401 when no handler is registered", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () =>
-        jsonResponse({ code: "unauthenticated", message: "Unauthorized.", traceId: "t" }, 401),
-      ),
-    );
+  it.each([
+    [401, "unauthenticated"],
+    [403, "forbidden"],
+  ])("still throws on %s when no handler is registered", async (status, code) => {
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ code, message: "m", traceId: "t" }, status)));
 
     await expect(request.get("/api/x")).rejects.toBeInstanceOf(RequestError);
   });

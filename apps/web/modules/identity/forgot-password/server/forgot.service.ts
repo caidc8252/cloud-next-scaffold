@@ -15,7 +15,7 @@ import {
   ERR_FP_TOKEN_INVALID,
   ERR_FP_PASSWORD_REUSED,
   ERR_FP_PASSWORD_WEAK,
-} from "@/lib/forgot-error-codes";
+} from "@/modules/identity/forgot-password/error/forgot.error-codes";
 import type { ResetInput, SendLinkInput } from "../schema/forgot.schema";
 import * as repo from "./forgot.repository";
 
@@ -26,7 +26,9 @@ const RESEND_COOLDOWN_SECONDS = 60;
 const SELF_SERVICE_EXPIRES_TEXT = "60 minutes";
 
 /** 自助触发：发重置链接。**防枚举**——恒返回 ok；仅 ACTIVE 用户真签 token + 发信，发信失败静默吞掉。 */
-export async function sendResetLink(input: SendLinkInput): Promise<{ ok: true; cooldownSeconds: number }> {
+export async function sendResetLink(
+  input: SendLinkInput,
+): Promise<{ ok: true; cooldownSeconds: number }> {
   const user = await repo.findUserByEmail(input.email);
   if (user && user.status === "ACTIVE") {
     const token = await issueSelfServiceResetToken(user.userId);
@@ -52,7 +54,11 @@ export async function resetPassword(input: ResetInput): Promise<{ ok: true }> {
   const user = await repo.findUserById(entry.userId);
   if (!user || user.status !== "ACTIVE") throw new BusinessError(ERR_FP_TOKEN_INVALID);
 
-  const newPassword = await decryptAndValidatePassword(input.encryptedPassword, new Date(), ERR_FP_PASSWORD_WEAK);
+  const newPassword = await decryptAndValidatePassword(
+    input.encryptedPassword,
+    new Date(),
+    ERR_FP_PASSWORD_WEAK,
+  );
 
   const history = Array.isArray(user.passwordHistory) ? (user.passwordHistory as string[]) : [];
   for (const hash of recentPasswordHashes(user.passwordHash, history)) {

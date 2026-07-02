@@ -8,7 +8,7 @@ import {
   ERR_AUTH_MFA_LOCKED,
   ERR_AUTH_MFA_TOKEN_INVALID,
   ERR_AUTH_REQUEST_EXPIRED,
-} from "@/lib/auth-error-codes";
+} from "@/modules/identity/auth/error/auth.error-codes";
 
 vi.mock("./auth.repository", () => ({
   findUserByEmail: vi.fn(),

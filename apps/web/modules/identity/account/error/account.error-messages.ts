@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Locale } from "@cloud/i18n";
 import { registerErrorMessages } from "@cloud/request/server";
 import {
   ERR_ACCOUNT_NICKNAME_REQUIRED,
@@ -19,11 +20,29 @@ import {
   ERR_ACCOUNT_MFA_NOT_ENABLED,
   ERR_ACCOUNT_MFA_ENROLL_CODE_INVALID,
   ERR_ACCOUNT_MFA_PENDING_MISSING,
-} from "./account-error-codes.ts";
+} from "./account.error-codes.ts";
 
-// Account 域是 app 级的（不属于 @cloud/request 通用包），三语文案放在这里，
-// 通过 registerErrorMessages 注册进 server 端本地化解析。account 路由顶部 side-effect import 触发。
-const accountErrorMessages: Record<string, Record<string, string>> = {
+type AccountErrorCode =
+  | typeof ERR_ACCOUNT_NICKNAME_REQUIRED
+  | typeof ERR_ACCOUNT_COUNTRY_INVALID
+  | typeof ERR_ACCOUNT_EMAIL_INVALID
+  | typeof ERR_ACCOUNT_EMAIL_TAKEN
+  | typeof ERR_ACCOUNT_EMAIL_SAME
+  | typeof ERR_ACCOUNT_USERNAME_INVALID
+  | typeof ERR_ACCOUNT_USERNAME_TAKEN
+  | typeof ERR_ACCOUNT_USERNAME_SAME
+  | typeof ERR_ACCOUNT_VERIFY_CODE_INVALID
+  | typeof ERR_ACCOUNT_PASSWORD_CURRENT_WRONG
+  | typeof ERR_ACCOUNT_PASSWORD_POLICY
+  | typeof ERR_ACCOUNT_PASSWORD_REUSED
+  | typeof ERR_ACCOUNT_MFA_STEPUP_REQUIRED
+  | typeof ERR_ACCOUNT_MFA_STEPUP_INVALID
+  | typeof ERR_ACCOUNT_MFA_NOT_ENABLED
+  | typeof ERR_ACCOUNT_MFA_ENROLL_CODE_INVALID
+  | typeof ERR_ACCOUNT_MFA_PENDING_MISSING;
+
+// Account 域是 identity/account 模块级错误码，三语文案随模块放置并注册到 @cloud/request。
+const accountErrorMessages = {
   en: {
     [ERR_ACCOUNT_NICKNAME_REQUIRED]: "Display name is required.",
     [ERR_ACCOUNT_COUNTRY_INVALID]: "Please select a valid country.",
@@ -78,9 +97,11 @@ const accountErrorMessages: Record<string, Record<string, string>> = {
     [ERR_ACCOUNT_MFA_STEPUP_REQUIRED]: "続行するには認証アプリのコードを入力してください。",
     [ERR_ACCOUNT_MFA_STEPUP_INVALID]: "認証コードが正しくありません。",
     [ERR_ACCOUNT_MFA_NOT_ENABLED]: "二要素認証が有効になっていません。",
-    [ERR_ACCOUNT_MFA_ENROLL_CODE_INVALID]: "コードが一致しません。キーを再スキャンしてお試しください。",
-    [ERR_ACCOUNT_MFA_PENDING_MISSING]: "保留中のセットアップが見つかりません。最初からやり直してください。",
+    [ERR_ACCOUNT_MFA_ENROLL_CODE_INVALID]:
+      "コードが一致しません。キーを再スキャンしてお試しください。",
+    [ERR_ACCOUNT_MFA_PENDING_MISSING]:
+      "保留中のセットアップが見つかりません。最初からやり直してください。",
   },
-};
+} satisfies Record<Locale, Record<AccountErrorCode, string>>;
 
 registerErrorMessages(accountErrorMessages);

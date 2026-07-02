@@ -1,13 +1,19 @@
 import "server-only";
 
+import type { Locale } from "@cloud/i18n";
 import { registerErrorMessages } from "@cloud/request/server";
 import {
   ERR_FP_TOKEN_INVALID,
   ERR_FP_PASSWORD_WEAK,
   ERR_FP_PASSWORD_REUSED,
-} from "./forgot-error-codes";
+} from "./forgot.error-codes";
 
-const forgotErrorMessages: Record<string, Record<string, string>> = {
+type ForgotErrorCode =
+  | typeof ERR_FP_TOKEN_INVALID
+  | typeof ERR_FP_PASSWORD_WEAK
+  | typeof ERR_FP_PASSWORD_REUSED;
+
+const forgotErrorMessages = {
   en: {
     [ERR_FP_TOKEN_INVALID]: "The reset link is invalid or has expired.",
     [ERR_FP_PASSWORD_WEAK]: "Password does not meet the requirements.",
@@ -23,6 +29,6 @@ const forgotErrorMessages: Record<string, Record<string, string>> = {
     [ERR_FP_PASSWORD_WEAK]: "パスワードが要件を満たしていません。",
     [ERR_FP_PASSWORD_REUSED]: "最近使用したパスワードは使用できません。",
   },
-};
+} satisfies Record<Locale, Record<ForgotErrorCode, string>>;
 
 registerErrorMessages(forgotErrorMessages);

@@ -7,11 +7,8 @@ import {
   successResponse,
   type Pager,
 } from "@cloud/request/server";
-import {
-  ERR_MW_CACHE,
-  ERR_ROLE_DELETE_ASSIGNED,
-  ERR_UNAUTHORIZED,
-} from "@cloud/request/error-codes";
+import { ERR_INTERNAL, ERR_MW_CACHE, ERR_UNAUTHORIZED } from "@cloud/request/error-codes";
+import { ERR_ROLE_DELETE_ASSIGNED } from "@/modules/system/roles/error/roles.error-codes";
 import { handleApiError, withApiHandler } from "./api-handler";
 
 async function readBody(response: Response) {
@@ -104,7 +101,7 @@ describe("api-handler", () => {
     const body = await readBody(response);
 
     expect(response.status).toBe(500);
-    expect(body.code).toBe("100005");
+    expect(body.code).toBe(ERR_INTERNAL);
     expect(body.message).toBe("Internal server error.");
 
     spy.mockRestore();

@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Locale } from "@cloud/i18n";
 import { registerErrorMessages } from "@cloud/request/server";
 import {
   ERR_AUTH_MISSING_FIELDS,
@@ -17,12 +18,27 @@ import {
   ERR_AUTH_MFA_CODE_INVALID,
   ERR_AUTH_MFA_LOCKED,
   ERR_AUTH_MFA_NOT_CONFIGURED,
-} from "./auth-error-codes.ts";
+} from "./auth.error-codes.ts";
 
-// Auth 域是 app 级的（不属于 @cloud/request 通用包），所以它的错误码三语文案放在这里，
-// 通过 registerErrorMessages 注册进 @cloud/request 的 server 端本地化解析。
-// 导入本模块即完成注册（auth 路由顶部 side-effect import 触发）。
-const authErrorMessages: Record<string, Record<string, string>> = {
+type AuthErrorCode =
+  | typeof ERR_AUTH_MISSING_FIELDS
+  | typeof ERR_AUTH_INVALID_CREDENTIALS
+  | typeof ERR_AUTH_ACCOUNT_LOCKED
+  | typeof ERR_AUTH_NO_ACTIVE_PARTNER
+  | typeof ERR_AUTH_NOT_AUTHENTICATED
+  | typeof ERR_AUTH_INVALID_PARTNER
+  | typeof ERR_AUTH_CREDENTIALS_REQUIRED
+  | typeof ERR_AUTH_PARTNER_REQUIRED
+  | typeof ERR_AUTH_ACCOUNT_DISABLED
+  | typeof ERR_AUTH_ENCRYPTION_INVALID
+  | typeof ERR_AUTH_REQUEST_EXPIRED
+  | typeof ERR_AUTH_MFA_TOKEN_INVALID
+  | typeof ERR_AUTH_MFA_CODE_INVALID
+  | typeof ERR_AUTH_MFA_LOCKED
+  | typeof ERR_AUTH_MFA_NOT_CONFIGURED;
+
+// Auth 域是 identity/auth 模块级错误码，三语文案随模块放置并注册到 @cloud/request。
+const authErrorMessages = {
   en: {
     [ERR_AUTH_MISSING_FIELDS]: "Please complete the required fields.",
     [ERR_AUTH_INVALID_CREDENTIALS]: "Incorrect account or password.",
@@ -38,7 +54,8 @@ const authErrorMessages: Record<string, Record<string, string>> = {
     [ERR_AUTH_MFA_TOKEN_INVALID]: "Verification session expired. Please sign in again.",
     [ERR_AUTH_MFA_CODE_INVALID]: "Incorrect verification code.",
     [ERR_AUTH_MFA_LOCKED]: "Too many incorrect codes. Please try again later.",
-    [ERR_AUTH_MFA_NOT_CONFIGURED]: "Two-factor authentication is not set up. Contact your administrator.",
+    [ERR_AUTH_MFA_NOT_CONFIGURED]:
+      "Two-factor authentication is not set up. Contact your administrator.",
   },
   "zh-CN": {
     [ERR_AUTH_MISSING_FIELDS]: "请填写必填项。",
@@ -60,7 +77,8 @@ const authErrorMessages: Record<string, Record<string, string>> = {
   ja: {
     [ERR_AUTH_MISSING_FIELDS]: "必須項目を入力してください。",
     [ERR_AUTH_INVALID_CREDENTIALS]: "アカウントまたはパスワードが正しくありません。",
-    [ERR_AUTH_ACCOUNT_LOCKED]: "アカウントがロックされています。しばらくしてからもう一度お試しください。",
+    [ERR_AUTH_ACCOUNT_LOCKED]:
+      "アカウントがロックされています。しばらくしてからもう一度お試しください。",
     [ERR_AUTH_NO_ACTIVE_PARTNER]: "このアカウントで利用可能な組織がありません。",
     [ERR_AUTH_NOT_AUTHENTICATED]: "ログインしていません。",
     [ERR_AUTH_INVALID_PARTNER]: "この組織は利用できません。",
@@ -69,11 +87,12 @@ const authErrorMessages: Record<string, Record<string, string>> = {
     [ERR_AUTH_ACCOUNT_DISABLED]: "このアカウントは利用できません。",
     [ERR_AUTH_ENCRYPTION_INVALID]: "ログインリクエストを処理できませんでした。再度お試しください。",
     [ERR_AUTH_REQUEST_EXPIRED]: "ログインリクエストの有効期限が切れました。再度お試しください。",
-    [ERR_AUTH_MFA_TOKEN_INVALID]: "認証セッションの有効期限が切れました。もう一度サインインしてください。",
+    [ERR_AUTH_MFA_TOKEN_INVALID]:
+      "認証セッションの有効期限が切れました。もう一度サインインしてください。",
     [ERR_AUTH_MFA_CODE_INVALID]: "確認コードが正しくありません。",
     [ERR_AUTH_MFA_LOCKED]: "確認コードの誤りが多すぎます。しばらくしてからお試しください。",
     [ERR_AUTH_MFA_NOT_CONFIGURED]: "二要素認証が設定されていません。管理者にお問い合わせください。",
   },
-};
+} satisfies Record<Locale, Record<AuthErrorCode, string>>;
 
 registerErrorMessages(authErrorMessages);

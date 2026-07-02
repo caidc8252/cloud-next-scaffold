@@ -7,12 +7,7 @@ import {
   registerErrorMessages,
   runWithLocale,
 } from "./server.ts";
-import {
-  ERR_INVALID_ID,
-  ERR_INTERNAL,
-  ERR_ROLE_NAME_SHORT,
-  ERR_USER_NOT_FOUND,
-} from "./error-codes.ts";
+import { ERR_BAD_REQUEST, ERR_INVALID_ID, ERR_INTERNAL, ERR_NOT_FOUND } from "./error-codes.ts";
 
 async function readBody(response: Response) {
   return (await response.json()) as { code: string; message: string; traceId: string };
@@ -20,22 +15,24 @@ async function readBody(response: Response) {
 
 describe("error response localization", () => {
   it("uses the english registry message by default (no ambient locale)", async () => {
-    const body = await readBody(errorResponse(ERR_USER_NOT_FOUND));
-    expect(body.message).toBe("User not found.");
+    const body = await readBody(errorResponse(ERR_NOT_FOUND));
+    expect(body.message).toBe("The requested resource was not found.");
   });
 
   it("localizes registry codes to the ambient locale", async () => {
-    const zh = await readBody(runWithLocale("zh-CN", () => errorResponse(ERR_USER_NOT_FOUND)));
-    expect(zh.message).toBe("用户不存在。");
+    const zh = await readBody(runWithLocale("zh-CN", () => errorResponse(ERR_NOT_FOUND)));
+    expect(zh.message).toBe("请求的资源不存在。");
 
-    const ja = await readBody(runWithLocale("ja", () => badRequestResponse(ERR_ROLE_NAME_SHORT)));
-    expect(ja.message).toBe("ロール名が短すぎます。");
+    const ja = await readBody(runWithLocale("ja", () => badRequestResponse(ERR_BAD_REQUEST)));
+    expect(ja.message).toBe("リクエストが不正です。");
   });
 
   it("is code-authoritative: ignores the explicit message for registry codes", async () => {
     // 同一个 code 复用了不同具体文案，本地化时以注册表为准，显式 message 被忽略。
     const zh = await readBody(
-      runWithLocale("zh-CN", () => badRequestResponse(ERR_INVALID_ID, "Cannot disable your own account.")),
+      runWithLocale("zh-CN", () =>
+        badRequestResponse(ERR_INVALID_ID, "Cannot disable your own account."),
+      ),
     );
     expect(zh.message).toBe("提供的 ID 无效。");
   });
@@ -88,7 +85,9 @@ describe("i18n params interpolation", () => {
     expect(en.message).toBe("Still assigned to 3 member(s).");
 
     const zh = await readBody(
-      runWithLocale("zh-CN", () => errorResponse("199010", undefined, 409, { params: { count: 5 } })),
+      runWithLocale("zh-CN", () =>
+        errorResponse("199010", undefined, 409, { params: { count: 5 } }),
+      ),
     );
     expect(zh.message).toBe("仍被 5 个成员绑定。");
   });
@@ -103,7 +102,7 @@ describe("i18n params interpolation", () => {
 describe("stack logging", () => {
   it("logs the cause stack so every caught exception is traceable", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-    errorResponse(ERR_USER_NOT_FOUND, undefined, 404, { cause: new Error("boom-stack-marker") });
+    errorResponse(ERR_NOT_FOUND, undefined, 404, { cause: new Error("boom-stack-marker") });
     const logged = spy.mock.calls.flat().map(String).join("\n");
     expect(logged).toContain("boom-stack-marker");
     spy.mockRestore();

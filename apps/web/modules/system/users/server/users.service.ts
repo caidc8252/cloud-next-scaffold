@@ -3,6 +3,12 @@ import "server-only";
 import { generateToken } from "@cloud/security/token";
 import { AuthzError, type ActiveSession } from "@cloud/permissions/server";
 import { BusinessError } from "@cloud/request";
+import { INVITE_TTL_MS } from "@cloud/constants";
+import { createLogger } from "@cloud/log";
+import { getTranslations } from "@cloud/i18n/server";
+import { isLocale } from "@cloud/i18n";
+import { extractRoleIds, parseRoleIds } from "@/lib/role-codes";
+import type { User } from "../schema/users.types";
 import {
   ERR_USER_CANCEL_NOT_PENDING,
   ERR_USER_CANNOT_DISABLE_SELF,
@@ -10,13 +16,7 @@ import {
   ERR_USER_NO_PENDING_INVITE,
   ERR_USER_NOT_FOUND,
   ERR_USER_PROTECTED,
-} from "@cloud/request/error-codes";
-import { INVITE_TTL_MS } from "@cloud/constants";
-import { createLogger } from "@cloud/log";
-import { getTranslations } from "@cloud/i18n/server";
-import { isLocale } from "@cloud/i18n";
-import { extractRoleIds, parseRoleIds } from "@/lib/role-codes";
-import type { User } from "../schema/users.types";
+} from "../error/users.error-codes";
 import { createPasswordResetToken } from "@/lib/password-reset-token";
 import { sendInviteEmail, sendResetLinkEmail } from "@/lib/email";
 import type {
@@ -62,7 +62,10 @@ export async function listUsersAndInvites(partyId: number): Promise<User[]> {
   ];
 }
 
-export async function createInvite(session: ActiveSession, input: CreateInviteInput): Promise<User> {
+export async function createInvite(
+  session: ActiveSession,
+  input: CreateInviteInput,
+): Promise<User> {
   const partyId = session.currentPartyId;
   const now = new Date();
 
@@ -129,7 +132,10 @@ export async function updateUser(
   if (!link) throw new BusinessError(ERR_USER_NOT_FOUND, 404);
 
   // 受保护用户（本人 / ADMIN）只能改 remark，不能改角色。
-  if (isProtectedUser(userId, session.userId, link.authorizingType) && input.roleIds !== undefined) {
+  if (
+    isProtectedUser(userId, session.userId, link.authorizingType) &&
+    input.roleIds !== undefined
+  ) {
     throw new BusinessError(ERR_USER_PROTECTED);
   }
 
@@ -144,9 +150,7 @@ export async function updateUser(
   await usersRepository.updatePartyUser(partyId, userId, {
     updUserId: session.userId,
     ...(input.remark !== undefined ? { remark: input.remark.trim() || null } : {}),
-    ...(requestedRoleIds !== null
-      ? { roles: requestedRoleIds.map((roleId) => ({ roleId })) }
-      : {}),
+    ...(requestedRoleIds !== null ? { roles: requestedRoleIds.map((roleId) => ({ roleId })) } : {}),
   });
   return toClientUser(await usersRepository.getUserWithLink(partyId, userId));
 }
