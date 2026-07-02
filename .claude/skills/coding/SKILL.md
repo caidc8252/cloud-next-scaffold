@@ -10,12 +10,18 @@ Module-build entry point **and preflight router**. Base guard: needs `current_ta
 
 ## 1. Preflight — offer each unmet step in-session, never silently run it
 **Never** subagent the interactive steps (subagents can't hold operator dialogue); autonomous work — the implementation and the review audit — may use subagents.
-1. **Data-model drift** — `../pep-data-model-docs` HEAD ≠ workbench `data_model_docs` baseline → offer **`/sync-db-model`**.
+1. **Data-model drift** — `data_model_docs` baseline exists and `../pep-data-model-docs` HEAD ≠ it → offer **`/sync-db-model`** then **`/logic-converge`** (sync materializes the DDL into Prisma; only converge advances the baseline that clears this gate). First run (no baseline) → skip; gate 2 covers it.
 2. **Converge freshness** — `logic.md` missing · groom has `待处理` 碎片 · `logic.md` `## 2 Open` non-empty · a doc repo HEAD moved past its workbench baseline → offer **`/logic-converge`**. `## 3 Deferred` does **not** block.
 3. **Prototype** — prototype + UI work → hand off to **`mock-app`** (prototype→Next); return for the non-prototype logic.
 
+These are gates, not mere suggestions: offering is how you satisfy them in-session, but if the operator declines a genuinely-required prerequisite (`logic.md` missing / `## 2 Open` non-empty), **stop — don't build on unconverged conflicts**.
+
 ## 2. Plan (native plan mode, **not** `superpowers:writing-plans`)
-`EnterPlanMode` → read `.claude/context/injections/references/coding-rules.md` → research specs + prototype + data-model + existing code + `logic.md` → write the plan → `ExitPlanMode` → implement. **Settle every decision here** — resolve each ambiguity/conflict with the operator (cross-source conflicts via `/logic-converge`) before `ExitPlanMode`; the approved plan needs no further decisions. Plan tasks reference converged decisions (`C-n`) + inputs — references, not a work-queue; on a re-run after a re-converge, re-verify already-shipped code against any `## 1 Converged` entry tagged `⟲ re-check impl` (green tests don't prove a superseded decision was rolled back).
+`EnterPlanMode` → read `.claude/context/injections/references/coding-rules.md` → research specs + prototype + data-model + existing code + `logic.md` → write the plan → `ExitPlanMode` → implement.
+- **Settle every decision here** — resolve each ambiguity/conflict with the operator (cross-source conflicts via `/logic-converge`) before `ExitPlanMode`.
+- Plan tasks reference converged decisions (`C-n`) + inputs — references, not a work-queue.
+- **On a re-run:** re-verify already-shipped code against any `## 1 Converged` entry tagged `⟲ re-check impl` (converge's flag that a shipped decision was superseded — green tests don't prove the old behavior was rolled back), and report which you re-verified so converge can clear the tag.
+- **If a `## 1 Converged` decision contradicts the current inputs**, treat it as stale — don't implement it; loop back to `/logic-converge`.
 
 The plan must cover:
 - create/update the module's `overview.md` (per `.claude/context/injections/references/coding-rules/module-layout.md`);

@@ -5,7 +5,7 @@ description: /logic-converge — for the active task, read all inputs (requireme
 
 # logic-converge
 
-`logic.md` is a **supplement** on top of the raw inputs (never a substitute; `/coding` reads all inputs AND `logic.md`). Reconcile what the sources *do* say; not gap-hunting for what none mention. **Out of scope:** cross-module dependency / stubs (`/coding` owns it, 铁律 8) and commons 上提 (flag to the operator) — converge does neither; but a genuine **source conflict** that happens to involve another module **is** still converged here.
+`logic.md` is a **supplement** on top of the raw inputs (never a substitute; `/coding` reads all inputs AND `logic.md`). Reconcile what the sources *do* say; not gap-hunting for what none mention. **Out of scope:** cross-module dependency / stubs (`/coding` owns it, 铁律 8) and commons 上提 (flag to the operator); but a genuine **source conflict** that happens to involve another module **is** still converged here.
 
 ## Preconditions
 - Read `.work/workbench.json`; `current_task` empty → **error out** (run `/start-work`).
@@ -21,7 +21,7 @@ For each doc repo: checkout `develop`, `git pull`; record this pass's HEAD per r
 | Input | Repo (local) | How to locate |
 |---|---|---|
 | specs | `pep-webapp-docs` (`../pep-webapp-docs`) | `specs/README.md` → resolve authoritative `<CATEGORY>/<MODULE>` via `specs/00-module-registry.md` (mirrors 飞书「所属模块」) → read module `{rules,processes,states}/` **plus inherited shared layers** global `specs/_common/` + category `<CATEGORY>/_common/` → `specs/glossary.md`. |
-| prototype | `pep-webapp-docs` | `handoffs/design/`, exact path per `.claude/rules/prototype-loop.md`. Absent → "no prototype", don't fabricate. |
+| prototype | `pep-webapp-docs` | `handoffs/design/`, exact path per `pep-webapp-docs`'s `.claude/rules/prototype-loop.md`. Absent → "no prototype", don't fabricate. |
 | data-model | `pep-data-model-docs` (`../pep-data-model-docs`) | Navigate via its own README. |
 | existing code | this repo | `apps/web/modules/<cat>/<name>/` (absent → new module). |
 | overview | this repo | `apps/web/modules/**/overview.md`, `apps/web/commons/**/overview.md` — **read-only** global awareness. |
@@ -38,7 +38,11 @@ One lens per source pairing: **do they agree on one implementable truth?** Every
 - **soft diff / ambiguity** — same thing, described differently or at different granularity;
 - **blocking silence** — one source specifies, another is silent where implementation needs it — *only* when that silence would force coding to guess.
 
-Surface each (including groom `待处理` fragments) and get the operator's decision. Before converging an area, read existing `## 1/2/3` entries touching it — don't re-ask; supersede when a later input overrides an earlier decision. Route: resolved → `## 1 Converged`; still needs a decision → `## 2 Open`; consciously punted → `## 3 Deferred`.
+Then, each pass:
+- **Converge new conflicts** (from the diff + groom `待处理` fragments): surface each, get the operator's decision.
+- **Re-offer every existing `## 2 Open` item** (independent of the diff) — a parked conflict never re-enters the diff on its own, so this is the only way it clears.
+- **Before deciding an area, read its existing `## 1/2/3` entries** (buckets defined in step 5) — don't re-ask a settled decision; supersede when a later input overrides one.
+- **Route** each: resolved → `## 1 Converged`; still needs a decision → `## 2 Open`; consciously punted → `## 3 Deferred`.
 
 ### 5. Write `logic.md` — you are its only writer
 Always emit the file (even with zero conflicts — at minimum `## 0 Provenance` — so `/coding`'s gate passes).
@@ -60,8 +64,9 @@ Always emit the file (even with zero conflicts — at minimum `## 0 Provenance` 
 ## 3 Deferred    (consciously punted; does NOT block gates)
 - <conflict> — disposition: 转出 TASK-x / out-of-scope this task / coding uses <fallback> until decided
 ```
-- `C-n` is a reference handle, not a status. Tag an entry `⟲ re-check impl` when you revise/supersede a decision `/coding` may already have shipped.
-- **Cumulative-but-living**, module-level, not cleared by `/submit-work`. Prune a `## 1 Converged` entry **only** when its conflict is gone from the inputs; a decision still bridging a live disagreement is kept or superseded, never dropped (its resolution isn't in the inputs — losing it forces coding to guess).
+- `C-n` is a reference handle, not a status.
+- **`⟲ re-check impl`:** tag an entry when you revise/supersede a decision `/coding` may already have shipped. **Preserve** the tag on entries you don't touch this pass; clear it only after `/coding` reports (via the loop) it re-verified that entry.
+- **Cumulative-but-living**, module-level, not cleared by `/submit-work`. A `## 1 Converged` decision must never contradict the current inputs: prune it once its conflict is gone from the inputs, or supersede it when they point elsewhere (losing a live decision forces coding to guess).
 - Mark a groom fragment `待处理 → 已整理` once its content is captured as a `## 1/2/3` entry.
 
 ### 6. Advance the baseline — clean pass only

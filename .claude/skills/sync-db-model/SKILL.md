@@ -62,7 +62,7 @@ app.sql 头部 `create schema if not exists app;`，`app.user`/`app.party`… �
 
 ## Steps
 
-1. **就绪校验**：确认 `../pep-data-model-docs/specs/physical-model/app.sql` 与 `packages/db/prisma/schema.prisma` 均存在可读；上游缺失 → 提示 `git clone` 后退出。
+1. **就绪校验 + 拉取上游**：`../pep-data-model-docs` 存在 → 先 `git pull`（取最新 DDL；避免拿陈旧 `app.sql` 同步，也早于 `/logic-converge` 的拉取以免两侧对不同版本）；缺失 → 提示 `git clone` 后退出。确认 `../pep-data-model-docs/specs/physical-model/app.sql` 与 `packages/db/prisma/schema.prisma` 均存在可读。
 2. **解析两边**：
    - 解析 app.sql → 表/列/类型/可空/默认/索引·唯一/comment。
    - 解析 schema.prisma → model/字段/`@db.*`/`@@map`/`@@unique`/`@@index`。

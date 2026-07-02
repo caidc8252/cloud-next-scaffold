@@ -12,6 +12,8 @@ description: /start-work {task编号} —— 开始一个新任务。校验唯�
 > **顺序铁律**：步骤 1–7 全是只读校验与 git 操作；**只有全部成功，才在步骤 8 写入 `workbench.json`**。任何一步失败/被操作员中止 → 直接退出，**不留下半启动的脏 workbench**（git 副作用——如已 stash/切换的仓——留给操作员接管，不回滚）。
 >
 > **三仓对齐**：本代码仓 + 两文档仓（需求空间 `../pep-webapp-docs`、数据模型空间 `../pep-data-model-docs`，各仓路径/URL 以其自描述 README 为准）。**两文档仓（步骤 6）全部对齐成功，才创建本地代码仓分支（步骤 7）**。
+>
+> **异常界定**（步骤 4/6 共用）：进行中的合并/rebase/cherry-pick、冲突未解、detached HEAD；**文档仓另加**本地与远端 `develop`/目标分支 diverged（各有对方没有的提交，非快进）。检出任一 → **重点提醒**具体仓与异常，**停止 start-work 退出**，交操作员手动处理后重跑。
 
 ## 飞书数据源（真实 MCP 接入）
 
@@ -41,7 +43,7 @@ description: /start-work {task编号} —— 开始一个新任务。校验唯�
 
 3. **缓存分支名**：`feature_name = feature/task-{task编号}`。
 
-4. **本地代码仓脏检查**（沿用「异常界定」，见步骤 6）：先判**异常**——有进行中的合并/rebase/cherry-pick、冲突未解、detached HEAD → **停止**并提示操作员手动处理，退出。否则若工作区有**干净的**未提交改动（`git status --porcelain` 非空）**且**当前分支 ≠ `feature_name`：
+4. **本地代码仓脏检查**：先判**异常**（见上「异常界定」）→ 检出即停止退出。否则若工作区有**干净的**未提交改动（`git status --porcelain` 非空）**且**当前分支 ≠ `feature_name`：
    - **重点提醒**操作员将 `git stash`，并询问是否同意；
    - 操作员**拒绝**（或 AUTONOMOUS_MODE 无输入）→ **停止**并提示「请自行处理未提交的改动后再开始」，退出；
    - 同意 → `git stash`（带说明信息）后继续。
@@ -51,7 +53,7 @@ description: /start-work {task编号} —— 开始一个新任务。校验唯�
 6. **两文档仓对齐**（需求空间 `../pep-webapp-docs`、数据模型空间 `../pep-data-model-docs`）—— 对**每个**仓依次执行；任一仓中止 → 整个 start-work 退出（不写 workbench）：
    - **缺失自动 clone**：本地无该仓 → 按各仓自描述 README 的 URL `git clone` 到对应目录（`Newland-Payment-Technology-US-Co-Ltd/pep-webapp-docs` / `pep-data-model-docs`）。
    - **同步云端**：`git fetch`（含 `--prune`），拿到远端最新分支信息。
-   - **异常界定（停手，交操作员手动处理）**：进行中的合并/rebase/cherry-pick、冲突未解、detached HEAD、本地与远端 `develop`/目标分支 **diverged**（各有对方没有的提交，非快进）→ **重点提醒**具体是哪个仓、什么异常，**停止 start-work 退出**，让操作员手动处理后重跑。
+   - **异常检查**（见上「异常界定」，文档仓含 diverged）→ 检出任一 → 停止 start-work 退出。
    - **仅干净的未提交改动**（`git status --porcelain` 非空，且无上述异常）→ **重点提醒**该仓有未提交改动、将被 `git stash` 暂存（含 `task_id` 说明），询问是否同意；**拒绝/无输入** → 停止退出；同意 → `git stash` 后继续。
    - **切到 `feature_name`**：
      - 该仓存在 `feature_name`（本地或远端）→ checkout 并同步到云端最新（快进 `pull`）。
