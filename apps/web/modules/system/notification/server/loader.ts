@@ -12,3 +12,8 @@ export const loadNotice = cache(async (id: string) => {
   const session = await requirePermissions({ all: [] });
   return getNoticeByIdScoped(session, id);
 });
+
+export const loadNotice = cache(async (id: string) => {
+  const session = await requirePermissions({ all: [] });
+  return getNoticeByIdScoped(session, id);
+});
