@@ -7,6 +7,7 @@ import { Button, Popover, PopoverContent, PopoverTrigger, MenuItem } from "@clou
 import { useLocale } from "@cloud/i18n/client";
 import { locales, localeLabels, type Locale } from "@cloud/i18n";
 import { setLocaleAction } from "@cloud/i18n/actions";
+import { setLocaleAction } from "@cloud/i18n/actions";
 
 // 语言切换：地球图标按钮触发弹层，列出 locale（当前项加粗 + 勾选）。
 // 选中即写 locale cookie 并 router.refresh()。语言清单固定来自 @cloud/i18n（en/zh-CN/ja）。
