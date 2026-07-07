@@ -4,6 +4,8 @@ import { GLOBAL_ROLES } from "./catalog/roles.ts";
 
 import systemRoles from "../modules/system/roles/manifest.ts";
 import systemUsers from "../modules/system/users/manifest.ts";
+import systemUsers from "../modules/system/users/manifest.ts";
+
 
 // 采集入口(作者维护 import 串;provisional 自动扫描推迟到 Step 3)。codegen 读这一份。
 export const collected = {
