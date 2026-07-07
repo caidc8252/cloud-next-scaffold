@@ -13,7 +13,7 @@ export function PepMark({ size = 32 }: { size?: number }) {
       <rect x="19.8" y="8" width="4.2" height="16" rx="2.1" fill="var(--color-primary-300)" />
     </svg>
   );
-}
+}fdsfdsafdsaf
 
 // Lockup — mark + "PEP" wordmark with an optional uppercase sublabel.
 export function PepLogo({
