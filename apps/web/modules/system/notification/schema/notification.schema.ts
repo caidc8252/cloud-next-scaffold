@@ -8,6 +8,8 @@ export const listNoticesQuerySchema = z.object({
   q: z.string().trim().min(1).optional(),
 });
 export type ListNoticesQuery = z.infer<typeof listNoticesQuerySchema>;
+export type ListNoticesQuery = z.infer<typeof listNoticesQuerySchema>;
+
 
 export const markReadBodySchema = z.union([
   z.object({ ids: z.array(z.string()).min(1) }),
