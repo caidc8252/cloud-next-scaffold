@@ -6,6 +6,8 @@ import type { LucideIcon } from "lucide-react";
 import { Spinner } from "@cloud/ui";
 import { useTranslations } from "@cloud/i18n/client";
 import { PepLogo } from "./brand";
+import { PepLogo } from "./brand";
+
 
 const HIGHLIGHTS: { key: string; Icon: LucideIcon }[] = [
   { key: "devices", Icon: Smartphone },
