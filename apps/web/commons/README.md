@@ -15,3 +15,4 @@
 - 每个 `commons/<mod>/` 维护一份 `overview.md`（commons 模板见 `.claude/context/injections/references/coding-rules/commons.md`），供 `/logic-converge` 做全局认识。**只读消费**，写入由专门的维护 skill 负责（建设中）。
 
 > 目录当前为空（占位）。第一个通用模块提升上来后，删除本说明的"占位"措辞即可。
+fsdasfdsafdasfdsadfsfdafsdafsdafsdadfsasfdasfdaafsdafsdfadsasfd
