@@ -7,7 +7,7 @@
 > 3. `pnpm test`(全量单测,pretest 先跑 gen:coc)
 > 4. `cp apps/web/.env.example apps/web/.env` → `pnpm dev`(起 `apps/web`,:3000;需本地 Postgres + Redis,详见 README)
 
----
+---12312312321321
 
 ## 1. 一句话概览
 
