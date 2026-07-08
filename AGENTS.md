@@ -1,7 +1,7 @@
 # This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
-
+12312312321
 # AI 行为准则
 
 本文件是 AI 在本项目的**常驻**行为准则：哲学 + 目录语义 + 铁律 + 脚手架工作流。深度规格按需查团队编码规则索引 `.claude/context/injections/references/coding-rules.md`（路由，按主题分篇：`server-layering` / `api-and-requests` / `auth-guards` / `coc-declaration` / `module-layout` / `i18n` / `storage` / `logging` / `notice` / …）。
